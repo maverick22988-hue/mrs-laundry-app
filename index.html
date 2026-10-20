@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '7ecfe0561b', version: '1.3.0' };</script>
+  <script>window.MLS_PWA = { build: 'ddb76e0be7', version: '1.4.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -158,7 +158,7 @@
   /* one colour family per meaning: blue = new/queued, amber = in progress/pending, green = done/good, teal = completed, red = problem/stopped, slate = inactive */
   .status-badge.s-new, .status-badge.s-received, .status-badge.s-leave, .status-badge.s-holiday, .status-badge.s-unassigned, .status-badge.s-draft, .status-badge.s-not_started, .status-badge.s-scheduled { background: #dbeafe; color: #1e40af; }
   .status-badge.s-processing, .status-badge.s-washing, .status-badge.s-drying, .status-badge.s-folding, .status-badge.s-qc, .status-badge.s-packed, .status-badge.s-partial, .status-badge.s-late, .status-badge.s-undertime, .status-badge.s-pending, .status-badge.s-reopened, .status-badge.s-assigned, .status-badge.s-accepted, .status-badge.s-submitted, .status-badge.s-open, .status-badge.s-in_progress, .status-badge.s-stale { background: #fef3c7; color: #92400e; }
-  .status-badge.s-ready, .status-badge.s-active, .status-badge.s-paid, .status-badge.s-present, .status-badge.s-approved, .status-badge.s-finalized, .status-badge.s-delivered, .status-badge.s-picked_up, .status-badge.s-in, .status-badge.s-pass, .status-badge.s-ok, .status-badge.s-on_time { background: #dcfce7; color: #166534; }
+  .status-badge.s-ready, .status-badge.s-applied, .status-badge.s-active, .status-badge.s-paid, .status-badge.s-present, .status-badge.s-approved, .status-badge.s-finalized, .status-badge.s-delivered, .status-badge.s-picked_up, .status-badge.s-in, .status-badge.s-pass, .status-badge.s-ok, .status-badge.s-on_time { background: #dcfce7; color: #166534; }
   .status-badge.s-out_for_delivery, .status-badge.s-for_pickup, .status-badge.s-computed { background: #e0f2fe; color: #075985; }
   .status-badge.s-completed, .status-badge.s-released, .status-badge.s-closed { background: #ccfbf1; color: #115e59; }
   .status-badge.s-cancelled, .status-badge.s-refunded, .status-badge.s-unpaid, .status-badge.s-absent, .status-badge.s-review, .status-badge.s-rejected, .status-badge.s-failed, .status-badge.s-fail, .status-badge.s-locked, .status-badge.s-disabled, .status-badge.s-error, .status-badge.s-overdue { background: #fee2e2; color: #991b1b; }
@@ -398,10 +398,182 @@
   .net-badge.net-checking i { color: #64748b; animation: net-pulse 1s ease-in-out infinite; }
   @keyframes net-pulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
   @media (max-width: 575.98px) { .net-badge span { display: none; } .net-badge { padding: .25rem .45rem; } }
+  /* the offline queue (1.4.0): what waits for the server, what the server refused */
+  .queue-badge { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 600; padding: .25rem .6rem; border-radius: 999px; border: 1px solid #fde68a; background: #fffbeb; color: #92400e; white-space: nowrap; text-decoration: none; min-height: 28px; }
+  .queue-badge i { font-size: .7rem; }
+  .queue-badge.q-rejected { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+  .queue-badge.q-sending { background: var(--mls-card); border-color: var(--mls-line); color: var(--mls-ink-soft); }
+  .queue-badge:hover { filter: brightness(.97); color: inherit; }
+  .pending-tag { display: inline-block; font-size: .68rem; font-weight: 700; letter-spacing: .02em; padding: .1rem .4rem; border-radius: 6px; background: #fffbeb; color: #92400e; border: 1px solid #fde68a; vertical-align: middle; }
+  .pending-tag.refused { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+  .sync-list { list-style: none; margin: 0; padding: 0; }
+  .sync-list li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .6rem .9rem; align-items: start; padding: .6rem 0; border-bottom: 1px solid var(--mls-line); }
+  .sync-list li:last-child { border-bottom: 0; }
+  .sync-list .when { font-size: .76rem; color: var(--mls-ink-soft); white-space: nowrap; }
+  .sync-list .what { font-size: .92rem; min-width: 0; overflow-wrap: anywhere; }
+  .sync-list .why { font-size: .82rem; color: #991b1b; margin-top: .15rem; }
+  .sync-list .flag { font-size: .8rem; color: #92400e; margin-top: .15rem; }
+  .sync-list .ref { font-size: .8rem; color: var(--mls-ink-soft); margin-top: .1rem; }
+  .sync-stat { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; font-size: .9rem; }
+  .sync-stat b { font-size: 1.2rem; }
+  .receipt-paper .provisional { border: 2px dashed #92400e; color: #92400e; padding: .35rem .5rem; margin: .4rem 0; text-align: center; font-weight: 700; letter-spacing: .04em; }
+  .receipt-paper .provisional small { display: block; font-weight: 400; letter-spacing: 0; margin-top: .15rem; }
+  @media (max-width: 575.98px) { .queue-badge span { display: none; } .queue-badge { padding: .25rem .45rem; } .sync-list li { grid-template-columns: minmax(0, 1fr) auto; } .sync-list .when { grid-column: 1 / -1; } }
 </style>
 
 </head>
 <body>
+  <script>
+    /* The shared core: the money arithmetic and the cart-pricing and promo rules as the server runs them (Utilities.gs → defineShared_),
+       served here so a device quotes a cart offline with the same code. Pure: no server call, no secret. */
+    function defineShared_(opts) {
+  opts = opts || {};
+  var symbolOf = function () { return typeof opts.currencySymbol === 'function' ? opts.currencySymbol() : (opts.currencySymbol || '₱'); };
+  /** Money: all arithmetic in integer centavos; cells and the UI hold pesos. */
+  var Money = {
+    /** Pesos → centavos with half-away-from-zero rounding; the epsilon defeats 1.005 * 100 = 100.4999…. */
+    cents: function (pesos) { var n = Number(pesos); if (!isFinite(n)) return 0; return (n < 0 ? -1 : 1) * Math.round((Math.abs(n) + Number.EPSILON) * 100); },
+    pesos: function (cents) { return Math.round(Number(cents) || 0) / 100; },
+    add: function () { var t = 0; for (var i = 0; i < arguments.length; i++) t += Math.round(Number(arguments[i]) || 0); return t; },
+    sub: function (a, b) { return Math.round(Number(a) || 0) - Math.round(Number(b) || 0); },
+    mul: function (cents, factor) { return Math.round((Number(cents) || 0) * (Number(factor) || 0)); },
+    pct: function (cents, pct) { return Math.round((Number(cents) || 0) * (Number(pct) || 0) / 100); },
+    fromCell: function (v) { return Money.cents(v === '' || v === null || v === undefined ? 0 : v); },
+    toCell: function (cents) { return Money.pesos(cents); },
+    format: function (cents, symbol) {
+      var sign = cents < 0 ? '-' : '';
+      var abs = Math.abs(Math.round(Number(cents) || 0));
+      var whole = String(Math.floor(abs / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      var frac = String(abs % 100).padStart(2, '0');
+      return sign + (symbol === undefined ? symbolOf() : symbol) + whole + '.' + frac;
+    }
+  };
+  function isBlank(v) { return v === null || v === undefined || String(v).trim() === ''; }
+  function trim(v) { return String(v === null || v === undefined ? '' : v).trim(); }
+  function slug(v) { return trim(v).toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, ''); }
+  function fail(message, fields) { throw opts.validation ? opts.validation(message, fields) : Object.assign(new Error(message), { code: 'VALIDATION', fields: fields || null }); }
+  function forbid(message) { throw opts.forbidden ? opts.forbidden(message) : Object.assign(new Error(message), { code: 'FORBIDDEN', fields: null }); }
+  function num(v, label, o) {
+    o = o || {}; var n = Number(v);
+    if (isBlank(v) || !isFinite(n)) fail(label + ' must be a number', { lines: 'number' });
+    if (o.min !== undefined && n < o.min) fail(label + ' must be at least ' + o.min, { lines: 'min' });
+    if (o.integer && n !== Math.round(n)) fail(label + ' must be a whole number', { lines: 'integer' });
+    return n;
+  }
+
+  /** The best price row for a service at a branch for a customer type on a date: branch+type > branch > type > base. */
+  function priceScore(p) { return (isBlank(p.BranchId) ? 0 : 2) + (isBlank(p.CustomerType) ? 0 : 1); }
+  function resolvePrice(serviceId, branchId, customerType, dateIso, prices) {
+    var rows = (prices || []).filter(function (p) {
+      if (p.ServiceId !== serviceId) return false;
+      if (p.Status === 'INACTIVE' || p.Status === 'VOID') return false;
+      if (!isBlank(p.BranchId) && p.BranchId !== branchId) return false;
+      if (!isBlank(p.CustomerType) && p.CustomerType !== customerType) return false;
+      if (!isBlank(p.EffectiveFrom) && dateIso < String(p.EffectiveFrom) ) return false;
+      if (!isBlank(p.EffectiveTo) && dateIso > String(p.EffectiveTo)) return false;
+      return true;
+    });
+    rows.sort(function (a, b) { return priceScore(b) - priceScore(a) || String(b.EffectiveFrom || '').localeCompare(String(a.EffectiveFrom || '')); });
+    return rows[0] || null;
+  }
+  function unitLabel(type) { return { PER_KILO: 'kg', PER_PIECE: 'pc', PER_LOAD: 'load', FLAT: 'flat' }[type] || ''; }
+
+  /**
+   * Prices one service line. line: { serviceId, qty, weightKg }; env: { branchId, customerType, dateIso, express, prices, services (map by id), settings }
+   * → { LineType, ServiceId, Description, Qty, WeightKg, Unit, UnitPrice, LineTotal, surcharge, minimumApplied, priceSource }
+   */
+  function priceService(line, env) {
+    var service = env.services[line.serviceId];
+    if (!service || service.Status !== 'ACTIVE') fail('A service in the cart is no longer available', { lines: 'service' });
+    var row = resolvePrice(service.Id, env.branchId, env.customerType, env.dateIso, env.prices);
+    if (!row) fail(service.Name + ' has no price yet; set one under Services', { lines: 'price' });
+    var unit = Money.cents(row.Price), type = service.PricingType, minQty = Number(service.MinimumQty) || 0;
+    var qty, weight = '', billable;
+    if (type === 'PER_KILO') {
+      var actual = num(line.weightKg !== undefined && line.weightKg !== '' ? line.weightKg : line.qty, service.Name + ' weight', { min: 0 });
+      if (actual <= 0) fail(service.Name + ': enter the weight in kg', { lines: 'weight' });
+      weight = Math.round(actual * 100) / 100; billable = Math.max(weight, minQty); qty = Math.round(billable * 100) / 100;
+    } else if (type === 'FLAT') { qty = 1; billable = 1; }
+    else {
+      qty = num(line.qty, service.Name + ' quantity', { min: 0, integer: true }); if (qty < 1) fail(service.Name + ': quantity must be at least 1', { lines: 'qty' });
+      if (minQty > 0 && qty < minQty) qty = minQty; billable = qty;
+    }
+    var total = Money.mul(unit, billable), minimumApplied = false;
+    var minAmount = Money.cents(service.MinimumAmount);
+    if (minAmount > 0 && total < minAmount) { total = minAmount; minimumApplied = true; }
+    var surcharge = 0;
+    if (env.express) { var pct = Number(service.ExpressSurchargePct); if (!(pct > 0)) pct = Number((env.settings || {}).ExpressSurchargePct) || 0; if (pct > 0) surcharge = Money.pct(total, pct); }
+    return { LineType: 'SERVICE', ServiceId: service.Id, ItemId: '', Description: service.Name, Qty: qty, WeightKg: weight, Unit: service.Unit || unitLabel(type), UnitPrice: Money.pesos(unit), LineTotal: Money.pesos(Money.add(total, surcharge)),
+      surcharge: Money.pesos(surcharge), minimumApplied: minimumApplied, priceSource: (isBlank(row.BranchId) && isBlank(row.CustomerType)) ? 'base' : ('list' + (row.CustomerType ? ' · ' + row.CustomerType : '') + (row.BranchId ? ' · branch' : '')), pricingType: type };
+  }
+  /** Prices one product line from the item's selling price. line: { itemId, qty }; env.items is a map by id. */
+  function priceProduct(line, env) {
+    var item = env.items[line.itemId];
+    if (!item || item.Status !== 'ACTIVE' || !item.IsSellable) fail('A product in the cart is not for sale', { lines: 'product' });
+    var qty = num(line.qty, item.Name + ' quantity', { min: 0, integer: true }); if (qty < 1) fail(item.Name + ': quantity must be at least 1', { lines: 'qty' });
+    var unit = Money.cents(item.SellingPrice);
+    return { LineType: 'PRODUCT', ServiceId: '', ItemId: item.Id, Description: item.Name, Qty: qty, WeightKg: '', Unit: item.Unit || 'pc', UnitPrice: Money.pesos(unit), LineTotal: Money.pesos(Money.mul(unit, qty)), surcharge: 0, minimumApplied: false, priceSource: 'item', pricingType: 'PER_PIECE' };
+  }
+  /**
+   * Is this code good for this cart? env: { promos (rows), branchId, customerType, subtotal (centavos), dateIso }. Returns { promo, discount (centavos) }
+   * or fails with a VALIDATION error whose promoCode field says why: invalid, inactive, notyet, expired, branch, customer, min, used.
+   */
+  function checkPromo(code, env) {
+    env = env || {};
+    var c = slug(code); var bad = function (reason, message) { fail(message, { promoCode: reason }); };
+    var p = (env.promos || []).filter(function (x) { return x.Code === c; })[0];
+    if (!p) bad('invalid', 'Promo code ' + (c || code) + ' does not exist');
+    var today = env.dateIso;
+    if (p.Status !== 'ACTIVE') bad('inactive', 'Promo code ' + p.Code + ' is no longer active');
+    if (!isBlank(p.StartDate) && today < String(p.StartDate)) bad('notyet', 'Promo code ' + p.Code + ' starts on ' + p.StartDate);
+    if (!isBlank(p.EndDate) && today > String(p.EndDate)) bad('expired', 'Promo code ' + p.Code + ' expired on ' + p.EndDate);
+    if (!isBlank(p.BranchId) && p.BranchId !== env.branchId) bad('branch', 'Promo code ' + p.Code + ' is for another branch');
+    if (!isBlank(p.CustomerType) && p.CustomerType !== (env.customerType || 'REGULAR')) bad('customer', 'Promo code ' + p.Code + ' is for ' + String(p.CustomerType).toLowerCase() + ' customers');
+    var subtotal = Math.round(Number(env.subtotal) || 0);
+    if (Money.cents(p.MinSubtotal) > subtotal) bad('min', 'Promo code ' + p.Code + ' needs a subtotal of at least ' + Money.format(Money.cents(p.MinSubtotal)));
+    if (Number(p.MaxUses) > 0 && Number(p.UsedCount || 0) >= Number(p.MaxUses)) bad('used', 'Promo code ' + p.Code + ' has been used up');
+    var discount = p.DiscountType === 'PERCENT' ? Money.pct(subtotal, Number(p.Value)) : Math.min(subtotal, Money.cents(p.Value));
+    return { promo: { Id: p.Id, Code: p.Code, Name: p.Name, DiscountType: p.DiscountType, Value: p.Value }, discount: discount };
+  }
+  /**
+   * Prices a whole cart. input: { lines, isExpress, promoCode, discountAmount, discountReason, deliveryFee, otherCharges }
+   * env: { branchId, customerType, dateIso, now (Date), canDiscount, prices, services (map), items (map), promos (rows), settings: { ExpressSurchargePct, ExpressDueHours, DefaultDueHours } }
+   * → { lines, subtotal, discountAmount, discountReason, promo, promoDiscount, manualDiscount, deliveryFee, otherCharges, total, isExpress, dueHours, dueAt, totalWeightKg, customerType }
+   */
+  function priceCart(input, env) {
+    input = input || {}; env = env || {};
+    var lines = Array.isArray(input.lines) ? input.lines : [];
+    if (!lines.length) fail('Add at least one service or product', { lines: 'required' });
+    var settings = env.settings || {};
+    var e = { branchId: env.branchId, customerType: env.customerType || 'REGULAR', dateIso: env.dateIso, express: !!input.isExpress, prices: env.prices || [], services: env.services || {}, items: env.items || {}, settings: settings };
+    var priced = lines.map(function (l) {
+      l = l || {}; var type = String(l.lineType || (l.itemId ? 'PRODUCT' : 'SERVICE')).toUpperCase();
+      if (type === 'PRODUCT') return priceProduct(l, e);
+      return priceService(l, e);
+    });
+    var subtotal = priced.reduce(function (t, l) { return Money.add(t, Money.cents(l.LineTotal)); }, 0);
+    // a promo code first (checkPromo says why a code is refused), then the manual discount on what is left
+    var promo = null, promoDiscount = 0;
+    if (!isBlank(input.promoCode)) { var pc = checkPromo(input.promoCode, { promos: env.promos || [], branchId: e.branchId, customerType: e.customerType, subtotal: subtotal, dateIso: e.dateIso }); promo = pc.promo; promoDiscount = pc.discount; }
+    var manual = Money.cents(input.discountAmount);
+    if (manual < 0) fail('Discount cannot be negative', { discountAmount: 'min' });
+    if (manual > subtotal - promoDiscount) fail('Discount cannot exceed the subtotal' + (promo ? ' left after the promo code' : ''), { discountAmount: 'max' });
+    if (manual > 0 && !env.canDiscount) forbid('Discounts need the POS_DISCOUNT permission');
+    if (manual > 0 && isBlank(input.discountReason)) fail('Give a reason for the discount', { discountReason: 'required' });
+    var discount = Money.add(promoDiscount, manual);
+    var reason = [promo ? 'Promo ' + promo.Code + (promo.DiscountType === 'PERCENT' ? ' (' + Number(promo.Value) + '%)' : '') : '', manual > 0 ? trim(input.discountReason).slice(0, 160) : ''].filter(Boolean).join(' · ').slice(0, 200);
+    var delivery = Money.cents(input.deliveryFee), other = Money.cents(input.otherCharges);
+    if (delivery < 0 || other < 0) fail('Fees cannot be negative', { deliveryFee: 'min' });
+    var total = Money.add(subtotal, -discount, delivery, other);
+    var hours = e.express ? (Number(settings.ExpressDueHours) || 6) : priced.reduce(function (h, l) { var s = e.services[l.ServiceId]; return Math.max(h, s ? Number(s.EstimatedHours) || 0 : 0); }, 0) || (Number(settings.DefaultDueHours) || 48);
+    var weight = priced.reduce(function (w, l) { return w + (Number(l.WeightKg) || 0); }, 0);
+    var now = env.now instanceof Date ? env.now : new Date();
+    return { lines: priced, subtotal: Money.pesos(subtotal), discountAmount: Money.pesos(discount), discountReason: reason, promo: promo, promoDiscount: Money.pesos(promoDiscount), manualDiscount: Money.pesos(manual), deliveryFee: Money.pesos(delivery), otherCharges: Money.pesos(other), total: Money.pesos(total), isExpress: e.express, dueHours: hours, dueAt: new Date(now.getTime() + hours * 3600000), totalWeightKg: Math.round(weight * 100) / 100, customerType: e.customerType };
+  }
+  return { Money: Money, resolvePrice: resolvePrice, priceService: priceService, priceProduct: priceProduct, priceCart: priceCart, checkPromo: checkPromo, unitLabel: unitLabel, isBlank: isBlank, trim: trim, slug: slug };
+}
+    window.MLS_SHARED = defineShared_({ currencySymbol: '₱' });
+  </script>
   <script>
 /**
  * Mrs Laundry Sys — App.html: the application core in one namespace (MLS). Modules register with MLS.Router and call
@@ -410,7 +582,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.3.0';
+  var VERSION = '1.4.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -437,7 +609,8 @@ window.MLS = (function () {
     { route: 'expenses', title: 'Expenses', icon: 'fa-receipt', section: 'Money', permission: 'EXPENSE_VIEW', phase: 6 },
     { route: 'eod', title: 'End of Day', icon: 'fa-vault', section: 'Money', permission: 'EOD_VIEW', phase: 6 },
     { route: 'reports', title: 'Reports & Audit', icon: 'fa-chart-line', section: 'Money', permission: 'REPORT_VIEW', phase: 6 },
-    { route: 'settings', title: 'Settings & Profile', icon: 'fa-gear', section: 'System', phase: 7 }
+    { route: 'settings', title: 'Settings & Profile', icon: 'fa-gear', section: 'System', phase: 7 },
+    { route: 'sync', title: 'Sync', icon: 'fa-rotate', section: 'System', phase: 11 }
   ];
 
   // ------------------------------------------------------------------ state
@@ -493,12 +666,20 @@ window.MLS = (function () {
         } catch (e) { finish(false, { code: 'NETWORK', message: e.message || String(e) }); }
       });
     }
-    /** Resolves with data; rejects with { code, message, fields }. One retry on BUSY; AUTH_REQUIRED returns to the sign-in screen. */
+    /**
+     * Resolves with data; rejects with { code, message, fields }. One retry on BUSY; AUTH_REQUIRED returns to the sign-in screen.
+     * When the server cannot be reached (the browser reports no network, or the call fails), the copy this device keeps answers a
+     * read, and one of the queueable writes is applied to the copy and queued for the server (Offline.html); anything else fails
+     * with offline: true. A write that timed out is queued only when its handler is safe to run twice (a RequestId): the server may
+     * have applied it. Nothing is ever reported as saved on the server before the server said so.
+     */
     function call(action, payload, opts) {
       opts = opts || {}; inflight++; if (opts.busy) UI.busy(true);
+      var offlineNow = !opts.noOffline && !!Api.offline && Net.state() === 'offline' && HOST === 'pwa' && !navigator.onLine;
       var attempt = function (n) {
         var usedToken = AppState.token;
-        return rawCall(action, payload, opts.device, { timeoutMs: opts.timeoutMs, url: opts.url }).then(function (res) {
+        if (offlineNow) return Promise.reject({ code: 'NETWORK', message: 'The browser reports no network.', skipped: true });
+        return rawCall(action, payload, opts.device, { timeoutMs: opts.timeoutMs || (Net.state() === 'unreachable' && Api.offline ? 12000 : undefined), url: opts.url }).then(function (res) {
           if (!res || typeof res !== 'object') throw { code: 'NETWORK', message: 'Empty reply from the server' };
           Net.noteSuccess();
           if (res.success) { if (res.meta && res.meta.dataVersion) AppState.dataVersion = res.meta.dataVersion; if (Api.offline && Api.offline.record) { try { Api.offline.record(action, payload, res.data, res.meta); } catch (e) { /* the copy is best effort */ } } return res.data; }
@@ -513,16 +694,21 @@ window.MLS = (function () {
       return attempt(0).then(function (d) { inflight--; if (opts.busy) UI.busy(false); return d; }, function (e) {
         inflight--; if (opts.busy) UI.busy(false);
         if (!(e && (e.code === 'NETWORK' || e.code === 'TIMEOUT' || e.code === 'NO_SERVER'))) throw e;
-        if (e.code !== 'NO_SERVER') Net.noteFailure(e);
-        // the server could not be reached: the copy this device keeps may answer a read; anything else needs the connection
+        if (e.code !== 'NO_SERVER' && !e.skipped) Net.noteFailure(e);
+        // the server could not be reached: the copy this device keeps may answer a read or take a queueable write; anything else needs the connection
         if (!Api.offline || !Api.offline.answer || opts.noOffline) throw e;
+        var refused = { code: e.code, message: 'No connection to the server — this needs a connection.' + (e.code === 'TIMEOUT' ? ' (The server did not answer in time.)' : ''), offline: true };
+        if (Api.offline.queueable && Api.offline.queueable(action)) {
+          if (e.code === 'TIMEOUT' && !Api.offline.idempotent(action)) throw { code: e.code, message: 'The server did not answer in time and may have recorded this already; check it when the connection returns before doing it again.', offline: true };
+          return Api.offline.enqueue(action, payload).then(function (data) { try { console.warn('[Mrs Laundry Sys] ' + action + ' kept on this device for the server (' + e.code + ')'); } catch (x) { /* ignore */ } Api.offline.served(action, { asOf: new Date().toISOString(), how: 'queue' }); Toast.info('Kept on this device — it reaches the server when the connection returns (see Sync).', 4000); return data; });
+        }
         return Api.offline.answer(action, payload).then(function (hit) {
           if (hit && hit.data !== undefined) { try { console.warn('[Mrs Laundry Sys] ' + action + ' answered from the copy on this device (' + e.code + ': ' + e.message + ')'); } catch (x) { /* ignore */ } Api.offline.served(action, hit); return hit.data; }
-          throw { code: e.code, message: 'No connection to the server — this needs a connection.' + (e.code === 'TIMEOUT' ? ' (The server did not answer in time.)' : ''), offline: true };
-        }, function () { throw e; });
+          throw refused;
+        }, function (err) { if (err && err.code && err.offline && err.code !== 'NETWORK') throw err; throw refused; });
       });
     }
-    /** Api.offline is set by Offline.html: answer(action, payload) → { data, asOf } | null, record(action, payload, data, meta), me(token), served(action, hit). */
+    /** Api.offline is set by Offline.html: answer(action, payload) → { data, asOf } | null, record(action, payload, data, meta), me(token), served(action, hit), enqueue(action, payload), queueable(action), idempotent(action). */
     return { call: call, pending: function () { return inflight; }, host: function () { return HOST; }, offline: null };
   })();
 
@@ -630,7 +816,7 @@ window.MLS = (function () {
       host.appendChild(t); setTimeout(function () { t.remove(); }, ms || (kind === 'danger' ? 8000 : 4000));
       return t;
     },
-    success: function (m) { return Toast.show(m, 'success'); }, danger: function (m) { return Toast.show(m, 'danger'); }, warning: function (m) { return Toast.show(m, 'warning'); }, info: function (m) { return Toast.show(m, 'info'); }
+    success: function (m, ms) { return Toast.show(m, 'success', ms); }, danger: function (m, ms) { return Toast.show(m, 'danger', ms); }, warning: function (m, ms) { return Toast.show(m, 'warning', ms); }, info: function (m, ms) { return Toast.show(m, 'info', ms); }
   };
 
   var Modal = {
@@ -938,15 +1124,20 @@ window.MLS = (function () {
     });
     UI.el('device-forget').addEventListener('click', function () {
       // the confirm dialog sits before the device dialog in the page, so the device dialog closes first instead of covering it
-      Modal.closeThen('device-modal', function () { Modal.confirm({ title: 'Forget this device', body: 'Sign out here and remove the server address, the device label and the cached app from this browser. Nothing on the server changes.', okText: 'Forget', danger: true }).then(function (yes) {
+      var waiting = window.MLS && window.MLS.Queue ? window.MLS.Queue.state().pending : 0;
+      Modal.closeThen('device-modal', function () { Modal.confirm({ title: 'Forget this device', body: 'Sign out here and remove the server address, the device label and the cached app from this browser. Nothing on the server changes.' + (waiting ? ' WARNING: ' + waiting + ' operation' + (waiting === 1 ? '' : 's') + ' made offline (orders, payments, punches…) ' + (waiting === 1 ? 'has' : 'have') + ' not reached the server yet and will be LOST. Connect and let Sync finish first.' : ''), okText: waiting ? 'Discard ' + waiting + ' and forget' : 'Forget', danger: true }).then(function (yes) {
         if (!yes) return; var token = AppState.token;
         var done = function () { AppState.forget(); var p = Promise.resolve(); var S = window.MLS && window.MLS.Store; if (S) p = p.then(function () { return S.clearAll(); }).catch(function () { /* ignore */ }); if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) p = navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }).catch(function () { /* ignore */ }); if (window.caches && caches.keys) p = p.then(function () { return caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }); }).catch(function () { /* ignore */ }); p.then(function () { location.replace(location.pathname); }); };
         if (token) Api.call('auth.logout', {}, { noRedirect: true }).then(done, done); else done();
       }); });
     });
     UI.el('device-update').addEventListener('click', function () { if (!Pwa.update()) Toast.info('No update is waiting.'); });
+    UI.el('device-notify').addEventListener('change', function () {
+      var box = this; if (!box.checked) { Notify.set(false); return; }
+      Notify.request().then(function (granted) { box.checked = granted; if (!granted) Toast.warning('This browser did not allow notifications; nothing was changed.'); else Toast.success('You will be notified when a sync needs attention while the app is in the background.'); });
+    });
     UI.el('device-refresh').addEventListener('click', function () { var S = window.MLS && window.MLS.Sync; if (!S || !AppState.me) { Toast.info('Sign in first.'); return; } var b = UI.el('device-refresh'); b.disabled = true; S.pull({ force: true }).then(function (r) { b.disabled = false; Toast[r ? 'success' : 'warning'](r ? (r.unchanged ? 'The copy on this device is already current.' : 'Refreshed: ' + r.orders + ' orders, ' + r.customers + ' customers, ' + r.snapshots + ' screens.') : 'Could not refresh now (no connection?).'); openDevice(); }); });
-    UI.el('device-clear').addEventListener('click', function () { var S = window.MLS && window.MLS.Store; if (!S) return; Modal.closeThen('device-modal', function () { Modal.confirm({ title: 'Clear saved data', body: 'Remove the orders, customers and screens this device keeps for offline reading. They come back on the next refresh while connected.', okText: 'Clear' }).then(function (yes) { if (!yes) return; S.clearAll().then(function () { Toast.success('Saved data cleared.'); }, function (e) { Toast.danger(UI.error(e)); }); }); }); });
+    UI.el('device-clear').addEventListener('click', function () { var S = window.MLS && window.MLS.Store; if (!S) return; Modal.closeThen('device-modal', function () { Modal.confirm({ title: 'Clear saved data', body: 'Remove the orders, customers and screens this device keeps for offline reading. They come back on the next refresh while connected. What was made offline and still waits for the server is kept.', okText: 'Clear' }).then(function (yes) { if (!yes) return; S.clearCopy().then(function () { Toast.success('Saved data cleared.'); }, function (e) { Toast.danger(UI.error(e)); }); }); }); });
     Pwa.onUpdate(function () { var b = UI.el('device-update'); if (b) b.hidden = false; });
     UI.el('offline-retry').addEventListener('click', function () { UI.el('offline-retry').disabled = true; Net.health().then(function () { UI.el('offline-retry').disabled = false; start(); }); });
     UI.el('offline-forget').addEventListener('click', function () { AppState.clear(); Auth.showAuth(); });
@@ -954,9 +1145,10 @@ window.MLS = (function () {
     Net.onChange(function (s) {
       if (s === 'checking' || s === 'unknown') return;
       var was = settled; settled = s; if (!was || was === s) return;
-      if (s === 'offline') Toast.warning('You are offline. Nothing can be saved until the connection returns.', 6000);
-      else if (s === 'unreachable') Toast.warning('The network is up but the server is not answering. Retrying.', 6000);
-      else if (s === 'online') { Toast.success('Connection restored.'); var off = UI.el('panel-offline'); if (off && !off.hidden) start(); }
+      var keeps = Api.offline && Api.offline.queueable ? ' Orders, payments, stages, punches and deliveries are kept on this device and sent when it returns.' : ' Nothing can be saved until the connection returns.';
+      if (s === 'offline') Toast.warning('You are offline.' + keeps, 6000);
+      else if (s === 'unreachable') Toast.warning('The network is up but the server is not answering. Retrying.' + keeps, 6000);
+      else if (s === 'online') { var q = window.MLS && window.MLS.Queue ? window.MLS.Queue.state().pending : 0; Toast.success('Connection restored.' + (q ? ' Sending ' + q + ' operation' + (q === 1 ? '' : 's') + ' made offline…' : '')); var off = UI.el('panel-offline'); if (off && !off.hidden) start(); }
     });
     var connectForm = UI.el('panel-connect');
     connectForm.addEventListener('submit', function (ev) {
@@ -998,6 +1190,23 @@ window.MLS = (function () {
       AppState.clear(); Auth.showAuth();
     });
   }
+  /** Browser notifications, opt-in under This device, used for one thing only: a sync that needs attention while the app is in the background. Never for a success. */
+  var Notify = (function () {
+    function supported() { return HOST === 'pwa' && 'Notification' in window; }
+    function enabled() { try { return supported() && Notification.permission === 'granted' && localStorage.getItem('mls.notify') === '1'; } catch (e) { return false; } }
+    function set(on) { try { if (on) localStorage.setItem('mls.notify', '1'); else localStorage.removeItem('mls.notify'); } catch (e) { /* ignore */ } }
+    function request() {
+      if (!supported()) return Promise.resolve(false);
+      var ask = Notification.permission === 'granted' ? Promise.resolve('granted') : Promise.resolve().then(function () { return Notification.requestPermission(); });
+      return ask.then(function (p) { var ok = p === 'granted'; set(ok); return ok; }, function () { set(false); return false; });
+    }
+    /** Shows a notification when the user opted in and the app is in the background; returns whether one was shown. */
+    function attention(title, body) {
+      if (!enabled() || !document.hidden) return false;
+      try { var n = new Notification(title, { body: body, tag: 'mls-sync', icon: 'icons/icon-192.png' }); n.onclick = function () { try { window.focus(); Router.go('sync'); } catch (e) { /* ignore */ } }; return true; } catch (e) { return false; }
+    }
+    return { supported: supported, enabled: enabled, set: set, request: request, attention: attention };
+  })();
   /** This device: the label, the server address (installed app only), the build, an update if one waits, and the way to forget everything. */
   function openDevice() {
     UI.el('device-label').value = AppState.device();
@@ -1005,7 +1214,9 @@ window.MLS = (function () {
     if (apiRow) apiRow.hidden = HOST !== 'pwa'; if (api) { api.hidden = HOST !== 'pwa'; api.value = AppState.apiUrl(); }
     var about = UI.el('device-about'); if (about) about.textContent = 'Release ' + info.version + (info.build ? ' · build ' + info.build : '') + (HOST === 'pwa' ? (info.installed ? ' · installed on this device' : ' · running in the browser') + (info.serviceWorker ? ' · offline shell ready' : ' · offline shell not ready yet') : ' · Apps Script page') + ' · ' + (Net.state() === 'online' ? 'server online' : Net.state());
     var upd = UI.el('device-update'); if (upd) upd.hidden = !info.updateReady;
-    var copy = UI.el('device-copy'); if (copy) { copy.textContent = 'Saved on this device: reading…'; var S = window.MLS && window.MLS.Store; if (S && S.available()) S.summary().then(function (r) { var when = r.sync && r.sync.lastPull ? new Date(r.sync.lastPull).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'never'; copy.textContent = 'Saved on this device for offline reading: ' + r.orders + ' orders, ' + r.customers + ' customers, ' + r.snapshots + ' screens · refreshed ' + when + (r.sync && r.sync.window ? ' · keeps ' + r.sync.window.days + ' days of orders' : ''); }, function () { copy.textContent = 'Nothing is saved on this device for offline reading (storage unavailable).'; }); else copy.textContent = 'Nothing is saved on this device for offline reading (storage unavailable).'; }
+    var notifyRow = UI.el('device-notify-row'), notify = UI.el('device-notify');
+    if (notifyRow && notify) { notifyRow.hidden = !(HOST === 'pwa' && 'Notification' in window); notify.checked = Notify.enabled(); }
+    var copy = UI.el('device-copy'); if (copy) { copy.textContent = 'Saved on this device: reading…'; var S = window.MLS && window.MLS.Store; if (S && S.available()) S.summary().then(function (r) { var when = r.sync && r.sync.lastPull ? new Date(r.sync.lastPull).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'never'; copy.textContent = 'Saved on this device for offline reading: ' + r.orders + ' orders, ' + r.customers + ' customers, ' + r.snapshots + ' screens · refreshed ' + when + (r.sync && r.sync.window ? ' · keeps ' + r.sync.window.days + ' days of orders' : '') + (r.queue ? ' · offline queue: ' + r.queue.pending + ' waiting, ' + r.queue.rejected + ' refused' : ''); }, function () { copy.textContent = 'Nothing is saved on this device for offline reading (storage unavailable).'; }); else copy.textContent = 'Nothing is saved on this device for offline reading (storage unavailable).'; }
     Form.clearErrors(UI.el('device-form')); Modal.open('device-modal');
   }
   function boot() {
@@ -1015,26 +1226,37 @@ window.MLS = (function () {
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else setTimeout(boot, 0);
 
-  return { version: VERSION, phase: APP_PHASE, host: HOST, MODULES: MODULES, AppState: AppState, Api: Api, Net: Net, Pwa: Pwa, UI: UI, Toast: Toast, Modal: Modal, Form: Form, Validator: Validator, Formatter: Formatter, Table: Table, Print: Print, Qr: Qr, Keys: Keys, Router: Router, Auth: Auth, openDevice: openDevice, start: start };
+  return { version: VERSION, phase: APP_PHASE, host: HOST, MODULES: MODULES, AppState: AppState, Api: Api, Net: Net, Pwa: Pwa, Notify: Notify, UI: UI, Toast: Toast, Modal: Modal, Form: Form, Validator: Validator, Formatter: Formatter, Table: Table, Print: Print, Qr: Qr, Keys: Keys, Router: Router, Auth: Auth, openDevice: openDevice, start: start };
 })();
 </script>
 
   <script>
 /**
- * Mrs Laundry Sys — Offline.html: the copy a device keeps for offline reading (release 1.3.0).
- * MLS.Store is an IndexedDB database with four stores: meta (the sync watermarks, the signed-in user, the enums), snapshots
- * (the answers of read actions, filed under action + payload exactly as the server bundles them), orders (the order views
- * of the lens, open or within OfflineOrderDays) and customers (the list rows of the lens). MLS.Sync pulls them through
- * sync.pull after sign-in, every OfflinePullMinutes while online, and shortly after the data version moves; it also files
- * every live answer of a read action as it passes. When the server cannot be reached, MLS.Api asks Store.answer() for the
- * same action and payload: lists are computed here from the stored rows with the server's own rules, everything else comes
- * from the filed answer, and the page is told what it shows is as of a time. Nothing is ever answered that the signed-in
- * user did not receive from the server, and a different user signing in wipes the copy.
+ * Mrs Laundry Sys — Offline.html: what a device keeps and does without the server (bundles 1.3.0 and 1.4.0).
+ * MLS.Store is an IndexedDB database: meta (the sync watermarks, the signed-in user, the enums, the provisional counter),
+ * snapshots (the answers of read actions, filed under action + payload exactly as the server bundles them), orders (the
+ * order views of the lens, open or within OfflineOrderDays, plus the orders taken offline under their temporary ids),
+ * customers (the list rows of the lens, plus those made offline) and queue (the operations made offline, each with its
+ * state and the server's verdict). MLS.Sync pulls the copy through sync.pull after sign-in, every OfflinePullMinutes while
+ * online and shortly after the data version moves, and files every live answer of a read action as it passes.
+ * When the server cannot be reached, MLS.Api asks here: a read is answered from the copy (lists are computed from the
+ * stored rows with the server's own rules, a quote by the same shared pricing code the server runs, everything else from
+ * the filed answer); one of the eleven queueable writes is applied to the copy and queued — an order gets a provisional
+ * reference and a temporary id, a payment is provisional, a stage, a punch or a job step is kept with the time it was
+ * pressed — and nothing else is accepted. MLS.Queue pushes the queue through sync.push as soon as the server answers,
+ * in order, and records the verdict of every operation exactly as the ledger returned it: applied (with the id and number
+ * the server gave), refused (with the reason, kept until the user discards it) or flagged for review. Nothing here claims
+ * a sale, a payment or a punch reached the server before the server said so.
  */
 (function () {
   'use strict';
-  var M = window.MLS, UI = M.UI, Api = M.Api, Net = M.Net, AppState = M.AppState;
-  var DB_NAME = 'mls-offline', DB_VERSION = 1, STORES = ['meta', 'snapshots', 'orders', 'customers'];
+  var M = window.MLS, UI = M.UI, Api = M.Api, Net = M.Net, AppState = M.AppState, F = M.Formatter;
+  var DB_NAME = 'mls-offline', DB_VERSION = 2, STORES = ['meta', 'snapshots', 'orders', 'customers', 'queue'];
+  /** The writes a device may make offline (decision 6); the server's Sync.QUEUEABLE is the same list and refuses anything else. */
+  var QUEUEABLE = ['orders.create', 'customers.quickAdd', 'customers.save', 'payments.create', 'production.advance', 'production.qc', 'timeclock.punch', 'deliveries.accept', 'deliveries.start', 'deliveries.complete', 'deliveries.fail'];
+  /** Writes whose server handler refuses to apply twice (a RequestId): safe to queue after a timed-out call; the others are queued only when the call never left the device. */
+  var IDEMPOTENT = ['orders.create', 'customers.quickAdd', 'customers.save', 'payments.create'];
+  var PUSH_BATCH = 50;
 
   // ------------------------------------------------------------------ the database
   var Store = (function () {
@@ -1063,7 +1285,7 @@ window.MLS = (function () {
         });
       });
     }
-    return {
+    var Store = {
       available: function () { return !unavailable; },
       get: function (store, key) { return run(store, 'readonly', function (os) { return os.get(key); }); },
       put: function (store, key, value) { return run(store, 'readwrite', function (os) { os.put(value, key); return true; }); },
@@ -1071,18 +1293,34 @@ window.MLS = (function () {
       remove: function (store, key) { return run(store, 'readwrite', function (os) { os.delete(key); return true; }); },
       removeMany: function (store, keys) { return run(store, 'readwrite', function (os) { keys.forEach(function (k) { os.delete(k); }); return keys.length; }); },
       all: function (store) { return run(store, 'readonly', function (os) { return os.getAll(); }); },
+      keys: function (store) { return run(store, 'readonly', function (os) { return os.getAllKeys(); }); },
       count: function (store) { return run(store, 'readonly', function (os) { return os.count(); }); },
       clear: function (store) { return run(store, 'readwrite', function (os) { os.clear(); return true; }); },
+      /** Removes the server's rows of a store and keeps the rows made offline (temporary ids), which the queue still owns. */
+      clearServerRows: function (store) { return Store.keys(store).then(function (keys) { var gone = keys.filter(function (k) { return !isTemp(k); }); return gone.length ? Store.removeMany(store, gone) : 0; }); },
       clearAll: function () { var p = Promise.resolve(); STORES.forEach(function (n) { p = p.then(function () { return Store.clear(n); }); }); return p; },
-      /** Everything about what this device holds, for This device. */
-      summary: function () { return Promise.all([Store.count('orders'), Store.count('customers'), Store.count('snapshots'), Store.get('meta', 'sync')]).then(function (r) { return { orders: r[0], customers: r[1], snapshots: r[2], sync: r[3] || null }; }); }
+      /** Clear saved data: the server's rows and the filed screens go; the queue, the rows made offline and the device's counters stay. */
+      clearCopy: function () { return Promise.all([Store.clearServerRows('orders'), Store.clearServerRows('customers'), Store.clear('snapshots'), Store.remove('meta', 'sync')]); },
+      /** Everything about what this device holds, for This device and the Sync page. */
+      summary: function () { return Promise.all([Store.count('orders'), Store.count('customers'), Store.count('snapshots'), Store.get('meta', 'sync'), Store.all('queue')]).then(function (r) { var q = r[4] || []; return { orders: r[0], customers: r[1], snapshots: r[2], sync: r[3] || null, queue: { pending: q.filter(function (o) { return o.state === 'PENDING' || o.state === 'SENDING'; }).length, rejected: q.filter(function (o) { return o.state === 'REJECTED'; }).length, applied: q.filter(function (o) { return o.state === 'APPLIED'; }).length } }; }); }
     };
+    return Store;
   })();
 
   /** The key an answer is filed under: the action and the payload without blank, false or null values, keys sorted — the same rule as the server's Sync.payloadKey. */
   function payloadKey(action, payload) { var keep = {}; Object.keys(payload || {}).sort().forEach(function (k) { var v = payload[k]; if (v === undefined || v === null || v === '' || v === false) return; keep[k] = v; }); return action + '|' + JSON.stringify(keep); }
   function lower(v) { return String(v === null || v === undefined ? '' : v).toLowerCase(); }
   function digitsOf(v) { return String(v || '').replace(/\D/g, ''); }
+  function isTemp(v) { return typeof v === 'string' && v.indexOf('tmp:') === 0; }
+  function tempId() { return 'tmp:' + UI.uuid(); }
+  function isoLocalDate(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function phoneOf(v) { return String(v === null || v === undefined ? '' : v).trim().replace(/[\s\-().]/g, ''); }
+  function fail(code, message, fields) { return { code: code, message: message, fields: fields || null, offline: true }; }
+  function clone(v) { return v === undefined ? undefined : JSON.parse(JSON.stringify(v)); }
+  function labelOf(status, labels) { return (labels || {})[status] || String(status || '').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, function (c) { return c.toUpperCase(); }); }
+  /** This browser's stable id: the provisional references and the ledger name the device by it. */
+  function deviceId() { try { var id = localStorage.getItem('mls.deviceId'); if (!id) { id = UI.uuid().replace(/-/g, '').slice(0, 12); localStorage.setItem('mls.deviceId', id); } return id; } catch (e) { return 'nolocal'; } }
+  function deviceCode() { return deviceId().slice(0, 4).toUpperCase(); }
 
   // ------------------------------------------------------------------ answers from the copy
   var Answers = (function () {
@@ -1090,7 +1328,7 @@ window.MLS = (function () {
     function snapshot(action, payload) { return Store.get('snapshots', payloadKey(action, payload)).then(function (hit) { return hit ? { data: hit.data, asOf: hit.asOf, how: 'snapshot' } : null; }); }
     function ordersMeta() { return snapshot('orders.meta', {}).then(function (h) { return h ? h.data : { statuses: [], labels: {}, open: [] }; }); }
     function pageOf(rows, opts, defaultSize) { var size = Math.min(Math.max(Number(opts.size) || defaultSize, 1), 200), pageNo = Math.max(Number(opts.page) || 1, 1), start = (pageNo - 1) * size; return { rows: rows.slice(start, start + size), total: rows.length, page: pageNo, pages: Math.max(1, Math.ceil(rows.length / size)) }; }
-    /** orders.list as the server computes it, over the stored views. */
+    /** orders.list as the server computes it, over the stored views (the provisional orders included). */
     function ordersList(opts) {
       opts = opts || {};
       return Promise.all([Store.all('orders'), ordersMeta(), meta('sync')]).then(function (r) {
@@ -1103,7 +1341,7 @@ window.MLS = (function () {
           if (opts.from && o.OrderDate < opts.from) return false;
           if (opts.to && o.OrderDate > opts.to) return false;
           if (opts.withBalance && !(Number(o.BalanceAmount) > 0 && ['CANCELLED', 'REFUNDED'].indexOf(o.Status) < 0)) return false;
-          if (opts.search) { var n = lower(opts.search); if (![o.OrderNo, o.CustomerName, o.CustomerPhone, o.Id].some(function (v) { return lower(v).indexOf(n) >= 0; })) return false; }
+          if (opts.search) { var n = lower(opts.search); if (![o.OrderNo, o.CustomerName, o.CustomerPhone, o.Id, o.ProvisionalRef].some(function (v) { return lower(v).indexOf(n) >= 0; })) return false; }
           return true;
         });
         rows.sort(function (a, b) { return String(b.OrderDate).localeCompare(String(a.OrderDate)) || String(b.OrderNo).localeCompare(String(a.OrderNo)); });
@@ -1113,6 +1351,18 @@ window.MLS = (function () {
       });
     }
     function orderGet(opts) { return Promise.all([Store.get('orders', String(opts && opts.id || '')), meta('sync')]).then(function (r) { return r[0] ? { data: r[0], asOf: (r[1] || {}).lastPull || null, how: 'orders' } : null; }); }
+    /** orders.receipt for an order the device holds: the server's receipt heading from orders.meta; a provisional order prints as such, without a tracking link. */
+    function orderReceipt(opts) {
+      return Promise.all([Store.get('orders', String(opts && opts.id || '')), ordersMeta(), meta('sync')]).then(function (r) {
+        var o = r[0], om = r[1]; if (!o || !om.receipt) return null;
+        var me = AppState.me;
+        return { data: { business: om.receipt.business, branch: om.receipt.branch, tracking: { link: o.TrackingToken ? '' : '', token: o.TrackingToken || '' }, provisional: !!o._pending,
+          order: { OrderNo: o.OrderNo, ProvisionalRef: o.ProvisionalRef || '', OfflineAt: o.OfflineAt || '', OrderDate: o.OrderDate, CreatedAt: o.CreatedAt, DueAt: o.DueAt, Status: o.Status, StatusLabel: o.StatusLabel, CustomerName: o.CustomerName, CustomerPhone: o.CustomerPhone, IsExpress: o.IsExpress, BagCount: o.BagCount, TotalWeightKg: o.TotalWeightKg, Subtotal: o.Subtotal, DiscountAmount: o.DiscountAmount, DiscountReason: o.DiscountReason, DeliveryFee: o.DeliveryFee, OtherCharges: o.OtherCharges, OrderTotal: o.OrderTotal, PaidAmount: o.PaidAmount, BalanceAmount: o.BalanceAmount, Notes: o.Notes, Cashier: o.Cashier, ServiceType: o.ServiceType, PromoCode: o.PromoCode, Id: o.Id, Mobile: o.Mobile, CustomerId: o.CustomerId },
+          items: (o.Items || []).map(function (i) { return { Description: i.Description, Qty: i.Qty, WeightKg: i.WeightKg, Unit: i.Unit, UnitPrice: i.UnitPrice, LineTotal: i.LineTotal, LineType: i.LineType }; }),
+          payments: (o.Payments || []).map(function (p) { return { Type: p.Type, Method: p.Method, Amount: p.Amount, ReferenceNo: p.ReferenceNo, CreatedAt: p.CreatedAt, Cashier: p.Cashier }; }),
+          printedAt: new Date().toISOString(), printedBy: me ? me.user.DisplayName : '' }, asOf: (r[2] || {}).lastPull || null, how: 'orders' };
+      });
+    }
     function customersList(opts) {
       opts = opts || {};
       return Promise.all([Store.all('customers'), meta('enums'), meta('sync')]).then(function (r) {
@@ -1131,7 +1381,7 @@ window.MLS = (function () {
       var digits = n.replace(/\D/g, '');
       return Promise.all([Store.all('customers'), meta('sync')]).then(function (r) {
         var rows = (r[0] || []).filter(function (c) { return c.Status === 'ACTIVE' && (lower(c.FullName).indexOf(n) >= 0 || (digits.length >= 3 && digitsOf(c.Phone).indexOf(digits) >= 0)); }).slice(0, 10)
-          .map(function (c) { return { Id: c.Id, FullName: c.FullName, Phone: c.Phone, CustomerType: c.CustomerType, Balance: c.Balance, OrderCount: c.OrderCount, Address: c.Address }; });
+          .map(function (c) { return { Id: c.Id, FullName: c.FullName, Phone: c.Phone, CustomerType: c.CustomerType, Balance: c.Balance, OrderCount: c.OrderCount, Address: c.Address, _pending: !!c._pending }; });
         return { data: rows, asOf: (r[1] || {}).lastPull || null, how: 'customers' };
       });
     }
@@ -1143,13 +1393,368 @@ window.MLS = (function () {
         return { data: c, asOf: (r[2] || {}).lastPull || null, how: 'customers' };
       });
     }
-    var LOCAL = { 'orders.list': ordersList, 'orders.get': orderGet, 'customers.list': customersList, 'customers.search': customersSearch, 'customers.get': customerGet };
-    /** The offline answer for an action, or null when the device holds none. Never throws. */
+    function servicesQuote(opts) { return Quote.price(opts || {}).then(function (q) { return { data: q, asOf: null, how: 'quote' }; }); }
+    /** dispatch.get for a job on the rider's own list (the complete dialog opens with it). */
+    function dispatchGet(opts) { return snapshot('deliveries.mine', {}).then(function (hit) { var d = hit && hit.data && (hit.data.rows || []).filter(function (x) { return x.Id === String(opts && opts.id || ''); })[0]; return d ? { data: d, asOf: hit.asOf, how: 'snapshot' } : null; }); }
+    var LOCAL = { 'orders.list': ordersList, 'orders.get': orderGet, 'orders.receipt': orderReceipt, 'customers.list': customersList, 'customers.search': customersSearch, 'customers.get': customerGet, 'services.quote': servicesQuote, 'dispatch.get': dispatchGet };
+    /** The offline answer for an action, or null when the device holds none. Never throws for a copy miss; a quote that the shared core refuses rejects with its validation error, as the server would. */
     function answer(action, payload) {
       var fn = LOCAL[action];
+      if (action === 'services.quote') return fn(payload || {});
       return (fn ? fn(payload || {}) : snapshot(action, payload)).catch(function () { return null; });
     }
-    return { answer: answer, payloadKey: payloadKey, LOCAL: Object.keys(LOCAL) };
+    return { answer: answer, payloadKey: payloadKey, LOCAL: Object.keys(LOCAL), snapshot: snapshot, ordersMeta: ordersMeta };
+  })();
+
+  // ------------------------------------------------------------------ a quote without the server: the shared core over the catalogue the device holds
+  var Quote = (function () {
+    /** The catalogue as the pull filed it: services with their price rows, the live promo codes and the pricing settings (services.list forPos), the sellable products (inventory.all). */
+    function catalogue() {
+      return Promise.all([Answers.snapshot('services.list', { forPos: true }), Answers.snapshot('inventory.all', { sellable: true, type: 'PRODUCT' }), Answers.ordersMeta()]).then(function (r) {
+        var cat = r[0] && r[0].data, items = r[1] && r[1].data, om = r[2];
+        if (!cat || !Array.isArray(cat.rows) || !cat.rows.length || !cat.rows[0].Prices) return null;
+        var services = {}, prices = []; cat.rows.forEach(function (s) { services[s.Id] = s; (s.Prices || []).forEach(function (p) { prices.push(p); }); });
+        var products = {}; ((items && (items.rows || items)) || []).forEach(function (i) { products[i.Id] = i; });
+        return { services: services, prices: prices, items: products, promos: cat.promos || [], settings: cat.pricing || om.pricing || {}, branch: cat.branch, allowNegativeStock: !!om.allowNegativeStock };
+      });
+    }
+    function customerType(customerId) { if (!customerId) return Promise.resolve('REGULAR'); return Store.get('customers', String(customerId)).then(function (c) { return c ? c.CustomerType || 'REGULAR' : 'REGULAR'; }).catch(function () { return 'REGULAR'; }); }
+    /** The quote the server would give (services.quote), computed by the same code over the catalogue the device holds. Rejects as the server rejects. */
+    function price(input) {
+      var S = window.MLS_SHARED, me = AppState.me;
+      if (!S) return Promise.reject(fail('NETWORK', 'This page did not load the pricing rules; reload it while connected.'));
+      if (!me || !me.activeBranch || me.activeBranch === 'ALL') return Promise.reject(fail('VALIDATION', 'Choose a branch first', { branchId: 'required' }));
+      return Promise.all([catalogue(), customerType(input.customerId)]).then(function (r) {
+        var cat = r[0]; if (!cat) throw fail('NETWORK', 'This device has no copy of the catalogue yet; open the POS once while connected.');
+        var env = { branchId: me.activeBranch, customerType: r[1], dateIso: isoLocalDate(), now: new Date(), canDiscount: (me.permissions || []).indexOf('POS_DISCOUNT') >= 0, prices: cat.prices, services: cat.services, items: cat.items, promos: cat.promos, settings: cat.settings };
+        var q;
+        try { q = S.priceCart(input, env); } catch (e) { throw { code: e.code || 'VALIDATION', message: e.message || String(e), fields: e.fields || null }; }
+        q.dueAt = q.dueAt instanceof Date ? q.dueAt.toISOString() : q.dueAt;
+        // the stock the copy knows: the same refusal as the server's, against what the device last saw (the server accepts and flags at sync — decision 4)
+        if (!cat.allowNegativeStock) q.lines.forEach(function (l) { if (l.LineType !== 'PRODUCT') return; var it = cat.items[l.ItemId]; var need = q.lines.filter(function (x) { return x.LineType === 'PRODUCT' && x.ItemId === l.ItemId; }).reduce(function (t, x) { return t + Number(x.Qty); }, 0); if (it && Number(it.QtyOnHand) - need < 0) throw fail('VALIDATION', 'Only ' + Number(it.QtyOnHand) + ' ' + (it.Unit || '') + ' of ' + it.Name + ' on hand at this branch as of the last refresh; ' + need + ' in the cart', { lines: 'stock' }); });
+        return q;
+      });
+    }
+    return { price: price, catalogue: catalogue };
+  })();
+
+  // ------------------------------------------------------------------ applying an operation to the copy (so the pages show it) and undoing nothing
+  var Local = (function () {
+    function me() { return AppState.me; }
+    function myName() { var m = me(); return m ? m.user.DisplayName : ''; }
+    function branchName(id) { var m = me(); var b = m && (m.branches || []).filter(function (x) { return x.Id === id; })[0]; return b ? b.Name : id; }
+    function branchCode(id) { var m = me(); var b = m && (m.branches || []).filter(function (x) { return x.Id === id; })[0]; return b ? b.Code : ''; }
+    function activity(type, from, to, details, at) { return { Id: tempId(), At: at, UserId: me().user.Id, User: myName(), Activity: type, FromStatus: from || '', ToStatus: to || '', Details: details }; }
+    function nextProvisionalRef() { return Store.get('meta', 'provSeq').then(function (n) { n = (Number(n) || 0) + 1; return Store.put('meta', 'provSeq', n).then(function () { return 'P-' + deviceCode() + '-' + String(n).padStart(4, '0'); }); }); }
+    function offlineMethods() { return Answers.ordersMeta().then(function (om) { return om.offline && om.offline.paymentMethods ? om.offline.paymentMethods : ['CASH']; }); }
+    function checkMethod(payment, om) {
+      if (!payment || !(Number(payment.amount) > 0)) return;
+      var method = String(payment.method || om.defaultMethod || 'CASH').toUpperCase(), allowed = om.offline && om.offline.paymentMethods ? om.offline.paymentMethods : ['CASH'];
+      if (allowed.indexOf(method) < 0) throw fail('VALIDATION', method.replace(/_/g, ' ') + ' cannot be taken while offline; only ' + allowed.join(', ') + '. Ask for cash or an e-wallet reference, or wait for the connection.', { method: 'offline' });
+      if ((om.referenceRequiredFor || []).indexOf(method) >= 0 && !String(payment.referenceNo || '').trim()) throw fail('VALIDATION', 'Enter the ' + method.replace(/_/g, ' ').toLowerCase() + ' reference number', { referenceNo: 'required' });
+    }
+    function paymentRow(order, payment, at) {
+      var cents = Math.round(Number(payment.amount) * 100), method = String(payment.method || 'CASH').toUpperCase();
+      return { Id: tempId(), OrderId: order.Id, BranchId: order.BranchId, Type: 'PAYMENT', Method: method, Amount: cents / 100, ReferenceNo: String(payment.referenceNo || '').trim().slice(0, 60), ShiftDate: isoLocalDate(new Date(at)), CashierUserId: me().user.Id, Cashier: myName(), EodId: '', Notes: '', Status: 'ACTIVE', RequestId: '', CreatedAt: at, UpdatedAt: at, OfflineAt: at, _pending: true };
+    }
+    function recompute(o) {
+      var paid = (o.Payments || []).reduce(function (t, p) { return t + (p.Type === 'REFUND' ? -1 : 1) * Math.round(Number(p.Amount) * 100); }, 0);
+      o.PaidAmount = paid / 100; o.BalanceAmount = Math.max(0, Math.round(Number(o.OrderTotal) * 100) - paid) / 100; return o;
+    }
+
+    /** orders.create: the quote (shared core), a provisional reference, a temporary id, the order view the pages expect. */
+    function ordersCreate(p, at) {
+      var m = me();
+      return Promise.all([Quote.price(p), Answers.ordersMeta(), p.customerId ? Store.get('customers', String(p.customerId)) : null, nextProvisionalRef()]).then(function (r) {
+        var q = r[0], om = r[1], customer = r[2], ref = r[3];
+        if (p.customerId && !customer) throw fail('NOT_FOUND', 'Record not found');
+        if (customer && customer.Status !== 'ACTIVE') throw fail('VALIDATION', 'Customer ' + customer.FullName + ' is inactive', { customerId: 'inactive' });
+        checkMethod(p.payment, om);
+        var serviceType = String(p.serviceType || 'WALK_IN').toUpperCase(), bags = p.bagCount === '' || p.bagCount === undefined || p.bagCount === null ? 0 : Number(p.bagCount) || 0;
+        var customerName = customer ? customer.FullName : (String(p.customerName || '').trim() || om.walkInName || 'Walk-in customer').slice(0, 80), customerPhone = customer ? customer.Phone : phoneOf(p.customerPhone);
+        var id = tempId(), cents = Math.round(Number(q.total) * 100);
+        var o = { Id: id, OrderNo: ref, ProvisionalRef: ref, OfflineAt: at, BranchId: m.activeBranch, Branch: branchName(m.activeBranch), BranchCode: branchCode(m.activeBranch), CustomerId: customer ? customer.Id : '', CustomerName: customerName, CustomerPhone: customerPhone, Mobile: customerPhone, OrderDate: isoLocalDate(new Date(at)), DueAt: q.dueAt, IsExpress: !!q.isExpress, BagCount: bags, TotalWeightKg: q.totalWeightKg,
+          Subtotal: q.subtotal, DiscountAmount: q.discountAmount, DiscountReason: q.discountReason, DeliveryFee: q.deliveryFee, OtherCharges: q.otherCharges, OrderTotal: q.total, PaidAmount: 0, BalanceAmount: cents / 100, Status: 'RECEIVED', StatusLabel: labelOf('RECEIVED', om.labels), ServiceType: serviceType, Notes: String(p.notes || '').trim().slice(0, 300), CashierUserId: m.user.Id, Cashier: myName(), ReleasedAt: '', ReleasedBy: '', ReleasedByName: '', RequestId: String(p.requestId || ''), TrackingToken: '', PromoCode: q.promo ? q.promo.Code : '',
+          CreatedAt: at, UpdatedAt: at, CreatedBy: m.user.Username, UpdatedBy: m.user.Username, IsOpen: true, Transitions: (om.transitions || {}).RECEIVED || [], Customer: customer ? { Id: customer.Id, FullName: customer.FullName, Phone: customer.Phone, Mobile: customer.Mobile || customer.Phone, SmsOptOut: !!customer.SmsOptOut, CustomerType: customer.CustomerType, Address: customer.Address } : null,
+          Items: q.lines.map(function (l, i) { return { Id: id + '-L' + (i + 1), OrderId: id, LineType: l.LineType, ServiceId: l.ServiceId, ItemId: l.ItemId, Description: l.Description, Qty: l.Qty, WeightKg: l.WeightKg, Unit: l.Unit, UnitPrice: l.UnitPrice, LineTotal: l.LineTotal, MaterialsConsumedAt: '' }; }),
+          Payments: [], Timeline: [activity('CREATED', '', 'RECEIVED', 'Order ' + ref + ' taken offline on this device · ' + q.lines.length + ' line' + (q.lines.length === 1 ? '' : 's') + ' · ' + F.peso(q.total) + (q.isExpress ? ' · express' : ''), at)], _pending: true };
+        if (p.payment && Number(p.payment.amount) > 0) { var pay = paymentRow(o, { amount: Math.min(Number(p.payment.amount), Number(q.total)), method: p.payment.method, referenceNo: p.payment.referenceNo }, at); o.Payments.push(pay); recompute(o); o.Timeline.push(activity('PAYMENT', '', '', 'Payment of ' + F.peso(pay.Amount) + ' by ' + pay.Method.replace(/_/g, ' ').toLowerCase() + (pay.ReferenceNo ? ' (ref ' + pay.ReferenceNo + ')' : '') + ' · provisional until synced', at)); }
+        var custP = customer ? Store.put('customers', customer.Id, Object.assign({}, customer, { OrderCount: (Number(customer.OrderCount) || 0) + 1, Balance: Math.round(((Number(customer.Balance) || 0) + o.BalanceAmount) * 100) / 100, LastOrderDate: o.OrderDate })) : Promise.resolve();
+        // the production board the device holds gets the new order in its queue, as the server's board would on the next load
+        var boardP = Answers.snapshot('production.board', {}).then(function (hit) { if (!hit || !hit.data || !hit.data.columns || !hit.data.columns.QUEUE) return; var b = hit.data; b.columns.QUEUE.push({ Id: id, OrderNo: ref, CustomerName: customerName, CustomerPhone: customerPhone, Status: 'RECEIVED', StatusLabel: o.StatusLabel, IsExpress: o.IsExpress, BagCount: bags, TotalWeightKg: q.totalWeightKg, Lines: q.lines.filter(function (l) { return l.LineType === 'SERVICE'; }).map(function (l) { return (Number(l.WeightKg) > 0 ? Number(l.WeightKg) + ' kg' : Number(l.Qty) + ' ' + (l.Unit || 'pc')) + ' ' + l.Description; }), DueAt: q.dueAt, OrderDate: o.OrderDate, ServiceType: serviceType, BranchId: m.activeBranch, Overdue: false, MachineNo: '', StageStartedAt: null, StageBy: '', MinutesInStage: 0, _pending: true }); b.counts = Object.keys(b.columns).reduce(function (c, k) { c[k] = b.columns[k].length; return c; }, {}); return Store.put('snapshots', payloadKey('production.board', {}), Object.assign({}, hit, { data: b })); }).catch(function () { /* no board on this device */ });
+        return Promise.all([Store.put('orders', id, o), custP, boardP]).then(function () { return { result: o, tempId: id, provisionalRef: ref, quote: q, label: 'Order ' + ref + ' · ' + customerName + ' · ' + F.peso(q.total) + (o.Payments.length ? ' · ' + F.peso(o.PaidAmount) + ' ' + o.Payments[0].Method.replace(/_/g, ' ').toLowerCase() : ' · pay later') }; });
+      });
+    }
+    function customerView(p, at) {
+      var m = me(), id = tempId(), phone = phoneOf(p.Phone);
+      return { Id: id, BranchId: m.activeBranch, FullName: String(p.FullName || '').trim().slice(0, 80), Phone: phone, Email: String(p.Email || '').trim(), Address: String(p.Address || '').trim(), Latitude: '', Longitude: '', CustomerType: String(p.CustomerType || 'REGULAR').toUpperCase(), Notes: String(p.Notes || '').trim(), Status: 'ACTIVE', SmsOptOut: !!p.SmsOptOut, CreatedAt: at, UpdatedAt: at, CreatedBy: m.user.Username, UpdatedBy: m.user.Username, OrderCount: 0, Balance: 0, TotalPaid: 0, LastOrderDate: '', Mobile: phone, Orders: [], _pending: true };
+    }
+    function validateCustomer(p) {
+      if (!String(p.FullName || '').trim()) throw fail('VALIDATION', 'Required: Full name', { FullName: 'required' });
+      var phone = phoneOf(p.Phone); if (phone && !/^(\+63|63|0)\d{10}$/.test(phone)) throw fail('VALIDATION', 'Phone must be a Philippine mobile number', { Phone: 'phone' });
+      if (p.Email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(p.Email).trim())) throw fail('VALIDATION', 'Email must be an e-mail address', { Email: 'email' });
+    }
+    function existingByPhone(phone) { if (!phone) return Promise.resolve(null); return Store.all('customers').then(function (rows) { return rows.filter(function (c) { return c.Status === 'ACTIVE' && phoneOf(c.Phone) === phone; })[0] || null; }); }
+    /** customers.quickAdd / customers.save (a new customer): a temporary id; a mobile the copy already knows answers that customer, as the server does. */
+    function customersCreate(p, at, quick) {
+      validateCustomer(p); var m = me();
+      if (!quick && p.Id) throw fail('VALIDATION', 'Editing a customer needs a connection', { Id: 'offline' });
+      if (!m.activeBranch || m.activeBranch === 'ALL') throw fail('VALIDATION', 'Choose a branch first', { branchId: 'required' });
+      return existingByPhone(phoneOf(p.Phone)).then(function (dup) {
+        if (dup) { if (quick) return { result: { customer: dup, existing: true }, skip: true }; throw fail('CONFLICT', 'That mobile number already belongs to ' + dup.FullName + ' (' + dup.Id + ')'); }
+        var c = customerView(quick ? { FullName: p.FullName, Phone: p.Phone, CustomerType: 'REGULAR' } : p, at);
+        return Store.put('customers', c.Id, c).then(function () { return { result: quick ? { customer: c, existing: false } : c, tempId: c.Id, label: 'Customer ' + c.FullName + (c.Phone ? ' · ' + c.Phone : '') }; });
+      });
+    }
+    /** payments.create on an order the device holds: provisional until the server confirms it. */
+    function paymentsCreate(p, at) {
+      return Promise.all([Store.get('orders', String(p.orderId || '')), Answers.ordersMeta()]).then(function (r) {
+        var o = r[0], om = r[1]; if (!o) throw fail('NOT_FOUND', 'Record not found');
+        if (['CANCELLED', 'REFUNDED'].indexOf(o.Status) >= 0) throw fail('VALIDATION', 'Order ' + o.OrderNo + ' is ' + lower(o.Status) + '; it cannot take a payment', { orderId: 'status' });
+        var amount = Number(p.amount); if (!(amount > 0)) throw fail('VALIDATION', 'Amount must be more than zero', { amount: 'min' });
+        checkMethod({ amount: amount, method: p.method, referenceNo: p.referenceNo }, om);
+        if (Math.round(amount * 100) > Math.round(Number(o.BalanceAmount) * 100)) throw fail('VALIDATION', 'The balance of ' + o.OrderNo + ' is ' + F.peso(o.BalanceAmount) + '; a payment cannot exceed it', { amount: 'max' });
+        var pay = paymentRow(o, { amount: amount, method: p.method, referenceNo: p.referenceNo }, at); pay.Notes = String(p.notes || '').trim().slice(0, 200);
+        o = Object.assign({}, o, { Payments: (o.Payments || []).concat([pay]), Timeline: (o.Timeline || []).concat([activity('PAYMENT', '', '', 'Payment of ' + F.peso(pay.Amount) + ' by ' + pay.Method.replace(/_/g, ' ').toLowerCase() + (pay.ReferenceNo ? ' (ref ' + pay.ReferenceNo + ')' : '') + ' · provisional until synced', at)]), UpdatedAt: at }); recompute(o);
+        return Store.put('orders', o.Id, o).then(function () { return { result: { payment: pay, order: o }, tempId: pay.Id, label: 'Payment ' + F.peso(pay.Amount) + ' ' + pay.Method.replace(/_/g, ' ').toLowerCase() + ' on ' + o.OrderNo }; });
+      });
+    }
+    /** A status change on an order the device holds (a production stage, a quality check, a delivery step) and the board card that goes with it. */
+    function moveOrder(orderId, next, details, at, extra) {
+      return Promise.all([Store.get('orders', String(orderId || '')), Answers.ordersMeta(), Answers.snapshot('production.board', {})]).then(function (r) {
+        var o = r[0], om = r[1], board = r[2]; if (!o) throw fail('NOT_FOUND', 'Record not found');
+        var from = o.Status;
+        if (next && next !== from) {
+          if (((om.transitions || {})[from] || []).indexOf(next) < 0) throw fail('VALIDATION', 'An order that is ' + labelOf(from, om.labels).toLowerCase() + ' cannot move to ' + labelOf(next, om.labels).toLowerCase(), { status: 'transition' });
+          o = Object.assign({}, o, extra || {}, { Status: next, StatusLabel: labelOf(next, om.labels), Transitions: (om.transitions || {})[next] || [], IsOpen: (om.open || []).indexOf(next) >= 0, UpdatedAt: at, Timeline: (o.Timeline || []).concat([activity('STATUS', from, next, details, at)]) });
+        }
+        var writes = [Store.put('orders', o.Id, o)];
+        if (board && board.data && board.data.columns && next && next !== from) {
+          var b = board.data, card = null; Object.keys(b.columns).forEach(function (k) { b.columns[k] = b.columns[k].filter(function (c) { if (c.Id === o.Id) { card = c; return false; } return true; }); });
+          var col = next === 'READY' ? 'READY' : (['NEW', 'RECEIVED', 'PROCESSING'].indexOf(next) >= 0 ? 'QUEUE' : (b.columns[next] ? next : null));
+          if (col) { card = Object.assign(card || { Id: o.Id, OrderNo: o.OrderNo, CustomerName: o.CustomerName, CustomerPhone: o.CustomerPhone, IsExpress: o.IsExpress, BagCount: o.BagCount, TotalWeightKg: o.TotalWeightKg, Lines: (o.Items || []).filter(function (l) { return l.LineType === 'SERVICE'; }).map(function (l) { return (Number(l.WeightKg) > 0 ? Number(l.WeightKg) + ' kg' : Number(l.Qty) + ' ' + (l.Unit || 'pc')) + ' ' + l.Description; }), DueAt: o.DueAt, OrderDate: o.OrderDate, ServiceType: o.ServiceType, BranchId: o.BranchId }, { Status: next, StatusLabel: o.StatusLabel, MachineNo: extra && extra._machineNo !== undefined ? extra._machineNo : '', StageStartedAt: at, StageBy: myName(), MinutesInStage: 0, _pending: true }); b.columns[col].push(card); }
+          b.counts = Object.keys(b.columns).reduce(function (m, k) { m[k] = b.columns[k].length; return m; }, {});
+          writes.push(Store.put('snapshots', payloadKey('production.board', {}), Object.assign({}, board, { data: b })));
+        }
+        return Promise.all(writes).then(function () { return o; });
+      });
+    }
+    function productionAdvance(p, at) {
+      var NEXT = { WASHING: 'DRYING', DRYING: 'FOLDING', FOLDING: 'QC' };
+      return Store.get('orders', String(p.orderId || '')).then(function (o) {
+        if (!o) throw fail('NOT_FOUND', 'Record not found');
+        var stage = p.stage ? String(p.stage).toUpperCase() : (['NEW', 'RECEIVED', 'PROCESSING'].indexOf(o.Status) >= 0 ? 'WASHING' : NEXT[o.Status]);
+        if (!stage) throw fail('VALIDATION', o.Status === 'QC' ? 'Finish the quality check with pass or fail' : 'Order ' + o.OrderNo + ' is ' + lower(o.StatusLabel) + ' and has no next production stage', { stage: 'enum' });
+        var machine = String(p.machineNo || '').trim().slice(0, 20), notes = String(p.notes || '').trim().slice(0, 300);
+        return moveOrder(o.Id, stage, labelOf(stage) + (machine ? ' · machine ' + machine : '') + (notes ? ' · ' + notes : '') + ' · offline', at, { _machineNo: machine }).then(function (updated) {
+          return { result: { order: updated, log: { Id: tempId(), OrderId: o.Id, Stage: stage, MachineNo: machine, StartedAt: at, Notes: notes, _pending: true } }, label: o.OrderNo + ' → ' + labelOf(stage) + (machine ? ' (' + machine + ')' : '') };
+        });
+      });
+    }
+    function productionQc(p, at) {
+      var result = String(p.result || '').toUpperCase(), notes = String(p.notes || '').trim().slice(0, 300);
+      if (['PASS', 'FAIL'].indexOf(result) < 0) throw fail('VALIDATION', 'Quality check result must be one of PASS, FAIL', { result: 'enum' });
+      if (result === 'FAIL' && notes.length < 3) throw fail('VALIDATION', 'Say what failed the check', { notes: 'required' });
+      return Store.get('orders', String(p.orderId || '')).then(function (o) {
+        if (!o) throw fail('NOT_FOUND', 'Record not found');
+        if (o.Status !== 'QC') throw fail('VALIDATION', 'Order ' + o.OrderNo + ' is not in quality check (it is ' + lower(o.StatusLabel) + ')', { orderId: 'status' });
+        var next = result === 'PASS' ? 'READY' : 'WASHING';
+        return moveOrder(o.Id, next, (result === 'PASS' ? 'Quality check passed' + (notes ? ' · ' + notes : '') : 'Quality check failed: ' + notes + ' · back to washing') + ' · offline', at).then(function (updated) { return { result: { order: updated, result: result }, label: o.OrderNo + ' QC ' + result.toLowerCase() }; });
+      });
+    }
+    /** timeclock.punch: the status snapshot the page shows, flipped, with the punch marked provisional. */
+    function timeclockPunch(p, at) {
+      return Answers.snapshot('timeclock.status', {}).then(function (hit) {
+        if (!hit || !hit.data || !hit.data.staff) throw fail('VALIDATION', 'This device has no copy of your time clock yet; open it once while connected', { staffId: 'unlinked' });
+        var s = clone(hit.data), type = p.type ? String(p.type).toUpperCase() : (s.state === 'IN' ? 'OUT' : 'IN');
+        if (type === 'IN' && s.state === 'IN') throw fail('VALIDATION', 'You are already clocked in' + (s.lastLog ? ' since ' + s.lastLog.Time : '') + '; clock out first', { type: 'state' });
+        if (type === 'OUT' && s.state !== 'IN') throw fail('VALIDATION', 'You are not clocked in; clock in first', { type: 'state' });
+        if (Number(s.punchesLeft) <= 0) throw fail('VALIDATION', 'The daily limit of ' + s.maxPunches + ' punches is reached; ask a manager to correct your time logs', { type: 'limit' });
+        var d = new Date(at), time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        var log = { Id: tempId(), LogType: type, LoggedAt: at, Time: time, Method: 'OFFLINE', DeviceLabel: AppState.device() || '', _pending: true };
+        if (type === 'OUT' && s.serverTime) s.workedMinutes = (Number(s.workedMinutes) || 0) + Math.max(0, Math.round((d.getTime() - new Date(s.serverTime).getTime()) / 60000));
+        s.state = type; s.lastLog = log; s.logs = (s.logs || []).concat([log]); s.punchesLeft = Math.max(0, Number(s.punchesLeft) - 1); s.punched = type; s.serverTime = at; s.pending = true;
+        return Store.put('snapshots', payloadKey('timeclock.status', {}), Object.assign({}, hit, { data: s })).then(function () { return { result: s, label: 'Clock ' + (type === 'IN' ? 'in' : 'out') + ' at ' + time }; });
+      });
+    }
+    /** The rider's job steps on the deliveries.mine snapshot, and the orders on the job. */
+    function deliveryStep(action, p, at) {
+      return Answers.snapshot('deliveries.mine', {}).then(function (hit) {
+        if (!hit || !hit.data) throw fail('VALIDATION', 'This device has no copy of your deliveries yet; open them once while connected', { id: 'copy' });
+        var data = clone(hit.data), d = (data.rows || []).filter(function (x) { return x.Id === String(p.id || ''); })[0];
+        if (!d) throw fail('NOT_FOUND', 'Job ' + p.id + ' was not found on this device');
+        var bad = function (msg) { throw fail('VALIDATION', 'Job ' + d.Id + ' is ' + lower(d.Status).replace(/_/g, ' ') + msg, { id: 'status' }); };
+        var next, orderMoves = [], details = '';
+        if (action === 'deliveries.accept') { if (d.Status !== 'ASSIGNED') bad('; only an assigned job can be accepted'); next = 'ACCEPTED'; }
+        else if (action === 'deliveries.start') { if (['ASSIGNED', 'ACCEPTED'].indexOf(d.Status) < 0) bad(' and cannot be started'); next = 'OUT_FOR_DELIVERY'; orderMoves = (d.Items || []).map(function (i) { return { orderId: i.OrderId, status: 'OUT_FOR_DELIVERY', details: 'Out for delivery with ' + myName() + ' · offline' }; }); }
+        else if (action === 'deliveries.complete') {
+          if (d.Status !== 'OUT_FOR_DELIVERY') bad('; start it before completing'); next = d.JobType === 'DELIVERY' ? 'DELIVERED' : 'PICKED_UP';
+          var collections = Array.isArray(p.collections) ? p.collections : [];
+          if (collections.some(function (c) { return Number(c.amount) > 0; }) && (me().permissions || []).indexOf('PAYMENT_COLLECT') < 0) throw fail('FORBIDDEN', 'This action needs the PAYMENT_COLLECT permission');
+          orderMoves = (d.Items || []).map(function (i) { var c = collections.filter(function (x) { return x && x.orderId === i.OrderId; })[0]; return { orderId: i.OrderId, status: d.JobType === 'DELIVERY' ? 'COMPLETED' : null, details: 'Delivered by ' + myName() + ' · offline', collect: c && Number(c.amount) > 0 ? c : null }; });
+          details = String(p.notes || '').trim();
+        }
+        else if (action === 'deliveries.fail') { var reason = String(p.reason || '').trim(); if (reason.length < 3) throw fail('VALIDATION', 'Say why the delivery failed', { reason: 'required' }); if (['ACCEPTED', 'OUT_FOR_DELIVERY'].indexOf(d.Status) < 0) bad(' and cannot be failed'); next = 'FAILED'; d.FailureReason = reason; orderMoves = (d.Items || []).map(function (i) { return { orderId: i.OrderId, status: 'READY', details: 'Delivery failed: ' + reason + ' · offline', onlyFrom: 'OUT_FOR_DELIVERY' }; }); }
+        return Answers.ordersMeta().then(function (om) {
+          var moves = orderMoves.map(function (mv) {
+            return Store.get('orders', mv.orderId).then(function (o) {
+              if (!o) return null;
+              var p2 = Promise.resolve(o);
+              if (mv.collect) { checkMethod(mv.collect, om); p2 = paymentsCreate({ orderId: o.Id, amount: Math.min(Number(mv.collect.amount), Number(o.BalanceAmount)), method: mv.collect.method, referenceNo: mv.collect.referenceNo, notes: 'Collected on delivery · job ' + d.Id }, at).then(function (r) { return r.result.order; }); }
+              return p2.then(function (o2) { if (!mv.status || o2.Status === mv.status || (mv.onlyFrom && o2.Status !== mv.onlyFrom)) return o2; if (mv.status === 'COMPLETED' && o2.Status !== 'OUT_FOR_DELIVERY') return o2; return moveOrder(o2.Id, mv.status, mv.details, at, mv.status === 'COMPLETED' ? { ReleasedAt: at, ReleasedBy: me().user.Id, ReleasedByName: myName() } : null); });
+            });
+          });
+          return Promise.all(moves).then(function () {
+            d.Status = next; d._pending = true; d.IsOpen = ['UNASSIGNED', 'ASSIGNED', 'ACCEPTED', 'OUT_FOR_DELIVERY'].indexOf(next) >= 0; if (next === 'DELIVERED' || next === 'PICKED_UP' || next === 'FAILED') d.CompletedAt = at; if (details) d.Notes = (d.Notes ? d.Notes + '\n' : '') + details;
+            var dispatcher = (d.Actions || []).indexOf('assign') >= 0 && d.IsOpen; d.Actions = (dispatcher ? ['assign', 'cancel'] : []).concat(next === 'ASSIGNED' ? ['accept'] : next === 'ACCEPTED' ? ['start'] : next === 'OUT_FOR_DELIVERY' ? ['complete', 'fail'] : []);
+            (d.Items || []).forEach(function (i) { i.Status = next; var mv = orderMoves.filter(function (x) { return x.orderId === i.OrderId; })[0]; if (mv && mv.status && (!mv.onlyFrom || i.OrderStatus === mv.onlyFrom)) { i.OrderStatus = mv.status; i.OrderStatusLabel = labelOf(mv.status, om.labels); } });
+            return Store.put('snapshots', payloadKey('deliveries.mine', {}), Object.assign({}, hit, { data: data })).then(function () { return { result: d, label: 'Job ' + d.Id + ' ' + lower(next).replace(/_/g, ' ') + (d.CustomerName ? ' · ' + d.CustomerName : '') }; });
+          });
+        });
+      });
+    }
+    /** Applies an operation to the copy; resolves with { result, tempId?, provisionalRef?, quote?, label, skip? }. Rejects with a validation error as the server would. */
+    function apply(action, payload, at) {
+      payload = payload || {};
+      try {
+        switch (action) {
+          case 'orders.create': return ordersCreate(payload, at);
+          case 'customers.quickAdd': return customersCreate(payload, at, true);
+          case 'customers.save': return customersCreate(payload, at, false);
+          case 'payments.create': return paymentsCreate(payload, at);
+          case 'production.advance': return productionAdvance(payload, at);
+          case 'production.qc': return productionQc(payload, at);
+          case 'timeclock.punch': return timeclockPunch(payload, at);
+          case 'deliveries.accept': case 'deliveries.start': case 'deliveries.complete': case 'deliveries.fail': return deliveryStep(action, payload, at);
+          default: return Promise.reject(fail('NETWORK', 'No connection to the server — this needs a connection.'));
+        }
+      } catch (e) { return Promise.reject(e); }
+    }
+    /** After the server applied an operation: the server's record replaces the provisional one, and later operations learn the real id. */
+    function confirm(op, r) {
+      var data = r.data, writes = [];
+      if (op.action === 'orders.create' && data && data.Id) { writes.push(Store.remove('orders', op.tempId).then(function () { return Store.put('orders', data.Id, data); })); }
+      else if ((op.action === 'customers.quickAdd' || op.action === 'customers.save') && data) { var c = data.customer || data; if (c && c.Id) { if (op.tempId && op.tempId !== c.Id) writes.push(Store.remove('customers', op.tempId)); writes.push(Store.put('customers', c.Id, Object.assign({}, c, { _pending: undefined }))); } }
+      else if (op.action === 'payments.create' && data && data.order) writes.push(Store.put('orders', data.order.Id, data.order));
+      else if ((op.action === 'production.advance' || op.action === 'production.qc') && data && data.order) writes.push(Store.put('orders', data.order.Id, data.order));
+      else if (op.action === 'timeclock.punch' && data && data.staff) writes.push(Store.put('snapshots', payloadKey('timeclock.status', {}), { action: 'timeclock.status', payload: {}, data: data, asOf: new Date().toISOString() }));
+      else if (/^deliveries\./.test(op.action) && data && data.Id) writes.push(Answers.snapshot('deliveries.mine', {}).then(function (hit) { if (!hit) return; var rows = (hit.data.rows || []).map(function (x) { return x.Id === data.Id ? data : x; }); return Store.put('snapshots', payloadKey('deliveries.mine', {}), Object.assign({}, hit, { data: Object.assign({}, hit.data, { rows: rows }) })); }));
+      return Promise.all(writes);
+    }
+    return { apply: apply, confirm: confirm, offlineMethods: offlineMethods };
+  })();
+
+  // ------------------------------------------------------------------ the queue and the push
+  var Queue = (function () {
+    var pushing = null, listeners = [], seqLoaded = false, seq = 0, lastPush = null, lastError = null, counts = { pending: 0, rejected: 0, flagged: 0 };
+    /** After a push the server did not answer (or refused whole), the automatic retries back off: 2, 4, 8 … seconds up to five minutes, with jitter; Send now ignores it. */
+    var backoff = { failures: 0, until: 0 };
+    function backoffAfterFailure() { backoff.failures++; var secs = Math.min(300, Math.pow(2, backoff.failures)) * (0.75 + Math.random() * 0.5); backoff.until = Date.now() + Math.round(secs * 1000); }
+    function backoffReset() { backoff.failures = 0; backoff.until = 0; }
+    function holding() { return Date.now() < backoff.until; }
+    function emit() { listeners.forEach(function (fn) { try { fn(state()); } catch (e) { console.error(e); } }); try { document.dispatchEvent(new CustomEvent('mls:queue', { detail: state() })); } catch (e) { /* ignore */ } }
+    function state() { return { pushing: !!pushing, pending: counts.pending, rejected: counts.rejected, flagged: counts.flagged, lastPush: lastPush, lastError: lastError, nextTryAt: holding() && counts.pending ? new Date(backoff.until).toISOString() : null, failures: backoff.failures }; }
+    function recount() { return Store.all('queue').then(function (q) { counts = { pending: q.filter(function (o) { return o.state === 'PENDING' || o.state === 'SENDING'; }).length, rejected: q.filter(function (o) { return o.state === 'REJECTED'; }).length, flagged: q.filter(function (o) { return o.state === 'APPLIED' && o.result && o.result.flags && o.result.flags.length; }).length }; emit(); return counts; }).catch(function () { return counts; }); }
+    function nextSeq() { if (seqLoaded) return Promise.resolve(++seq); return Store.get('meta', 'queueSeq').then(function (n) { seq = Number(n) || 0; seqLoaded = true; return ++seq; }); }
+    function queueMax() { return Answers.ordersMeta().then(function (om) { return om.offline && om.offline.queueMax ? Number(om.offline.queueMax) : 500; }); }
+    /** Applies the write to the copy and files it for the server; resolves with the local result the page shows. */
+    function enqueue(action, payload) {
+      var me = AppState.me; if (!me) return Promise.reject(fail('AUTH_REQUIRED', 'Please sign in'));
+      if (!Store.available()) return Promise.reject(fail('NETWORK', 'No connection to the server — this needs a connection (this browser cannot keep a queue).'));
+      var at = new Date().toISOString();
+      return Promise.all([queueMax(), Store.all('queue')]).then(function (r) {
+        var pendingCount = r[1].filter(function (o) { return o.state === 'PENDING' || o.state === 'SENDING'; }).length;
+        if (pendingCount >= r[0]) throw fail('VALIDATION', 'This device holds ' + pendingCount + ' operations waiting for the server (the limit, OfflineQueueMax); connect before taking more.');
+        return Local.apply(action, payload, at);
+      }).then(function (local) {
+        if (local.skip) return local.result;
+        return nextSeq().then(function (n) {
+          var op = { opId: UI.uuid(), seq: n, userId: me.user.Id, username: me.user.Username, displayName: me.user.DisplayName, branchId: me.activeBranch, action: action, payload: clone(payload || {}), clientAt: at, tempId: local.tempId || '', provisionalRef: local.provisionalRef || '', label: local.label || action, state: 'PENDING', attempts: 0, createdAt: at, appVersion: M.version };
+          if (local.quote) op.payload.quote = clone(local.quote);
+          if (local.provisionalRef) op.payload.provisionalRef = local.provisionalRef;
+          return Store.put('meta', 'queueSeq', n).then(function () { return Store.put('queue', op.opId, op); }).then(function () { recount(); schedule(1500); return local.result; });
+        });
+      });
+    }
+    /** Pending operations of the signed-in user, plus those of other users on this device a manager chose to submit. */
+    function batchFor(q, me) {
+      return q.filter(function (o) { return o.state === 'PENDING' && (o.userId === me.user.Id || o.submitBy === me.user.Id); }).sort(function (a, b) { return a.seq - b.seq; }).slice(0, PUSH_BATCH);
+    }
+    /** Replaces the temporary ids that applied operations resolved in the payloads of the operations still waiting. */
+    function remapPending(q, map) {
+      var changed = [];
+      q.forEach(function (o) {
+        if (o.state !== 'PENDING') return; var text = JSON.stringify(o.payload), out = text;
+        Object.keys(map).forEach(function (t) { out = out.split(JSON.stringify(t)).join(JSON.stringify(map[t])); });
+        if (out !== text) { o.payload = JSON.parse(out); changed.push([o.opId, o]); }
+      });
+      return changed.length ? Store.putMany('queue', changed) : Promise.resolve(0);
+    }
+    /** Sends what waits, in order, batch after batch, and records every verdict. Resolves with a summary; never rejects. opts.manual ignores the back-off (Send now). */
+    function push(opts) {
+      opts = opts || {};
+      if (pushing) return pushing;
+      var me = AppState.me; if (!me || !AppState.token || !Store.available()) return Promise.resolve(null);
+      if (!opts.manual && holding()) return Promise.resolve(null);
+      var summary = { sent: 0, applied: 0, rejected: 0, duplicate: 0, flagged: 0, error: null, labels: [] };
+      var round = function () {
+        return Store.all('queue').then(function (q) {
+          var batch = batchFor(q, me); if (!batch.length) return summary;
+          var now = new Date().toISOString();
+          batch.forEach(function (o) { o.state = 'SENDING'; o.attempts = (o.attempts || 0) + 1; o.lastTriedAt = now; });
+          return Store.putMany('queue', batch.map(function (o) { return [o.opId, o]; })).then(function () { recount();
+            var body = { installId: null, deviceId: deviceId(), deviceLabel: AppState.device() || '', batchId: UI.uuid().slice(0, 13), appVersion: M.version, ops: batch.map(function (o) { return { opId: o.opId, seq: o.seq, action: o.action, payload: o.payload, clientAt: o.clientAt, userId: o.userId, branchId: o.branchId, tempId: o.tempId || undefined, provisionalRef: o.provisionalRef || undefined, appVersion: o.appVersion }; }) };
+            return Store.get('meta', 'sync').then(function (m) { body.installId = m && m.installId ? m.installId : null; return Api.call('sync.push', body, { noRedirect: true, timeoutMs: 180000, noOffline: true }); }).then(function (r) {
+              var map = {}, verdicts = {}; (r.results || []).forEach(function (x) { verdicts[x.opId] = x; });
+              var confirms = [];
+              batch.forEach(function (o) {
+                var v = verdicts[o.opId];
+                if (!v) { o.state = 'PENDING'; return; }  // not reached within the server's budget: it goes again
+                summary.sent++;
+                o.result = { status: v.status, resultId: v.resultId || '', resultRef: v.resultRef || '', flags: v.flags || [], error: v.error || null, at: new Date().toISOString() };
+                if (v.status === 'APPLIED' || v.status === 'DUPLICATE') { o.state = 'APPLIED'; if (v.status === 'APPLIED') summary.applied++; else summary.duplicate++; if (v.flags && v.flags.length) summary.flagged++; if (o.tempId && v.resultId) map[o.tempId] = v.resultId; if (v.data) confirms.push(Local.confirm(o, v)); summary.labels.push(o.label + (v.resultRef ? ' → ' + v.resultRef : '')); }
+                else { o.state = 'REJECTED'; summary.rejected++; summary.labels.push(o.label + ' ✗ ' + (v.error ? v.error.message : 'refused')); }
+              });
+              return Promise.all(confirms).then(function () { return Store.putMany('queue', batch.map(function (o) { return [o.opId, o]; })); }).then(function () { return remapPending(q, map); }).then(function () { lastPush = new Date().toISOString(); lastError = null; backoffReset(); return recount(); }).then(function () { return round(); });
+            }, function (e) {
+              batch.forEach(function (o) { o.state = 'PENDING'; });
+              backoffAfterFailure();
+              return Store.putMany('queue', batch.map(function (o) { return [o.opId, o]; })).then(function () { summary.error = (e && e.message) || String(e); lastError = summary.error; if (e && e.fields && e.fields.installId) { summary.installMismatch = true; } return recount(); }).then(function () { return summary; });
+            });
+          });
+        });
+      };
+      pushing = round().catch(function (e) { summary.error = (e && e.message) || String(e); lastError = summary.error; return summary; }).then(function (s) { pushing = null; emit(); if (!opts.quiet) report(s); if (s && s.applied) { try { document.dispatchEvent(new CustomEvent('mls:synced', { detail: s })); } catch (e) { /* ignore */ } } return s; });
+      emit();
+      return pushing;
+    }
+    function report(s) {
+      if (!s || !s.sent) return;
+      var T = M.Toast;
+      if (s.applied || s.duplicate) T.success((s.applied + s.duplicate) + ' offline operation' + (s.applied + s.duplicate === 1 ? '' : 's') + ' reached the server' + (s.flagged ? ' · ' + s.flagged + ' flagged for review' : '') + ' — see Sync for the details.', 6000);
+      if (s.rejected) T.danger(s.rejected + ' offline operation' + (s.rejected === 1 ? ' was' : 's were') + ' refused by the server — open Sync to read why.', 10000);
+      // a browser notification only when the user opted in, the app is in the background and something needs attention — never for a success
+      if ((s.rejected || s.flagged) && M.Notify) M.Notify.attention('Mrs Laundry Sys — sync needs attention', (s.rejected ? s.rejected + ' refused by the server' : '') + (s.rejected && s.flagged ? ' · ' : '') + (s.flagged ? s.flagged + ' flagged for review' : '') + ' — open Sync');
+    }
+    var debounce = null;
+    function schedule(ms) { clearTimeout(debounce); debounce = setTimeout(function () { if (AppState.me && Net.state() === 'online') push(); }, ms); }
+    /** The clock that keeps trying: every 60 s while something waits, honouring the back-off; a reconnection or a return to the tab tries sooner. */
+    function tick() { if (AppState.me && Net.state() === 'online' && !document.hidden && counts.pending && !holding()) push(); }
+    /** The whole queue as the Sync page lists it. */
+    function list() { return Store.all('queue').then(function (q) { return q.sort(function (a, b) { return b.seq - a.seq; }); }); }
+    function discard(opId) { return Store.get('queue', opId).then(function (o) { if (!o || o.state === 'SENDING') throw fail('VALIDATION', 'That operation is being sent'); return Store.remove('queue', opId); }).then(recount); }
+    /** A manager takes another user's waiting operations on this device into the next push (decision 5; the server audits it). */
+    function submitOthers(userId) { var me = AppState.me; return Store.all('queue').then(function (q) { var mine = q.filter(function (o) { return o.state === 'PENDING' && o.userId === userId && o.userId !== me.user.Id; }); mine.forEach(function (o) { o.submitBy = me.user.Id; }); return mine.length ? Store.putMany('queue', mine.map(function (o) { return [o.opId, o]; })) : 0; }).then(function () { return push({ manual: true }); }); }
+    /** Applied operations are kept a day for the page, then dropped; refused ones stay until discarded. */
+    function purge() { var cutoff = Date.now() - 86400000; return Store.all('queue').then(function (q) { var gone = q.filter(function (o) { return o.state === 'APPLIED' && o.result && new Date(o.result.at).getTime() < cutoff; }).map(function (o) { return o.opId; }); return gone.length ? Store.removeMany('queue', gone) : 0; }).then(recount).catch(function () { return 0; }); }
+    function init() {
+      recount();
+      document.addEventListener('mls:signedin', function () { purge().then(function () { if (Net.state() === 'online') push(); }); });
+      Net.onChange(function (s) { if (s === 'online' && AppState.me) schedule(800); });
+      document.addEventListener('visibilitychange', function () { if (!document.hidden && AppState.me && Net.state() === 'online') schedule(2000); });
+      setInterval(tick, 15000);
+    }
+    return { enqueue: enqueue, push: push, list: list, discard: discard, submitOthers: submitOthers, state: state, onChange: function (fn) { listeners.push(fn); }, init: init, recount: recount, queueable: function (a) { return QUEUEABLE.indexOf(a) >= 0; }, idempotent: function (a) { return IDEMPOTENT.indexOf(a) >= 0; }, deviceId: deviceId, deviceCode: deviceCode, purge: purge, holding: holding };
   })();
 
   // ------------------------------------------------------------------ the pull
@@ -1158,7 +1763,8 @@ window.MLS = (function () {
     function emit() { listeners.forEach(function (fn) { try { fn(state()); } catch (e) { console.error(e); } }); }
     function state() { return { pulling: !!pulling, lastPull: lastPull, dataVersion: pulledVersion, lastError: lastError, served: served }; }
     function loadMeta() { return Store.get('meta', 'sync').then(function (m) { m = m || {}; lastPull = m.lastPull || null; pulledVersion = m.dataVersion || 0; pullMinutes = m.pullMinutes || 5; readActions = m.readActions || null; return m; }).catch(function () { return {}; }); }
-    /** Pulls the copy for the signed-in user and lens: full after a change of user or lens (the stores are wiped first), incremental otherwise, page by page. Resolves with the summary; never rejects. */
+    function clearCopy() { return Promise.all([Store.clearServerRows('orders'), Store.clearServerRows('customers'), Store.clear('snapshots')]); }
+    /** Pulls the copy for the signed-in user and lens: full after a change of user or lens (the server's rows are wiped first; what was made offline stays with the queue), incremental otherwise, page by page. Resolves with the summary; never rejects. */
     function pull(opts) {
       opts = opts || {};
       if (pulling) return pulling;
@@ -1166,7 +1772,7 @@ window.MLS = (function () {
       pulling = loadMeta().then(function (meta) {
         var lensChanged = opts.full || meta.userId !== me.user.Id || meta.branch !== me.activeBranch;
         var installId = meta.installId || null;
-        var prep = lensChanged ? Promise.all([Store.clear('orders'), Store.clear('customers'), Store.clear('snapshots')]).then(function () { return { userId: me.user.Id, branch: me.activeBranch }; }) : Promise.resolve(meta);
+        var prep = lensChanged ? clearCopy().then(function () { return { userId: me.user.Id, branch: me.activeBranch }; }) : Promise.resolve(meta);
         return prep.then(function (m) {
           var body = { dataVersion: lensChanged || opts.force ? undefined : m.dataVersion, installId: installId, force: !!opts.force, orders: { since: m.ordersSince || null }, customers: { since: m.customersSince || null } };
           var first = null, orderRows = 0, customerRows = 0, snapshots = 0;
@@ -1176,7 +1782,7 @@ window.MLS = (function () {
               if (!first && installId && r.installId && r.installId !== installId && !lensChanged) {
                 // another installation (a restored backup, a new spreadsheet): the copy is wiped and pulled whole
                 installId = r.installId; lensChanged = true; m = { userId: me.user.Id, branch: me.activeBranch };
-                return Promise.all([Store.clear('orders'), Store.clear('customers'), Store.clear('snapshots')]).then(function () { body = { force: true, orders: { since: null }, customers: { since: null } }; return step(); });
+                return clearCopy().then(function () { body = { force: true, orders: { since: null }, customers: { since: null } }; return step(); });
               }
               if (!first) {
                 first = r;
@@ -1201,10 +1807,10 @@ window.MLS = (function () {
             var now = new Date().toISOString();
             if (last.unchanged) { lastPull = now; return Store.put('meta', 'sync', Object.assign({}, m, { lastPull: now, dataVersion: last.dataVersion, installId: last.installId || m.installId || null, userId: me.user.Id, branch: me.activeBranch })).then(function () { return { unchanged: true, orders: 0, customers: 0, snapshots: 0 }; }); }
             var serverTime = new Date(first.serverTime).getTime(), since = new Date(serverTime - 60000).toISOString(), prune = first.orders ? first.orders.pruneBefore : null;
-            var pruneP = prune ? Store.all('orders').then(function (all) { var stale = all.filter(function (o) { return !o.IsOpen && String(o.OrderDate) < prune; }).map(function (o) { return o.Id; }); return stale.length ? Store.removeMany('orders', stale) : 0; }) : Promise.resolve(0);
+            var pruneP = prune ? Store.all('orders').then(function (all) { var stale = all.filter(function (o) { return !o.IsOpen && !o._pending && String(o.OrderDate) < prune; }).map(function (o) { return o.Id; }); return stale.length ? Store.removeMany('orders', stale) : 0; }) : Promise.resolve(0);
             return pruneP.then(function (pruned) {
               pulledVersion = first.dataVersion; pullMinutes = first.pullMinutes || pullMinutes; readActions = first.readActions || readActions; lastPull = now; lastError = null;
-              return Store.put('meta', 'sync', { userId: me.user.Id, branch: me.activeBranch, installId: first.installId || null, dataVersion: first.dataVersion, ordersSince: since, customersSince: since, lastPull: now, pullMinutes: pullMinutes, readActions: readActions, window: first.window || null, serverTime: first.serverTime }).then(function () { return { unchanged: false, orders: orderRows, customers: customerRows, snapshots: snapshots, pruned: pruned }; });
+              return Store.put('meta', 'sync', { userId: me.user.Id, branch: me.activeBranch, installId: first.installId || null, dataVersion: first.dataVersion, ordersSince: since, customersSince: since, lastPull: now, pullMinutes: pullMinutes, readActions: readActions, queueable: first.queueable || QUEUEABLE, window: first.window || null, serverTime: first.serverTime }).then(function () { return { unchanged: false, orders: orderRows, customers: customerRows, snapshots: snapshots, pruned: pruned }; });
             });
           });
         });
@@ -1226,15 +1832,17 @@ window.MLS = (function () {
     function cachedMe(token) { return Store.get('meta', 'me').then(function (m) { return m && m.token === token ? m.me : null; }).catch(function () { return null; }); }
     function init() {
       loadMeta();
-      document.addEventListener('mls:signedin', function () { if (navigator.storage && navigator.storage.persist && M.host === 'pwa') { navigator.storage.persist().catch(function () { /* ignore */ }); } if (Net.state() === 'online') pull(); else Net.health().then(function (ok) { if (ok) pull(); }); });
+      // after sign-in: what waits goes to the server first, then the copy is refreshed so it carries the server's view of it
+      document.addEventListener('mls:signedin', function () { if (navigator.storage && navigator.storage.persist && M.host === 'pwa') { navigator.storage.persist().catch(function () { /* ignore */ }); } var go = function () { return Queue.push({ quiet: false }).then(function () { return pull(); }); }; if (Net.state() === 'online') go(); else Net.health().then(function (ok) { if (ok) go(); }); });
       document.addEventListener('visibilitychange', function () { if (!document.hidden) tick(); });
-      Net.onChange(function (s) { if (s === 'online' && AppState.me && due()) pull(); });
+      document.addEventListener('mls:synced', function () { schedule(500); });
+      Net.onChange(function (s) { if (s === 'online' && AppState.me && due()) schedule(3000); });
       setInterval(tick, 60000);
     }
     return { pull: pull, record: record, cachedMe: cachedMe, state: state, onChange: function (fn) { listeners.push(fn); }, init: init, noteServed: function () { served++; }, payloadKey: payloadKey };
   })();
 
-  // ------------------------------------------------------------------ the bar and the hooks
+  // ------------------------------------------------------------------ the bar, the badge and the hooks
   var bar = (function () {
     var lastLocal = null, servedSinceOnline = false;
     function paint() {
@@ -1242,22 +1850,34 @@ window.MLS = (function () {
       var off = Net.state() === 'offline' || Net.state() === 'unreachable';
       var show = !!(AppState.me && off && !UI.el('app').hidden);
       el.hidden = !show; if (!show) return;
-      var when = lastLocal && lastLocal.asOf ? new Date(lastLocal.asOf) : null;
-      UI.el('offline-bar-text').textContent = (Net.state() === 'offline' ? 'No connection' : 'Server unreachable') + ' — showing what this device saved' + (when ? ' as of ' + when.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '') + '. Nothing can be saved until the connection returns.';
+      var when = lastLocal && lastLocal.asOf ? new Date(lastLocal.asOf) : null, q = Queue.state();
+      UI.el('offline-bar-text').textContent = (Net.state() === 'offline' ? 'No connection' : 'Server unreachable') + ' — showing what this device saved' + (when ? ' as of ' + when.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '') + '. Orders, payments, stage updates, punches and deliveries you make now are kept on this device and sent when the connection returns' + (q.pending ? ' (' + q.pending + ' waiting)' : '') + '.';
     }
-    return { paint: paint, served: function (hit) { lastLocal = hit; servedSinceOnline = true; paint(); }, online: function () { paint(); if (servedSinceOnline) { servedSinceOnline = false; try { M.Router.refreshAll(); } catch (e) { /* ignore */ } } } };
+    function badge() {
+      var el = UI.el('queue-badge'); if (!el) return; var q = Queue.state(), n = q.pending + q.rejected, show = !!(AppState.me && n > 0);
+      el.hidden = !show; if (!show) return;
+      el.className = 'queue-badge ' + (q.rejected ? 'q-rejected' : (q.pushing ? 'q-sending' : 'q-pending'));
+      el.innerHTML = '<i class="fa-solid ' + (q.rejected ? 'fa-triangle-exclamation' : (q.pushing ? 'fa-rotate fa-spin' : 'fa-clock')) + '" aria-hidden="true"></i><span>' + (q.rejected ? q.rejected + ' refused' : (q.pushing ? 'Sending ' + q.pending + '…' : q.pending + ' waiting')) + '</span>';
+      el.title = (q.pending ? q.pending + ' operation' + (q.pending === 1 ? '' : 's') + ' waiting for the server' : '') + (q.rejected ? (q.pending ? ' · ' : '') + q.rejected + ' refused by the server' : '') + ' — open Sync';
+    }
+    return { paint: paint, badge: badge, served: function (hit) { lastLocal = hit; servedSinceOnline = true; paint(); }, online: function () { paint(); if (servedSinceOnline) { servedSinceOnline = false; try { if (!document.querySelector('.modal.show')) M.Router.refreshAll(); } catch (e) { /* ignore */ } } } };
   })();
 
   Api.offline = {
     answer: Answers.answer,
     record: Sync.record,
     me: Sync.cachedMe,
-    served: function (action, hit) { Sync.noteServed(); bar.served(hit); }
+    served: function (action, hit) { Sync.noteServed(); bar.served(hit); },
+    enqueue: Queue.enqueue,
+    queueable: Queue.queueable,
+    idempotent: Queue.idempotent
   };
-  Net.onChange(function (s) { if (s === 'online') bar.online(); else bar.paint(); });
-  document.addEventListener('mls:signedin', bar.paint); document.addEventListener('mls:signedout', function () { bar.paint(); });
-  Sync.init();
-  M.Store = Store; M.Sync = Sync; M.Offline = { answers: Answers, payloadKey: payloadKey, paintBar: bar.paint };
+  Net.onChange(function (s) { if (s === 'online') bar.online(); else bar.paint(); bar.badge(); });
+  Queue.onChange(function () { bar.badge(); bar.paint(); });
+  document.addEventListener('mls:signedin', function () { bar.paint(); bar.badge(); }); document.addEventListener('mls:signedout', function () { bar.paint(); bar.badge(); });
+  document.addEventListener('mls:synced', function () { try { if (!document.querySelector('.modal.show') && M.Router.current() !== 'pos') M.Router.refreshAll(); } catch (e) { /* ignore */ } });
+  Queue.init(); Sync.init();
+  M.Store = Store; M.Sync = Sync; M.Queue = Queue; M.Offline = { answers: Answers, quote: Quote, local: Local, payloadKey: payloadKey, paintBar: bar.paint, paintBadge: bar.badge, isTemp: isTemp, QUEUEABLE: QUEUEABLE };
 })();
 </script>
 
@@ -1329,6 +1949,7 @@ window.MLS = (function () {
         <h1 class="page-title" id="page-title">Dashboard</h1>
         <div class="topbar-right">
           <span class="net-badge net-unknown" id="net-badge" role="status" aria-live="polite" hidden><i class="fa-solid fa-circle" aria-hidden="true"></i><span id="net-badge-text"></span></span>
+          <a class="queue-badge q-pending" id="queue-badge" href="#/sync" role="status" aria-live="polite" hidden></a>
           <span class="badge text-bg-light border" id="branch-label" hidden></span>
           <div class="branch-switch" id="branch-switch-wrap" hidden><select class="form-select form-select-sm" id="branch-switch" aria-label="Branch"></select></div>
           <div class="dropdown">
@@ -1804,6 +2425,7 @@ window.MLS = (function () {
           <div class="col-6" id="pay-tendered-wrap"><label class="form-label" for="pay-tendered">Cash tendered</label><input class="form-control money" id="pay-tendered" name="tendered" type="number" step="0.01" min="0" inputmode="decimal"></div>
           <div class="col-6" id="pay-change-wrap"><label class="form-label">Change</label><div class="form-control-plaintext fw-bold money" id="pay-change">—</div></div>
           <div class="col-12"><label class="form-label" for="pay-note">Note (optional)</label><input class="form-control" id="pay-note" name="notes" maxlength="200"></div>
+          <div class="col-12 small text-soft" id="pay-offline-note" hidden><i class="fa-solid fa-cloud-arrow-down me-1"></i>No connection: this payment is kept on this device as provisional and recorded on the server when the connection returns. Only cash and e-wallets with a reference can be taken now.</div>
         </div>
         <div class="alert alert-danger py-2 small mt-3" id="pay-error" hidden></div>
       </div>
@@ -1864,7 +2486,8 @@ window.MLS = (function () {
     var html = '<div class="receipt-paper' + (forPrint ? '' : '') + '">' +
       '<div class="c big">' + esc(b.name) + '</div>' + (d.branch.name ? '<div class="c">' + esc(d.branch.name) + '</div>' : '') + (b.header ? '<div class="c">' + esc(b.header) + '</div>' : '') +
       (b.address ? '<div class="c">' + esc(b.address) + '</div>' : '') + (b.phone ? '<div class="c">' + esc(b.phone) + '</div>' : '') + (b.taxId ? '<div class="c">TIN ' + esc(b.taxId) + '</div>' : '') +
-      '<hr><div class="row"><span>Order</span><span><b>' + esc(o.OrderNo) + '</b></span></div><div class="row"><span>Date</span><span>' + esc(F.datetime(o.CreatedAt)) + '</span></div>' + (o.DueAt ? '<div class="row"><span>Due</span><span>' + esc(F.datetime(o.DueAt)) + '</span></div>' : '') +
+      (d.provisional ? '<div class="provisional">PROVISIONAL RECEIPT<small>Reference ' + esc(o.ProvisionalRef || o.OrderNo) + ' · taken while the shop\'s system was offline. The order number follows once it is synced; keep this slip.</small></div>' : '') +
+      '<hr><div class="row"><span>' + (d.provisional ? 'Reference' : 'Order') + '</span><span><b>' + esc(o.OrderNo) + '</b></span></div>' + (!d.provisional && o.ProvisionalRef ? '<div class="row muted"><span>Taken offline as</span><span>' + esc(o.ProvisionalRef) + '</span></div>' : '') + '<div class="row"><span>Date</span><span>' + esc(F.datetime(o.CreatedAt)) + '</span></div>' + (o.DueAt ? '<div class="row"><span>Due</span><span>' + esc(F.datetime(o.DueAt)) + '</span></div>' : '') +
       '<div class="row"><span>Customer</span><span>' + esc(o.CustomerName) + '</span></div>' + (o.CustomerPhone ? '<div class="row"><span>Mobile</span><span>' + esc(o.CustomerPhone) + '</span></div>' : '') +
       (o.IsExpress ? '<div class="c strong">EXPRESS</div>' : '') + (o.BagCount ? '<div class="row"><span>Bags</span><span>' + esc(o.BagCount) + '</span></div>' : '') +
       '<hr>' + lines + '<hr>' +
@@ -1873,7 +2496,7 @@ window.MLS = (function () {
       '<div class="row big"><span>TOTAL</span><span>' + money(o.OrderTotal) + '</span></div>' + (pays ? '<hr>' + pays : '') +
       '<div class="row"><span>Paid</span><span>' + money(o.PaidAmount) + '</span></div><div class="row strong"><span>' + (Number(o.BalanceAmount) > 0 ? 'BALANCE DUE' : 'Balance') + '</span><span>' + money(o.BalanceAmount) + '</span></div>' +
       (o.Notes ? '<hr><div>' + esc(o.Notes) + '</div>' : '') + '<hr><div class="row"><span>Status</span><span>' + esc(o.StatusLabel) + '</span></div><div class="row"><span>Cashier</span><span>' + esc(o.Cashier) + '</span></div>' +
-      (b.footer ? '<hr><div class="c">' + esc(b.footer) + '</div>' : '') + trackingBlock(d) + '<div class="c foot">Printed ' + esc(F.datetime(d.printedAt)) + '</div></div>';
+      (b.footer ? '<hr><div class="c">' + esc(b.footer) + '</div>' : '') + (d.provisional ? '' : trackingBlock(d)) + '<div class="c foot">Printed ' + esc(F.datetime(d.printedAt)) + (d.provisional ? ' · provisional' : '') + '</div></div>';
     return html;
   }
   /** The tracking link on a receipt: a QR code when the setting is on and the library loaded, the link in text either way. */
@@ -1911,7 +2534,11 @@ window.MLS = (function () {
     return getMeta().then(function (m) {
       var form = UI.el('pay-form'); form.reset(); Form.clearErrors(form); UI.hide('pay-error');
       UI.el('pay-title').textContent = opts.title || 'Payment';
-      UI.el('pay-method').innerHTML = UI.options(m.paymentMethods, m.defaultMethod, methodLabel, function (x) { return x; });
+      // without the server only the methods the offline policy allows are offered (cash and e-wallets with a reference, never cards or transfers)
+      var offline = M.Net && M.Net.state() !== 'online' && m.offline && Array.isArray(m.offline.paymentMethods), methods = offline ? m.paymentMethods.filter(function (x) { return m.offline.paymentMethods.indexOf(x) >= 0; }) : m.paymentMethods;
+      if (offline && !methods.length) methods = ['CASH'];
+      UI.el('pay-method').innerHTML = UI.options(methods, methods.indexOf(m.defaultMethod) >= 0 ? m.defaultMethod : methods[0], methodLabel, function (x) { return x; });
+      var offNote = UI.el('pay-offline-note'); if (offNote) offNote.hidden = !offline;
       UI.html('pay-summary', (opts.summaryHtml || '') + '<span>Amount due</span><span class="grand money">' + F.peso(opts.balance) + '</span>');
       UI.el('pay-amount').value = (Number(opts.balance) || 0).toFixed(2); UI.el('pay-amount').max = (Number(opts.balance) || 0).toFixed(2);
       UI.el('pay-later').hidden = !(opts.checkout && opts.allowPayLater !== false && m.allowPayLater);
@@ -1972,7 +2599,7 @@ window.MLS = (function () {
   function lineQty(i) { return i.LineType === 'SERVICE' && i.WeightKg ? F.qty(i.WeightKg, 'kg') + (Number(i.Qty) !== Number(i.WeightKg) ? ' <span class="text-soft">(billed ' + F.qty(i.Qty, i.Unit) + ')</span>' : '') : F.qty(i.Qty, i.Unit); }
   function renderOrder(o) {
     current = o;
-    UI.el('order-modal-title').innerHTML = UI.esc(o.OrderNo) + ' ' + UI.badge(o.Status, o.StatusLabel) + (o.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '');
+    UI.el('order-modal-title').innerHTML = UI.esc(o.OrderNo) + ' ' + UI.badge(o.Status, o.StatusLabel) + (o.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + (o._pending ? ' <span class="pending-tag" title="Taken offline on this device; the server has not received it yet">not synced</span>' : (o.ProvisionalRef ? ' <span class="small text-soft">offline ref ' + UI.esc(o.ProvisionalRef) + '</span>' : ''));
     var head = [['Customer', UI.esc(o.CustomerName) + (o.CustomerPhone ? '<div class="small text-soft">' + UI.esc(o.CustomerPhone) + (o.Mobile ? '' : ' <span class="badge text-bg-light border" title="Not a mobile number: no SMS">no SMS</span>') + (o.Customer && o.Customer.SmsOptOut ? ' <span class="badge text-bg-secondary" title="Opted out of promotional messages">no promos</span>' : '') + '</div>' : '')], ['Received', F.datetime(o.CreatedAt)], ['Due', o.DueAt ? F.datetime(o.DueAt) : '—'], ['Branch', UI.esc(o.Branch)], ['Cashier', UI.esc(o.Cashier)], ['Type', F.status(o.ServiceType)], ['Bags · weight', (o.BagCount || 0) + ' · ' + F.qty(o.TotalWeightKg, 'kg')], ['Released', o.ReleasedAt ? F.datetime(o.ReleasedAt) + (o.ReleasedByName ? ' by ' + UI.esc(o.ReleasedByName) : '') : '—']];
     var lines = o.Items.map(function (i) { return '<tr><td data-label="Item">' + UI.esc(i.Description) + (i.LineType === 'PRODUCT' ? ' <span class="badge text-bg-light border">product</span>' : '') + '</td><td data-label="Qty" class="text-end">' + lineQty(i) + '</td><td data-label="Unit price" class="text-end money">' + F.peso(i.UnitPrice) + '</td><td data-label="Line total" class="text-end money fw-bold">' + F.peso(i.LineTotal) + '</td></tr>'; }).join('');
     var pays = o.Payments.length ? o.Payments.map(function (p) { return '<tr><td data-label="When">' + F.datetime(p.CreatedAt) + '</td><td data-label="Type">' + (p.Type === 'REFUND' ? '<span class="text-danger fw-bold">Refund</span>' : 'Payment') + '</td><td data-label="Method">' + UI.esc(methodLabel(p.Method)) + (p.ReferenceNo ? ' <span class="text-soft small">' + UI.esc(p.ReferenceNo) + '</span>' : '') + '</td><td data-label="By">' + UI.esc(p.Cashier) + '</td><td data-label="Amount" class="text-end money fw-bold">' + (p.Type === 'REFUND' ? '-' : '') + F.peso(p.Amount) + '</td><td class="text-end no-print">' + (M.Auth.can('POS_VOID') ? '<button type="button" class="btn btn-sm btn-link text-danger p-0" data-void="' + UI.esc(p.Id) + '">void</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="6" class="text-soft">No payments yet.</td></tr>';
@@ -2028,7 +2655,7 @@ window.MLS = (function () {
       ['OPEN', 'READY'].forEach(function (k) { var el = document.querySelector('#orders-tabs [data-count="' + k + '"]'); if (el) { var n = k === 'OPEN' ? Object.keys(r.counts).reduce(function (t, s) { return t + (['NEW', 'RECEIVED', 'PROCESSING', 'WASHING', 'DRYING', 'FOLDING', 'QC', 'READY', 'OUT_FOR_DELIVERY'].indexOf(s) >= 0 ? r.counts[s] : 0); }, 0) : (r.counts.READY || 0); el.textContent = n || ''; } });
       M.Table.render(box, {
         columns: [
-          { key: 'OrderNo', label: 'Order', format: function (v, row) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (row.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : ''); } },
+          { key: 'OrderNo', label: 'Order', format: function (v, row) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (row.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + (row._pending ? ' <span class="pending-tag" title="Taken offline on this device; the server has not received it yet">not synced</span>' : ''); } },
           { key: 'OrderDate', label: 'Date', format: function (v, row) { return F.date(v) + (row.DueAt ? '<div class="small text-soft">due ' + F.datetime(row.DueAt) + '</div>' : ''); } },
           { key: 'CustomerName', label: 'Customer', format: function (v, row) { return UI.esc(v) + (row.CustomerPhone ? '<div class="small text-soft">' + UI.esc(row.CustomerPhone) + '</div>' : ''); } },
           { key: 'OrderTotal', label: 'Total', align: 'right', format: function (v) { return '<span class="money">' + F.peso(v) + '</span>'; } },
@@ -2120,7 +2747,7 @@ window.MLS = (function () {
       var sel = UI.el('cust-type'); if (sel.options.length === 1) sel.innerHTML += UI.options(types, '', function (t) { return F.status(t); }, function (t) { return t; });
       M.Table.render(UI.el('cust-table'), {
         columns: [
-          { key: 'FullName', label: 'Customer', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (r.CustomerType !== 'REGULAR' ? ' <span class="badge text-bg-light border">' + F.status(r.CustomerType) + '</span>' : '') + (r.Status !== 'ACTIVE' ? ' ' + UI.badge(r.Status) : ''); } },
+          { key: 'FullName', label: 'Customer', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (r._pending ? ' <span class="pending-tag" title="Registered offline on this device; the server has not received it yet">not synced</span>' : '') + (r.CustomerType !== 'REGULAR' ? ' <span class="badge text-bg-light border">' + F.status(r.CustomerType) + '</span>' : '') + (r.Status !== 'ACTIVE' ? ' ' + UI.badge(r.Status) : ''); } },
           { key: 'Phone', label: 'Mobile', format: function (v, r) { return UI.esc(v || '—') + (r.Email ? '<div class="small text-soft">' + UI.esc(r.Email) + '</div>' : ''); } },
           { key: 'Address', label: 'Address', format: function (v) { return '<span class="small">' + UI.esc(v || '—') + '</span>'; } },
           { key: 'OrderCount', label: 'Orders', align: 'right', format: function (v, r) { return v + (r.LastOrderDate ? '<div class="small text-soft">last ' + F.date(r.LastOrderDate) + '</div>' : ''); } },
@@ -3249,7 +3876,7 @@ window.MLS = (function () {
     var link = mapLink(j), nav = navLink(j);
     var extra = (M.Sms && M.Sms.can(j.Mobile) ? M.Sms.menuHtml({ id: 'job-sms-' + j.Id, items: smsItems(j), cls: 'btn-outline-primary' }) : '') + (M.Auth.can('INCIDENT_CREATE') ? '<button type="button" class="btn btn-sm btn-outline-warning" data-incident="' + UI.esc(j.Id) + '"><i class="fa-solid fa-triangle-exclamation me-1"></i>Report incident</button>' : '');
     return '<div class="job-card' + (j.IsOpen ? '' : ' done') + '" data-job="' + UI.esc(j.Id) + '">' +
-      '<div class="d-flex align-items-center gap-2 flex-wrap"><span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>' + UI.badge(j.Status, statusLabel(j.Status)) + '<span class="small text-soft">' + (j.ScheduledAt ? F.datetime(j.ScheduledAt) : 'any time') + '</span><span class="ms-auto small text-soft">' + UI.esc(j.Id) + '</span></div>' +
+      '<div class="d-flex align-items-center gap-2 flex-wrap"><span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>' + UI.badge(j.Status, statusLabel(j.Status)) + (j._pending ? '<span class="pending-tag" title="Recorded on this phone; the server has not received it yet">not synced</span>' : '') + '<span class="small text-soft">' + (j.ScheduledAt ? F.datetime(j.ScheduledAt) : 'any time') + '</span><span class="ms-auto small text-soft">' + UI.esc(j.Id) + '</span></div>' +
       '<div class="who mt-1">' + UI.esc(j.CustomerName || 'Customer') + '</div>' +
       (j.Address || nav ? '<div class="addr">' + UI.esc(j.Address || 'Pinned location') + (link ? ' <a href="' + link + '" target="_blank" rel="noopener" class="ms-1"><i class="fa-solid fa-map-location-dot"></i> Map</a>' : '') + (nav && j.IsOpen ? ' <a href="' + nav + '" target="_blank" rel="noopener" class="ms-1 fw-bold"><i class="fa-solid fa-diamond-turn-right"></i> Navigate</a>' : '') + (j.Latitude && j.Longitude ? ' <span class="small text-soft" title="Pinned coordinates"><i class="fa-solid fa-location-dot"></i></span>' : '') + '</div>' : '') +
       (j.Phone ? '<div><a href="tel:' + UI.esc(j.Phone) + '"><i class="fa-solid fa-phone me-1"></i>' + UI.esc(j.Phone) + '</a></div>' : '') +
@@ -3559,7 +4186,8 @@ window.MLS = (function () {
     if (!s) { UI.el('tc-unlinked').hidden = false; btn.disabled = true; UI.html('tc-staff', ''); UI.html('tc-state', ''); UI.html('tc-punches', ''); UI.el('tc-schedule').textContent = ''; return; }
     UI.el('tc-unlinked').hidden = true;
     UI.html('tc-staff', '<div class="fw-bold">' + UI.esc(s.staff.FullName) + '</div><div class="small text-soft">' + UI.esc(s.staff.StaffNo) + (s.staff.Position ? ' · ' + UI.esc(s.staff.Position) : '') + ' · ' + UI.esc(s.staff.Branch) + '</div>');
-    UI.html('tc-state', s.state === 'IN' ? UI.badge('IN', 'Clocked in since ' + F.clock(s.lastLog.Time)) + '<div class="small text-soft mt-1">' + F.minutes(s.workedMinutes) + ' worked so far</div>' : UI.badge('OUT', s.lastLog ? 'Clocked out at ' + F.clock(s.lastLog.Time) : 'Not clocked in today') + (s.workedMinutes ? '<div class="small text-soft mt-1">' + F.minutes(s.workedMinutes) + ' worked today</div>' : ''));
+    var pendingTag = s.pending ? '<div class="mt-1"><span class="pending-tag" title="Punched on this device; the server has not received it yet">not synced</span></div>' : '';
+    UI.html('tc-state', (s.state === 'IN' ? UI.badge('IN', 'Clocked in since ' + F.clock(s.lastLog.Time)) + '<div class="small text-soft mt-1">' + F.minutes(s.workedMinutes) + ' worked so far</div>' : UI.badge('OUT', s.lastLog ? 'Clocked out at ' + F.clock(s.lastLog.Time) : 'Not clocked in today') + (s.workedMinutes ? '<div class="small text-soft mt-1">' + F.minutes(s.workedMinutes) + ' worked today</div>' : '')) + pendingTag);
     btn.disabled = s.punchesLeft <= 0; btn.className = 'btn btn-punch ' + (s.state === 'IN' ? 'btn-danger' : 'btn-primary'); btn.innerHTML = '<i class="fa-solid fa-fingerprint me-2"></i>' + (s.state === 'IN' ? 'Clock out' : 'Clock in');
     UI.el('tc-schedule').textContent = s.holiday ? 'Holiday today: ' + s.holiday.Name : (s.schedule ? (s.schedule.IsRestDay ? 'Rest day today' : 'Shift today ' + F.clock(s.schedule.ShiftStart) + ' – ' + F.clock(s.schedule.ShiftEnd) + (s.schedule.BreakMinutes ? ' · ' + s.schedule.BreakMinutes + ' min break' : '')) : 'No schedule for today');
     UI.html('tc-punches', s.logs.map(function (l) { return '<li><span>' + (l.LogType === 'IN' ? '<i class="fa-solid fa-arrow-right-to-bracket text-success me-1"></i>In' : '<i class="fa-solid fa-arrow-right-from-bracket text-danger me-1"></i>Out') + (l.Method === 'ADMIN' ? ' <span class="small text-soft">(corrected)</span>' : '') + '</span><span>' + F.clock(l.Time) + '</span></li>'; }).join(''));
@@ -5206,6 +5834,106 @@ window.MLS = (function () {
 })();
 </script>
 
+        <!-- Mrs Laundry Sys — SyncPage.html: the Sync module (bundle 1.4.0): what this device made offline and where each operation stands — waiting for the server, applied (with the id and number the server gave), refused (with the server's reason) or flagged for review; the queues of other users on this device, which a manager with SYNC_SUBMIT_OTHERS may submit; and the server's own ledger of this user's operations. Nothing here is a guess: every verdict is the one sync.push returned. -->
+<section id="view-sync" class="view" hidden>
+  <div class="view-head">
+    <h2>Sync</h2>
+    <span class="text-soft small" id="sync-scope"></span>
+    <span class="spacer"></span>
+    <button type="button" class="btn btn-primary btn-sm" id="sync-push"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Send now</button>
+    <button type="button" class="btn btn-outline-primary btn-sm" id="sync-refresh"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
+  </div>
+  <div class="card mb-3"><div class="card-body">
+    <div class="sync-stat" id="sync-stat"></div>
+    <p class="small text-soft mb-0 mt-2" id="sync-note">While the server cannot be reached, orders, new customers, payments (cash and e-wallet with a reference), production stages, punches and delivery steps are kept on this device and sent, in order, as soon as it answers. Each one is confirmed only when the server says so; a refused one stays here with the reason until you discard it.</p>
+  </div></div>
+  <div class="card mb-3" id="sync-others-card" hidden>
+    <div class="card-header d-flex align-items-center"><i class="fa-solid fa-users me-2 text-soft"></i>Other users on this device</div>
+    <div class="card-body" id="sync-others"></div>
+  </div>
+  <div class="card mb-3">
+    <div class="card-header d-flex align-items-center flex-wrap gap-2"><i class="fa-solid fa-mobile-screen me-2 text-soft"></i>On this device <span class="small text-soft ms-auto" id="sync-device"></span></div>
+    <div class="card-body"><ul class="sync-list" id="sync-queue"><li class="text-soft small">Loading…</li></ul></div>
+  </div>
+  <div class="card">
+    <div class="card-header d-flex align-items-center flex-wrap gap-2"><i class="fa-solid fa-server me-2 text-soft"></i>On the server <span class="small text-soft" id="sync-ledger-scope"></span>
+      <select class="form-select form-select-sm ms-auto w-auto" id="sync-ledger-who" aria-label="Whose operations" hidden><option value="">Mine</option><option value="ALL">Everyone</option></select>
+      <select class="form-select form-select-sm w-auto" id="sync-ledger-days" aria-label="Days"><option value="1">Today</option><option value="7" selected>7 days</option><option value="30">30 days</option></select>
+    </div>
+    <div class="card-body"><ul class="sync-list" id="sync-ledger"><li class="text-soft small">Loading…</li></ul></div>
+  </div>
+</section>
+<script>
+(function () {
+  'use strict';
+  var M = window.MLS, UI = M.UI, Api = M.Api, Toast = M.Toast, F = M.Formatter;
+  var wired = false;
+  function when(v) { return v ? F.datetime(v) : ''; }
+  function actionLabel(a) { return { 'orders.create': 'Order', 'customers.quickAdd': 'New customer', 'customers.save': 'New customer', 'payments.create': 'Payment', 'production.advance': 'Production stage', 'production.qc': 'Quality check', 'timeclock.punch': 'Time clock', 'deliveries.accept': 'Job accepted', 'deliveries.start': 'Job started', 'deliveries.complete': 'Job completed', 'deliveries.fail': 'Job failed' }[a] || a; }
+  function stateTag(o) {
+    if (o.state === 'PENDING') return '<span class="pending-tag">waiting</span>';
+    if (o.state === 'SENDING') return '<span class="pending-tag"><i class="fa-solid fa-rotate fa-spin"></i> sending</span>';
+    if (o.state === 'REJECTED') return '<span class="pending-tag refused">refused</span>';
+    return UI.badge('APPLIED', o.result && o.result.status === 'DUPLICATE' ? 'Applied earlier' : 'Applied');
+  }
+  function flagsHtml(flags) { return (flags || []).map(function (f) { return '<div class="flag"><i class="fa-solid fa-flag me-1"></i>' + UI.esc(String(f.code).replace(/_/g, ' ').toLowerCase()) + (f.note ? ': ' + UI.esc(f.note) : '') + '</div>'; }).join(''); }
+  function queueItem(o, mine) {
+    var r = o.result || {};
+    return '<li data-op="' + UI.esc(o.opId) + '"><div class="when">' + UI.esc(when(o.clientAt)) + (mine ? '' : '<div>' + UI.esc(o.displayName || o.username || '') + '</div>') + '</div>' +
+      '<div class="what"><span class="fw-bold">' + UI.esc(actionLabel(o.action)) + '</span> · ' + UI.esc(o.label || '') +
+      (o.state === 'APPLIED' && r.resultRef ? '<div class="ref">Server: ' + UI.esc(r.resultRef) + (r.resultId ? ' (' + UI.esc(r.resultId) + ')' : '') + ' · ' + UI.esc(when(r.at)) + '</div>' : '') +
+      (o.state === 'REJECTED' && r.error ? '<div class="why"><i class="fa-solid fa-circle-xmark me-1"></i>' + UI.esc(r.error.message || r.error.code) + ' <span class="text-soft">(' + UI.esc(r.error.code) + ')</span></div>' : '') +
+      (o.state === 'PENDING' && o.attempts ? '<div class="ref">Tried ' + o.attempts + ' time' + (o.attempts === 1 ? '' : 's') + ', last ' + UI.esc(when(o.lastTriedAt)) + '</div>' : '') + flagsHtml(r.flags) + '</div>' +
+      '<div class="text-end">' + stateTag(o) + (o.state === 'REJECTED' ? '<div class="mt-1"><button type="button" class="btn btn-outline-secondary btn-sm" data-discard="' + UI.esc(o.opId) + '">Discard</button></div>' : '') + '</div></li>';
+  }
+  function paintQueue() {
+    var me = M.AppState.me; if (!me || !M.Queue) return Promise.resolve();
+    return M.Queue.list().then(function (q) {
+      var mine = q.filter(function (o) { return o.userId === me.user.Id; }), others = q.filter(function (o) { return o.userId !== me.user.Id && o.state !== 'APPLIED'; });
+      var st = M.Queue.state();
+      UI.html('sync-stat', '<span><b>' + st.pending + '</b> waiting</span><span><b>' + st.rejected + '</b> refused</span><span><b>' + st.flagged + '</b> flagged for review</span>' + (st.lastPush ? '<span class="text-soft">last sent ' + UI.esc(when(st.lastPush)) + '</span>' : '') + (st.lastError ? '<span class="text-danger">' + UI.esc(st.lastError) + (st.nextTryAt ? ' · next try ' + UI.esc(F.time(st.nextTryAt)) : '') + '</span>' : ''));
+      UI.el('sync-push').disabled = !!st.pushing || !st.pending || M.Net.state() !== 'online';
+      UI.html('sync-queue', mine.length ? mine.map(function (o) { return queueItem(o, true); }).join('') : '<li class="text-soft small">Nothing was made offline on this device' + (st.lastPush ? ' since the last send' : '') + '.</li>');
+      UI.el('sync-device').textContent = 'device ' + (M.Queue.deviceCode ? M.Queue.deviceCode() : '') + (M.AppState.device() ? ' · ' + M.AppState.device() : '');
+      var card = UI.el('sync-others-card'); card.hidden = !others.length;
+      if (others.length) {
+        var byUser = {}; others.forEach(function (o) { (byUser[o.userId] = byUser[o.userId] || { name: o.displayName || o.username || o.userId, ops: [] }).ops.push(o); });
+        var can = M.Auth.can('SYNC_SUBMIT_OTHERS');
+        UI.html('sync-others', Object.keys(byUser).map(function (uid) { var g = byUser[uid], waiting = g.ops.filter(function (o) { return o.state === 'PENDING'; }).length; return '<div class="mb-3"><div class="d-flex align-items-center flex-wrap gap-2 mb-1"><span class="fw-bold">' + UI.esc(g.name) + '</span><span class="small text-soft">' + waiting + ' waiting · ' + g.ops.filter(function (o) { return o.state === 'REJECTED'; }).length + ' refused</span>' + (can && waiting ? '<button type="button" class="btn btn-outline-primary btn-sm ms-auto" data-submit="' + UI.esc(uid) + '">Submit ' + UI.esc(g.name) + '\'s ' + waiting + ' now</button>' : (waiting && !can ? '<span class="small text-soft ms-auto">sent when ' + UI.esc(g.name) + ' signs in here, or by a manager</span>' : '')) + '</div><ul class="sync-list">' + g.ops.map(function (o) { return queueItem(o, false); }).join('') + '</ul></div>'; }).join(''));
+        UI.el('sync-others').querySelectorAll('[data-submit]').forEach(function (b) { b.onclick = function () { var uid = b.getAttribute('data-submit'); M.Modal.confirm({ title: 'Submit another user\'s operations', body: 'Their operations are applied under their own name and permissions; the server records that you submitted them.', okText: 'Submit' }).then(function (yes) { if (yes) M.Queue.submitOthers(uid).then(function () { paintQueue(); paintLedger(); }); }); }; });
+      }
+      document.querySelectorAll('#view-sync [data-discard]').forEach(function (b) { b.onclick = function () { var id = b.getAttribute('data-discard'); M.Modal.confirm({ title: 'Discard this operation', body: 'It was refused by the server and will be removed from this device. Nothing changes on the server; redo it there if it is still needed.', okText: 'Discard', danger: true }).then(function (yes) { if (yes) M.Queue.discard(id).then(paintQueue).catch(function (e) { Toast.danger(UI.error(e)); }); }); }; });
+    });
+  }
+  function ledgerItem(r) {
+    var ok = r.Status === 'APPLIED';
+    return '<li><div class="when">' + UI.esc(when(r.ClientAt || r.ReceivedAt)) + '<div>' + UI.esc(r.User || '') + (r.SubmittedBy && r.SubmittedBy !== r.User ? ' <span class="text-soft">via ' + UI.esc(r.SubmittedBy) + '</span>' : '') + '</div></div>' +
+      '<div class="what"><span class="fw-bold">' + UI.esc(actionLabel(r.Action)) + '</span>' + (r.ResultRef ? ' · ' + UI.esc(r.ResultRef) : '') + (r.ProvisionalRef ? ' <span class="text-soft">(' + UI.esc(r.ProvisionalRef) + ')</span>' : '') +
+      (r.DeviceLabel ? '<div class="ref">' + UI.esc(r.DeviceLabel) + ' · received ' + UI.esc(when(r.ReceivedAt)) + '</div>' : '') +
+      (!ok && r.ErrorMessage ? '<div class="why">' + UI.esc(r.ErrorMessage) + ' <span class="text-soft">(' + UI.esc(r.ErrorCode) + ')</span></div>' : '') + flagsHtml(r.Flags) + '</div>' +
+      '<div class="text-end">' + UI.badge(r.Status, r.Status === 'APPLIED' ? 'Applied' : r.Status === 'REJECTED' ? 'Refused' : 'Pending') + '</div></li>';
+  }
+  function paintLedger() {
+    var who = UI.el('sync-ledger-who').value, days = Number(UI.el('sync-ledger-days').value) || 7;
+    return Api.call('sync.status', { userId: who || undefined, days: days }, { noOffline: true }).then(function (r) {
+      UI.el('sync-ledger-who').hidden = !r.canSeeOthers;
+      UI.el('sync-ledger-scope').textContent = r.total + ' operation' + (r.total === 1 ? '' : 's') + ' · ' + (r.counts.APPLIED || 0) + ' applied, ' + (r.counts.REJECTED || 0) + ' refused, ' + (r.counts.flagged || 0) + ' flagged';
+      UI.html('sync-ledger', r.rows.length ? r.rows.map(ledgerItem).join('') : '<li class="text-soft small">The server has received nothing made offline ' + (who === 'ALL' ? 'by anyone' : 'by you') + ' in the last ' + days + ' day' + (days === 1 ? '' : 's') + '.</li>');
+    }).catch(function (e) { UI.html('sync-ledger', '<li class="text-soft small">' + (e && (e.offline || e.code === 'NETWORK' || e.code === 'TIMEOUT') ? 'The server\'s ledger needs a connection.' : UI.esc(UI.error(e))) + '</li>'); UI.el('sync-ledger-scope').textContent = ''; });
+  }
+  function load() { UI.el('sync-scope').textContent = M.Net.state() === 'online' ? 'connected' : 'no connection — nothing can be sent until it returns'; return Promise.all([paintQueue(), paintLedger()]); }
+  function wire() {
+    if (wired) return; wired = true;
+    UI.el('sync-refresh').onclick = load;
+    UI.el('sync-push').onclick = function () { if (!M.Queue) return; UI.el('sync-push').disabled = true; M.Queue.push({ manual: true }).then(function () { load(); }); };
+    UI.el('sync-ledger-who').onchange = paintLedger; UI.el('sync-ledger-days').onchange = paintLedger;
+    if (M.Queue) M.Queue.onChange(function () { if (M.Router.current() === 'sync') paintQueue(); });
+    M.Net.onChange(function () { if (M.Router.current() === 'sync') load(); });
+  }
+  M.Router.register('sync', { title: 'Sync', render: function () { wire(); load(); }, refresh: load });
+})();
+</script>
+
       </main>
     </div>
   </div>
@@ -5249,6 +5977,7 @@ window.MLS = (function () {
         <div class="mb-3" id="device-api-row" hidden><label class="form-label" for="device-api">Web-app address</label><input class="form-control" id="device-api" name="apiUrl" inputmode="url" autocapitalize="none" spellcheck="false" hidden><div class="form-text">The Apps Script deployment this device talks to; a new address is checked before it is saved.</div></div>
         <p class="small text-soft mb-2" id="device-about"></p>
         <p class="small text-soft mb-2" id="device-copy"></p>
+        <div class="form-check mb-3" id="device-notify-row" hidden><input class="form-check-input" type="checkbox" id="device-notify"><label class="form-check-label small" for="device-notify">Notify me when a sync needs attention (an operation refused or flagged for review) while the app is in the background — never for a success</label></div>
         <div class="d-flex flex-wrap gap-2">
           <button type="button" class="btn btn-outline-primary btn-sm" id="device-update" hidden><i class="fa-solid fa-arrow-rotate-right me-1"></i>Update now</button>
           <button type="button" class="btn btn-outline-secondary btn-sm" id="device-refresh"><i class="fa-solid fa-cloud-arrow-down me-1"></i>Refresh saved data</button>
