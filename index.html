@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'ddb76e0be7', version: '1.4.0' };</script>
+  <script>window.MLS_PWA = { build: '9b4d9173ec', version: '1.5.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -415,6 +415,9 @@
   .sync-list .flag { font-size: .8rem; color: #92400e; margin-top: .15rem; }
   .sync-list .ref { font-size: .8rem; color: var(--mls-ink-soft); margin-top: .1rem; }
   .sync-stat { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; font-size: .9rem; }
+  .review-list li { background: #fffdf5; border-radius: 10px; padding: .6rem .7rem; margin-bottom: .4rem; border: 1px solid #fde68a; }
+  .review-list li:last-child { border-bottom: 1px solid #fde68a; }
+  .review-list .what a { font-weight: 600; }
   .sync-stat b { font-size: 1.2rem; }
   .receipt-paper .provisional { border: 2px dashed #92400e; color: #92400e; padding: .35rem .5rem; margin: .4rem 0; text-align: center; font-weight: 700; letter-spacing: .04em; }
   .receipt-paper .provisional small { display: block; font-weight: 400; letter-spacing: 0; margin-top: .15rem; }
@@ -582,7 +585,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.4.0';
+  var VERSION = '1.5.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -1415,7 +1418,7 @@ window.MLS = (function () {
         if (!cat || !Array.isArray(cat.rows) || !cat.rows.length || !cat.rows[0].Prices) return null;
         var services = {}, prices = []; cat.rows.forEach(function (s) { services[s.Id] = s; (s.Prices || []).forEach(function (p) { prices.push(p); }); });
         var products = {}; ((items && (items.rows || items)) || []).forEach(function (i) { products[i.Id] = i; });
-        return { services: services, prices: prices, items: products, promos: cat.promos || [], settings: cat.pricing || om.pricing || {}, branch: cat.branch, allowNegativeStock: !!om.allowNegativeStock };
+        return { services: services, prices: prices, items: products, promos: cat.promos || [], settings: cat.pricing || om.pricing || {}, branch: cat.branch, allowNegativeStock: !!om.allowNegativeStock, stockAsOf: r[1] && r[1].asOf ? r[1].asOf : null };
       });
     }
     function customerType(customerId) { if (!customerId) return Promise.resolve('REGULAR'); return Store.get('customers', String(customerId)).then(function (c) { return c ? c.CustomerType || 'REGULAR' : 'REGULAR'; }).catch(function () { return 'REGULAR'; }); }
@@ -1465,8 +1468,10 @@ window.MLS = (function () {
     /** orders.create: the quote (shared core), a provisional reference, a temporary id, the order view the pages expect. */
     function ordersCreate(p, at) {
       var m = me();
-      return Promise.all([Quote.price(p), Answers.ordersMeta(), p.customerId ? Store.get('customers', String(p.customerId)) : null, nextProvisionalRef()]).then(function (r) {
-        var q = r[0], om = r[1], customer = r[2], ref = r[3];
+      return Promise.all([Quote.price(p), Answers.ordersMeta(), p.customerId ? Store.get('customers', String(p.customerId)) : null, nextProvisionalRef(), Quote.catalogue()]).then(function (r) {
+        var q = r[0], om = r[1], customer = r[2], ref = r[3], cat = r[4];
+        // what the device believed the stock was (and when) for the products sold: the server records it beside its own figure if the sale drives stock below zero
+        var stockSeen = null; q.lines.forEach(function (l) { if (l.LineType !== 'PRODUCT' || !cat || !cat.items[l.ItemId]) return; stockSeen = stockSeen || { items: {}, asOf: cat.stockAsOf }; stockSeen.items[l.ItemId] = Number(cat.items[l.ItemId].QtyOnHand) || 0; });
         if (p.customerId && !customer) throw fail('NOT_FOUND', 'Record not found');
         if (customer && customer.Status !== 'ACTIVE') throw fail('VALIDATION', 'Customer ' + customer.FullName + ' is inactive', { customerId: 'inactive' });
         checkMethod(p.payment, om);
@@ -1480,9 +1485,11 @@ window.MLS = (function () {
           Payments: [], Timeline: [activity('CREATED', '', 'RECEIVED', 'Order ' + ref + ' taken offline on this device · ' + q.lines.length + ' line' + (q.lines.length === 1 ? '' : 's') + ' · ' + F.peso(q.total) + (q.isExpress ? ' · express' : ''), at)], _pending: true };
         if (p.payment && Number(p.payment.amount) > 0) { var pay = paymentRow(o, { amount: Math.min(Number(p.payment.amount), Number(q.total)), method: p.payment.method, referenceNo: p.payment.referenceNo }, at); o.Payments.push(pay); recompute(o); o.Timeline.push(activity('PAYMENT', '', '', 'Payment of ' + F.peso(pay.Amount) + ' by ' + pay.Method.replace(/_/g, ' ').toLowerCase() + (pay.ReferenceNo ? ' (ref ' + pay.ReferenceNo + ')' : '') + ' · provisional until synced', at)); }
         var custP = customer ? Store.put('customers', customer.Id, Object.assign({}, customer, { OrderCount: (Number(customer.OrderCount) || 0) + 1, Balance: Math.round(((Number(customer.Balance) || 0) + o.BalanceAmount) * 100) / 100, LastOrderDate: o.OrderDate })) : Promise.resolve();
+        // the sellable catalogue the device holds: a product sold offline leaves its shelf on this device too, so a second sale here is refused as the server would refuse it
+        var stockP = stockSeen ? Answers.snapshot('inventory.all', { sellable: true, type: 'PRODUCT' }).then(function (hit) { if (!hit || !hit.data) return; var rows = hit.data.rows || hit.data; q.lines.forEach(function (l) { if (l.LineType !== 'PRODUCT') return; var it = rows.filter(function (x) { return x.Id === l.ItemId; })[0]; if (it) it.QtyOnHand = (Number(it.QtyOnHand) || 0) - Number(l.Qty); }); return Store.put('snapshots', payloadKey('inventory.all', { sellable: true, type: 'PRODUCT' }), hit); }).catch(function () { /* best effort */ }) : Promise.resolve();
         // the production board the device holds gets the new order in its queue, as the server's board would on the next load
         var boardP = Answers.snapshot('production.board', {}).then(function (hit) { if (!hit || !hit.data || !hit.data.columns || !hit.data.columns.QUEUE) return; var b = hit.data; b.columns.QUEUE.push({ Id: id, OrderNo: ref, CustomerName: customerName, CustomerPhone: customerPhone, Status: 'RECEIVED', StatusLabel: o.StatusLabel, IsExpress: o.IsExpress, BagCount: bags, TotalWeightKg: q.totalWeightKg, Lines: q.lines.filter(function (l) { return l.LineType === 'SERVICE'; }).map(function (l) { return (Number(l.WeightKg) > 0 ? Number(l.WeightKg) + ' kg' : Number(l.Qty) + ' ' + (l.Unit || 'pc')) + ' ' + l.Description; }), DueAt: q.dueAt, OrderDate: o.OrderDate, ServiceType: serviceType, BranchId: m.activeBranch, Overdue: false, MachineNo: '', StageStartedAt: null, StageBy: '', MinutesInStage: 0, _pending: true }); b.counts = Object.keys(b.columns).reduce(function (c, k) { c[k] = b.columns[k].length; return c; }, {}); return Store.put('snapshots', payloadKey('production.board', {}), Object.assign({}, hit, { data: b })); }).catch(function () { /* no board on this device */ });
-        return Promise.all([Store.put('orders', id, o), custP, boardP]).then(function () { return { result: o, tempId: id, provisionalRef: ref, quote: q, label: 'Order ' + ref + ' · ' + customerName + ' · ' + F.peso(q.total) + (o.Payments.length ? ' · ' + F.peso(o.PaidAmount) + ' ' + o.Payments[0].Method.replace(/_/g, ' ').toLowerCase() : ' · pay later') }; });
+        return Promise.all([Store.put('orders', id, o), custP, boardP, stockP]).then(function () { return { result: o, tempId: id, provisionalRef: ref, quote: q, stockSeen: stockSeen, label: 'Order ' + ref + ' · ' + customerName + ' · ' + F.peso(q.total) + (o.Payments.length ? ' · ' + F.peso(o.PaidAmount) + ' ' + o.Payments[0].Method.replace(/_/g, ' ').toLowerCase() : ' · pay later') }; });
       });
     }
     function customerView(p, at) {
@@ -1672,6 +1679,7 @@ window.MLS = (function () {
           var op = { opId: UI.uuid(), seq: n, userId: me.user.Id, username: me.user.Username, displayName: me.user.DisplayName, branchId: me.activeBranch, action: action, payload: clone(payload || {}), clientAt: at, tempId: local.tempId || '', provisionalRef: local.provisionalRef || '', label: local.label || action, state: 'PENDING', attempts: 0, createdAt: at, appVersion: M.version };
           if (local.quote) op.payload.quote = clone(local.quote);
           if (local.provisionalRef) op.payload.provisionalRef = local.provisionalRef;
+          if (local.stockSeen) op.payload.stockSeen = clone(local.stockSeen);
           return Store.put('meta', 'queueSeq', n).then(function () { return Store.put('queue', op.opId, op); }).then(function () { recount(); schedule(1500); return local.result; });
         });
       });
@@ -1711,7 +1719,7 @@ window.MLS = (function () {
                 var v = verdicts[o.opId];
                 if (!v) { o.state = 'PENDING'; return; }  // not reached within the server's budget: it goes again
                 summary.sent++;
-                o.result = { status: v.status, resultId: v.resultId || '', resultRef: v.resultRef || '', flags: v.flags || [], error: v.error || null, at: new Date().toISOString() };
+                o.result = { status: v.status, resultId: v.resultId || '', resultRef: v.resultRef || '', flags: v.flags || [], conflicts: v.conflicts || [], error: v.error || null, at: new Date().toISOString() };
                 if (v.status === 'APPLIED' || v.status === 'DUPLICATE') { o.state = 'APPLIED'; if (v.status === 'APPLIED') summary.applied++; else summary.duplicate++; if (v.flags && v.flags.length) summary.flagged++; if (o.tempId && v.resultId) map[o.tempId] = v.resultId; if (v.data) confirms.push(Local.confirm(o, v)); summary.labels.push(o.label + (v.resultRef ? ' → ' + v.resultRef : '')); }
                 else { o.state = 'REJECTED'; summary.rejected++; summary.labels.push(o.label + ' ✗ ' + (v.error ? v.error.message : 'refused')); }
               });
@@ -2014,6 +2022,7 @@ window.MLS = (function () {
     if (inv) out.push({ key: 'lowStock', label: 'Low stock items', icon: 'fa-boxes-stacked', tone: 'warn', value: n(inv.lowStock), sub: plural(inv.tracked, 'stock level') + ' tracked', href: '#/inventory' });
     if (dl) out.push({ key: 'deliveriesOpen', label: 'Deliveries open', icon: 'fa-motorcycle', tone: 'info', value: n(dl.open), sub: dl.unassigned + ' unassigned · ' + dl.today + ' today', href: '#/dispatch' });
     if (c) out.push({ key: 'cashier', label: 'Cashier status', icon: 'fa-cash-register', text: true, value: c.eodOpen ? c.eodOpen + ' open' : (c.eodSubmitted ? c.eodSubmitted + ' submitted' : (c.eodApproved ? 'closed' : 'not started')), sub: 'end of day for ' + F.date(d.date), href: '#/eod' });
+    if (d.syncReview) out.push({ key: 'syncReview', label: 'Sync to review', icon: 'fa-flag', tone: d.syncReview.open > 0 ? 'warn' : '', value: n(d.syncReview.open), sub: d.syncReview.open > 0 ? 'accepted from devices, needs a look' : 'nothing flagged', href: '#/sync' });
     if (d.incidents) out.push({ key: 'incidents', label: 'Open incidents', icon: 'fa-triangle-exclamation', tone: d.incidents.open + d.incidents.inReview > 0 ? 'warn' : '', value: n(d.incidents.open + d.incidents.inReview), sub: d.incidents.inReview + ' in review · ' + d.incidents.today + ' today', href: '#/incidents' });
     if (d.followups) out.push({ key: 'followups', label: 'To follow up', icon: 'fa-comment-sms', tone: d.followups.unclaimed + d.followups.balances > 0 ? 'warn' : '', value: n(d.followups.unclaimed + d.followups.balances), sub: d.followups.unclaimed + ' unclaimed · ' + d.followups.balances + ' with a balance' });
     return out;
@@ -2607,7 +2616,7 @@ window.MLS = (function () {
     UI.html('order-modal-body', '<div class="detail-grid mb-3">' + head.map(function (h) { return '<div><div class="k">' + h[0] + '</div><div class="v">' + h[1] + '</div></div>'; }).join('') + '</div>' +
       '<div class="table-wrap"><table class="table table-cards mb-0"><thead><tr><th>Item</th><th class="text-end">Qty</th><th class="text-end">Unit price</th><th class="text-end">Line total</th></tr></thead><tbody>' + lines + '</tbody></table></div>' +
       '<div class="row mt-3"><div class="col-md-7"><h6 class="fw-bold">Payments</h6><div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>When</th><th>Type</th><th>Method</th><th>By</th><th class="text-end">Amount</th><th></th></tr></thead><tbody>' + pays + '</tbody></table></div></div>' +
-      '<div class="col-md-5"><div class="totals mt-2"><span>Subtotal</span><span class="money">' + F.peso(o.Subtotal) + '</span>' + (Number(o.DiscountAmount) ? '<span>Discount' + (o.DiscountReason ? ' <span class="text-soft small">' + UI.esc(o.DiscountReason) + '</span>' : '') + '</span><span class="money">-' + F.peso(o.DiscountAmount) + '</span>' : '') + (Number(o.DeliveryFee) ? '<span>Delivery fee</span><span class="money">' + F.peso(o.DeliveryFee) + '</span>' : '') + (Number(o.OtherCharges) ? '<span>Other charges</span><span class="money">' + F.peso(o.OtherCharges) + '</span>' : '') + '<span class="fw-bold">Total</span><span class="grand money">' + F.peso(o.OrderTotal) + '</span><span>Paid</span><span class="money">' + F.peso(o.PaidAmount) + '</span><span class="fw-bold">Balance</span><span class="money fw-bold ' + (Number(o.BalanceAmount) > 0 ? 'text-danger' : 'text-success') + '">' + F.peso(o.BalanceAmount) + '</span></div></div></div>' +
+      '<div class="col-md-5"><div class="totals mt-2"><span>Subtotal</span><span class="money">' + F.peso(o.Subtotal) + '</span>' + (Number(o.DiscountAmount) ? '<span>Discount' + (o.DiscountReason ? ' <span class="text-soft small">' + UI.esc(o.DiscountReason) + '</span>' : '') + '</span><span class="money">-' + F.peso(o.DiscountAmount) + '</span>' : '') + (Number(o.DeliveryFee) ? '<span>Delivery fee</span><span class="money">' + F.peso(o.DeliveryFee) + '</span>' : '') + (Number(o.OtherCharges) ? '<span>Other charges</span><span class="money">' + F.peso(o.OtherCharges) + '</span>' : '') + '<span class="fw-bold">Total</span><span class="grand money">' + F.peso(o.OrderTotal) + '</span><span>Paid</span><span class="money">' + F.peso(o.PaidAmount) + '</span><span class="fw-bold">' + (Number(o.BalanceAmount) < 0 ? 'Overpaid' : 'Balance') + '</span><span class="money fw-bold ' + (Number(o.BalanceAmount) > 0 ? 'text-danger' : (Number(o.BalanceAmount) < 0 ? 'text-warning-emphasis' : 'text-success')) + '"' + (Number(o.BalanceAmount) < 0 ? ' title="More was paid than the order total — a payment taken offline on another device; refund the excess (Sync → Needs review)"' : '') + '>' + F.peso(Math.abs(Number(o.BalanceAmount))) + '</span></div></div></div>' +
       (o.Notes ? '<div class="alert alert-light border small mt-3 mb-0"><i class="fa-regular fa-note-sticky me-1"></i>' + UI.esc(o.Notes) + '</div>' : '') +
       '<h6 class="fw-bold mt-3">Timeline</h6><ul class="timeline">' + tl + '</ul>');
     UI.el('order-modal-body').querySelectorAll('[data-void]').forEach(function (b) { b.onclick = function () { voidPayment(b.getAttribute('data-void')); }; });
@@ -2659,7 +2668,7 @@ window.MLS = (function () {
           { key: 'OrderDate', label: 'Date', format: function (v, row) { return F.date(v) + (row.DueAt ? '<div class="small text-soft">due ' + F.datetime(row.DueAt) + '</div>' : ''); } },
           { key: 'CustomerName', label: 'Customer', format: function (v, row) { return UI.esc(v) + (row.CustomerPhone ? '<div class="small text-soft">' + UI.esc(row.CustomerPhone) + '</div>' : ''); } },
           { key: 'OrderTotal', label: 'Total', align: 'right', format: function (v) { return '<span class="money">' + F.peso(v) + '</span>'; } },
-          { key: 'BalanceAmount', label: 'Balance', align: 'right', format: function (v) { return '<span class="money ' + (Number(v) > 0 ? 'text-danger fw-bold' : 'text-success') + '">' + F.peso(v) + '</span>'; } },
+          { key: 'BalanceAmount', label: 'Balance', align: 'right', format: function (v) { return Number(v) < 0 ? '<span class="money text-warning-emphasis fw-bold" title="Overpaid — refund the excess (Sync → Needs review)">' + F.peso(Math.abs(Number(v))) + ' over</span>' : '<span class="money ' + (Number(v) > 0 ? 'text-danger fw-bold' : 'text-success') + '">' + F.peso(v) + '</span>'; } },
           { key: 'Status', label: 'Status', format: function (v, row) { return UI.badge(v, row.StatusLabel); } }
         ],
         rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-basket-shopping', title: state.search || state.from || state.to ? 'No orders match' : (state.status === 'OPEN' ? 'No open orders' : 'No orders here yet'), hint: state.search || state.from || state.to ? 'Change the search or the dates.' : 'Orders start at the point of sale and move through production to pickup or delivery.', action: !(state.search || state.from || state.to) && M.Auth.can('POS_CREATE') ? { label: 'Start an order', icon: 'fa-cash-register', href: '#/pos' } : null },
@@ -3254,6 +3263,7 @@ window.MLS = (function () {
     Api.call('inventory.move', d, { busy: true }).then(function (r) {
       Toast.success(F.status(r.movement.MovementType) + ' posted: ' + r.item.Name + ' now ' + F.qty(r.movement.QtyAfter, r.item.Unit) + ' at ' + UI.branchName(r.movement.BranchId));
       moveRequestId = null; M.Modal.closeThen('move-modal', function () { reload(); if (current && current.Id === r.item.Id) open(r.item.Id); });
+      try { document.dispatchEvent(new CustomEvent('mls:inventory-moved', { detail: r })); } catch (x) { /* the review page listens; nothing else depends on it */ }
     }).catch(function (e) { if (e.fields) Form.errors(f, e.fields, e.message); Toast.danger(UI.error(e)); });
   }
 
@@ -4970,6 +4980,7 @@ window.MLS = (function () {
     <select class="form-select" id="eod-branch" aria-label="Branch" hidden></select>
     <span class="small text-soft" id="eod-note"></span>
   </div>
+  <div id="eod-pending-host"></div>
   <div id="eod-banner"></div>
   <div class="eod-layout">
     <div>
@@ -5017,6 +5028,7 @@ window.MLS = (function () {
 
   // ---------------------------------------------------------------- load
   function load() {
+    paintPending();
     UI.el('eod-figures').innerHTML = '<div class="text-soft small">Loading…</div>';
     return Api.call('eod.preview', { date: state.date, branchId: state.branchId || undefined }).then(function (d) {
       data = d; counts = {}; typedActual = null;
@@ -5025,6 +5037,9 @@ window.MLS = (function () {
     }).catch(function (e) { data = null; UI.el('eod-figures').innerHTML = UI.empty({ icon: 'fa-vault', title: 'The sheet could not be computed', hint: UI.error(e), compact: true }); UI.el('eod-count').innerHTML = ''; UI.el('eod-banner').innerHTML = ''; UI.el('eod-rows').innerHTML = ''; UI.el('eod-print').hidden = true; });
   }
   function paint() { paintBanner(); paintFigures(); paintRows(); paintCount(); UI.el('eod-print').hidden = !data; UI.el('eod-scope').textContent = UI.branchName(data.branchId) + ' · ' + F.date(data.date); }
+  /** Operations made on this device that have not reached the server (bundle 1.5.0): the sheet cannot be closed over money the server has not seen. */
+  function pendingHere() { return M.Queue ? M.Queue.state().pending : 0; }
+  function paintPending() { var n = pendingHere(); UI.html('eod-pending-host', !n ? '' : '<div class="alert alert-warning py-2 small mb-2" id="eod-pending"><i class="fa-solid fa-cloud-arrow-up me-1"></i>' + n + ' operation' + (n === 1 ? '' : 's') + ' made on this device (orders, payments, punches…) ' + (n === 1 ? 'has' : 'have') + ' not reached the server yet. The end of day counts only what the server holds: submit it after they are sent (' + (M.Net.state() === 'online' ? 'they are being sent now' : 'the connection is down') + ' — see Sync).</div>'); }
 
   function paintBanner() {
     var r = report(), cls = { OPEN: 'range', SUBMITTED: '', APPROVED: 'finalized', REJECTED: 'reopened' }[r ? r.Status : ''] || 'range';
@@ -5045,6 +5060,7 @@ window.MLS = (function () {
     var nonCash = f.byMethod.filter(function (m) { return m.Method !== 'CASH' && (m.Count > 0 || cents(m.Amount)); });
     html += '<h6 class="mt-3 mb-1 small text-uppercase text-soft">Non-cash collections</h6>' + (nonCash.length ? nonCash.map(function (m) { return line(methodLabel(m.Method) + ' <span class="small text-soft">× ' + m.Count + '</span>', F.peso(m.Amount)); }).join('') : '<div class="small text-soft">None</div>') + line('Total non-cash', '<strong>' + F.peso(f.nonCashSales) + '</strong>', 'total') + (cents(f.nonCashExpenses) ? line('Non-cash expenses', F.peso(f.nonCashExpenses), '', 'paid by GCash or bank; not in the drawer') : '');
     html += '<div class="sum-grid mt-3">' + [['Orders today', f.orders.count], ['Sales today', F.peso(f.orders.sales)], ['Refunds', f.refunds.count + (f.refunds.count ? ' · ' + F.peso(f.refunds.amount) : '')], ['Carry-over rows', f.carryOver.count]].map(function (t) { return '<div class="tile"><div class="k">' + t[0] + '</div><div class="v">' + t[1] + '</div></div>'; }).join('') + '</div>';
+    if (f.offline && f.offline.count) html += '<div class="alert alert-info py-2 small mb-2"><i class="fa-solid fa-mobile-screen me-1"></i>' + f.offline.count + ' payment' + (f.offline.count === 1 ? '' : 's') + ' (' + F.peso(f.offline.amount) + ') ' + (f.offline.count === 1 ? 'was' : 'were') + ' collected on a device while it had no connection and accepted since; ' + (f.offline.count === 1 ? 'it is' : 'they are') + ' marked in the rows below.</div>';
     if (f.carryOver.count) html += '<div class="alert alert-warning py-2 small mb-2"><i class="fa-solid fa-circle-info me-1"></i>' + f.carryOver.count + ' row' + (f.carryOver.count === 1 ? '' : 's') + ' from earlier shifts ' + (f.carryOver.since ? 'after the last close on ' + F.date(f.carryOver.since) : '') + ' never made it onto a report; they are included here so no cash goes unreconciled.</div>';
     if (f.byCashier.length) html += '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Handled by</th><th class="text-end">Cash</th><th class="text-end">Non-cash</th><th class="text-end">Rows</th></tr></thead><tbody>' + f.byCashier.map(function (c) { return '<tr><td>' + UI.esc(c.Cashier) + '</td><td class="text-end money">' + F.peso(c.Cash) + '</td><td class="text-end money">' + F.peso(c.NonCash) + '</td><td class="text-end">' + c.Count + '</td></tr>'; }).join('') + '</tbody></table></div>';
     UI.html('eod-figures', html);
@@ -5058,7 +5074,7 @@ window.MLS = (function () {
       M.Table.render(UI.el('eod-rows'), { columns: [
         { key: 'OrderNo', label: 'Order', format: function (v, p) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(p.CustomerName || '') + (p.ShiftDate !== data.date ? ' · shift ' + F.date(p.ShiftDate) : '') + '</div>'; } },
         { key: 'Type', label: 'Type', format: function (v) { return v === 'REFUND' ? '<span class="status-badge s-rejected">Refund</span>' : '<span class="status-badge s-paid">Payment</span>'; } },
-        { key: 'Method', label: 'Method', format: function (v, p) { return methodLabel(v) + (p.ReferenceNo ? '<div class="small text-soft">ref ' + UI.esc(p.ReferenceNo) + '</div>' : ''); } },
+        { key: 'Method', label: 'Method', format: function (v, p) { return methodLabel(v) + (p.OfflineAt ? ' <span class="pending-tag" title="Collected on a device while it had no connection; accepted at ' + UI.esc(F.datetime(p.CreatedAt)) + '">offline</span>' : '') + (p.ReferenceNo ? '<div class="small text-soft">ref ' + UI.esc(p.ReferenceNo) + '</div>' : ''); } },
         { key: 'Amount', label: 'Amount', align: 'right', format: function (v, p) { return '<span class="money fw-bold' + (p.Type === 'REFUND' ? ' text-danger' : '') + '">' + (p.Type === 'REFUND' ? '−' : '') + F.peso(v) + '</span>'; } },
         { key: 'Cashier', label: 'By', format: function (v, p) { return UI.esc(v || '—') + '<div class="small text-soft">' + F.time(p.CreatedAt) + '</div>'; } }
       ], rows: f.payments, empty: { icon: 'fa-coins', title: 'No payments on this report', compact: true }, onRow: function (p) { if (M.OrdersUI && M.Auth.can('ORDER_VIEW')) M.OrdersUI.openOrder(p.OrderId); } });
@@ -5082,7 +5098,7 @@ window.MLS = (function () {
     html += '<div class="eod-line total mt-3"><span>Counted</span><span class="money" id="eod-counted">' + F.peso(pesos(countedCents())) + '</span></div><div class="eod-line"><span>Expected</span><span class="money" id="eod-expected2">' + F.peso(pesos(expectedCents())) + '</span></div><div class="eod-line"><span>Variance</span><span id="eod-variance"></span></div>';
     html += '<label class="form-label mt-3" for="eod-notes">Notes' + (edit ? ' <span class="fw-normal text-soft">(required when the variance is beyond ' + F.peso(data.tolerance) + ')</span>' : '') + '</label>' + (edit ? '<textarea class="form-control" id="eod-notes" rows="2" maxlength="500">' + UI.esc(r ? r.Notes : '') + '</textarea>' : '<div class="small">' + (r && r.Notes ? UI.esc(r.Notes) : '<span class="text-soft">—</span>') + '</div>');
     var acts = '';
-    if (edit) acts += '<button type="button" class="btn btn-outline-primary" id="eod-save"><i class="fa-solid fa-floppy-disk me-1"></i>Save draft</button><button type="button" class="btn btn-primary" id="eod-submit"><i class="fa-solid fa-paper-plane me-1"></i>Submit for approval</button>';
+    if (edit) acts += '<button type="button" class="btn btn-outline-primary" id="eod-save"><i class="fa-solid fa-floppy-disk me-1"></i>Save draft</button><button type="button" class="btn btn-primary" id="eod-submit"' + (pendingHere() ? ' disabled title="Operations made on this device have not reached the server yet"' : '') + '><i class="fa-solid fa-paper-plane me-1"></i>Submit for approval</button>' + (pendingHere() ? '<span class="small text-warning-emphasis">Submitting waits for the ' + pendingHere() + ' operation' + (pendingHere() === 1 ? '' : 's') + ' this device still has to send.</span>' : '');
     if (r && r.canApprove) acts += '<button type="button" class="btn btn-success" id="eod-approve"><i class="fa-solid fa-check me-1"></i>Approve</button>';
     if (r && r.canReject) acts += '<button type="button" class="btn btn-outline-danger" id="eod-reject"><i class="fa-solid fa-rotate-left me-1"></i>' + (r.Status === 'APPROVED' ? 'Reopen (reject)' : 'Reject') + '</button>';
     if (!acts && !frozen() && !data.canCreate) acts = '<span class="small text-soft">You can view this sheet; submitting it needs the EOD_CREATE permission.</span>';
@@ -5176,6 +5192,8 @@ window.MLS = (function () {
     UI.el('eod-refresh').onclick = function () { load(); }; UI.el('eod-history').onclick = openHistory; UI.el('eod-print').onclick = print;
     UI.el('eod-row-tabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { state.rowTab = b.getAttribute('data-tab'); if (data) paintRows(); }; });
     ['from', 'to', 'status'].forEach(function (k) { UI.el('eod-h-' + k).onchange = function () { state.hist[k] = this.value; state.hist.page = 1; loadHistory(); }; });
+    // when the device's queue drains (or grows) while the sheet is open, the notice and the submit button follow
+    if (M.Queue) M.Queue.onChange(function () { if (M.Router.current() !== 'eod') return; paintPending(); if (data) paintCount(); });
   }
   M.Router.register('eod', {
     title: 'End of Day',
@@ -5834,7 +5852,7 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — SyncPage.html: the Sync module (bundle 1.4.0): what this device made offline and where each operation stands — waiting for the server, applied (with the id and number the server gave), refused (with the server's reason) or flagged for review; the queues of other users on this device, which a manager with SYNC_SUBMIT_OTHERS may submit; and the server's own ledger of this user's operations. Nothing here is a guess: every verdict is the one sync.push returned. -->
+        <!-- Mrs Laundry Sys — SyncPage.html: the Sync module (bundles 1.4.0 and 1.5.0): what this device made offline and where each operation stands — waiting for the server, applied (with the id and number the server gave), refused (with the server's reason) or flagged for review; the queues of other users on this device, which a manager with SYNC_SUBMIT_OTHERS may submit; the server's own ledger of this user's operations; and, for SYNC_REVIEW, the review: what the server accepted from a device with a flag a person must look at (stock below zero, a payment beyond the balance, a merged customer, a price or promo that changed, a payment on a closed day), settled as it is, reversed through the normal audited refund or stock movement, or dismissed with a note. Nothing here is a guess: every verdict is the one the server returned. -->
 <section id="view-sync" class="view" hidden>
   <div class="view-head">
     <h2>Sync</h2>
@@ -5847,6 +5865,12 @@ window.MLS = (function () {
     <div class="sync-stat" id="sync-stat"></div>
     <p class="small text-soft mb-0 mt-2" id="sync-note">While the server cannot be reached, orders, new customers, payments (cash and e-wallet with a reference), production stages, punches and delivery steps are kept on this device and sent, in order, as soon as it answers. Each one is confirmed only when the server says so; a refused one stays here with the reason until you discard it.</p>
   </div></div>
+  <div class="card mb-3" id="sync-review-card" hidden>
+    <div class="card-header d-flex align-items-center flex-wrap gap-2"><i class="fa-solid fa-flag me-2 text-soft"></i>Needs review <span class="small text-soft" id="sync-review-scope"></span>
+      <select class="form-select form-select-sm ms-auto w-auto" id="sync-review-status" aria-label="Which items"><option value="OPEN">Open</option><option value="RESOLVED">Settled</option><option value="ALL">All</option></select>
+    </div>
+    <div class="card-body"><p class="small text-soft">What the server accepted from a device while it was offline but a person must look at. Accepting keeps it as it is; a refund or a stock movement made through the normal action reverses it and is recorded here; dismissing needs a note. Nothing is deleted.</p><ul class="sync-list review-list" id="sync-review"><li class="text-soft small">Loading…</li></ul></div>
+  </div>
   <div class="card mb-3" id="sync-others-card" hidden>
     <div class="card-header d-flex align-items-center"><i class="fa-solid fa-users me-2 text-soft"></i>Other users on this device</div>
     <div class="card-body" id="sync-others"></div>
@@ -5883,7 +5907,7 @@ window.MLS = (function () {
       '<div class="what"><span class="fw-bold">' + UI.esc(actionLabel(o.action)) + '</span> · ' + UI.esc(o.label || '') +
       (o.state === 'APPLIED' && r.resultRef ? '<div class="ref">Server: ' + UI.esc(r.resultRef) + (r.resultId ? ' (' + UI.esc(r.resultId) + ')' : '') + ' · ' + UI.esc(when(r.at)) + '</div>' : '') +
       (o.state === 'REJECTED' && r.error ? '<div class="why"><i class="fa-solid fa-circle-xmark me-1"></i>' + UI.esc(r.error.message || r.error.code) + ' <span class="text-soft">(' + UI.esc(r.error.code) + ')</span></div>' : '') +
-      (o.state === 'PENDING' && o.attempts ? '<div class="ref">Tried ' + o.attempts + ' time' + (o.attempts === 1 ? '' : 's') + ', last ' + UI.esc(when(o.lastTriedAt)) + '</div>' : '') + flagsHtml(r.flags) + '</div>' +
+      (o.state === 'PENDING' && o.attempts ? '<div class="ref">Tried ' + o.attempts + ' time' + (o.attempts === 1 ? '' : 's') + ', last ' + UI.esc(when(o.lastTriedAt)) + '</div>' : '') + flagsHtml(r.flags) + (r.conflicts && r.conflicts.length ? '<div class="flag"><i class="fa-solid fa-clipboard-check me-1"></i>' + r.conflicts.length + ' review item' + (r.conflicts.length === 1 ? '' : 's') + ' opened for a manager to settle</div>' : '') + '</div>' +
       '<div class="text-end">' + stateTag(o) + (o.state === 'REJECTED' ? '<div class="mt-1"><button type="button" class="btn btn-outline-secondary btn-sm" data-discard="' + UI.esc(o.opId) + '">Discard</button></div>' : '') + '</div></li>';
   }
   function paintQueue() {
@@ -5921,12 +5945,63 @@ window.MLS = (function () {
       UI.html('sync-ledger', r.rows.length ? r.rows.map(ledgerItem).join('') : '<li class="text-soft small">The server has received nothing made offline ' + (who === 'ALL' ? 'by anyone' : 'by you') + ' in the last ' + days + ' day' + (days === 1 ? '' : 's') + '.</li>');
     }).catch(function (e) { UI.html('sync-ledger', '<li class="text-soft small">' + (e && (e.offline || e.code === 'NETWORK' || e.code === 'TIMEOUT') ? 'The server\'s ledger needs a connection.' : UI.esc(UI.error(e))) + '</li>'); UI.el('sync-ledger-scope').textContent = ''; });
   }
-  function load() { UI.el('sync-scope').textContent = M.Net.state() === 'online' ? 'connected' : 'no connection — nothing can be sent until it returns'; return Promise.all([paintQueue(), paintLedger()]); }
+  // ---------------------------------------------------------------- the review (1.5.0)
+  var reversing = null;  // the review item a stock movement opened from here will settle
+  function typeLabel(t) { return { NEGATIVE_STOCK: 'Stock below zero', OVERPAYMENT: 'Payment beyond the balance', DUPLICATE_CUSTOMER: 'Customer merged', PRICE_VARIANCE: 'Price changed', PROMO_VARIANCE: 'Promo changed', LATE_FOR_EOD: 'Paid on a closed day' }[t] || t; }
+  function reviewItem(c) {
+    var d = c.Details || {}, open = c.Status === 'OPEN', acts = '';
+    var what = '';
+    if (c.Type === 'OVERPAYMENT') what = UI.esc(F.peso(d.amount)) + ' taken on ' + UI.esc(c.OrderNo || d.orderNo || '') + ' when its balance was ' + UI.esc(F.peso(d.balanceBefore)) + ' · <b>' + UI.esc(F.peso(c.Amount)) + ' to refund</b>' + (c.OrderBalance !== '' && Number(c.OrderBalance) < 0 ? ' · the order now shows ' + UI.esc(F.peso(-Number(c.OrderBalance))) + ' overpaid' : (open ? '' : ''));
+    else if (c.Type === 'NEGATIVE_STOCK') what = UI.esc(c.Item || d.item || '') + ': ' + UI.esc(String(d.onHandBefore)) + ' ' + UI.esc(c.Unit || d.unit || '') + ' on hand when the sale arrived, ' + UI.esc(String(d.sold)) + ' sold on ' + UI.esc(c.OrderNo || d.orderNo || '') + ' · <b>now ' + UI.esc(String(d.onHandAfter)) + '</b>' + (d.deviceSaw !== null && d.deviceSaw !== undefined ? ' · the device saw ' + UI.esc(String(d.deviceSaw)) + (d.deviceSawAt ? ' as of ' + UI.esc(F.datetime(d.deviceSawAt)) : '') : '');
+    else if (c.Type === 'DUPLICATE_CUSTOMER') what = 'Registered offline as <b>' + UI.esc((d.offline || {}).FullName || '') + '</b> (' + UI.esc((d.offline || {}).Phone || '') + '), merged into <b>' + UI.esc((d.existing || {}).FullName || c.RecordRef) + '</b> (' + UI.esc(c.RecordId) + ') who already had that mobile';
+    else if (c.Type === 'PRICE_VARIANCE') what = UI.esc(c.OrderNo || '') + ': quoted ' + UI.esc(F.peso(d.quotedTotal)) + ', the price list now says ' + UI.esc(F.peso(d.serverTotal)) + ' · the quoted amount stands' + (d.lines && d.lines.length ? '<div class="ref">' + d.lines.map(UI.esc).join('<br>') + '</div>' : '');
+    else if (c.Type === 'PROMO_VARIANCE') what = UI.esc(c.OrderNo || '') + ': promo ' + UI.esc(d.promo || '') + ' refused at sync (' + UI.esc(d.reason || '') + ') · the quoted discount of ' + UI.esc(F.peso(d.quotedDiscount)) + ' stands, no use counted';
+    else if (c.Type === 'LATE_FOR_EOD') what = UI.esc(F.peso(d.amount)) + ' on ' + UI.esc(c.OrderNo || d.orderNo || '') + ' collected on ' + UI.esc(F.date(d.collectedOn)) + ' after that day was ' + UI.esc(String(d.eodStatus || '').toLowerCase()) + ' · recorded on ' + UI.esc(F.date(d.recordedOn));
+    else what = UI.esc(c.Summary || '');
+    if (open) {
+      if (c.Type === 'OVERPAYMENT' && M.Auth.can('POS_REFUND') && c.OrderId) acts += '<button type="button" class="btn btn-danger btn-sm" data-rv-refund="' + UI.esc(c.Id) + '">Refund ' + UI.esc(F.peso(c.Amount)) + '</button>';
+      if (c.Type === 'NEGATIVE_STOCK' && M.Auth.can('INVENTORY_ADJUST') && M.InventoryUI) acts += '<button type="button" class="btn btn-outline-primary btn-sm" data-rv-adjust="' + UI.esc(c.Id) + '">Adjust stock</button>';
+      acts += '<button type="button" class="btn btn-outline-success btn-sm" data-rv-accept="' + UI.esc(c.Id) + '">Accept as is</button><button type="button" class="btn btn-outline-secondary btn-sm" data-rv-dismiss="' + UI.esc(c.Id) + '">Dismiss…</button>';
+    }
+    return '<li data-review="' + UI.esc(c.Id) + '"><div class="when">' + UI.esc(when(c.CreatedAt)) + '<div>' + UI.esc(c.User || '') + (c.DeviceLabel ? ' · ' + UI.esc(c.DeviceLabel) : '') + '</div></div>' +
+      '<div class="what"><span class="fw-bold">' + UI.esc(typeLabel(c.Type)) + '</span>' + (c.OrderId && M.OrdersUI ? ' <a href="#" data-rv-order="' + UI.esc(c.OrderId) + '">' + UI.esc(c.OrderNo) + '</a>' : '') + '<div>' + what + '</div>' +
+      (!open ? '<div class="ref">' + UI.esc(c.Resolution === 'REVERSED' ? 'Reversed' : c.Resolution === 'DISMISSED' ? 'Dismissed' : 'Accepted') + ' by ' + UI.esc(c.ResolvedBy || '') + ' · ' + UI.esc(when(c.ResolvedAt)) + (c.ResolutionRef ? ' · ' + UI.esc(c.ResolutionRef) : '') + (c.ResolutionNote ? ' · ' + UI.esc(c.ResolutionNote) : '') + '</div>' : '') +
+      (acts ? '<div class="d-flex flex-wrap gap-2 mt-2">' + acts + '</div>' : '') + '</div>' +
+      '<div class="text-end">' + (open ? '<span class="pending-tag refused">to review</span>' : UI.badge(c.Resolution || 'RESOLVED', c.Resolution === 'REVERSED' ? 'Reversed' : c.Resolution === 'DISMISSED' ? 'Dismissed' : 'Accepted')) + '</div></li>';
+  }
+  function resolve(id, resolution, note, referenceId) {
+    return Api.call('sync.resolveConflict', { id: id, resolution: resolution, note: note || '', referenceId: referenceId || '' }, { noOffline: true }).then(function (r) { Toast.success('Review item settled: ' + (resolution === 'REVERSED' ? 'reversed' : resolution.toLowerCase()) + '.'); paintReview(); return r; }).catch(function (e) { Toast.danger(UI.error(e)); });
+  }
+  function paintReview() {
+    var card = UI.el('sync-review-card'); if (!card) return Promise.resolve();
+    if (!M.Auth.can('SYNC_REVIEW')) { card.hidden = true; return Promise.resolve(); }
+    card.hidden = false; var status = UI.el('sync-review-status').value;
+    return Api.call('sync.conflicts', { status: status, days: 30 }, { noOffline: true }).then(function (r) {
+      UI.el('sync-review-scope').textContent = r.counts.open + ' open' + (status !== 'OPEN' ? ' · ' + r.total + ' shown' : '');
+      UI.html('sync-review', r.rows.length ? r.rows.map(reviewItem).join('') : '<li class="text-soft small">' + (status === 'OPEN' ? 'Nothing waits for a review.' : 'Nothing settled in the last 30 days.') + '</li>');
+      var byId = {}; r.rows.forEach(function (c) { byId[c.Id] = c; });
+      var root = UI.el('sync-review');
+      root.querySelectorAll('[data-rv-order]').forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); M.OrdersUI.openOrder(a.getAttribute('data-rv-order'), paintReview); }; });
+      root.querySelectorAll('[data-rv-accept]').forEach(function (b) { b.onclick = function () { var c = byId[b.getAttribute('data-rv-accept')]; M.Modal.confirm({ title: 'Accept as it is', body: typeLabel(c.Type) + ' on ' + (c.OrderNo || c.RecordRef || c.RecordId) + ': what the server applied stands; nothing changes. The review is recorded under your name.', okText: 'Accept' }).then(function (yes) { if (yes) resolve(c.Id, 'ACCEPTED'); }); }; });
+      root.querySelectorAll('[data-rv-dismiss]').forEach(function (b) { b.onclick = function () { var c = byId[b.getAttribute('data-rv-dismiss')]; M.OrdersUI.openReason({ title: 'Dismiss: ' + typeLabel(c.Type), hint: 'Say why nothing needs to be done; the note is kept with the item.', label: 'Note', confirmText: 'Dismiss', onSubmit: function (d) { return Api.call('sync.resolveConflict', { id: c.Id, resolution: 'DISMISSED', note: d.reason }, { noOffline: true }); } }).then(function (r) { if (r) { Toast.success('Review item dismissed.'); paintReview(); } }); }; });
+      root.querySelectorAll('[data-rv-refund]').forEach(function (b) { b.onclick = function () { var c = byId[b.getAttribute('data-rv-refund')], d = c.Details || {};
+        M.OrdersUI.openReason({ title: 'Refund the excess on ' + c.OrderNo, hint: F.peso(c.Amount) + ' was taken beyond the balance (' + (d.method || '') + (d.referenceNo ? ' ' + d.referenceNo : '') + '). The refund is recorded against the order and settles this item.', withAmount: true, amountMax: c.Amount, confirmText: 'Refund', danger: true,
+          onSubmit: function (r) { return Api.call('payments.refund', { orderId: c.OrderId, amount: r.amount, method: r.method, reason: r.reason, requestId: UI.uuid() }, { noOffline: true }).then(function (res) { return Api.call('sync.resolveConflict', { id: c.Id, resolution: 'REVERSED', referenceId: res.payment.Id, note: r.reason }, { noOffline: true }); }); }
+        }).then(function (r) { if (r) { Toast.success('Refunded and settled.'); paintReview(); } }); }; });
+      root.querySelectorAll('[data-rv-adjust]').forEach(function (b) { b.onclick = function () { var c = byId[b.getAttribute('data-rv-adjust')]; reversing = c; M.InventoryUI.openMove({ Id: c.ItemId, Name: c.Item, Unit: c.Unit }); Toast.info('Post the stock movement; it settles this item as reversed.', 5000); }; });
+    }).catch(function (e) { UI.html('sync-review', '<li class="text-soft small">' + (e && (e.offline || e.code === 'NETWORK' || e.code === 'TIMEOUT') ? 'The review needs a connection.' : UI.esc(UI.error(e))) + '</li>'); UI.el('sync-review-scope').textContent = ''; });
+  }
+  document.addEventListener('mls:inventory-moved', function (ev) {
+    var r = ev.detail, c = reversing; if (!c || !r || !r.movement) return; reversing = null;
+    if (r.movement.ItemId !== c.ItemId) { Toast.warning('The movement was for another item; the review item stays open.'); return; }
+    resolve(c.Id, 'REVERSED', r.movement.Notes || '', r.movement.Id);
+  });
+  function load() { UI.el('sync-scope').textContent = M.Net.state() === 'online' ? 'connected' : 'no connection — nothing can be sent until it returns'; return Promise.all([paintReview(), paintQueue(), paintLedger()]); }
   function wire() {
     if (wired) return; wired = true;
     UI.el('sync-refresh').onclick = load;
     UI.el('sync-push').onclick = function () { if (!M.Queue) return; UI.el('sync-push').disabled = true; M.Queue.push({ manual: true }).then(function () { load(); }); };
-    UI.el('sync-ledger-who').onchange = paintLedger; UI.el('sync-ledger-days').onchange = paintLedger;
+    UI.el('sync-ledger-who').onchange = paintLedger; UI.el('sync-ledger-days').onchange = paintLedger; UI.el('sync-review-status').onchange = paintReview;
     if (M.Queue) M.Queue.onChange(function () { if (M.Router.current() === 'sync') paintQueue(); });
     M.Net.onChange(function () { if (M.Router.current() === 'sync') load(); });
   }
