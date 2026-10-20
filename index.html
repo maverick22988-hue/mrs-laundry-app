@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '60258d370d', version: '1.2.0' };</script>
+  <script>window.MLS_PWA = { build: '7ecfe0561b', version: '1.3.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -384,6 +384,9 @@
     a { color: inherit; text-decoration: none; }
   }
 
+  /* ---- offline bar (release 1.3.0): shown only while the server cannot be reached and the app is open */
+  #offline-bar { display: flex; align-items: center; gap: .6rem; padding: .5rem 1rem; background: #fffbeb; border-bottom: 1px solid #fde68a; color: #92400e; font-size: .85rem; }
+  #offline-bar i { color: #d97706; }
   /* ---- connection badge (release 1.2.0): read from Net.state(), never set by hand */
   .net-badge { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 600; padding: .25rem .6rem; border-radius: 999px; border: 1px solid var(--mls-line); background: var(--mls-card); color: var(--mls-ink-soft); white-space: nowrap; }
   .net-badge i { font-size: .5rem; }
@@ -407,7 +410,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.2.0';
+  var VERSION = '1.3.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -444,7 +447,7 @@ window.MLS = (function () {
     token: null, me: null, dataVersion: 0, page: {},
     load: function () { try { AppState.token = tokenStore().getItem('mls.token') || null; } catch (e) { AppState.token = null; } return AppState.token; },
     setToken: function (t) { AppState.token = t; try { if (t) tokenStore().setItem('mls.token', t); else tokenStore().removeItem('mls.token'); } catch (e) { /* storage may be unavailable */ } },
-    clear: function () { AppState.setToken(null); AppState.me = null; AppState.page = {}; },
+    clear: function () { AppState.setToken(null); AppState.me = null; AppState.page = {}; try { document.dispatchEvent(new CustomEvent('mls:signedout')); } catch (e) { /* older engines */ } },
     device: function () { try { return localStorage.getItem('mls.device') || ''; } catch (e) { return ''; } },
     setDevice: function (label) { try { if (label) localStorage.setItem('mls.device', label); else localStorage.removeItem('mls.device'); } catch (e) { /* ignore */ } },
     /** The web-app address the installed app talks to (blank on the Apps Script page itself, which needs none). */
@@ -498,7 +501,7 @@ window.MLS = (function () {
         return rawCall(action, payload, opts.device, { timeoutMs: opts.timeoutMs, url: opts.url }).then(function (res) {
           if (!res || typeof res !== 'object') throw { code: 'NETWORK', message: 'Empty reply from the server' };
           Net.noteSuccess();
-          if (res.success) { if (res.meta && res.meta.dataVersion) AppState.dataVersion = res.meta.dataVersion; return res.data; }
+          if (res.success) { if (res.meta && res.meta.dataVersion) AppState.dataVersion = res.meta.dataVersion; if (Api.offline && Api.offline.record) { try { Api.offline.record(action, payload, res.data, res.meta); } catch (e) { /* the copy is best effort */ } } return res.data; }
           var err = res.error || { code: 'INTERNAL', message: 'Unknown error' };
           if (err.code === 'BUSY' && n < 1) return new Promise(function (r) { setTimeout(r, 1500); }).then(function () { return attempt(n + 1); });
           // a stale reply for a session that has since been replaced (sign out, sign in as someone else) must not sign the new user out
@@ -507,9 +510,20 @@ window.MLS = (function () {
           throw err;
         });
       };
-      return attempt(0).then(function (d) { inflight--; if (opts.busy) UI.busy(false); return d; }, function (e) { inflight--; if (opts.busy) UI.busy(false); if (e && (e.code === 'NETWORK' || e.code === 'TIMEOUT')) Net.noteFailure(e); throw e; });
+      return attempt(0).then(function (d) { inflight--; if (opts.busy) UI.busy(false); return d; }, function (e) {
+        inflight--; if (opts.busy) UI.busy(false);
+        if (!(e && (e.code === 'NETWORK' || e.code === 'TIMEOUT' || e.code === 'NO_SERVER'))) throw e;
+        if (e.code !== 'NO_SERVER') Net.noteFailure(e);
+        // the server could not be reached: the copy this device keeps may answer a read; anything else needs the connection
+        if (!Api.offline || !Api.offline.answer || opts.noOffline) throw e;
+        return Api.offline.answer(action, payload).then(function (hit) {
+          if (hit && hit.data !== undefined) { try { console.warn('[Mrs Laundry Sys] ' + action + ' answered from the copy on this device (' + e.code + ': ' + e.message + ')'); } catch (x) { /* ignore */ } Api.offline.served(action, hit); return hit.data; }
+          throw { code: e.code, message: 'No connection to the server — this needs a connection.' + (e.code === 'TIMEOUT' ? ' (The server did not answer in time.)' : ''), offline: true };
+        }, function () { throw e; });
+      });
     }
-    return { call: call, pending: function () { return inflight; }, host: function () { return HOST; } };
+    /** Api.offline is set by Offline.html: answer(action, payload) → { data, asOf } | null, record(action, payload, data, meta), me(token), served(action, hit). */
+    return { call: call, pending: function () { return inflight; }, host: function () { return HOST; }, offline: null };
   })();
 
   // ------------------------------------------------------------------ connection
@@ -804,7 +818,7 @@ window.MLS = (function () {
         else html += '<li><a class="nav-link disabled" id="nav-' + m.route + '" href="#" tabindex="-1" aria-disabled="true" title="Arrives in Phase ' + m.phase + '"><i class="fa-solid ' + m.icon + '"></i><span>' + UI.esc(m.title) + '</span><span class="phase-badge">Phase ' + m.phase + '</span></a></li>';
       });
       ul.innerHTML = html;
-      ul.querySelectorAll('a[data-route]').forEach(function (a) { a.addEventListener('click', function () { document.body.classList.remove('sidebar-open'); }); });
+      ul.querySelectorAll('a[data-route]').forEach(function (a) { a.addEventListener('click', function () { document.body.classList.remove('sidebar-open'); if (a.getAttribute('data-route') === current) go(current); }); });  // a tap on the open module refreshes it
       markActive();
     }
     function markActive() { document.querySelectorAll('#main-nav .nav-link').forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-route') === current); }); }
@@ -863,6 +877,7 @@ window.MLS = (function () {
       paintIdentity(); paintBranchSwitch(); Router.paintNav(); Router.check();
       Router.go(Router.fromHash());
       if (me.user.MustChangePassword) setTimeout(function () { openChangePassword(true); }, 300);
+      try { document.dispatchEvent(new CustomEvent('mls:signedin', { detail: { user: me.user.Id, branch: me.activeBranch } })); } catch (e) { /* older engines */ }
     }
     /** The user chip and the sidebar heading: painted at sign-in and again whenever the sign-in context is refreshed (business name or own profile changed). */
     function paintIdentity() {
@@ -925,11 +940,13 @@ window.MLS = (function () {
       // the confirm dialog sits before the device dialog in the page, so the device dialog closes first instead of covering it
       Modal.closeThen('device-modal', function () { Modal.confirm({ title: 'Forget this device', body: 'Sign out here and remove the server address, the device label and the cached app from this browser. Nothing on the server changes.', okText: 'Forget', danger: true }).then(function (yes) {
         if (!yes) return; var token = AppState.token;
-        var done = function () { AppState.forget(); var p = Promise.resolve(); if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) p = navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }).catch(function () { /* ignore */ }); if (window.caches && caches.keys) p = p.then(function () { return caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }); }).catch(function () { /* ignore */ }); p.then(function () { location.replace(location.pathname); }); };
+        var done = function () { AppState.forget(); var p = Promise.resolve(); var S = window.MLS && window.MLS.Store; if (S) p = p.then(function () { return S.clearAll(); }).catch(function () { /* ignore */ }); if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) p = navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }).catch(function () { /* ignore */ }); if (window.caches && caches.keys) p = p.then(function () { return caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }); }).catch(function () { /* ignore */ }); p.then(function () { location.replace(location.pathname); }); };
         if (token) Api.call('auth.logout', {}, { noRedirect: true }).then(done, done); else done();
       }); });
     });
     UI.el('device-update').addEventListener('click', function () { if (!Pwa.update()) Toast.info('No update is waiting.'); });
+    UI.el('device-refresh').addEventListener('click', function () { var S = window.MLS && window.MLS.Sync; if (!S || !AppState.me) { Toast.info('Sign in first.'); return; } var b = UI.el('device-refresh'); b.disabled = true; S.pull({ force: true }).then(function (r) { b.disabled = false; Toast[r ? 'success' : 'warning'](r ? (r.unchanged ? 'The copy on this device is already current.' : 'Refreshed: ' + r.orders + ' orders, ' + r.customers + ' customers, ' + r.snapshots + ' screens.') : 'Could not refresh now (no connection?).'); openDevice(); }); });
+    UI.el('device-clear').addEventListener('click', function () { var S = window.MLS && window.MLS.Store; if (!S) return; Modal.closeThen('device-modal', function () { Modal.confirm({ title: 'Clear saved data', body: 'Remove the orders, customers and screens this device keeps for offline reading. They come back on the next refresh while connected.', okText: 'Clear' }).then(function (yes) { if (!yes) return; S.clearAll().then(function () { Toast.success('Saved data cleared.'); }, function (e) { Toast.danger(UI.error(e)); }); }); }); });
     Pwa.onUpdate(function () { var b = UI.el('device-update'); if (b) b.hidden = false; });
     UI.el('offline-retry').addEventListener('click', function () { UI.el('offline-retry').disabled = true; Net.health().then(function () { UI.el('offline-retry').disabled = false; start(); }); });
     UI.el('offline-forget').addEventListener('click', function () { AppState.clear(); Auth.showAuth(); });
@@ -971,8 +988,13 @@ window.MLS = (function () {
     if (HOST === 'pwa' && !AppState.apiUrl()) { var q = ''; try { q = new URLSearchParams(location.search).get('api') || ''; } catch (e) { /* ignore */ } Auth.showConnect(q); return; }
     var token = AppState.load();
     if (!token) { Auth.showAuth(); return; }
-    Api.call('auth.me', {}, { noRedirect: true }).then(function (me) { AppState.me = me; Auth.showApp(); }).catch(function (e) {
-      if (e && (e.code === 'NETWORK' || e.code === 'TIMEOUT' || e.code === 'NO_SERVER')) { Auth.showOffline(e); return; }
+    Api.call('auth.me', {}, { noRedirect: true, noOffline: true }).then(function (me) { AppState.me = me; Auth.showApp(); }).catch(function (e) {
+      if (e && (e.code === 'NETWORK' || e.code === 'TIMEOUT' || e.code === 'NO_SERVER')) {
+        // no answer: the copy this device keeps may still open the app for the same session, read-only until the server answers
+        var cached = Api.offline && Api.offline.me ? Api.offline.me(token) : Promise.resolve(null);
+        cached.then(function (me) { if (me) { AppState.me = me; Auth.showApp(); if (window.MLS && window.MLS.Offline) window.MLS.Offline.paintBar(); } else Auth.showOffline(e); }, function () { Auth.showOffline(e); });
+        return;
+      }
       AppState.clear(); Auth.showAuth();
     });
   }
@@ -983,6 +1005,7 @@ window.MLS = (function () {
     if (apiRow) apiRow.hidden = HOST !== 'pwa'; if (api) { api.hidden = HOST !== 'pwa'; api.value = AppState.apiUrl(); }
     var about = UI.el('device-about'); if (about) about.textContent = 'Release ' + info.version + (info.build ? ' · build ' + info.build : '') + (HOST === 'pwa' ? (info.installed ? ' · installed on this device' : ' · running in the browser') + (info.serviceWorker ? ' · offline shell ready' : ' · offline shell not ready yet') : ' · Apps Script page') + ' · ' + (Net.state() === 'online' ? 'server online' : Net.state());
     var upd = UI.el('device-update'); if (upd) upd.hidden = !info.updateReady;
+    var copy = UI.el('device-copy'); if (copy) { copy.textContent = 'Saved on this device: reading…'; var S = window.MLS && window.MLS.Store; if (S && S.available()) S.summary().then(function (r) { var when = r.sync && r.sync.lastPull ? new Date(r.sync.lastPull).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'never'; copy.textContent = 'Saved on this device for offline reading: ' + r.orders + ' orders, ' + r.customers + ' customers, ' + r.snapshots + ' screens · refreshed ' + when + (r.sync && r.sync.window ? ' · keeps ' + r.sync.window.days + ' days of orders' : ''); }, function () { copy.textContent = 'Nothing is saved on this device for offline reading (storage unavailable).'; }); else copy.textContent = 'Nothing is saved on this device for offline reading (storage unavailable).'; }
     Form.clearErrors(UI.el('device-form')); Modal.open('device-modal');
   }
   function boot() {
@@ -993,6 +1016,248 @@ window.MLS = (function () {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else setTimeout(boot, 0);
 
   return { version: VERSION, phase: APP_PHASE, host: HOST, MODULES: MODULES, AppState: AppState, Api: Api, Net: Net, Pwa: Pwa, UI: UI, Toast: Toast, Modal: Modal, Form: Form, Validator: Validator, Formatter: Formatter, Table: Table, Print: Print, Qr: Qr, Keys: Keys, Router: Router, Auth: Auth, openDevice: openDevice, start: start };
+})();
+</script>
+
+  <script>
+/**
+ * Mrs Laundry Sys — Offline.html: the copy a device keeps for offline reading (release 1.3.0).
+ * MLS.Store is an IndexedDB database with four stores: meta (the sync watermarks, the signed-in user, the enums), snapshots
+ * (the answers of read actions, filed under action + payload exactly as the server bundles them), orders (the order views
+ * of the lens, open or within OfflineOrderDays) and customers (the list rows of the lens). MLS.Sync pulls them through
+ * sync.pull after sign-in, every OfflinePullMinutes while online, and shortly after the data version moves; it also files
+ * every live answer of a read action as it passes. When the server cannot be reached, MLS.Api asks Store.answer() for the
+ * same action and payload: lists are computed here from the stored rows with the server's own rules, everything else comes
+ * from the filed answer, and the page is told what it shows is as of a time. Nothing is ever answered that the signed-in
+ * user did not receive from the server, and a different user signing in wipes the copy.
+ */
+(function () {
+  'use strict';
+  var M = window.MLS, UI = M.UI, Api = M.Api, Net = M.Net, AppState = M.AppState;
+  var DB_NAME = 'mls-offline', DB_VERSION = 1, STORES = ['meta', 'snapshots', 'orders', 'customers'];
+
+  // ------------------------------------------------------------------ the database
+  var Store = (function () {
+    var dbp = null, unavailable = false;
+    function open() {
+      if (dbp) return dbp;
+      dbp = new Promise(function (resolve, reject) {
+        if (!window.indexedDB) { unavailable = true; reject(new Error('IndexedDB is not available in this browser')); return; }
+        var req; try { req = indexedDB.open(DB_NAME, DB_VERSION); } catch (e) { unavailable = true; reject(e); return; }
+        req.onupgradeneeded = function () { var db = req.result; STORES.forEach(function (n) { if (!db.objectStoreNames.contains(n)) db.createObjectStore(n); }); };
+        req.onsuccess = function () { var db = req.result; db.onversionchange = function () { db.close(); dbp = null; }; resolve(db); };
+        req.onerror = function () { unavailable = true; reject(req.error || new Error('IndexedDB refused to open')); };
+        req.onblocked = function () { reject(new Error('IndexedDB is blocked by another tab')); };
+      });
+      dbp.catch(function () { dbp = null; });
+      return dbp;
+    }
+    /** Runs fn(objectStore) in one transaction and resolves with the request's result (or fn's own value). */
+    function run(store, mode, fn) {
+      return open().then(function (db) {
+        return new Promise(function (resolve, reject) {
+          var t = db.transaction(store, mode), os = t.objectStore(store), out;
+          t.oncomplete = function () { resolve(out && typeof out === 'object' && 'result' in out && typeof out.readyState === 'string' ? out.result : out); };
+          t.onerror = function () { reject(t.error || new Error('transaction failed')); }; t.onabort = function () { reject(t.error || new Error('transaction aborted')); };
+          try { out = fn(os); } catch (e) { reject(e); try { t.abort(); } catch (x) { /* ignore */ } }
+        });
+      });
+    }
+    return {
+      available: function () { return !unavailable; },
+      get: function (store, key) { return run(store, 'readonly', function (os) { return os.get(key); }); },
+      put: function (store, key, value) { return run(store, 'readwrite', function (os) { os.put(value, key); return true; }); },
+      putMany: function (store, entries) { return run(store, 'readwrite', function (os) { entries.forEach(function (e) { os.put(e[1], e[0]); }); return entries.length; }); },
+      remove: function (store, key) { return run(store, 'readwrite', function (os) { os.delete(key); return true; }); },
+      removeMany: function (store, keys) { return run(store, 'readwrite', function (os) { keys.forEach(function (k) { os.delete(k); }); return keys.length; }); },
+      all: function (store) { return run(store, 'readonly', function (os) { return os.getAll(); }); },
+      count: function (store) { return run(store, 'readonly', function (os) { return os.count(); }); },
+      clear: function (store) { return run(store, 'readwrite', function (os) { os.clear(); return true; }); },
+      clearAll: function () { var p = Promise.resolve(); STORES.forEach(function (n) { p = p.then(function () { return Store.clear(n); }); }); return p; },
+      /** Everything about what this device holds, for This device. */
+      summary: function () { return Promise.all([Store.count('orders'), Store.count('customers'), Store.count('snapshots'), Store.get('meta', 'sync')]).then(function (r) { return { orders: r[0], customers: r[1], snapshots: r[2], sync: r[3] || null }; }); }
+    };
+  })();
+
+  /** The key an answer is filed under: the action and the payload without blank, false or null values, keys sorted — the same rule as the server's Sync.payloadKey. */
+  function payloadKey(action, payload) { var keep = {}; Object.keys(payload || {}).sort().forEach(function (k) { var v = payload[k]; if (v === undefined || v === null || v === '' || v === false) return; keep[k] = v; }); return action + '|' + JSON.stringify(keep); }
+  function lower(v) { return String(v === null || v === undefined ? '' : v).toLowerCase(); }
+  function digitsOf(v) { return String(v || '').replace(/\D/g, ''); }
+
+  // ------------------------------------------------------------------ answers from the copy
+  var Answers = (function () {
+    function meta(name) { return Store.get('meta', name).catch(function () { return undefined; }); }
+    function snapshot(action, payload) { return Store.get('snapshots', payloadKey(action, payload)).then(function (hit) { return hit ? { data: hit.data, asOf: hit.asOf, how: 'snapshot' } : null; }); }
+    function ordersMeta() { return snapshot('orders.meta', {}).then(function (h) { return h ? h.data : { statuses: [], labels: {}, open: [] }; }); }
+    function pageOf(rows, opts, defaultSize) { var size = Math.min(Math.max(Number(opts.size) || defaultSize, 1), 200), pageNo = Math.max(Number(opts.page) || 1, 1), start = (pageNo - 1) * size; return { rows: rows.slice(start, start + size), total: rows.length, page: pageNo, pages: Math.max(1, Math.ceil(rows.length / size)) }; }
+    /** orders.list as the server computes it, over the stored views. */
+    function ordersList(opts) {
+      opts = opts || {};
+      return Promise.all([Store.all('orders'), ordersMeta(), meta('sync')]).then(function (r) {
+        var all = r[0] || [], om = r[1], sync = r[2] || {};
+        var status = !opts.status ? 'OPEN' : String(opts.status).toUpperCase();
+        var rows = all.filter(function (o) {
+          if (status === 'OPEN' && !o.IsOpen) return false;
+          if (status !== 'OPEN' && status !== 'ALL' && o.Status !== status) return false;
+          if (opts.customerId && o.CustomerId !== opts.customerId) return false;
+          if (opts.from && o.OrderDate < opts.from) return false;
+          if (opts.to && o.OrderDate > opts.to) return false;
+          if (opts.withBalance && !(Number(o.BalanceAmount) > 0 && ['CANCELLED', 'REFUNDED'].indexOf(o.Status) < 0)) return false;
+          if (opts.search) { var n = lower(opts.search); if (![o.OrderNo, o.CustomerName, o.CustomerPhone, o.Id].some(function (v) { return lower(v).indexOf(n) >= 0; })) return false; }
+          return true;
+        });
+        rows.sort(function (a, b) { return String(b.OrderDate).localeCompare(String(a.OrderDate)) || String(b.OrderNo).localeCompare(String(a.OrderNo)); });
+        var counts = {}; all.forEach(function (o) { counts[o.Status] = (counts[o.Status] || 0) + 1; });
+        var p = pageOf(rows, opts, 25);
+        return { data: { rows: p.rows, total: p.total, page: p.page, pages: p.pages, counts: counts, statuses: om.statuses || [], labels: om.labels || {} }, asOf: sync.lastPull || null, how: 'orders' };
+      });
+    }
+    function orderGet(opts) { return Promise.all([Store.get('orders', String(opts && opts.id || '')), meta('sync')]).then(function (r) { return r[0] ? { data: r[0], asOf: (r[1] || {}).lastPull || null, how: 'orders' } : null; }); }
+    function customersList(opts) {
+      opts = opts || {};
+      return Promise.all([Store.all('customers'), meta('enums'), meta('sync')]).then(function (r) {
+        var all = r[0] || [], enums = r[1] || {}, sync = r[2] || {};
+        var type = !opts.type ? '' : String(opts.type).toUpperCase(), status = !opts.status ? 'ACTIVE' : String(opts.status).toUpperCase();
+        var rows = all.filter(function (c) { return (status === 'ALL' || c.Status === status) && (!type || c.CustomerType === type); });
+        if (opts.withBalance) rows = rows.filter(function (c) { return Number(c.Balance) > 0; });
+        if (opts.search) { var n = lower(opts.search); rows = rows.filter(function (c) { return [c.FullName, c.Phone, c.Email, c.Address, c.Id].some(function (v) { return lower(v).indexOf(n) >= 0; }); }); }
+        rows.sort(function (a, b) { return String(a.FullName).localeCompare(String(b.FullName)); });
+        var p = pageOf(rows, opts, 25);
+        return { data: { rows: p.rows, total: p.total, page: p.page, pages: p.pages, types: enums.CustomerType || [] }, asOf: sync.lastPull || null, how: 'customers' };
+      });
+    }
+    function customersSearch(opts) {
+      var n = lower((opts || {}).q).trim(); if (n.length < 2) return Promise.resolve({ data: [], asOf: null, how: 'customers' });
+      var digits = n.replace(/\D/g, '');
+      return Promise.all([Store.all('customers'), meta('sync')]).then(function (r) {
+        var rows = (r[0] || []).filter(function (c) { return c.Status === 'ACTIVE' && (lower(c.FullName).indexOf(n) >= 0 || (digits.length >= 3 && digitsOf(c.Phone).indexOf(digits) >= 0)); }).slice(0, 10)
+          .map(function (c) { return { Id: c.Id, FullName: c.FullName, Phone: c.Phone, CustomerType: c.CustomerType, Balance: c.Balance, OrderCount: c.OrderCount, Address: c.Address }; });
+        return { data: rows, asOf: (r[1] || {}).lastPull || null, how: 'customers' };
+      });
+    }
+    function customerGet(opts) {
+      return Promise.all([Store.get('customers', String(opts && opts.id || '')), Store.all('orders'), meta('sync')]).then(function (r) {
+        if (!r[0]) return null; var c = Object.assign({}, r[0]);
+        c.Orders = (r[1] || []).filter(function (o) { return o.CustomerId === c.Id; }).sort(function (a, b) { return String(b.OrderDate).localeCompare(String(a.OrderDate)) || String(b.Id).localeCompare(String(a.Id)); }).slice(0, 25)
+          .map(function (o) { return { Id: o.Id, OrderNo: o.OrderNo, OrderDate: o.OrderDate, Status: o.Status, OrderTotal: o.OrderTotal, PaidAmount: o.PaidAmount, BalanceAmount: o.BalanceAmount, IsExpress: o.IsExpress }; });
+        return { data: c, asOf: (r[2] || {}).lastPull || null, how: 'customers' };
+      });
+    }
+    var LOCAL = { 'orders.list': ordersList, 'orders.get': orderGet, 'customers.list': customersList, 'customers.search': customersSearch, 'customers.get': customerGet };
+    /** The offline answer for an action, or null when the device holds none. Never throws. */
+    function answer(action, payload) {
+      var fn = LOCAL[action];
+      return (fn ? fn(payload || {}) : snapshot(action, payload)).catch(function () { return null; });
+    }
+    return { answer: answer, payloadKey: payloadKey, LOCAL: Object.keys(LOCAL) };
+  })();
+
+  // ------------------------------------------------------------------ the pull
+  var Sync = (function () {
+    var pulling = null, lastPull = null, pulledVersion = 0, pullMinutes = 5, readActions = null, debounce = null, listeners = [], lastError = null, served = 0;
+    function emit() { listeners.forEach(function (fn) { try { fn(state()); } catch (e) { console.error(e); } }); }
+    function state() { return { pulling: !!pulling, lastPull: lastPull, dataVersion: pulledVersion, lastError: lastError, served: served }; }
+    function loadMeta() { return Store.get('meta', 'sync').then(function (m) { m = m || {}; lastPull = m.lastPull || null; pulledVersion = m.dataVersion || 0; pullMinutes = m.pullMinutes || 5; readActions = m.readActions || null; return m; }).catch(function () { return {}; }); }
+    /** Pulls the copy for the signed-in user and lens: full after a change of user or lens (the stores are wiped first), incremental otherwise, page by page. Resolves with the summary; never rejects. */
+    function pull(opts) {
+      opts = opts || {};
+      if (pulling) return pulling;
+      var me = AppState.me; if (!me || !AppState.token || !Store.available()) return Promise.resolve(null);
+      pulling = loadMeta().then(function (meta) {
+        var lensChanged = opts.full || meta.userId !== me.user.Id || meta.branch !== me.activeBranch;
+        var installId = meta.installId || null;
+        var prep = lensChanged ? Promise.all([Store.clear('orders'), Store.clear('customers'), Store.clear('snapshots')]).then(function () { return { userId: me.user.Id, branch: me.activeBranch }; }) : Promise.resolve(meta);
+        return prep.then(function (m) {
+          var body = { dataVersion: lensChanged || opts.force ? undefined : m.dataVersion, installId: installId, force: !!opts.force, orders: { since: m.ordersSince || null }, customers: { since: m.customersSince || null } };
+          var first = null, orderRows = 0, customerRows = 0, snapshots = 0;
+          var step = function () {
+            return Api.call('sync.pull', body, { noRedirect: true, timeoutMs: 120000, noOffline: true }).then(function (r) {
+              if (r.unchanged) return { unchanged: true, dataVersion: r.dataVersion, installId: r.installId };
+              if (!first && installId && r.installId && r.installId !== installId && !lensChanged) {
+                // another installation (a restored backup, a new spreadsheet): the copy is wiped and pulled whole
+                installId = r.installId; lensChanged = true; m = { userId: me.user.Id, branch: me.activeBranch };
+                return Promise.all([Store.clear('orders'), Store.clear('customers'), Store.clear('snapshots')]).then(function () { body = { force: true, orders: { since: null }, customers: { since: null } }; return step(); });
+              }
+              if (!first) {
+                first = r;
+                var entries = (r.snapshots || []).map(function (s) { return [s.key, { action: s.action, payload: s.payload, data: s.data, asOf: new Date(r.serverTime).toISOString() }]; }); snapshots = entries.length;
+                return Promise.all([entries.length ? Store.putMany('snapshots', entries) : null, Store.put('meta', 'enums', r.enums || {}), r.snapshots && r.snapshots.some(function (s) { return s.action === 'auth.me'; }) ? Store.put('meta', 'me', { token: AppState.token, me: r.snapshots.filter(function (s) { return s.action === 'auth.me'; })[0].data, at: new Date().toISOString() }) : null]).then(function () { return r; });
+              }
+              return r;
+            }).then(function (r) {
+              if (r.unchanged) return r;
+              var writes = [];
+              if (r.orders && r.orders.rows.length) { orderRows += r.orders.rows.length; writes.push(Store.putMany('orders', r.orders.rows.map(function (o) { return [o.Id, o]; }))); }
+              if (r.customers && r.customers.rows.length) { customerRows += r.customers.rows.length; writes.push(Store.putMany('customers', r.customers.rows.map(function (c) { return [c.Id, c]; }))); }
+              return Promise.all(writes).then(function () {
+                var moreOrders = r.orders && r.orders.more, moreCustomers = r.customers && r.customers.more;
+                if (!moreOrders && !moreCustomers) return r;
+                body = { dataVersion: r.dataVersion, snapshots: false, force: true, orders: moreOrders ? { since: m.ordersSince || null, cursor: r.orders.cursor } : false, customers: moreCustomers ? { since: m.customersSince || null, cursor: r.customers.cursor } : false };
+                return step();
+              });
+            });
+          };
+          return step().then(function (last) {
+            var now = new Date().toISOString();
+            if (last.unchanged) { lastPull = now; return Store.put('meta', 'sync', Object.assign({}, m, { lastPull: now, dataVersion: last.dataVersion, installId: last.installId || m.installId || null, userId: me.user.Id, branch: me.activeBranch })).then(function () { return { unchanged: true, orders: 0, customers: 0, snapshots: 0 }; }); }
+            var serverTime = new Date(first.serverTime).getTime(), since = new Date(serverTime - 60000).toISOString(), prune = first.orders ? first.orders.pruneBefore : null;
+            var pruneP = prune ? Store.all('orders').then(function (all) { var stale = all.filter(function (o) { return !o.IsOpen && String(o.OrderDate) < prune; }).map(function (o) { return o.Id; }); return stale.length ? Store.removeMany('orders', stale) : 0; }) : Promise.resolve(0);
+            return pruneP.then(function (pruned) {
+              pulledVersion = first.dataVersion; pullMinutes = first.pullMinutes || pullMinutes; readActions = first.readActions || readActions; lastPull = now; lastError = null;
+              return Store.put('meta', 'sync', { userId: me.user.Id, branch: me.activeBranch, installId: first.installId || null, dataVersion: first.dataVersion, ordersSince: since, customersSince: since, lastPull: now, pullMinutes: pullMinutes, readActions: readActions, window: first.window || null, serverTime: first.serverTime }).then(function () { return { unchanged: false, orders: orderRows, customers: customerRows, snapshots: snapshots, pruned: pruned }; });
+            });
+          });
+        });
+      }).catch(function (e) { lastError = (e && e.message) || String(e); return null; }).then(function (r) { pulling = null; emit(); return r; });
+      emit();
+      return pulling;
+    }
+    function due() { if (!lastPull) return true; return Date.now() - new Date(lastPull).getTime() >= pullMinutes * 60000; }
+    function tick() { if (AppState.me && Net.state() === 'online' && !document.hidden && due()) pull(); }
+    function schedule(ms) { clearTimeout(debounce); debounce = setTimeout(function () { if (AppState.me && Net.state() === 'online') pull(); }, ms); }
+    /** Files a live answer as it passes (the read actions the server listed for this user), and pulls soon when the data version moved. */
+    function record(action, payload, data, meta) {
+      if (!Store.available() || !AppState.me) return;
+      if (meta && meta.dataVersion && pulledVersion && meta.dataVersion > pulledVersion) schedule(4000);
+      if (!readActions || readActions.indexOf(action) < 0) return;
+      Store.put('snapshots', payloadKey(action, payload), { action: action, payload: payload || {}, data: data, asOf: new Date().toISOString() }).catch(function () { /* the copy is best effort */ });
+    }
+    /** The signed-in user as the server last described them, for an offline start: only for the same token. */
+    function cachedMe(token) { return Store.get('meta', 'me').then(function (m) { return m && m.token === token ? m.me : null; }).catch(function () { return null; }); }
+    function init() {
+      loadMeta();
+      document.addEventListener('mls:signedin', function () { if (navigator.storage && navigator.storage.persist && M.host === 'pwa') { navigator.storage.persist().catch(function () { /* ignore */ }); } if (Net.state() === 'online') pull(); else Net.health().then(function (ok) { if (ok) pull(); }); });
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) tick(); });
+      Net.onChange(function (s) { if (s === 'online' && AppState.me && due()) pull(); });
+      setInterval(tick, 60000);
+    }
+    return { pull: pull, record: record, cachedMe: cachedMe, state: state, onChange: function (fn) { listeners.push(fn); }, init: init, noteServed: function () { served++; }, payloadKey: payloadKey };
+  })();
+
+  // ------------------------------------------------------------------ the bar and the hooks
+  var bar = (function () {
+    var lastLocal = null, servedSinceOnline = false;
+    function paint() {
+      var el = UI.el('offline-bar'); if (!el) return;
+      var off = Net.state() === 'offline' || Net.state() === 'unreachable';
+      var show = !!(AppState.me && off && !UI.el('app').hidden);
+      el.hidden = !show; if (!show) return;
+      var when = lastLocal && lastLocal.asOf ? new Date(lastLocal.asOf) : null;
+      UI.el('offline-bar-text').textContent = (Net.state() === 'offline' ? 'No connection' : 'Server unreachable') + ' — showing what this device saved' + (when ? ' as of ' + when.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '') + '. Nothing can be saved until the connection returns.';
+    }
+    return { paint: paint, served: function (hit) { lastLocal = hit; servedSinceOnline = true; paint(); }, online: function () { paint(); if (servedSinceOnline) { servedSinceOnline = false; try { M.Router.refreshAll(); } catch (e) { /* ignore */ } } } };
+  })();
+
+  Api.offline = {
+    answer: Answers.answer,
+    record: Sync.record,
+    me: Sync.cachedMe,
+    served: function (action, hit) { Sync.noteServed(); bar.served(hit); }
+  };
+  Net.onChange(function (s) { if (s === 'online') bar.online(); else bar.paint(); });
+  document.addEventListener('mls:signedin', bar.paint); document.addEventListener('mls:signedout', function () { bar.paint(); });
+  Sync.init();
+  M.Store = Store; M.Sync = Sync; M.Offline = { answers: Answers, payloadKey: payloadKey, paintBar: bar.paint };
 })();
 </script>
 
@@ -1077,6 +1342,7 @@ window.MLS = (function () {
           </div>
         </div>
       </header>
+      <div id="offline-bar" role="status" hidden><i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i><span id="offline-bar-text">No connection — showing what this device saved.</span></div>
       <main id="main-content" tabindex="-1">
         <!-- Mrs Laundry Sys — DashboardPage.html: the Dashboard module: today's numbers under the branch lens, computed on the server and shaped by the caller's permissions; My day for staff and riders; the getting-started checklist for administrators of a new business. -->
 <section id="view-dashboard" class="view" hidden>
@@ -4982,8 +5248,11 @@ window.MLS = (function () {
         <div class="mb-3"><label class="form-label" for="device-label">Device label</label><input class="form-control" id="device-label" name="deviceLabel" maxlength="60" placeholder="e.g. Counter 1"></div>
         <div class="mb-3" id="device-api-row" hidden><label class="form-label" for="device-api">Web-app address</label><input class="form-control" id="device-api" name="apiUrl" inputmode="url" autocapitalize="none" spellcheck="false" hidden><div class="form-text">The Apps Script deployment this device talks to; a new address is checked before it is saved.</div></div>
         <p class="small text-soft mb-2" id="device-about"></p>
+        <p class="small text-soft mb-2" id="device-copy"></p>
         <div class="d-flex flex-wrap gap-2">
           <button type="button" class="btn btn-outline-primary btn-sm" id="device-update" hidden><i class="fa-solid fa-arrow-rotate-right me-1"></i>Update now</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="device-refresh"><i class="fa-solid fa-cloud-arrow-down me-1"></i>Refresh saved data</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="device-clear"><i class="fa-solid fa-broom me-1"></i>Clear saved data</button>
           <button type="button" class="btn btn-outline-danger btn-sm" id="device-forget"><i class="fa-solid fa-eraser me-1"></i>Forget this device</button>
         </div>
       </div>
