@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '9b4d9173ec', version: '1.5.0' };</script>
+  <script>window.MLS_PWA = { build: 'aaddb93a23', version: '1.6.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -585,7 +585,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.5.0';
+  var VERSION = '1.6.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -1036,6 +1036,7 @@ window.MLS = (function () {
     function showAuth(message) {
       UI.hide('app'); UI.hide('boot-screen'); UI.show('auth-screen'); document.body.classList.remove('sidebar-open');
       if (message) { var n = UI.el('auth-note'); n.textContent = message; n.hidden = false; }
+      try { document.dispatchEvent(new CustomEvent('mls:authscreen')); } catch (e) { /* older engines */ }
       Api.call('auth.setupStatus', {}, { noRedirect: true }).then(function (s) {
         UI.el('auth-business').textContent = s.businessName || 'Mrs Laundry Sys';
         if (!s.initialized) onlyPanel('panel-uninitialized'); else if (!s.hasAdmin) onlyPanel('panel-setup'); else { onlyPanel('panel-login'); setTimeout(function () { var u = UI.el('login-username'); if (u && (!document.activeElement || document.activeElement === document.body)) u.focus(); }, 50); }
@@ -1086,11 +1087,12 @@ window.MLS = (function () {
     }
     function login(username, password) {
       return Api.call('auth.login', { username: username, password: password, userAgent: navigator.userAgent }, { busy: true, noRedirect: true }).then(function (res) {
-        AppState.setToken(res.token); AppState.me = res.me; UI.el('auth-note').hidden = true; showApp(); return res.me;
+        AppState.setToken(res.token); AppState.me = res.me; UI.el('auth-note').hidden = true; UI.el('auth-queue-note').hidden = true; showApp(); return res.me;
       });
     }
     function logout() {
-      var finish = function () { AppState.clear(); showAuth('You have signed out.'); };
+      var waiting = window.MLS && window.MLS.Queue ? window.MLS.Queue.state().pending : 0;
+      var finish = function () { AppState.clear(); showAuth(waiting ? 'You have signed out. ' + waiting + ' operation' + (waiting === 1 ? '' : 's') + ' made offline on this device ' + (waiting === 1 ? 'is' : 'are') + ' kept and sent when you sign in here again (or when a manager submits them).' : 'You have signed out.'); };
       if (!AppState.token) { finish(); return Promise.resolve(); }
       return Api.call('auth.logout', {}, { busy: true, noRedirect: true }).then(finish, finish);
     }
@@ -1704,6 +1706,7 @@ window.MLS = (function () {
       if (pushing) return pushing;
       var me = AppState.me; if (!me || !AppState.token || !Store.available()) return Promise.resolve(null);
       if (!opts.manual && holding()) return Promise.resolve(null);
+      var usedToken = AppState.token;
       var summary = { sent: 0, applied: 0, rejected: 0, duplicate: 0, flagged: 0, error: null, labels: [] };
       var round = function () {
         return Store.all('queue').then(function (q) {
@@ -1726,8 +1729,16 @@ window.MLS = (function () {
               return Promise.all(confirms).then(function () { return Store.putMany('queue', batch.map(function (o) { return [o.opId, o]; })); }).then(function () { return remapPending(q, map); }).then(function () { lastPush = new Date().toISOString(); lastError = null; backoffReset(); return recount(); }).then(function () { return round(); });
             }, function (e) {
               batch.forEach(function (o) { o.state = 'PENDING'; });
-              backoffAfterFailure();
-              return Store.putMany('queue', batch.map(function (o) { return [o.opId, o]; })).then(function () { summary.error = (e && e.message) || String(e); lastError = summary.error; if (e && e.fields && e.fields.installId) { summary.installMismatch = true; } return recount(); }).then(function () { return summary; });
+              var dead = !!(e && e.code === 'AUTH_REQUIRED');
+              if (!dead) backoffAfterFailure();
+              return Store.putMany('queue', batch.map(function (o) { return [o.opId, o]; })).then(function () {
+                summary.error = dead ? 'Your session ended; sign in again to send what waits.' : ((e && e.message) || String(e)); lastError = summary.error; if (e && e.fields && e.fields.installId) { summary.installMismatch = true; } summary.authRequired = dead;
+                return recount();
+              }).then(function () {
+                // the session that owns these operations is gone (expired overnight, revoked, signed out elsewhere): nothing is retried with a dead token and nothing is discarded — the sign-in screen says what waits and for whom
+                if (dead && AppState.me && batch.length && AppState.token === usedToken) { var who = AppState.me.user.DisplayName; AppState.clear(); M.Auth.showAuth('Your session ended. ' + batch.length + ' operation' + (batch.length === 1 ? '' : 's') + ' made offline ' + (batch.length === 1 ? 'is' : 'are') + ' kept on this device: sign in as ' + who + ' to send ' + (batch.length === 1 ? 'it' : 'them') + '.'); }
+                return summary;
+              });
             });
           });
         });
@@ -1868,7 +1879,9 @@ window.MLS = (function () {
       el.innerHTML = '<i class="fa-solid ' + (q.rejected ? 'fa-triangle-exclamation' : (q.pushing ? 'fa-rotate fa-spin' : 'fa-clock')) + '" aria-hidden="true"></i><span>' + (q.rejected ? q.rejected + ' refused' : (q.pushing ? 'Sending ' + q.pending + '…' : q.pending + ' waiting')) + '</span>';
       el.title = (q.pending ? q.pending + ' operation' + (q.pending === 1 ? '' : 's') + ' waiting for the server' : '') + (q.rejected ? (q.pending ? ' · ' : '') + q.rejected + ' refused by the server' : '') + ' — open Sync';
     }
-    return { paint: paint, badge: badge, served: function (hit) { lastLocal = hit; servedSinceOnline = true; paint(); }, online: function () { paint(); if (servedSinceOnline) { servedSinceOnline = false; try { if (!document.querySelector('.modal.show')) M.Router.refreshAll(); } catch (e) { /* ignore */ } } } };
+    /** The pages refresh from the server once the connection is back; when the device holds operations for the server, those go first, so the pages show the server's view of them and a dead session is met by the push (refused, audited, the queue kept) rather than by a page. */
+    function refreshPages() { if (!servedSinceOnline) return; servedSinceOnline = false; try { if (AppState.me && !document.querySelector('.modal.show')) M.Router.refreshAll(); } catch (e) { /* ignore */ } }
+    return { paint: paint, badge: badge, served: function (hit) { lastLocal = hit; servedSinceOnline = true; paint(); }, online: function () { paint(); if (AppState.me && Queue.state().pending) Queue.push().then(refreshPages, refreshPages); else refreshPages(); } };
   })();
 
   Api.offline = {
@@ -1880,6 +1893,19 @@ window.MLS = (function () {
     queueable: Queue.queueable,
     idempotent: Queue.idempotent
   };
+  /** The sign-in screen: what this device still holds for the server and whose it is (the queue survives sign-out and expiry; it goes when its owner signs in, or when a manager submits it). */
+  function paintAuthNote() {
+    var el = UI.el('auth-queue-note'); if (!el || !Store.available()) return;
+    Store.all('queue').then(function (q) {
+      var pending = q.filter(function (o) { return o.state === 'PENDING' || o.state === 'SENDING'; }), refused = q.filter(function (o) { return o.state === 'REJECTED'; }).length;
+      if (!pending.length && !refused) { el.hidden = true; return; }
+      var names = {}; pending.forEach(function (o) { names[o.displayName || o.username || 'someone'] = (names[o.displayName || o.username || 'someone'] || 0) + 1; });
+      var who = Object.keys(names).map(function (n) { return n + ' (' + names[n] + ')'; }).join(', ');
+      el.textContent = (pending.length ? pending.length + ' operation' + (pending.length === 1 ? '' : 's') + ' made offline on this device ' + (pending.length === 1 ? 'waits' : 'wait') + ' for the server — made by ' + who + '. ' + (Object.keys(names).length === 1 ? 'Sign in as ' + Object.keys(names)[0] + ' to send ' + (pending.length === 1 ? 'it' : 'them') + ', or a manager can submit ' + (pending.length === 1 ? 'it' : 'them') + ' from Sync.' : 'Each is sent when its owner signs in here, or a manager submits them from Sync.') : '') + (refused ? (pending.length ? ' ' : '') + refused + ' refused operation' + (refused === 1 ? '' : 's') + ' also wait' + (refused === 1 ? 's' : '') + ' on this device to be looked at.' : '');
+      el.hidden = false;
+    }).catch(function () { el.hidden = true; });
+  }
+  document.addEventListener('mls:authscreen', paintAuthNote);
   Net.onChange(function (s) { if (s === 'online') bar.online(); else bar.paint(); bar.badge(); });
   Queue.onChange(function () { bar.badge(); bar.paint(); });
   document.addEventListener('mls:signedin', function () { bar.paint(); bar.badge(); }); document.addEventListener('mls:signedout', function () { bar.paint(); bar.badge(); });
@@ -1896,6 +1922,7 @@ window.MLS = (function () {
     <div class="auth-card">
       <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="10" fill="none" stroke="white" stroke-width="3"/><path d="M13 21c2.5-2.5 5-2.5 7 0s4.5 2.5 7 0" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg></span><span><span class="brand-name d-block" id="auth-business">Mrs Laundry Sys</span><span class="brand-sub">Point of sale and laundry management</span></span></div>
       <div class="alert alert-info py-2 small mt-3 mb-0" id="auth-note" hidden></div>
+      <div class="alert alert-warning py-2 small mt-2 mb-0" id="auth-queue-note" hidden></div>
 
       <form id="panel-login" autocomplete="on" hidden>
         <h1>Sign in</h1>
