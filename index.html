@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'fc152a964e', version: '1.7.0' };</script>
+  <script>window.MLS_PWA = { build: '1960fa2da5', version: '1.8.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -129,6 +129,9 @@
   #main-content { padding: 20px; max-width: 1400px; width: 100%; }
   .view > .view-head { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: 16px; }
   .view > .view-head h2 { font-size: 1.3rem; margin: 0; } .view > .view-head .spacer { flex: 1 1 auto; }
+  /* the state of a read on its way: a saved answer on screen while the server is asked, then updated, or why it was not */
+  .refresh-state { display: inline-flex; align-items: center; gap: .35rem; font-size: .78rem; color: var(--mls-ink-soft); white-space: nowrap; }
+  .refresh-state.ok { color: var(--mls-success); } .refresh-state.bad { color: var(--mls-danger); white-space: normal; }
 
   /* ---- Shared components ---- */
   .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
@@ -590,7 +593,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.7.0';
+  var VERSION = '1.8.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -717,8 +720,68 @@ window.MLS = (function () {
         }, function (err) { if (err && err.code && err.offline && err.code !== 'NETWORK') throw err; throw refused; });
       });
     }
+    /**
+     * A sequence for one list or panel: every request takes a ticket, and a reply paints only while its ticket is the
+     * newest — a slower answer for an earlier tab, filter or search can no longer overwrite the one the user asked for
+     * last. var seq = Api.sequence(); var t = seq.take(); Api.call(...).then(function (r) { if (!seq.is(t)) return; paint(r); });
+     */
+    function sequence() { var n = 0; return { take: function () { return ++n; }, is: function (t) { return t === n; }, current: function () { return n; } }; }
+    var CACHED_WAIT_MS = 150;
+    /**
+     * A read that paints a screen. opts.paint(data, info) runs with the last answer this device holds for the same request
+     * (info.cached = true, info.asOf = when it was saved) as soon as the copy finds it — within CACHED_WAIT_MS, never waiting
+     * on a slow store — and again with the live answer (info.cached = false), which always wins; the returned promise settles
+     * with the live answer exactly as Api.call would. While a saved answer is on screen the view's head says so ("saved 10:42 ·
+     * updating…"), so a copy is never mistaken for the server's current state; when the live call fails, the head says the
+     * screen was not updated and why. opts.seq (Api.sequence()) drops any reply, saved or live, for a request the screen has
+     * since superseded (its error, if any, carries superseded: true so the page stays quiet). opts.cached = false asks for the live answer only (money screens).
+     */
+    function read(action, payload, opts) {
+      opts = opts || {};
+      // a reply paints only while it is the newest of its sequence and the app is still signed in as it was when the read began (a session that ended meanwhile has cleared the state the page would paint into)
+      var seq = opts.seq, ticket = seq ? seq.take() : null, token = AppState.token, fresh = function () { return (!seq || seq.is(ticket)) && !!AppState.me && AppState.token === token; };
+      var view = opts.view === undefined ? Router.current() : opts.view, liveDone = false, paintedCached = false, startedAt = Date.now();
+      var live = Api.call(action, payload, opts).then(function (data) {
+        liveDone = true;
+        if (fresh()) { if (opts.paint) opts.paint(data, { cached: false, asOf: null }); Refresh.live(view, paintedCached); try { Timing.view(view || action, Date.now() - startedAt, paintedCached ? 'saved-then-live' : 'live'); } catch (e) { /* ignore */ } }
+        return data;
+      }, function (e) { liveDone = true; if (fresh()) Refresh.failed(view, paintedCached, e); else if (e && typeof e === 'object') { try { e.superseded = true; } catch (x) { /* frozen */ } } throw e; });
+      var canCache = opts.cached !== false && opts.paint && Api.offline && Api.offline.answer && Net.state() !== 'offline' && Net.state() !== 'unreachable';
+      if (canCache) {
+        var timer = null;
+        new Promise(function (resolve) {
+          timer = setTimeout(function () { resolve(null); }, CACHED_WAIT_MS);
+          try { Api.offline.answer(action, payload).then(function (hit) { clearTimeout(timer); resolve(hit); }, function () { clearTimeout(timer); resolve(null); }); } catch (e) { clearTimeout(timer); resolve(null); }
+        }).then(function (hit) {
+          if (!hit || hit.data === undefined || hit.data === null || liveDone || !fresh()) return;
+          paintedCached = true;
+          try { opts.paint(hit.data, { cached: true, asOf: hit.asOf || null }); Refresh.cached(view, hit.asOf); try { Timing.view(view || action, Date.now() - startedAt, 'saved'); } catch (e) { /* ignore */ } } catch (e) { console.error(e); }
+        });
+      }
+      return live;
+    }
+    /** The state line in a view's head while a read is on its way: "saved 10:42 · updating…", then "updated", or why it was not. */
+    var Refresh = (function () {
+      var timers = {};
+      function chip(view) {
+        if (!view) return null; var v = UI.el('view-' + view); if (!v) return null;
+        var head = v.querySelector('.view-head'); if (!head) return null;
+        var el = head.querySelector('.refresh-state');
+        if (!el) { el = document.createElement('span'); el.className = 'refresh-state'; el.hidden = true; el.setAttribute('role', 'status'); var spacer = head.querySelector('.spacer'); if (spacer) head.insertBefore(el, spacer); else head.appendChild(el); }
+        return el;
+      }
+      function show(view, html, cls, hideAfter) { var el = chip(view); if (!el) return; clearTimeout(timers[view]); el.className = 'refresh-state' + (cls ? ' ' + cls : ''); el.innerHTML = html; el.hidden = false; if (hideAfter) timers[view] = setTimeout(function () { el.hidden = true; }, hideAfter); }
+      function cached(view, asOf) { var when = asOf ? new Date(asOf) : null; show(view, '<i class="fa-solid fa-rotate fa-spin" aria-hidden="true"></i>saved' + (when && !isNaN(when) ? ' ' + when.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' }) : '') + ' · updating…', 'updating'); }
+      function live(view, hadCached) { if (hadCached) show(view, '<i class="fa-solid fa-check" aria-hidden="true"></i>updated', 'ok', 1500); else { var el = chip(view); if (el) el.hidden = true; } }
+      function failed(view, hadCached, e) {
+        if (!hadCached) { var el = chip(view); if (el) el.hidden = true; return; }
+        var off = e && (e.offline || e.code === 'NETWORK' || e.code === 'TIMEOUT' || e.code === 'NO_SERVER');
+        show(view, '<i class="fa-solid ' + (off ? 'fa-cloud-arrow-down' : 'fa-triangle-exclamation') + '" aria-hidden="true"></i>' + (off ? 'not updated — no connection; showing what this device saved' : 'not updated — ' + UI.esc((e && e.message) || 'the server did not answer')), 'bad');
+      }
+      return { cached: cached, live: live, failed: failed, chip: chip };
+    })();
     /** Api.offline is set by Offline.html: answer(action, payload) → { data, asOf } | null, record(action, payload, data, meta), me(token), served(action, hit), enqueue(action, payload), queueable(action), idempotent(action). */
-    return { call: call, pending: function () { return inflight; }, host: function () { return HOST; }, offline: null };
+    return { call: call, read: read, sequence: sequence, refresh: Refresh, pending: function () { return inflight; }, host: function () { return HOST; }, offline: null };
   })();
 
   // ------------------------------------------------------------------ connection
@@ -824,9 +887,15 @@ window.MLS = (function () {
     }
     // the page going away is the moment a single checkout's timing would otherwise be lost
     window.addEventListener('pagehide', function () { if (data) save(); });
-    function summary() { var d = load(); if (data) save(); return Object.keys(d).map(function (a) { var t = d[a]; return { action: a, count: t.count, avgMs: Math.round(t.totalMs / t.count), maxMs: t.maxMs, avgServerMs: Math.round(t.totalServerMs / t.count), maxServerMs: t.maxServerMs, last: t.last }; }).sort(function (x, y) { return y.count - x.count; }); }
+    function summary() { var d = load(); if (data) save(); return Object.keys(d).map(function (a) { var t = d[a]; return { action: a, count: t.count, avgMs: Math.round(t.totalMs / t.count), maxMs: t.maxMs, avgServerMs: Math.round(t.totalServerMs / t.count), maxServerMs: t.maxServerMs, sources: t.sources || null, last: t.last }; }).sort(function (x, y) { return y.count - x.count; }); }
+    /** A screen painted: how long after the navigation its content stood, and from where ('saved' = the device's copy, 'live' = the server, 'saved-then-live' = both). */
+    function view(name, ms, source) {
+      var d = load(), t = d['view:' + name] || (d['view:' + name] = { count: 0, totalMs: 0, maxMs: 0, totalServerMs: 0, maxServerMs: 0, sources: {} });
+      t.count++; t.totalMs += ms; t.maxMs = Math.max(t.maxMs, ms); t.sources[source] = (t.sources[source] || 0) + 1; t.last = new Date().toISOString();
+      if (t.count % 5 === 0) save();
+    }
     function clear() { data = {}; save(); }
-    return { note: note, summary: summary, clear: clear };
+    return { note: note, view: view, summary: summary, clear: clear };
   })();
 
   // ------------------------------------------------------------------ ui helpers
@@ -1336,6 +1405,7 @@ window.MLS = (function () {
   /** Writes whose server handler refuses to apply twice (a RequestId): safe to queue after a timed-out call; the others are queued only when the call never left the device. */
   var IDEMPOTENT = ['orders.create', 'customers.quickAdd', 'customers.save', 'payments.create'];
   var PUSH_BATCH = 50;
+  var OPEN_TIMEOUT_MS = 8000;
 
   // ------------------------------------------------------------------ the database
   var Store = (function () {
@@ -1345,10 +1415,12 @@ window.MLS = (function () {
       dbp = new Promise(function (resolve, reject) {
         if (!window.indexedDB) { unavailable = true; reject(new Error('IndexedDB is not available in this browser')); return; }
         var req; try { req = indexedDB.open(DB_NAME, DB_VERSION); } catch (e) { unavailable = true; reject(e); return; }
+        // a browser that never answers the open request (a cross-site frame with storage partitioned off) must not hang whatever waits on the copy: the copy is then simply unavailable
+        var timer = setTimeout(function () { unavailable = true; reject(new Error('IndexedDB did not open in time')); }, OPEN_TIMEOUT_MS);
         req.onupgradeneeded = function () { var db = req.result; STORES.forEach(function (n) { if (!db.objectStoreNames.contains(n)) db.createObjectStore(n); }); };
-        req.onsuccess = function () { var db = req.result; db.onversionchange = function () { db.close(); dbp = null; }; resolve(db); };
-        req.onerror = function () { unavailable = true; reject(req.error || new Error('IndexedDB refused to open')); };
-        req.onblocked = function () { reject(new Error('IndexedDB is blocked by another tab')); };
+        req.onsuccess = function () { clearTimeout(timer); var db = req.result; db.onversionchange = function () { db.close(); dbp = null; }; unavailable = false; resolve(db); };
+        req.onerror = function () { clearTimeout(timer); unavailable = true; reject(req.error || new Error('IndexedDB refused to open')); };
+        req.onblocked = function () { clearTimeout(timer); reject(new Error('IndexedDB is blocked by another tab')); };
       });
       dbp.catch(function () { dbp = null; });
       return dbp;
@@ -1480,7 +1552,11 @@ window.MLS = (function () {
     function answer(action, payload) {
       var fn = LOCAL[action];
       if (action === 'services.quote') return fn(payload || {});
-      return (fn ? fn(payload || {}) : snapshot(action, payload)).catch(function () { return null; });
+      // the copy belongs to one user and one branch lens: after a switch, until the pull has replaced it, it answers nothing
+      return meta('sync').then(function (m) {
+        var me = AppState.me; if (m && me && (m.userId !== me.user.Id || m.branch !== me.activeBranch)) return null;
+        return fn ? fn(payload || {}) : snapshot(action, payload);
+      }).catch(function () { return null; });
     }
     return { answer: answer, payloadKey: payloadKey, LOCAL: Object.keys(LOCAL), snapshot: snapshot, ordersMeta: ordersMeta };
   })();
@@ -1857,12 +1933,20 @@ window.MLS = (function () {
 
   // ------------------------------------------------------------------ the pull
   var Sync = (function () {
-    var pulling = null, lastPull = null, pulledVersion = 0, pullMinutes = 5, readActions = null, debounce = null, listeners = [], lastError = null, served = 0;
+    var pulling = null, lastPull = null, lastFull = null, pulledVersion = 0, pullMinutes = 5, readActions = null, debounce = null, listeners = [], lastError = null, served = 0;
     function emit() { listeners.forEach(function (fn) { try { fn(state()); } catch (e) { console.error(e); } }); }
-    function state() { return { pulling: !!pulling, lastPull: lastPull, dataVersion: pulledVersion, lastError: lastError, served: served }; }
-    function loadMeta() { return Store.get('meta', 'sync').then(function (m) { m = m || {}; lastPull = m.lastPull || null; pulledVersion = m.dataVersion || 0; pullMinutes = m.pullMinutes || 5; readActions = m.readActions || null; return m; }).catch(function () { return {}; }); }
+    function state() { return { pulling: !!pulling, lastPull: lastPull, lastFull: lastFull, dataVersion: pulledVersion, lastError: lastError, served: served }; }
+    function loadMeta() { return Store.get('meta', 'sync').then(function (m) { m = m || {}; lastPull = m.lastPull || null; lastFull = m.lastFull || null; pulledVersion = m.dataVersion || 0; pullMinutes = m.pullMinutes || 5; readActions = m.readActions || null; return m; }).catch(function () { return {}; }); }
+    /** How long a change elsewhere waits before this device refreshes its copy of the orders and customers (Settings → System, OfflinePullDebounceSeconds). */
+    function debounceMs() { var st = AppState.me && AppState.me.settings, n = Number(st && st.OfflinePullDebounceSeconds); return (isFinite(n) && n >= 5 ? n : 60) * 1000; }
     function clearCopy() { return Promise.all([Store.clearServerRows('orders'), Store.clearServerRows('customers'), Store.clear('snapshots')]); }
-    /** Pulls the copy for the signed-in user and lens: full after a change of user or lens (the server's rows are wiped first; what was made offline stays with the queue), incremental otherwise, page by page. Resolves with the summary; never rejects. */
+    /**
+     * Pulls the copy for the signed-in user and lens: full after a change of user or lens (the server's rows are wiped first;
+     * what was made offline stays with the queue), incremental otherwise, page by page. opts.light asks only for the orders
+     * and customers changed since the watermark — no screens: the server does not re-run every read action for a device that
+     * merely noticed a change; the screens are refreshed by the periodic full pull and by live use. Resolves with the summary;
+     * never rejects.
+     */
     function pull(opts) {
       opts = opts || {};
       if (pulling) return pulling;
@@ -1872,7 +1956,9 @@ window.MLS = (function () {
         var installId = meta.installId || null;
         var prep = lensChanged ? clearCopy().then(function () { return { userId: me.user.Id, branch: me.activeBranch }; }) : Promise.resolve(meta);
         return prep.then(function (m) {
+          var light = !!opts.light && !lensChanged && !opts.force && !!m.lastFull;  // a copy that never had its screens is pulled whole
           var body = { dataVersion: lensChanged || opts.force ? undefined : m.dataVersion, installId: installId, force: !!opts.force, orders: { since: m.ordersSince || null }, customers: { since: m.customersSince || null } };
+          if (light) body.snapshots = false;
           var first = null, orderRows = 0, customerRows = 0, snapshots = 0;
           var step = function () {
             return Api.call('sync.pull', body, { noRedirect: true, timeoutMs: 120000, noOffline: true }).then(function (r) {
@@ -1903,12 +1989,12 @@ window.MLS = (function () {
           };
           return step().then(function (last) {
             var now = new Date().toISOString();
-            if (last.unchanged) { lastPull = now; return Store.put('meta', 'sync', Object.assign({}, m, { lastPull: now, dataVersion: last.dataVersion, installId: last.installId || m.installId || null, userId: me.user.Id, branch: me.activeBranch })).then(function () { return { unchanged: true, orders: 0, customers: 0, snapshots: 0 }; }); }
+            if (last.unchanged) { lastPull = now; if (!light) lastFull = now; return Store.put('meta', 'sync', Object.assign({}, m, { lastPull: now, lastFull: lastFull, dataVersion: last.dataVersion, installId: last.installId || m.installId || null, userId: me.user.Id, branch: me.activeBranch })).then(function () { return { unchanged: true, orders: 0, customers: 0, snapshots: 0 }; }); }
             var serverTime = new Date(first.serverTime).getTime(), since = new Date(serverTime - 60000).toISOString(), prune = first.orders ? first.orders.pruneBefore : null;
             var pruneP = prune ? Store.all('orders').then(function (all) { var stale = all.filter(function (o) { return !o.IsOpen && !o._pending && String(o.OrderDate) < prune; }).map(function (o) { return o.Id; }); return stale.length ? Store.removeMany('orders', stale) : 0; }) : Promise.resolve(0);
             return pruneP.then(function (pruned) {
-              pulledVersion = first.dataVersion; pullMinutes = first.pullMinutes || pullMinutes; readActions = first.readActions || readActions; lastPull = now; lastError = null;
-              return Store.put('meta', 'sync', { userId: me.user.Id, branch: me.activeBranch, installId: first.installId || null, dataVersion: first.dataVersion, ordersSince: since, customersSince: since, lastPull: now, pullMinutes: pullMinutes, readActions: readActions, queueable: first.queueable || QUEUEABLE, window: first.window || null, serverTime: first.serverTime }).then(function () { return { unchanged: false, orders: orderRows, customers: customerRows, snapshots: snapshots, pruned: pruned }; });
+              pulledVersion = first.dataVersion; pullMinutes = first.pullMinutes || pullMinutes; readActions = first.readActions || readActions; lastPull = now; if (!light) lastFull = now; lastError = null;
+              return Store.put('meta', 'sync', { userId: me.user.Id, branch: me.activeBranch, installId: first.installId || null, dataVersion: first.dataVersion, ordersSince: since, customersSince: since, lastPull: now, lastFull: lastFull, pullMinutes: pullMinutes, readActions: readActions, queueable: first.queueable || QUEUEABLE, window: first.window || null, serverTime: first.serverTime }).then(function () { return { unchanged: false, orders: orderRows, customers: customerRows, snapshots: snapshots, pruned: pruned }; });
             });
           });
         });
@@ -1916,13 +2002,15 @@ window.MLS = (function () {
       emit();
       return pulling;
     }
-    function due() { if (!lastPull) return true; return Date.now() - new Date(lastPull).getTime() >= pullMinutes * 60000; }
+    /** A full pull (screens included) is due every pullMinutes; a light one does not count. */
+    function due() { if (!lastFull) return true; return Date.now() - new Date(lastFull).getTime() >= pullMinutes * 60000; }
     function tick() { if (AppState.me && Net.state() === 'online' && !document.hidden && due()) pull(); }
-    function schedule(ms) { clearTimeout(debounce); debounce = setTimeout(function () { if (AppState.me && Net.state() === 'online') pull(); }, ms); }
-    /** Files a live answer as it passes (the read actions the server listed for this user), and pulls soon when the data version moved. */
+    /** A pull in ms from now; onlyIfDue re-checks the clock when the moment comes, so a pull that ran meanwhile (the sign-in pull, say) is not repeated; opts go to pull (light). */
+    function schedule(ms, onlyIfDue, opts) { clearTimeout(debounce); debounce = setTimeout(function () { debounce = null; if (AppState.me && Net.state() === 'online' && (!onlyIfDue || due())) pull(opts); }, ms); }
+    /** Files a live answer as it passes (the read actions the server listed for this user), and — a debounce later — pulls the orders and customers that changed when the data version moved. */
     function record(action, payload, data, meta) {
       if (!Store.available() || !AppState.me) return;
-      if (meta && meta.dataVersion && pulledVersion && meta.dataVersion > pulledVersion) schedule(4000);
+      if (meta && meta.dataVersion && pulledVersion && meta.dataVersion > pulledVersion && !debounce) schedule(debounceMs(), false, { light: true });
       if (!readActions || readActions.indexOf(action) < 0) return;
       Store.put('snapshots', payloadKey(action, payload), { action: action, payload: payload || {}, data: data, asOf: new Date().toISOString() }).catch(function () { /* the copy is best effort */ });
     }
@@ -1931,10 +2019,10 @@ window.MLS = (function () {
     function init() {
       loadMeta();
       // after sign-in: what waits goes to the server first, then the copy is refreshed so it carries the server's view of it
-      document.addEventListener('mls:signedin', function () { if (navigator.storage && navigator.storage.persist && M.host === 'pwa') { navigator.storage.persist().catch(function () { /* ignore */ }); } var go = function () { return Queue.push({ quiet: false }).then(function () { return pull(); }); }; if (Net.state() === 'online') go(); else Net.health().then(function (ok) { if (ok) go(); }); });
+      document.addEventListener('mls:signedin', function () { if (navigator.storage && navigator.storage.persist && M.host === 'pwa') { navigator.storage.persist().catch(function () { /* ignore */ }); } var go = function () { return Queue.push({ quiet: false }).then(function () { return pull({ light: !due() }); }); };  /* a copy refreshed within OfflinePullMinutes gets its rows brought up to date, not every screen again */ if (Net.state() === 'online') go(); else Net.health().then(function (ok) { if (ok) go(); }); });
       document.addEventListener('visibilitychange', function () { if (!document.hidden) tick(); });
-      document.addEventListener('mls:synced', function () { schedule(500); });
-      Net.onChange(function (s) { if (s === 'online' && AppState.me && due()) schedule(3000); });
+      document.addEventListener('mls:synced', function () { schedule(500, false, { light: true }); });
+      Net.onChange(function (s) { if (s === 'online' && AppState.me && due()) schedule(3000, true); });
       setInterval(tick, 60000);
     }
     return { pull: pull, record: record, cachedMe: cachedMe, state: state, onChange: function (fn) { listeners.push(fn); }, init: init, noteServed: function () { served++; }, payloadKey: payloadKey };
@@ -2182,7 +2270,7 @@ window.MLS = (function () {
     var more = UI.el('dash-followups-more'); more.hidden = !(f.unclaimed + f.balances > (f.sample || []).length) || !M.Router.allowed('orders'); more.onclick = function () { M.Router.go('orders', { status: 'READY' }); };
     card.hidden = false;
   }
-  function paint(d) {
+  function paint(d, info) {
     paintSetup(d); paintMe(d); paintTiles(d); paintFollowups(d);
     var inv = d.inventory, card = UI.el('dash-lowstock-card');
     if (inv && inv.lowStockItems && inv.lowStockItems.length) {
@@ -2191,11 +2279,13 @@ window.MLS = (function () {
     } else card.hidden = true;
     var me = M.AppState.me, b = me && me.branches.filter(function (x) { return x.Id === d.branch; })[0];
     UI.el('dash-scope').textContent = d.branch === 'ALL' ? 'All branches' : (b ? b.Name : '');
-    UI.el('dash-asof').textContent = 'as of ' + F.time(new Date());
+    // a saved answer names the time it was saved; the live one the time it arrived
+    UI.el('dash-asof').textContent = 'as of ' + F.time(info && info.cached && info.asOf ? new Date(info.asOf) : new Date()) + (info && info.cached ? ' (saved on this device)' : '');
   }
+  var seq = M.Api.sequence();
   function load() {
     var btn = UI.el('dash-refresh'); btn.disabled = true;
-    return M.Api.call('dashboard.summary', {}).then(paint).catch(function (e) { M.Toast.danger('Dashboard: ' + UI.error(e)); }).then(function () { btn.disabled = false; });
+    return M.Api.read('dashboard.summary', {}, { seq: seq, paint: paint }).catch(function (e) { if (!(e && e.superseded)) M.Toast.danger('Dashboard: ' + UI.error(e)); }).then(function () { btn.disabled = false; });
   }
   M.Router.register('dashboard', {
     title: 'Dashboard',
@@ -2276,12 +2366,16 @@ window.MLS = (function () {
   function lensOk() { var me = M.AppState.me; return !!(me && me.activeBranch && me.activeBranch !== 'ALL'); }
 
   // ---------------------------------------------------------------- catalog
+  var catSeq = Api.sequence(), prodSeq = Api.sequence();
+  /** The catalogue: the copy on this device paints the tiles at once (the head says saved · updating), the server's answer replaces them; prices on the tiles are for reading — every total is quoted live or by the shared core. */
   function loadCatalog() {
-    UI.html('pos-tiles', '<div class="text-soft p-2">Loading catalog…</div>');
-    return Promise.all([Api.call('services.list', { forPos: true }), Api.call('inventory.all', { sellable: true, type: 'PRODUCT' })]).then(function (r) {
-      catalog.services = r[0].rows; catalog.categories = r[0].categories; catalog.products = r[1];
-      renderChips(); renderTiles();
-    }).catch(function (e) { Toast.danger('Catalog: ' + UI.error(e)); UI.html('pos-tiles', UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The catalog could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate', onClick: loadCatalog }, compact: true })); var again = UI.el('pos-tiles').querySelector('[data-empty-action]'); if (again) again.onclick = loadCatalog; });
+    if (!catalog.services.length && !catalog.products.length) UI.html('pos-tiles', '<div class="text-soft p-2">Loading catalog…</div>');
+    var got = { services: false, products: false }, paintAll = function () { if (got.services && got.products) { renderChips(); renderTiles(); } };
+    return Promise.all([
+      Api.read('services.list', { forPos: true }, { seq: catSeq, paint: function (r) { catalog.services = r.rows; catalog.categories = r.categories; got.services = true; paintAll(); } }),
+      Api.read('inventory.all', { sellable: true, type: 'PRODUCT' }, { seq: prodSeq, paint: function (r) { catalog.products = r; got.products = true; paintAll(); } })
+    ]).catch(function (e) {
+      if (e && e.superseded) return; Toast.danger('Catalog: ' + UI.error(e)); UI.html('pos-tiles', UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The catalog could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate', onClick: loadCatalog }, compact: true })); var again = UI.el('pos-tiles').querySelector('[data-empty-action]'); if (again) again.onclick = loadCatalog; });
   }
   function renderChips() {
     var chips = ['ALL'].concat(catalog.categories).concat(catalog.products.length ? ['PRODUCTS'] : []);
@@ -2763,10 +2857,11 @@ window.MLS = (function () {
   }
 
   // ------------------------------------------------------------ list
-  var state = { status: 'OPEN', search: '', from: '', to: '', withBalance: false, page: 1 };
+  var state = { status: 'OPEN', search: '', from: '', to: '', withBalance: false, page: 1 }, seq = Api.sequence();
+  /** The list: the device's copy paints at once (marked as saved in the head), the server's answer replaces it; a reply for a tab, filter or search the user has since left is dropped. */
   function load() {
     var box = UI.el('orders-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
-    return Api.call('orders.list', { status: state.status, search: state.search, from: state.from, to: state.to, withBalance: state.withBalance, page: state.page, size: 25 }).then(function (r) {
+    return Api.read('orders.list', { status: state.status, search: state.search, from: state.from, to: state.to, withBalance: state.withBalance, page: state.page, size: 25 }, { seq: seq, paint: function (r) {
       ['OPEN', 'READY'].forEach(function (k) { var el = document.querySelector('#orders-tabs [data-count="' + k + '"]'); if (el) { var n = k === 'OPEN' ? Object.keys(r.counts).reduce(function (t, s) { return t + (['NEW', 'RECEIVED', 'PROCESSING', 'WASHING', 'DRYING', 'FOLDING', 'QC', 'READY', 'OUT_FOR_DELIVERY'].indexOf(s) >= 0 ? r.counts[s] : 0); }, 0) : (r.counts.READY || 0); el.textContent = n || ''; } });
       M.Table.render(box, {
         columns: [
@@ -2781,7 +2876,7 @@ window.MLS = (function () {
         onPage: function (p) { state.page = p; load(); }, onRow: function (row) { openOrder(row.Id, function () { load(); }); }
       });
       UI.el('orders-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + r.total + ' order' + (r.total === 1 ? '' : 's');
-    }).catch(function (e) { Toast.danger('Orders: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Orders: ' + UI.error(e)); });
   }
   function wire() {
     UI.el('orders-refresh').onclick = function () { resetMeta(); load(); };
@@ -2854,10 +2949,11 @@ window.MLS = (function () {
 (function () {
   'use strict';
   var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Form = M.Form;
-  var state = { search: '', type: '', status: 'ACTIVE', withBalance: false, page: 1 }, types = ['REGULAR', 'VIP', 'CORPORATE'];
+  var state = { search: '', type: '', status: 'ACTIVE', withBalance: false, page: 1 }, types = ['REGULAR', 'VIP', 'CORPORATE'], seq = Api.sequence();
 
   function load() {
-    return Api.call('customers.list', { search: state.search, type: state.type, status: state.status, withBalance: state.withBalance, page: state.page, size: 25 }).then(function (r) {
+    var box = UI.el('cust-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    return Api.read('customers.list', { search: state.search, type: state.type, status: state.status, withBalance: state.withBalance, page: state.page, size: 25 }, { seq: seq, paint: function (r) {
       types = r.types || types;
       var sel = UI.el('cust-type'); if (sel.options.length === 1) sel.innerHTML += UI.options(types, '', function (t) { return F.status(t); }, function (t) { return t; });
       M.Table.render(UI.el('cust-table'), {
@@ -2872,7 +2968,7 @@ window.MLS = (function () {
         onPage: function (p) { state.page = p; load(); }, onRow: function (row) { open(row.Id); }
       });
       UI.el('cust-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + r.total + ' customer' + (r.total === 1 ? '' : 's');
-    }).catch(function (e) { Toast.danger('Customers: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Customers: ' + UI.error(e)); });
   }
   function openForm(c) {
     var f = UI.el('cust-form'); f.reset(); Form.clearErrors(f);
@@ -3041,8 +3137,10 @@ window.MLS = (function () {
   function canEdit() { return M.Auth.can('SERVICE_EDIT'); }
   function typeLabel(t) { return { PER_KILO: 'Per kilo', PER_PIECE: 'Per piece', PER_LOAD: 'Per load', FLAT: 'Flat' }[t] || t; }
 
+  var listSeq = Api.sequence();
   function load() {
-    return Api.call('services.list', { includeInactive: UI.el('svc-inactive').checked }).then(function (r) {
+    var box = UI.el('svc-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    return Api.read('services.list', { includeInactive: UI.el('svc-inactive').checked }, { seq: listSeq, paint: function (r) {
       rows = r.rows; categories = r.categories; UI.el('svc-categories').innerHTML = categories.map(function (c) { return '<option value="' + UI.esc(c) + '">'; }).join('');
       M.Table.render(UI.el('svc-table'), {
         columns: [
@@ -3058,7 +3156,7 @@ window.MLS = (function () {
         onRow: function (r) { open(r.Id); }
       });
       UI.el('svc-count').textContent = rows.length + ' service' + (rows.length === 1 ? '' : 's');
-    }).catch(function (e) { Toast.danger('Services: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Services: ' + UI.error(e)); });
   }
   function openForm(s) {
     var f = UI.el('svc-form'); f.reset(); Form.clearErrors(f); UI.el('svc-form-title').textContent = s ? 'Edit ' + s.Name : 'New service'; UI.el('svc-status-wrap').hidden = !s;
@@ -3259,8 +3357,10 @@ window.MLS = (function () {
   function itemById(id) { return (all || []).filter(function (i) { return i.Id === id; })[0] || null; }
 
   // ---------------------------------------------------------------- lists
+  var itemSeq = Api.sequence(), moveSeq = Api.sequence();
   function loadItems() {
-    return Api.call('inventory.items', { search: state.search, type: state.type, lowOnly: state.lowOnly, includeInactive: state.includeInactive, page: state.page, size: 50 }).then(function (r) {
+    var box = UI.el('inv-items-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    return Api.read('inventory.items', { search: state.search, type: state.type, lowOnly: state.lowOnly, includeInactive: state.includeInactive, page: state.page, size: 50 }, { seq: itemSeq, paint: function (r) {
       categories = r.categories || []; UI.el('item-categories').innerHTML = categories.map(function (c) { return '<option value="' + UI.esc(c) + '">'; }).join('');
       M.Table.render(UI.el('inv-items-table'), {
         columns: [
@@ -3276,10 +3376,11 @@ window.MLS = (function () {
       });
       UI.el('inv-count-items').textContent = r.total;
       UI.el('inv-scope').textContent = 'Stock at ' + UI.branchName(M.AppState.me.activeBranch);
-    }).catch(function (e) { Toast.danger('Inventory: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Inventory: ' + UI.error(e)); });
   }
   function loadMoves() {
-    return Api.call('inventory.movements', { search: state.mvSearch, type: state.mvType, from: state.mvFrom, to: state.mvTo, page: state.mvPage, size: 50 }).then(function (r) {
+    var box = UI.el('inv-moves-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    return Api.read('inventory.movements', { search: state.mvSearch, type: state.mvType, from: state.mvFrom, to: state.mvTo, page: state.mvPage, size: 50 }, { seq: moveSeq, paint: function (r) {
       var sel = UI.el('mv-type'); if (sel.options.length === 1) sel.innerHTML += UI.options(r.types || [], '', moveLabel, function (t) { return t; });
       M.Table.render(UI.el('inv-moves-table'), {
         columns: [
@@ -3294,7 +3395,7 @@ window.MLS = (function () {
         onPage: function (p) { state.mvPage = p; loadMoves(); }, onRow: function (row) { open(row.ItemId); }
       });
       UI.el('inv-count-moves').textContent = r.total;
-    }).catch(function (e) { Toast.danger('Movements: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Movements: ' + UI.error(e)); });
   }
   function showTab(tab) {
     state.tab = tab;
@@ -3523,8 +3624,10 @@ window.MLS = (function () {
   function round2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
 
   // ---------------------------------------------------------------- register
+  var listSeq = Api.sequence();
   function load() {
-    return Api.call('purchases.list', { search: state.search, paymentStatus: state.status, from: state.from, to: state.to, page: state.page, size: 25 }).then(function (r) {
+    var box = UI.el('po-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    return Api.read('purchases.list', { search: state.search, paymentStatus: state.status, from: state.from, to: state.to, page: state.page, size: 25 }, { seq: listSeq, paint: function (r) {
       M.Table.render(UI.el('po-table'), {
         columns: [
           { key: 'PurchaseNo', label: 'Purchase', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + F.date(r.PurchaseDate) + (M.AppState.me.activeBranch === 'ALL' ? ' · ' + UI.esc(UI.branchName(r.BranchId)) : '') + '</div>'; } },
@@ -3537,7 +3640,7 @@ window.MLS = (function () {
         onPage: function (p) { state.page = p; load(); }, onRow: function (row) { open(row.Id); }
       });
       UI.el('po-scope').textContent = r.total + ' purchase' + (r.total === 1 ? '' : 's') + (Number(r.unpaid) > 0 ? ' · ' + F.peso(r.unpaid) + ' unpaid' : '');
-    }).catch(function (e) { Toast.danger('Purchases: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Purchases: ' + UI.error(e)); });
   }
 
   // ---------------------------------------------------------------- new purchase
@@ -3697,12 +3800,14 @@ window.MLS = (function () {
       if (NEXT[col]) acts = '<button type="button" class="btn btn-sm btn-primary" data-adv="' + UI.esc(c.Id) + '" data-stage="' + NEXT[col][0] + '"><i class="fa-solid ' + NEXT[col][2] + ' me-1"></i>' + NEXT[col][1] + '</button>';
       else if (col === 'QC') acts = '<button type="button" class="btn btn-sm btn-success" data-qc="PASS" data-id="' + UI.esc(c.Id) + '"><i class="fa-solid fa-check me-1"></i>Pass</button><button type="button" class="btn btn-sm btn-outline-danger" data-qc="FAIL" data-id="' + UI.esc(c.Id) + '"><i class="fa-solid fa-rotate-left me-1"></i>Fail</button>';
     }
-    return '<div class="kcard' + (c.IsExpress ? ' express' : '') + (c.Overdue && col !== 'READY' ? ' overdue' : '') + '" data-open="' + UI.esc(c.Id) + '">' +
+    // the clock is this device's: minutes in stage and overdue are counted from the timestamps, not from the moment the server answered
+    var now = Date.now(), overdue = c.DueAt ? new Date(c.DueAt).getTime() < now : !!c.Overdue, minutes = c.StageSince ? Math.max(0, Math.round((now - new Date(c.StageSince).getTime()) / 60000)) : c.MinutesInStage;
+    return '<div class="kcard' + (c.IsExpress ? ' express' : '') + (overdue && col !== 'READY' ? ' overdue' : '') + '" data-open="' + UI.esc(c.Id) + '">' +
       '<div class="d-flex align-items-center gap-2"><span class="no">' + UI.esc(c.OrderNo) + '</span>' + (c.IsExpress ? '<span class="badge text-bg-warning">Express</span>' : '') + (c.ServiceType === 'DELIVERY' ? '<i class="fa-solid fa-motorcycle text-soft" title="For delivery"></i>' : '') + '</div>' +
       '<div class="small">' + UI.esc(c.CustomerName) + '</div>' +
       '<div class="meta">' + UI.esc((c.Lines && c.Lines.length ? c.Lines.join(' · ') : F.qty(c.TotalWeightKg, 'kg'))) + (c.BagCount ? ' · ' + c.BagCount + ' bag' + (c.BagCount === 1 ? '' : 's') : '') + (c.MachineNo ? ' · machine ' + UI.esc(c.MachineNo) : '') + '</div>' +
-      '<div class="meta"><span class="due">' + (c.DueAt ? (c.Overdue && col !== 'READY' ? 'Overdue · due ' : 'Due ') + F.datetime(c.DueAt) : 'No due time') + '</span></div>' +
-      (col !== 'QUEUE' && col !== 'READY' ? '<div class="meta">' + F.minutes(c.MinutesInStage) + ' in stage' + (c.StageBy ? ' · ' + UI.esc(c.StageBy) : '') + '</div>' : '') +
+      '<div class="meta"><span class="due">' + (c.DueAt ? (overdue && col !== 'READY' ? 'Overdue · due ' : 'Due ') + F.datetime(c.DueAt) : 'No due time') + '</span></div>' +
+      (col !== 'QUEUE' && col !== 'READY' ? '<div class="meta">' + F.minutes(minutes) + ' in stage' + (c.StageBy ? ' · ' + UI.esc(c.StageBy) : '') + '</div>' : '') +
       (c.Notes ? '<div class="meta"><i class="fa-regular fa-note-sticky me-1"></i>' + UI.esc(c.Notes) + '</div>' : '') +
       (acts ? '<div class="acts">' + acts + '</div>' : '') + '</div>';
   }
@@ -3716,7 +3821,8 @@ window.MLS = (function () {
     UI.el('prod-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · materials consumed at ' + F.status(board.consumptionStage).toLowerCase();
     UI.el('prod-updated').textContent = 'Updated ' + F.time(new Date());
   }
-  function load() { return Api.call('production.board', {}).then(function (b) { board = b; paint(); }).catch(function (e) { Toast.danger('Production: ' + UI.error(e)); }); }
+  var boardSeq = Api.sequence();
+  function load() { return Api.read('production.board', {}, { seq: boardSeq, paint: function (b) { board = b; paint(); } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Production: ' + UI.error(e)); }); }
   function advance(id, stage, extra) {
     return Api.call('production.advance', Object.assign({ orderId: id, stage: stage }, extra || {}), { busy: true }).then(function (r) { Toast.success(r.order.OrderNo + ' → ' + r.order.StatusLabel.toLowerCase()); load(); }).catch(function (e) { Toast.danger(UI.error(e)); load(); });
   }
@@ -3829,8 +3935,10 @@ window.MLS = (function () {
   function lensBranch() { var me = M.AppState.me; return me.activeBranch && me.activeBranch !== 'ALL' ? me.activeBranch : (me.branches.length === 1 ? me.branches[0].Id : ''); }
   function loadRiders() { return Api.call('dispatch.riders', {}).then(function (r) { riders = r; var sel = UI.el('dsp-rider'); sel.innerHTML = '<option value="">All riders</option>' + UI.options(r, state.rider, function (x) { return x.DisplayName; }); return r; }); }
 
+  var listSeq = Api.sequence();
   function load() {
-    return Api.call('dispatch.list', { status: state.status, search: state.search, riderUserId: state.rider, jobType: state.type, date: state.date, page: state.page, size: 50 }).then(function (r) {
+    var box = UI.el('dsp-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    return Api.read('dispatch.list', { status: state.status, search: state.search, riderUserId: state.rider, jobType: state.type, date: state.date, page: state.page, size: 50 }, { seq: listSeq, paint: function (r) {
       M.Table.render(UI.el('dsp-table'), {
         columns: [
           { key: 'Id', label: 'Job', format: function (v, j) { return '<span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span><div class="small text-soft">' + UI.esc(v) + (M.AppState.me.activeBranch === 'ALL' ? ' · ' + UI.esc(j.Branch) : '') + '</div>'; } },
@@ -3846,7 +3954,7 @@ window.MLS = (function () {
       });
       var openCount = ['UNASSIGNED', 'ASSIGNED', 'ACCEPTED', 'OUT_FOR_DELIVERY'].reduce(function (t, s) { return t + (r.counts[s] || 0); }, 0);
       UI.el('dsp-count-open').textContent = openCount || ''; UI.el('dsp-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + (r.counts.UNASSIGNED || 0) + ' unassigned';
-    }).catch(function (e) { Toast.danger('Dispatch: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Dispatch: ' + UI.error(e)); });
   }
 
   // ---------------------------------------------------------------- job page
@@ -4044,15 +4152,16 @@ window.MLS = (function () {
     M.Modal.open('dlv-complete-modal');
   }
 
+  var listSeq = Api.sequence();
   function load() {
-    return Api.call('deliveries.mine', {}).then(function (r) {
+    return Api.read('deliveries.mine', {}, { seq: listSeq, paint: function (r) {
       data = r; var open = r.rows.filter(function (j) { return j.IsOpen; }), done = r.rows.filter(function (j) { return !j.IsOpen; });
       UI.html('dlv-list', (open.length ? open.map(function (j) { return jobCard(j); }).join('') : '<div class="card"><div class="card-body">' + UI.empty({ icon: 'fa-motorcycle', title: 'No jobs assigned to you right now', hint: 'Jobs appear here the moment dispatch assigns one to you; pull down or tap Refresh to check.' }) + '</div></div>') + (done.length ? '<h6 class="text-soft mt-3">Finished today</h6>' + done.map(function (j) { return jobCard(j, { readOnly: true }); }).join('') : ''));
       wireCard(UI.el('dlv-list'), load);
       var rb = UI.el('dlv-route'), routable = open.filter(function (j) { return stopOf(j); }); rb.hidden = routable.length < 1;
       rb.onclick = function () { rb.disabled = true; locate(5000).then(function (loc) { rb.disabled = false; var url = routeLink(routable, loc ? loc.lat + ',' + loc.lng : ''); if (url) window.open(url, '_blank', 'noopener'); }); };
       UI.el('dlv-scope').textContent = open.length + ' open · ' + F.date(r.date);
-    }).catch(function (e) { Toast.danger('Deliveries: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Deliveries: ' + UI.error(e)); });
   }
   M.Router.register('deliveries', { title: 'My deliveries', render: function () { UI.el('dlv-refresh').onclick = load; load(); }, refresh: load });
   M.DeliveriesUI = { jobCard: jobCard, wireCard: wireCard, act: act, openComplete: openComplete, mapLink: mapLink, navLink: navLink, routeLink: routeLink, locate: locate };
@@ -4197,9 +4306,10 @@ window.MLS = (function () {
     onChange = afterChange || null;
     return Api.call('incidents.get', { id: id }, { busy: true }).then(function (i) { render(i); Modal.open('inc-modal'); return i; }).catch(function (e) { Toast.danger(UI.error(e)); });
   }
+  var listSeq = Api.sequence();
   function load() {
     var box = UI.el('inc-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
-    return Api.call('incidents.list', { status: state.status, type: state.type, search: state.search, page: state.page, size: 25 }).then(function (r) {
+    return Api.read('incidents.list', { status: state.status, type: state.type, search: state.search, page: state.page, size: 25 }, { seq: listSeq, paint: function (r) {
       var sel = UI.el('inc-type'); if (sel.options.length === 1) sel.innerHTML += UI.options(r.types || TYPES, '', typeLabel, function (t) { return t; });
       var openCount = (r.counts.OPEN || 0) + (r.counts.IN_REVIEW || 0); var c = document.querySelector('#inc-tabs [data-count="OPEN"]'); if (c) c.textContent = openCount || '';
       M.Table.render(box, {
@@ -4215,7 +4325,7 @@ window.MLS = (function () {
         onPage: function (p) { state.page = p; load(); }, onRow: function (row) { open(row.Id, function () { load(); }); }
       });
       UI.el('inc-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + r.total + ' incident' + (r.total === 1 ? '' : 's');
-    }).catch(function (e) { Toast.danger('Incidents: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Incidents: ' + UI.error(e)); });
   }
   function wire() {
     UI.el('inc-new').onclick = function () { report({}); };
@@ -4322,10 +4432,12 @@ window.MLS = (function () {
     return '<div class="table-wrap"><table class="table table-sm table-xs table-cards mb-0"><thead><tr><th>Date</th><th>Shift</th><th>In</th><th>Out</th><th class="text-end">Worked</th><th class="text-end">Late</th><th class="text-end">Hours</th><th>Status</th></tr></thead><tbody>' +
       rows.map(function (r) { return '<tr' + (r.Status === 'REVIEW' ? ' class="table-danger"' : '') + '><td data-label="Date">' + F.date(r.Date) + ' <span class="text-soft">' + r.Weekday + '</span>' + (r.Holiday ? '<div class="small text-soft">' + UI.esc(r.Holiday) + '</div>' : '') + '</td><td data-label="Shift">' + (r.IsRestDay ? 'Rest day' : (r.ShiftStart ? F.clock(r.ShiftStart) + '–' + F.clock(r.ShiftEnd) : '—')) + '</td><td data-label="In">' + (r.FirstIn ? F.clock(r.FirstIn) : '—') + '</td><td data-label="Out">' + (r.LastOut ? F.clock(r.LastOut) : '—') + '</td><td data-label="Worked" class="text-end">' + (r.WorkedMinutes ? F.minutes(r.WorkedMinutes) : '—') + '</td><td data-label="Late" class="text-end">' + (r.LateMinutes ? r.LateMinutes + ' min' : '—') + '</td><td data-label="Hours" class="text-end fw-bold">' + F.hours(r.RegularHours + r.OvertimeHours + r.HolidayHours + r.RestDayHours) + '</td><td data-label="Status">' + UI.badge(r.Status) + (r.Flags && r.Flags.length ? '<div class="small text-danger">' + r.Flags.map(function (f) { return F.status(f); }).join(', ') + (opts.reviewLink ? ' · <a href="#" data-review="' + r.Date + '">Review attendance</a>' : '') + '</div>' : '') + (r.Note ? '<div class="small text-soft">' + UI.esc(r.Note) + '</div>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
   }
+  var weekSeq = Api.sequence();
   function loadWeek() {
     if (!status) { UI.html('tc-week', '<div class="p-3 text-soft small">Link your login to a staff record to see your week.</div>'); return Promise.resolve(); }
     var r = weekRange(); UI.el('tc-week-range').textContent = F.date(r.from) + ' – ' + F.date(r.to);
-    return Api.call('timeclock.daily', { from: r.from, to: r.to }).then(function (d) { UI.html('tc-week', dayRows(d.rows) + '<div class="p-2 small text-soft">' + d.summary.DaysPresent + ' day' + (d.summary.DaysPresent === 1 ? '' : 's') + ' present · ' + F.hours(d.summary.TotalHours) + ' h' + (d.summary.ReviewDays ? ' · <span class="text-danger">' + d.summary.ReviewDays + ' to review</span>' : '') + '</div>'); }).catch(function (e) { UI.html('tc-week', '<div class="p-3 text-danger small">' + UI.esc(UI.error(e)) + '</div>'); });
+    var ticket = weekSeq.take();
+    return Api.call('timeclock.daily', { from: r.from, to: r.to }).then(function (d) { if (!weekSeq.is(ticket)) return; UI.html('tc-week', dayRows(d.rows) + '<div class="p-2 small text-soft">' + d.summary.DaysPresent + ' day' + (d.summary.DaysPresent === 1 ? '' : 's') + ' present · ' + F.hours(d.summary.TotalHours) + ' h' + (d.summary.ReviewDays ? ' · <span class="text-danger">' + d.summary.ReviewDays + ' to review</span>' : '') + '</div>'); }).catch(function (e) { UI.html('tc-week', '<div class="p-3 text-danger small">' + UI.esc(UI.error(e)) + '</div>'); });
   }
 
   // ---------------------------------------------------------------- manager corrections
@@ -4553,14 +4665,15 @@ window.MLS = (function () {
   }
 
   // ---------------------------------------------------------------- list and header
+  var listSeq = Api.sequence();
   function loadList() {
     if (!mayView()) return Promise.resolve();
-    return Api.call('staff.list', { search: state.search, status: state.status, size: 200 }).then(function (r) {
+    return Api.read('staff.list', { search: state.search, status: state.status, size: 200 }, { seq: listSeq, paint: function (r) {
       list = r.rows; meta.employmentTypes = r.employmentTypes; meta.payBases = r.payBases;
       UI.html('st-list', list.length ? list.map(function (s) { return '<button type="button" data-id="' + UI.esc(s.Id) + '" class="' + (current && current.Id === s.Id ? 'active' : '') + '"><div class="nm">' + UI.esc(s.FullName) + (s.Status !== 'ACTIVE' ? ' ' + UI.badge(s.Status) : '') + '</div><div class="sub">' + UI.esc(s.StaffNo) + (s.Position ? ' · ' + UI.esc(s.Position) : '') + (M.AppState.me.activeBranch === 'ALL' ? ' · ' + UI.esc(s.Branch) : '') + '</div></button>'; }).join('') : UI.empty({ icon: 'fa-id-badge', title: 'No staff records yet', hint: state.search ? 'Nobody matches "' + state.search + '".' : 'Add your first employee; link the record to a login so they can use the time clock.', compact: true }));
       UI.el('st-list').querySelectorAll('[data-id]').forEach(function (b) { b.onclick = function () { open(b.getAttribute('data-id')); }; });
       UI.el('st-scope').textContent = r.total + ' staff · ' + UI.branchName(M.AppState.me.activeBranch);
-    }).catch(function (e) { Toast.danger('Staff: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Staff: ' + UI.error(e)); });
   }
   function paintHead() {
     var s = current;
@@ -4976,8 +5089,10 @@ window.MLS = (function () {
   function methodLabel(m) { return F.status(m); }
 
   // ---------------------------------------------------------------- list
+  var listSeq = Api.sequence();
   function load() {
-    return Api.call('expenses.list', { search: state.search, categoryId: state.categoryId, method: state.method, status: state.status, from: state.from, to: state.to, page: state.page, size: 25 }).then(function (r) {
+    var box = UI.el('exp-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    return Api.read('expenses.list', { search: state.search, categoryId: state.categoryId, method: state.method, status: state.status, from: state.from, to: state.to, page: state.page, size: 25 }, { seq: listSeq, paint: function (r) {
       categories = r.categories || categories; methods = r.methods || methods;
       if (!filtersReady) { filtersReady = true; UI.el('exp-category').innerHTML = '<option value="">All categories</option>' + UI.options(categories, state.categoryId); UI.el('exp-method').innerHTML = '<option value="">All methods</option>' + UI.options(methods, state.method, methodLabel, function (m) { return m; }); }
       M.Table.render(UI.el('exp-table'), {
@@ -4994,7 +5109,7 @@ window.MLS = (function () {
       UI.el('exp-scope').textContent = r.count + ' expense' + (r.count === 1 ? '' : 's') + ' · ' + F.peso(r.totalAmount);
       var tiles = [['Total', F.peso(r.totalAmount)], ['Count', r.count]].concat(r.byMethod.map(function (m) { return [methodLabel(m.Method), F.peso(m.Amount)]; })).concat(r.byCategory.slice(0, 4).map(function (c) { return [c.Category, F.peso(c.Amount)]; }));
       UI.html('exp-summary', tiles.map(function (t) { return '<div class="tile"><div class="k">' + UI.esc(t[0]) + '</div><div class="v">' + UI.esc(t[1]) + '</div></div>'; }).join(''));
-    }).catch(function (e) { Toast.danger('Expenses: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Expenses: ' + UI.error(e)); });
   }
 
   // ---------------------------------------------------------------- form
@@ -5133,14 +5248,18 @@ window.MLS = (function () {
   function countedCents() { var configured = (data.denominations || []).length > 0; if (!configured) return typedActual === null ? cents(data.actualCash) : typedActual; return (data.denominations || []).reduce(function (t, v) { return t + cents(v) * (Number(counts[v]) || 0); }, 0); }
 
   // ---------------------------------------------------------------- load
+  var sheetSeq = Api.sequence();
+  /** The sheet is money: always the live answer (never the copy), and a reply for a day or branch the user has since left is dropped. */
   function load() {
     paintPending();
     UI.el('eod-figures').innerHTML = '<div class="text-soft small">Loading…</div>';
+    var ticket = sheetSeq.take();
     return Api.call('eod.preview', { date: state.date, branchId: state.branchId || undefined }).then(function (d) {
+      if (!sheetSeq.is(ticket)) return;
       data = d; counts = {}; typedActual = null;
       (d.report ? d.report.Denominations : []).forEach(function (x) { if (x.Count > 0) counts[x.Value] = x.Count; });
       paint();
-    }).catch(function (e) { data = null; UI.el('eod-figures').innerHTML = UI.empty({ icon: 'fa-vault', title: 'The sheet could not be computed', hint: UI.error(e), compact: true }); UI.el('eod-count').innerHTML = ''; UI.el('eod-banner').innerHTML = ''; UI.el('eod-rows').innerHTML = ''; UI.el('eod-print').hidden = true; });
+    }).catch(function (e) { if (!sheetSeq.is(ticket)) return; data = null; UI.el('eod-figures').innerHTML = UI.empty({ icon: 'fa-vault', title: 'The sheet could not be computed', hint: UI.error(e), compact: true }); UI.el('eod-count').innerHTML = ''; UI.el('eod-banner').innerHTML = ''; UI.el('eod-rows').innerHTML = ''; UI.el('eod-print').hidden = true; });
   }
   function paint() { paintBanner(); paintFigures(); paintRows(); paintCount(); UI.el('eod-print').hidden = !data; UI.el('eod-scope').textContent = UI.branchName(data.branchId) + ' · ' + F.date(data.date); }
   /** Operations made on this device that have not reached the server (bundle 1.5.0): the sheet cannot be closed over money the server has not seen. */
@@ -5475,9 +5594,12 @@ window.MLS = (function () {
     UI.el('rp-to').setAttribute('aria-label', s.noRange ? 'As of' : 'To date');
     if (s.yearPicker && !UI.el('rp-year').options.length) { var y = new Date().getFullYear(); UI.el('rp-year').innerHTML = '<option value="">All years</option>' + UI.options([y, y - 1, y - 2], state.year, function (v) { return String(v); }, function (v) { return String(v); }); }
   }
+  var reportSeq = Api.sequence();
   function load() {
     var s = spec(); UI.el('rp-table').innerHTML = '<div class="text-soft small p-3">Loading…</div>'; UI.el('rp-extra').innerHTML = ''; UI.el('rp-kpis').innerHTML = '';
+    var ticket = reportSeq.take();
     return s.load().then(function (d) {
+      if (!reportSeq.is(ticket)) return;  // the user has changed the tab, the dates or the page meanwhile
       data = d; var cols = s.columns(d), rows = s.rows(d);
       last = { columns: cols, rows: rows, title: TABS.filter(function (t) { return t[0] === state.tab; })[0][1] };
       UI.html('rp-kpis', s.kpis(d).map(function (k) { return '<div class="tile"><div class="k">' + UI.esc(k[0]) + '</div><div class="v">' + UI.esc(String(k[1])) + '</div></div>'; }).join(''));
@@ -5486,7 +5608,7 @@ window.MLS = (function () {
       if (s.auditFilters) { var ms = UI.el('rp-module'), as = UI.el('rp-action'); if (ms.options.length <= 1) ms.innerHTML = '<option value="">All modules</option>' + UI.options(d.modules, state.module, function (x) { return x; }, function (x) { return x; }); if (as.options.length <= 1) as.innerHTML = '<option value="">All actions</option>' + UI.options(d.actions, state.action, function (x) { return F.status(x); }, function (x) { return x; }); }
       paintChart(s.chart(d));
       UI.el('rp-scope').textContent = (s.noRange ? (s.yearPicker ? (state.year || 'all years') : 'as of ' + F.date(state.to || today())) : F.date(d.from || state.from) + ' – ' + F.date(d.to || state.to)) + ' · ' + UI.branchName(M.AppState.me.activeBranch);
-    }).catch(function (e) { UI.el('rp-table').innerHTML = UI.empty({ icon: 'fa-chart-line', title: 'The report could not be loaded', hint: UI.error(e), compact: true }); paintChart(null); });
+    }).catch(function (e) { if (!reportSeq.is(ticket)) return; UI.el('rp-table').innerHTML = UI.empty({ icon: 'fa-chart-line', title: 'The report could not be loaded', hint: UI.error(e), compact: true }); paintChart(null); });
   }
   function paintChart(c) {
     var card = UI.el('rp-chart-card'); if (chart) { try { chart.destroy(); } catch (e) { /* ignore */ } chart = null; }
@@ -5752,11 +5874,12 @@ window.MLS = (function () {
   }
   function tabBusiness() {
     body().innerHTML = '<div class="text-soft small">Loading…</div>';
-    loadSettings().then(function (d) { body().innerHTML = d.groups.filter(function (g) { return BUSINESS_GROUPS.indexOf(g.Group) >= 0; }).map(function (g) { return card(g.Group === 'Business' ? 'Business information' : 'Receipts', groupForm(g, d.canEdit)); }).join('') + card('Branches, services and pricing', '<p class="small text-soft mb-2">Branch addresses and receipt lines live under <strong>Branches</strong>; services, prices and recipes under <strong>Services</strong>.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-go-tab="branches"><i class="fa-solid fa-store me-1"></i>Branches</button><a class="btn btn-outline-secondary btn-sm" href="#/services"><i class="fa-solid fa-shirt me-1"></i>Services and pricing</a></div>'); wireGroupForms(body()); body().querySelectorAll('[data-go-tab]').forEach(function (b) { b.onclick = function () { state.tab = b.getAttribute('data-go-tab'); paintTabs(); showTab(); }; }); }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
+    loadSettings().then(function (d) { if (state.tab !== 'business') return; body().innerHTML = d.groups.filter(function (g) { return BUSINESS_GROUPS.indexOf(g.Group) >= 0; }).map(function (g) { return card(g.Group === 'Business' ? 'Business information' : 'Receipts', groupForm(g, d.canEdit)); }).join('') + card('Branches, services and pricing', '<p class="small text-soft mb-2">Branch addresses and receipt lines live under <strong>Branches</strong>; services, prices and recipes under <strong>Services</strong>.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-go-tab="branches"><i class="fa-solid fa-store me-1"></i>Branches</button><a class="btn btn-outline-secondary btn-sm" href="#/services"><i class="fa-solid fa-shirt me-1"></i>Services and pricing</a></div>'); wireGroupForms(body()); body().querySelectorAll('[data-go-tab]').forEach(function (b) { b.onclick = function () { state.tab = b.getAttribute('data-go-tab'); paintTabs(); showTab(); }; }); }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
   }
   function tabSettings() {
     body().innerHTML = '<div class="text-soft small">Loading…</div>';
     loadSettings().then(function (d) {
+      if (state.tab !== 'settings') return;  // the user has moved to another tab meanwhile: this answer must not paint over it
       var groups = d.groups.filter(function (g) { return BUSINESS_GROUPS.indexOf(g.Group) < 0; }); if (!state.group || !groups.some(function (g) { return g.Group === state.group; })) state.group = groups[0] ? groups[0].Group : '';
       var g = groups.filter(function (x) { return x.Group === state.group; })[0];
       body().innerHTML = '<div class="chips" id="set-groups">' + groups.map(function (x) { return '<button type="button" data-group="' + UI.esc(x.Group) + '"' + (x.Group === state.group ? ' class="active"' : '') + '>' + UI.esc(x.Group) + ' <span class="count">' + x.Settings.length + '</span></button>'; }).join('') + '</div>' + (g ? card(g.Group + ' settings', groupForm(g, d.canEdit)) : '');
@@ -5768,6 +5891,7 @@ window.MLS = (function () {
   function tabBranches() {
     body().innerHTML = '<div class="text-soft small">Loading…</div>';
     Api.call('branches.list').then(function (d) {
+      if (state.tab !== 'branches') return;
       cache.branches = d;
       body().innerHTML = card('Branches', '<div class="table-wrap"><table class="table table-sm table-cards mb-0" id="set-branch-table"><thead><tr><th>Branch</th><th>Address</th><th>Phone</th><th class="text-end">Users</th><th class="text-end">Staff</th><th>Status</th><th></th></tr></thead><tbody>' + d.rows.map(function (b) { return '<tr data-id="' + UI.esc(b.Id) + '"><td data-label="Branch"><span class="fw-bold">' + UI.esc(b.Name) + '</span> <span class="small text-soft">' + UI.esc(b.Code) + '</span>' + (b.ReceiptHeader ? '<div class="small text-soft">' + UI.esc(b.ReceiptHeader) + '</div>' : '') + '</td><td data-label="Address" class="small">' + UI.esc(b.Address || '—') + '</td><td data-label="Phone" class="small">' + UI.esc(b.Phone || '—') + '</td><td data-label="Users" class="text-end">' + b.Users + '</td><td data-label="Staff" class="text-end">' + b.Staff + '</td><td data-label="Status">' + UI.badge(b.Status) + '</td><td class="text-end">' + (d.canEdit ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-edit="' + UI.esc(b.Id) + '"><i class="fa-solid fa-pen me-1"></i>Edit</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>', d.canEdit && me().canSeeAllBranches ? '<button type="button" class="btn btn-sm btn-primary ms-auto" id="set-branch-new"><i class="fa-solid fa-plus me-1"></i>New branch</button>' : '');
       var nb = UI.el('set-branch-new'); if (nb) nb.onclick = function () { openBranch(null); };
@@ -5790,8 +5914,11 @@ window.MLS = (function () {
     UI.el('set-user-search').oninput = UI.debounce(function () { state.usersSearch = UI.el('set-user-search').value.trim(); loadUsers(); }, 350); UI.el('set-user-status').onchange = function () { state.usersStatus = this.value; loadUsers(); }; UI.el('set-user-new').onclick = function () { openUser(null); };
     loadUsers();
   }
+  var usersSeq = Api.sequence();
   function loadUsers() {
+    var ticket = usersSeq.take();
     return Api.call('users.list', { search: state.usersSearch, status: state.usersStatus }).then(function (d) {
+      if (!usersSeq.is(ticket)) return;  // a slower answer for an earlier search
       cache.users = d; var host = UI.el('set-user-table'); if (!host) return;
       M.Table.render(host, { columns: [
         { key: 'DisplayName', label: 'User', format: function (v, u) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(u.Username) + (u.Email ? ' · ' + UI.esc(u.Email) : '') + (u.StaffName ? ' · staff ' + UI.esc(u.StaffName) : '') + '</div>'; } },
@@ -5842,6 +5969,7 @@ window.MLS = (function () {
   function tabRoles() {
     body().innerHTML = '<div class="text-soft small">Loading…</div>';
     Api.call('roles.list').then(function (d) {
+      if (state.tab !== 'roles') return;
       cache.roles = d; if (!state.roleId || !d.rows.some(function (r) { return r.Id === state.roleId; })) state.roleId = d.rows[0].Id;
       var role = d.rows.filter(function (r) { return r.Id === state.roleId; })[0];
       body().innerHTML = '<div class="roles-layout"><div class="card"><div class="card-header d-flex align-items-center"><span>Roles</span>' + (d.canEdit ? '<button type="button" class="btn btn-sm btn-outline-primary ms-auto" id="set-role-new"><i class="fa-solid fa-plus me-1"></i>New role</button>' : '') + '</div><div class="staff-list" id="set-role-list">' + d.rows.map(function (r) { return '<button type="button" data-role="' + UI.esc(r.Id) + '"' + (r.Id === state.roleId ? ' class="active"' : '') + '><div class="nm">' + UI.esc(r.Name) + (r.Status === 'INACTIVE' ? ' <span class="status-badge s-inactive">inactive</span>' : '') + '</div><div class="sub">' + UI.esc(r.Code) + ' · ' + r.GrantCount + ' permission' + (r.GrantCount === 1 ? '' : 's') + ' · ' + r.Users + ' user' + (r.Users === 1 ? '' : 's') + '</div></button>'; }).join('') + '</div></div><div id="set-role-detail"></div></div>';
@@ -5881,6 +6009,7 @@ window.MLS = (function () {
   function tabSms() {
     body().innerHTML = '<div class="text-soft small">Loading…</div>';
     Api.call('sms.templates').then(function (r) {
+      if (state.tab !== 'sms') return;
       cache.sms = r; var byWf = {}; r.rows.forEach(function (t) { (byWf[t.Workflow] = byWf[t.Workflow] || []).push(t); });
       var head = '<p class="small text-soft mb-2">Staff send these from the phone\'s Messages app: the app fills the variables, the staff member reviews the text and presses Send in Messages. ' + UI.esc(r.capabilities.note) + '</p>';
       var groups = r.workflows.map(function (w) {
@@ -5923,6 +6052,7 @@ window.MLS = (function () {
   function tabMaintenance() {
     body().innerHTML = '<div class="text-soft small">Loading…</div>';
     Api.call('maintenance.report').then(function (r) {
+      if (state.tab !== 'maintenance') return;
       var inst = r.install || {}, instText = !inst.version ? 'Bundle.gs missing' : (inst.ok ? 'matches release ' + inst.version : (inst.counts.mismatch + inst.counts.missing + inst.counts.extra) + ' file' + ((inst.counts.mismatch + inst.counts.missing + inst.counts.extra) === 1 ? '' : 's') + ' differ');
       var tiles = [['Version', 'v' + r.version + ' · Phase ' + r.phase], ['Installation', instText], ['Setup version', r.setupVersion + (r.setupCurrent ? ' (current)' : ' — run Initialize Database')], ['Tables', r.tables], ['Business rows', F.number(r.businessRows, 0)], ['Users', r.users], ['Live sessions', r.sessions.live + ' / ' + r.sessions.total], ['Endpoints', r.endpoints], ['Validation', r.validation.ok ? 'OK' : r.validation.errors + ' error' + (r.validation.errors === 1 ? '' : 's')]];
       body().innerHTML = card('System', '<div class="sum-grid mb-2">' + tiles.map(function (t) { var bad = (t[0] === 'Validation' && !r.validation.ok) || (t[0] === 'Installation' && !inst.ok) || (t[0] === 'Setup version' && !r.setupCurrent); return '<div class="tile' + (bad ? ' border-danger' : '') + '" data-tile="' + t[0].toLowerCase().replace(/ /g, '-') + '"><div class="k">' + t[0] + '</div><div class="v text">' + UI.esc(String(t[1])) + '</div></div>'; }).join('') + '</div><div class="small text-soft">Database: ' + UI.esc(r.spreadsheetName) + ' · ' + UI.esc(r.timeZone) + ' · triggers: ' + (r.triggers.length ? r.triggers.map(function (t) { return UI.esc(t.handler); }).join(', ') : '<span class="text-danger">none installed</span>') + ' · server time ' + F.datetime(r.serverTime) + '</div>', '<button type="button" class="btn btn-sm btn-outline-secondary ms-auto" id="set-mt-refresh"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>') +
