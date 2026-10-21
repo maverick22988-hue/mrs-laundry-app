@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'aaddb93a23', version: '1.6.0' };</script>
+  <script>window.MLS_PWA = { build: 'fc152a964e', version: '1.7.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -416,6 +416,11 @@
   .sync-list .ref { font-size: .8rem; color: var(--mls-ink-soft); margin-top: .1rem; }
   .sync-stat { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; font-size: .9rem; }
   .review-list li { background: #fffdf5; border-radius: 10px; padding: .6rem .7rem; margin-bottom: .4rem; border: 1px solid #fde68a; }
+  .device-check { list-style: none; margin: 0; padding: 0; font-size: .85rem; }
+  .device-check li { display: flex; gap: .5rem; align-items: flex-start; padding: .25rem 0; border-bottom: 1px solid var(--mls-line); }
+  .device-check li:last-child { border-bottom: 0; }
+  .device-check li i { margin-top: .2rem; color: #166534; }
+  .device-check li.bad i { color: #991b1b; }
   .review-list li:last-child { border-bottom: 1px solid #fde68a; }
   .review-list .what a { font-weight: 600; }
   .sync-stat b { font-size: 1.2rem; }
@@ -585,7 +590,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.6.0';
+  var VERSION = '1.7.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -680,11 +685,12 @@ window.MLS = (function () {
       opts = opts || {}; inflight++; if (opts.busy) UI.busy(true);
       var offlineNow = !opts.noOffline && !!Api.offline && Net.state() === 'offline' && HOST === 'pwa' && !navigator.onLine;
       var attempt = function (n) {
-        var usedToken = AppState.token;
+        var usedToken = AppState.token, startedAt = Date.now();
         if (offlineNow) return Promise.reject({ code: 'NETWORK', message: 'The browser reports no network.', skipped: true });
         return rawCall(action, payload, opts.device, { timeoutMs: opts.timeoutMs || (Net.state() === 'unreachable' && Api.offline ? 12000 : undefined), url: opts.url }).then(function (res) {
           if (!res || typeof res !== 'object') throw { code: 'NETWORK', message: 'Empty reply from the server' };
           Net.noteSuccess();
+          if (!opts.url) { try { Timing.note(action, Date.now() - startedAt, res.meta ? res.meta.ms : undefined); } catch (e) { /* ignore */ } }
           if (res.success) { if (res.meta && res.meta.dataVersion) AppState.dataVersion = res.meta.dataVersion; if (Api.offline && Api.offline.record) { try { Api.offline.record(action, payload, res.data, res.meta); } catch (e) { /* the copy is best effort */ } } return res.data; }
           var err = res.error || { code: 'INTERNAL', message: 'Unknown error' };
           if (err.code === 'BUSY' && n < 1) return new Promise(function (r) { setTimeout(r, 1500); }).then(function () { return attempt(n + 1); });
@@ -769,12 +775,58 @@ window.MLS = (function () {
       navigator.serviceWorker.addEventListener('controllerchange', function () { if (!hadController) { hadController = true; return; } if (reloading) return; reloading = true; location.reload(); });
     }
     function update() { if (!waiting) return false; waiting.postMessage({ type: 'SKIP_WAITING' }); return true; }
+    function standalone() { try { return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } }
     function info() {
       var b = (typeof window.MLS_PWA === 'object' && window.MLS_PWA) || {};
-      var standalone = false; try { standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { /* ignore */ }
-      return { host: HOST, build: b.build || '', version: VERSION, installed: standalone, serviceWorker: !!(navigator.serviceWorker && navigator.serviceWorker.controller), updateReady: !!waiting };
+      return { host: HOST, build: b.build || '', version: VERSION, installed: standalone() || installedHere, serviceWorker: !!(navigator.serviceWorker && navigator.serviceWorker.controller), updateReady: !!waiting, canInstall: !!deferredInstall, ios: isIos() };
     }
-    return { init: init, update: update, info: info, updateReady: function () { return !!waiting; }, onUpdate: function (fn) { listeners.push(fn); } };
+    // ---- the install prompt (bundle 1.7.0): Chromium browsers hand the page a deferred prompt once the manifest and the worker qualify; iOS Safari has none and is told the menu path instead
+    var deferredInstall = null, installListeners = [], installedHere = false;
+    function isIos() { return /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+    function installChanged() { installListeners.forEach(function (fn) { try { fn(info()); } catch (e) { console.error(e); } }); }
+    window.addEventListener('beforeinstallprompt', function (ev) { ev.preventDefault(); deferredInstall = ev; installChanged(); });
+    window.addEventListener('appinstalled', function () { deferredInstall = null; installedHere = true; Toast.success('Mrs Laundry Sys is installed on this device.'); installChanged(); });
+    /** Shows the browser's install prompt; resolves with 'accepted', 'dismissed' or 'unavailable'. */
+    function install() {
+      var ev = deferredInstall; if (!ev) return Promise.resolve('unavailable');
+      deferredInstall = null; installChanged();
+      try { ev.prompt(); } catch (e) { return Promise.resolve('unavailable'); }
+      return Promise.resolve(ev.userChoice).then(function (c) { var out = c && c.outcome === 'accepted' ? 'accepted' : 'dismissed'; if (out === 'dismissed') { deferredInstall = ev; installChanged(); } return out; }, function () { return 'dismissed'; });
+    }
+    /** The facts the field trial asks for, read from this browser, never guessed: the worker, the storage, the install state, the server round trip. */
+    function selfCheck() {
+      var lines = [], ok = true, say = function (good, text) { if (!good) ok = false; lines.push({ ok: good, text: text }); };
+      var i = info();
+      say(true, 'Release ' + i.version + (i.build ? ' · build ' + i.build : '') + ' · ' + (HOST === 'pwa' ? 'installed app on its own origin' : 'Apps Script page'));
+      say(HOST !== 'pwa' || i.serviceWorker, HOST === 'pwa' ? (i.serviceWorker ? 'Service worker: in control — the app starts without a network' : 'Service worker: not in control yet — reload once while connected') : 'Service worker: not used on the Apps Script page (this page cannot start without a network)');
+      say(true, i.installed ? 'Installed: yes (standalone window)' : (i.canInstall ? 'Installed: no — the browser offers to install it (press Install the app)' : (i.ios ? 'Installed: no — iOS Safari: Share → Add to Home Screen' : 'Installed: no — use the browser menu (Install app / Add to Home screen) once this page qualifies')));
+      var storageP = (navigator.storage && navigator.storage.persisted) ? navigator.storage.persisted().then(function (p) { say(true, p ? 'Storage: persistent — the browser will not evict the copy or the queue under pressure' : 'Storage: best effort — the browser may evict the copy under storage pressure; install the app and keep using it so it is granted'); }, function () { say(true, 'Storage: persistence unknown in this browser'); }) : Promise.resolve(say(true, 'Storage: persistence not reported by this browser'));
+      var quotaP = (navigator.storage && navigator.storage.estimate) ? navigator.storage.estimate().then(function (e) { say(true, 'Storage used: ' + Math.round((e.usage || 0) / 1024) + ' KB of about ' + Math.round((e.quota || 0) / 1048576) + ' MB available'); }, function () { /* ignore */ }) : Promise.resolve();
+      var idbP = window.MLS && window.MLS.Store && window.MLS.Store.available() ? window.MLS.Store.summary().then(function (r) { say(true, 'Local database: ' + r.orders + ' orders, ' + r.customers + ' customers, ' + r.snapshots + ' screens' + (r.queue ? ' · queue ' + r.queue.pending + ' waiting, ' + r.queue.rejected + ' refused' : '') + (r.sync && r.sync.lastPull ? ' · refreshed ' + new Date(r.sync.lastPull).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '')); }, function () { say(false, 'Local database: cannot be opened (private window, or storage blocked) — nothing works offline here'); }) : Promise.resolve(say(false, 'Local database: not available in this browser'));
+      var t0 = Date.now();
+      var healthP = Net.health({ timeoutMs: 15000 }).then(function (good) { var ms = Date.now() - t0; say(good, good ? 'Server: answered in ' + ms + ' ms (' + (AppState.apiUrl() ? 'web-app address kept on this device' : 'Apps Script page') + ')' : 'Server: no answer in ' + ms + ' ms — ' + (Net.state() === 'offline' ? 'no network' : 'the network is up but the server did not answer')); });
+      say(true, 'Notifications: ' + ('Notification' in window ? (Notify.enabled() ? 'on for a sync that needs attention' : (Notification.permission === 'denied' ? 'blocked by the browser' : 'off (switch on under This device)')) : 'not supported here'));
+      say(true, 'Text messages: the Send text button opens the phone\'s Messages app through an sms: link; try one on this device and answer the dialog honestly — a desktop browser cannot open it');
+      return Promise.all([storageP, quotaP, idbP, healthP]).then(function () { var tm = Timing.summary(); if (tm.length) say(true, 'Timings on this device (round trip · server): ' + tm.slice(0, 6).map(function (t) { return t.action + ' ' + t.avgMs + ' ms · ' + t.avgServerMs + ' ms ×' + t.count; }).join(', ')); return { ok: ok, lines: lines, at: new Date().toISOString() }; });
+    }
+    return { init: init, update: update, info: info, install: install, selfCheck: selfCheck, updateReady: function () { return !!waiting; }, onUpdate: function (fn) { listeners.push(fn); }, onInstallChange: function (fn) { installListeners.push(fn); } };
+  })();
+
+  // ------------------------------------------------------------------ timings (bundle 1.7.0): what this device measured of every call — the round trip and the server's own time (meta.ms) — so the field trial reads real numbers, never estimates
+  var Timing = (function () {
+    var KEY = 'mls.timings', data = null;
+    function load() { if (data) return data; try { data = JSON.parse(localStorage.getItem(KEY) || 'null') || {}; } catch (e) { data = {}; } return data; }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { /* best effort */ } }
+    function note(action, roundMs, serverMs) {
+      var d = load(), t = d[action] || (d[action] = { count: 0, totalMs: 0, maxMs: 0, totalServerMs: 0, maxServerMs: 0 });
+      t.count++; t.totalMs += roundMs; t.maxMs = Math.max(t.maxMs, roundMs); if (serverMs !== undefined && serverMs !== null) { t.totalServerMs += serverMs; t.maxServerMs = Math.max(t.maxServerMs, serverMs); } t.last = new Date().toISOString();
+      if (t.count % 5 === 0) save();
+    }
+    // the page going away is the moment a single checkout's timing would otherwise be lost
+    window.addEventListener('pagehide', function () { if (data) save(); });
+    function summary() { var d = load(); if (data) save(); return Object.keys(d).map(function (a) { var t = d[a]; return { action: a, count: t.count, avgMs: Math.round(t.totalMs / t.count), maxMs: t.maxMs, avgServerMs: Math.round(t.totalServerMs / t.count), maxServerMs: t.maxServerMs, last: t.last }; }).sort(function (x, y) { return y.count - x.count; }); }
+    function clear() { data = {}; save(); }
+    return { note: note, summary: summary, clear: clear };
   })();
 
   // ------------------------------------------------------------------ ui helpers
@@ -1137,6 +1189,9 @@ window.MLS = (function () {
       }); });
     });
     UI.el('device-update').addEventListener('click', function () { if (!Pwa.update()) Toast.info('No update is waiting.'); });
+    UI.el('device-install').addEventListener('click', function () { var b = this; b.disabled = true; Pwa.install().then(function (r) { b.disabled = false; if (r === 'accepted') Toast.success('Installing… the app gets its own icon and window.'); else if (r === 'dismissed') Toast.info('Not installed. The offer stays under This device.'); else Toast.info('The browser offers no install prompt here; use its menu.'); paintInstall(); }); });
+    UI.el('device-check').addEventListener('click', function () { runDeviceCheck(); });
+    Pwa.onInstallChange(function () { paintInstall(); });
     UI.el('device-notify').addEventListener('change', function () {
       var box = this; if (!box.checked) { Notify.set(false); return; }
       Notify.request().then(function (granted) { box.checked = granted; if (!granted) Toast.warning('This browser did not allow notifications; nothing was changed.'); else Toast.success('You will be notified when a sync needs attention while the app is in the background.'); });
@@ -1212,6 +1267,24 @@ window.MLS = (function () {
     }
     return { supported: supported, enabled: enabled, set: set, request: request, attention: attention };
   })();
+  /** The install line of This device: the browser's own prompt when it offers one, the menu path otherwise, nothing once installed. */
+  function paintInstall(info) {
+    info = info || Pwa.info(); var btn = UI.el('device-install'), hint = UI.el('device-install-hint'); if (!btn || !hint) return;
+    btn.hidden = !(HOST === 'pwa' && info.canInstall && !info.installed);
+    var text = HOST !== 'pwa' ? '' : (info.installed ? 'Installed on this device: it opens in its own window and starts without a network.' : (info.canInstall ? 'This browser can install the app: it gets its own icon and window and keeps working without a network.' : (info.ios ? 'To install on iPhone or iPad: Safari → Share → Add to Home Screen. Only the installed app keeps its data for more than a week on iOS.' : 'Not installed. Use the browser menu — Install app or Add to Home screen — once the page has loaded twice while connected.')));
+    hint.textContent = text; hint.hidden = !text;
+  }
+  /** The device check: the facts the field trial asks for, read from this browser and printed as a list the person can read out or copy. */
+  function runDeviceCheck() {
+    var out = UI.el('device-check-out'), btn = UI.el('device-check'); if (!out) return Promise.resolve();
+    out.hidden = false; out.innerHTML = '<div class="small text-soft">Checking…</div>'; if (btn) btn.disabled = true;
+    return Pwa.selfCheck().then(function (r) {
+      out.innerHTML = '<ul class="device-check mb-2">' + r.lines.map(function (l) { return '<li class="' + (l.ok ? 'ok' : 'bad') + '"><i class="fa-solid ' + (l.ok ? 'fa-circle-check' : 'fa-circle-xmark') + '"></i><span>' + UI.esc(l.text) + '</span></li>'; }).join('') + '</ul><div class="d-flex gap-2 align-items-center"><button type="button" class="btn btn-outline-secondary btn-sm" id="device-check-copy"><i class="fa-solid fa-copy me-1"></i>Copy</button><span class="small text-soft">' + (r.ok ? 'Everything this check can see is in order.' : 'Something needs attention — see the red lines.') + '</span></div>';
+      var text = r.lines.map(function (l) { return (l.ok ? '[ok] ' : '[!!] ') + l.text; }).join('\n') + '\n' + navigator.userAgent;
+      var copy = UI.el('device-check-copy'); if (copy) copy.onclick = function () { var done = function () { Toast.success('Copied.'); }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { Toast.warning('Could not copy; select the text instead.'); }); else Toast.warning('Could not copy; select the text instead.'); };
+      if (btn) btn.disabled = false; return r;
+    }, function (e) { out.innerHTML = '<div class="small text-danger">' + UI.esc(UI.error(e)) + '</div>'; if (btn) btn.disabled = false; });
+  }
   /** This device: the label, the server address (installed app only), the build, an update if one waits, and the way to forget everything. */
   function openDevice() {
     UI.el('device-label').value = AppState.device();
@@ -1219,6 +1292,7 @@ window.MLS = (function () {
     if (apiRow) apiRow.hidden = HOST !== 'pwa'; if (api) { api.hidden = HOST !== 'pwa'; api.value = AppState.apiUrl(); }
     var about = UI.el('device-about'); if (about) about.textContent = 'Release ' + info.version + (info.build ? ' · build ' + info.build : '') + (HOST === 'pwa' ? (info.installed ? ' · installed on this device' : ' · running in the browser') + (info.serviceWorker ? ' · offline shell ready' : ' · offline shell not ready yet') : ' · Apps Script page') + ' · ' + (Net.state() === 'online' ? 'server online' : Net.state());
     var upd = UI.el('device-update'); if (upd) upd.hidden = !info.updateReady;
+    paintInstall(info); var chk = UI.el('device-check-out'); if (chk) { chk.hidden = true; chk.innerHTML = ''; }
     var notifyRow = UI.el('device-notify-row'), notify = UI.el('device-notify');
     if (notifyRow && notify) { notifyRow.hidden = !(HOST === 'pwa' && 'Notification' in window); notify.checked = Notify.enabled(); }
     var copy = UI.el('device-copy'); if (copy) { copy.textContent = 'Saved on this device: reading…'; var S = window.MLS && window.MLS.Store; if (S && S.available()) S.summary().then(function (r) { var when = r.sync && r.sync.lastPull ? new Date(r.sync.lastPull).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'never'; copy.textContent = 'Saved on this device for offline reading: ' + r.orders + ' orders, ' + r.customers + ' customers, ' + r.snapshots + ' screens · refreshed ' + when + (r.sync && r.sync.window ? ' · keeps ' + r.sync.window.days + ' days of orders' : '') + (r.queue ? ' · offline queue: ' + r.queue.pending + ' waiting, ' + r.queue.rejected + ' refused' : ''); }, function () { copy.textContent = 'Nothing is saved on this device for offline reading (storage unavailable).'; }); else copy.textContent = 'Nothing is saved on this device for offline reading (storage unavailable).'; }
@@ -1231,7 +1305,7 @@ window.MLS = (function () {
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else setTimeout(boot, 0);
 
-  return { version: VERSION, phase: APP_PHASE, host: HOST, MODULES: MODULES, AppState: AppState, Api: Api, Net: Net, Pwa: Pwa, Notify: Notify, UI: UI, Toast: Toast, Modal: Modal, Form: Form, Validator: Validator, Formatter: Formatter, Table: Table, Print: Print, Qr: Qr, Keys: Keys, Router: Router, Auth: Auth, openDevice: openDevice, start: start };
+  return { version: VERSION, phase: APP_PHASE, host: HOST, MODULES: MODULES, AppState: AppState, Api: Api, Net: Net, Pwa: Pwa, Notify: Notify, Timing: Timing, runDeviceCheck: runDeviceCheck, UI: UI, Toast: Toast, Modal: Modal, Form: Form, Validator: Validator, Formatter: Formatter, Table: Table, Print: Print, Qr: Qr, Keys: Keys, Router: Router, Auth: Auth, openDevice: openDevice, start: start };
 })();
 </script>
 
@@ -1642,6 +1716,11 @@ window.MLS = (function () {
     /** After the server applied an operation: the server's record replaces the provisional one, and later operations learn the real id. */
     function confirm(op, r) {
       var data = r.data, writes = [];
+      if ((data === undefined || data === null) && op.tempId && r.resultId) {  // answered from the ledger without the record: the provisional row goes, the next pull brings the server's
+        if (op.action === 'orders.create') writes.push(Store.remove('orders', op.tempId));
+        else if (op.action === 'customers.quickAdd' || op.action === 'customers.save') writes.push(Store.remove('customers', op.tempId));
+        return Promise.all(writes);
+      }
       if (op.action === 'orders.create' && data && data.Id) { writes.push(Store.remove('orders', op.tempId).then(function () { return Store.put('orders', data.Id, data); })); }
       else if ((op.action === 'customers.quickAdd' || op.action === 'customers.save') && data) { var c = data.customer || data; if (c && c.Id) { if (op.tempId && op.tempId !== c.Id) writes.push(Store.remove('customers', op.tempId)); writes.push(Store.put('customers', c.Id, Object.assign({}, c, { _pending: undefined }))); } }
       else if (op.action === 'payments.create' && data && data.order) writes.push(Store.put('orders', data.order.Id, data.order));
@@ -1723,7 +1802,7 @@ window.MLS = (function () {
                 if (!v) { o.state = 'PENDING'; return; }  // not reached within the server's budget: it goes again
                 summary.sent++;
                 o.result = { status: v.status, resultId: v.resultId || '', resultRef: v.resultRef || '', flags: v.flags || [], conflicts: v.conflicts || [], error: v.error || null, at: new Date().toISOString() };
-                if (v.status === 'APPLIED' || v.status === 'DUPLICATE') { o.state = 'APPLIED'; if (v.status === 'APPLIED') summary.applied++; else summary.duplicate++; if (v.flags && v.flags.length) summary.flagged++; if (o.tempId && v.resultId) map[o.tempId] = v.resultId; if (v.data) confirms.push(Local.confirm(o, v)); summary.labels.push(o.label + (v.resultRef ? ' → ' + v.resultRef : '')); }
+                if (v.status === 'APPLIED' || v.status === 'DUPLICATE') { o.state = 'APPLIED'; if (v.status === 'APPLIED') summary.applied++; else summary.duplicate++; if (v.flags && v.flags.length) summary.flagged++; if (o.tempId && v.resultId) map[o.tempId] = v.resultId; if (v.data || (o.tempId && v.resultId)) confirms.push(Local.confirm(o, v)); summary.labels.push(o.label + (v.resultRef ? ' → ' + v.resultRef : '')); }
                 else { o.state = 'REJECTED'; summary.rejected++; summary.labels.push(o.label + ' ✗ ' + (v.error ? v.error.message : 'refused')); }
               });
               return Promise.all(confirms).then(function () { return Store.putMany('queue', batch.map(function (o) { return [o.opId, o]; })); }).then(function () { return remapPending(q, map); }).then(function () { lastPush = new Date().toISOString(); lastError = null; backoffReset(); return recount(); }).then(function () { return round(); });
@@ -1743,7 +1822,7 @@ window.MLS = (function () {
           });
         });
       };
-      pushing = round().catch(function (e) { summary.error = (e && e.message) || String(e); lastError = summary.error; return summary; }).then(function (s) { pushing = null; emit(); if (!opts.quiet) report(s); if (s && s.applied) { try { document.dispatchEvent(new CustomEvent('mls:synced', { detail: s })); } catch (e) { /* ignore */ } } return s; });
+      pushing = round().catch(function (e) { summary.error = (e && e.message) || String(e); lastError = summary.error; return summary; }).then(function (s) { pushing = null; emit(); if (!opts.quiet) report(s); if (s && (s.applied || s.duplicate)) { try { document.dispatchEvent(new CustomEvent('mls:synced', { detail: s })); } catch (e) { /* ignore */ } } return s; });
       emit();
       return pushing;
     }
@@ -5862,7 +5941,7 @@ window.MLS = (function () {
       UI.el('set-mt-cache').onclick = function () { Api.call('maintenance.clearCache', {}, { busy: true }).then(function (x) { out('<div class="alert alert-success py-2 small">Session cache cleared (' + x.cleared + ' entries); nobody was signed out.</div>'); }).catch(fail); };
       UI.el('set-mt-verify').onclick = function () { Api.call('maintenance.selfCheck', {}, { busy: true }).then(function (v) { var c = v.counts, bad = v.files.filter(function (f) { return f.status !== 'OK'; }); out('<div class="alert ' + (v.ok ? 'alert-success' : 'alert-danger') + ' py-2 small">' + (v.ok ? 'Installation verified' : 'Installation differs from the bundle') + ' — ' + v.level + ' check against release ' + UI.esc(v.version || '?') + (v.builtAt ? ' built ' + F.datetime(v.builtAt) : '') + ': ' + c.ok + ' OK' + (c.mismatch ? ', ' + c.mismatch + ' changed' : '') + (c.missing ? ', ' + c.missing + ' missing' : '') + (c.extra ? ', ' + c.extra + ' extra' : '') + (c.unverified ? ', ' + c.unverified + ' unverified' : '') + '</div>' + (v.notes.length ? '<ul class="small text-soft">' + v.notes.map(function (n) { return '<li>' + UI.esc(n) + '</li>'; }).join('') + '</ul>' : '') + '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>File</th><th>Status</th><th>Checked by</th><th>Note</th></tr></thead><tbody>' + bad.concat(v.files.filter(function (f) { return f.status === 'OK'; })).map(function (f) { return '<tr' + (f.status === 'OK' ? '' : ' class="table-danger"') + '><td class="font-monospace">' + UI.esc(f.name) + '</td><td>' + UI.badge(f.status === 'OK' ? 'OK' : (f.status === 'UNVERIFIED' ? 'PENDING' : 'REJECTED'), f.status) + '</td><td class="small text-soft">' + UI.esc(f.how) + '</td><td class="small">' + UI.esc(f.note || '') + '</td></tr>'; }).join('') + '</tbody></table></div>'); }).catch(fail); };
       UI.el('set-mt-endpoints').onclick = function () { Api.call('system.endpoints', {}, { busy: true }).then(function (list) { out('<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Action</th><th>Needs</th><th>Scope</th></tr></thead><tbody>' + list.map(function (e) { return '<tr><td class="font-monospace">' + UI.esc(e.action) + '</td><td class="small">' + (e.isPublic ? '<span class="text-soft">public</span>' : UI.esc(e.permission || 'any login')) + '</td><td class="small text-soft">' + UI.esc([e.branch ? 'branch ' + e.branch : '', e.own ? 'own ' + e.own : ''].filter(Boolean).join(' · ')) + '</td></tr>'; }).join('') + '</tbody></table></div>'); }).catch(fail); };
-      UI.el('set-mt-browser').onclick = function () { var e = window.__mlsFirstError, res = window.__mlsFailedResources || [], libs = { bootstrap: typeof window.bootstrap === 'object', Chart: typeof window.Chart === 'function' }; out('<pre class="small bg-light border rounded p-2 mb-0 pre-wrap">' + UI.esc((e ? 'FIRST SCRIPT ERROR\n' + JSON.stringify(e, null, 2) : 'No script error has been raised on this page since it loaded.') + '\n\nRESOURCES THAT FAILED TO LOAD: ' + (res.length ? '\n' + JSON.stringify(res, null, 2) : 'none') + '\n\nLIBRARIES PRESENT: ' + JSON.stringify(libs) + '\n\nMODULES REGISTERED: ' + M.Router.registered().join(', ') + '\n\nAPP: v' + M.version + ' phase ' + M.phase + ' · ' + navigator.userAgent) + '</pre>'); };
+      UI.el('set-mt-browser').onclick = function () { var e = window.__mlsFirstError, res = window.__mlsFailedResources || [], libs = { bootstrap: typeof window.bootstrap === 'object', Chart: typeof window.Chart === 'function' }; out('<pre class="small bg-light border rounded p-2 mb-0 pre-wrap">' + UI.esc((e ? 'FIRST SCRIPT ERROR\n' + JSON.stringify(e, null, 2) : 'No script error has been raised on this page since it loaded.') + '\n\nRESOURCES THAT FAILED TO LOAD: ' + (res.length ? '\n' + JSON.stringify(res, null, 2) : 'none') + '\n\nLIBRARIES PRESENT: ' + JSON.stringify(libs) + '\n\nMODULES REGISTERED: ' + M.Router.registered().join(', ') + '\n\nAPP: v' + M.version + ' phase ' + M.phase + ' · ' + navigator.userAgent + (M.Timing ? '\n\nTIMINGS ON THIS DEVICE (round trip avg/max · server avg/max · calls):\n' + (M.Timing.summary().map(function (t) { return t.action + ': ' + t.avgMs + '/' + t.maxMs + ' ms · ' + t.avgServerMs + '/' + t.maxServerMs + ' ms · ×' + t.count; }).join('\n') || 'none yet') : '')) + '</pre>'); };
     }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
   }
   function chunk(a, n) { var out = []; for (var i = 0; i < a.length; i += n) out.push(a.slice(i, i + n)); return out; }
@@ -6080,12 +6159,16 @@ window.MLS = (function () {
         <p class="small text-soft mb-2" id="device-about"></p>
         <p class="small text-soft mb-2" id="device-copy"></p>
         <div class="form-check mb-3" id="device-notify-row" hidden><input class="form-check-input" type="checkbox" id="device-notify"><label class="form-check-label small" for="device-notify">Notify me when a sync needs attention (an operation refused or flagged for review) while the app is in the background — never for a success</label></div>
+        <p class="small text-soft mb-2" id="device-install-hint" hidden></p>
         <div class="d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-primary btn-sm" id="device-install" hidden><i class="fa-solid fa-download me-1"></i>Install the app</button>
           <button type="button" class="btn btn-outline-primary btn-sm" id="device-update" hidden><i class="fa-solid fa-arrow-rotate-right me-1"></i>Update now</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="device-check"><i class="fa-solid fa-stethoscope me-1"></i>Device check</button>
           <button type="button" class="btn btn-outline-secondary btn-sm" id="device-refresh"><i class="fa-solid fa-cloud-arrow-down me-1"></i>Refresh saved data</button>
           <button type="button" class="btn btn-outline-secondary btn-sm" id="device-clear"><i class="fa-solid fa-broom me-1"></i>Clear saved data</button>
           <button type="button" class="btn btn-outline-danger btn-sm" id="device-forget"><i class="fa-solid fa-eraser me-1"></i>Forget this device</button>
         </div>
+        <div class="mt-3" id="device-check-out" hidden></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save</button></div>
     </form>
