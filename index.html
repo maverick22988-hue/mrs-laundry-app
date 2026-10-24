@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '1960fa2da5', version: '1.8.0' };</script>
+  <script>window.MLS_PWA = { build: 'e702fecf61', version: '1.8.1' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -593,7 +593,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.8.0';
+  var VERSION = '1.8.1';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -870,32 +870,48 @@ window.MLS = (function () {
       var healthP = Net.health({ timeoutMs: 15000 }).then(function (good) { var ms = Date.now() - t0; say(good, good ? 'Server: answered in ' + ms + ' ms (' + (AppState.apiUrl() ? 'web-app address kept on this device' : 'Apps Script page') + ')' : 'Server: no answer in ' + ms + ' ms — ' + (Net.state() === 'offline' ? 'no network' : 'the network is up but the server did not answer')); });
       say(true, 'Notifications: ' + ('Notification' in window ? (Notify.enabled() ? 'on for a sync that needs attention' : (Notification.permission === 'denied' ? 'blocked by the browser' : 'off (switch on under This device)')) : 'not supported here'));
       say(true, 'Text messages: the Send text button opens the phone\'s Messages app through an sms: link; try one on this device and answer the dialog honestly — a desktop browser cannot open it');
-      return Promise.all([storageP, quotaP, idbP, healthP]).then(function () { var tm = Timing.summary(); if (tm.length) say(true, 'Timings on this device (round trip · server): ' + tm.slice(0, 6).map(function (t) { return t.action + ' ' + t.avgMs + ' ms · ' + t.avgServerMs + ' ms ×' + t.count; }).join(', ')); return { ok: ok, lines: lines, at: new Date().toISOString() }; });
+      return Promise.all([storageP, quotaP, idbP, healthP]).then(function () { var tm = Timing.summary(); if (tm.length) say(true, 'Timings on this device (round trip p50/p95 · server p50 ms): ' + tm.slice(0, 6).map(function (t) { return t.action + ' ' + t.p50Ms + '/' + t.p95Ms + ' · ' + (t.p50ServerMs === null ? '—' : t.p50ServerMs) + ' ×' + t.count; }).join(', ') + ' — Copy timings (CSV) has every line'); return { ok: ok, lines: lines, at: new Date().toISOString() }; });
     }
     return { init: init, update: update, info: info, install: install, selfCheck: selfCheck, updateReady: function () { return !!waiting; }, onUpdate: function (fn) { listeners.push(fn); }, onInstallChange: function (fn) { installListeners.push(fn); } };
   })();
 
   // ------------------------------------------------------------------ timings (bundle 1.7.0): what this device measured of every call — the round trip and the server's own time (meta.ms) — so the field trial reads real numbers, never estimates
   var Timing = (function () {
-    var KEY = 'mls.timings', data = null;
+    var KEY = 'mls.timings', SAMPLES = 200, data = null;
     function load() { if (data) return data; try { data = JSON.parse(localStorage.getItem(KEY) || 'null') || {}; } catch (e) { data = {}; } return data; }
     function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { /* best effort */ } }
+    function entry(d, key) { var t = d[key] || (d[key] = { count: 0, totalMs: 0, maxMs: 0, totalServerMs: 0, maxServerMs: 0, samples: [], serverSamples: [] }); if (!t.samples) t.samples = []; if (!t.serverSamples) t.serverSamples = []; return t; }
+    function push(list, v) { list.push(Math.round(v)); if (list.length > SAMPLES) list.splice(0, list.length - SAMPLES); }
+    /** The value below which p percent of the samples fall (nearest rank), over the last SAMPLES measurements. */
+    function percentile(list, p) { if (!list || !list.length) return null; var a = list.slice().sort(function (x, y) { return x - y; }); return a[Math.min(a.length - 1, Math.max(0, Math.ceil(p / 100 * a.length) - 1))]; }
     function note(action, roundMs, serverMs) {
-      var d = load(), t = d[action] || (d[action] = { count: 0, totalMs: 0, maxMs: 0, totalServerMs: 0, maxServerMs: 0 });
-      t.count++; t.totalMs += roundMs; t.maxMs = Math.max(t.maxMs, roundMs); if (serverMs !== undefined && serverMs !== null) { t.totalServerMs += serverMs; t.maxServerMs = Math.max(t.maxServerMs, serverMs); } t.last = new Date().toISOString();
+      var d = load(), t = entry(d, action);
+      t.count++; t.totalMs += roundMs; t.maxMs = Math.max(t.maxMs, roundMs); push(t.samples, roundMs);
+      if (serverMs !== undefined && serverMs !== null) { t.totalServerMs += serverMs; t.maxServerMs = Math.max(t.maxServerMs, serverMs); push(t.serverSamples, serverMs); }
+      t.last = new Date().toISOString();
       if (t.count % 5 === 0) save();
     }
     // the page going away is the moment a single checkout's timing would otherwise be lost
     window.addEventListener('pagehide', function () { if (data) save(); });
-    function summary() { var d = load(); if (data) save(); return Object.keys(d).map(function (a) { var t = d[a]; return { action: a, count: t.count, avgMs: Math.round(t.totalMs / t.count), maxMs: t.maxMs, avgServerMs: Math.round(t.totalServerMs / t.count), maxServerMs: t.maxServerMs, sources: t.sources || null, last: t.last }; }).sort(function (x, y) { return y.count - x.count; }); }
+    /** One line per action and per screen, most frequent first: count, average, max and the p50 / p95 / p99 of the last SAMPLES round trips and server times. */
+    function summary() {
+      var d = load(); if (data) save();
+      return Object.keys(d).map(function (a) { var t = entry(d, a); return { action: a, count: t.count, avgMs: Math.round(t.totalMs / t.count), maxMs: t.maxMs, p50Ms: percentile(t.samples, 50), p95Ms: percentile(t.samples, 95), p99Ms: percentile(t.samples, 99), avgServerMs: Math.round(t.totalServerMs / t.count), maxServerMs: t.maxServerMs, p50ServerMs: percentile(t.serverSamples, 50), p95ServerMs: percentile(t.serverSamples, 95), sampled: t.samples.length, sources: t.sources || null, last: t.last }; }).sort(function (x, y) { return y.count - x.count; });
+    }
     /** A screen painted: how long after the navigation its content stood, and from where ('saved' = the device's copy, 'live' = the server, 'saved-then-live' = both). */
     function view(name, ms, source) {
-      var d = load(), t = d['view:' + name] || (d['view:' + name] = { count: 0, totalMs: 0, maxMs: 0, totalServerMs: 0, maxServerMs: 0, sources: {} });
-      t.count++; t.totalMs += ms; t.maxMs = Math.max(t.maxMs, ms); t.sources[source] = (t.sources[source] || 0) + 1; t.last = new Date().toISOString();
+      var d = load(), t = entry(d, 'view:' + name); t.sources = t.sources || {};
+      t.count++; t.totalMs += ms; t.maxMs = Math.max(t.maxMs, ms); push(t.samples, ms); t.sources[source] = (t.sources[source] || 0) + 1; t.last = new Date().toISOString();
       if (t.count % 5 === 0) save();
     }
+    /** The summary as CSV (one header line), for a spreadsheet or a support message. */
+    function csv() {
+      var cols = ['action', 'count', 'sampled', 'p50Ms', 'p95Ms', 'p99Ms', 'avgMs', 'maxMs', 'p50ServerMs', 'p95ServerMs', 'avgServerMs', 'maxServerMs', 'sources', 'last'];
+      var q = function (v) { if (v === null || v === undefined) return ''; var s = typeof v === 'object' ? JSON.stringify(v) : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+      return cols.join(',') + '\n' + summary().map(function (r) { return cols.map(function (c) { return q(r[c]); }).join(','); }).join('\n') + '\n';
+    }
     function clear() { data = {}; save(); }
-    return { note: note, view: view, summary: summary, clear: clear };
+    return { note: note, view: view, summary: summary, csv: csv, percentile: percentile, clear: clear };
   })();
 
   // ------------------------------------------------------------------ ui helpers
@@ -1196,7 +1212,7 @@ window.MLS = (function () {
       UI.el('user-name').textContent = me.user.DisplayName; UI.el('user-role').textContent = me.user.RoleName; UI.el('user-avatar').textContent = UI.initials(me.user.DisplayName);
       UI.el('sidebar-business').textContent = me.settings.BusinessName || 'Mrs Laundry Sys'; UI.el('sidebar-version').textContent = 'v' + me.app.version;
       // the page in this browser and the server it talks to must come from the same release; after an update the open page is the older one
-      if (me.app.version !== VERSION && !paintIdentity.warned) { paintIdentity.warned = true; Toast.warning('This page is release ' + VERSION + ' but the server runs ' + me.app.version + '. Reload the page (F5) to pick up the update.', 12000); }
+      if (me.app.version !== VERSION && !paintIdentity.warned && AppState.meFrom !== 'saved') { paintIdentity.warned = true; Toast.warning('This page is release ' + VERSION + ' but the server runs ' + me.app.version + '. Reload the page (F5) to pick up the update.', 12000); }
     }
     function paintBranchSwitch() {
       var me = AppState.me, sel = UI.el('branch-switch'), wrap = UI.el('branch-switch-wrap');
@@ -1208,7 +1224,7 @@ window.MLS = (function () {
     }
     function login(username, password) {
       return Api.call('auth.login', { username: username, password: password, userAgent: navigator.userAgent }, { busy: true, noRedirect: true }).then(function (res) {
-        AppState.setToken(res.token); AppState.me = res.me; UI.el('auth-note').hidden = true; UI.el('auth-queue-note').hidden = true; showApp(); return res.me;
+        AppState.setToken(res.token); AppState.me = res.me; AppState.meFrom = 'live'; UI.el('auth-note').hidden = true; UI.el('auth-queue-note').hidden = true; showApp(); return res.me;
       });
     }
     function logout() {
@@ -1217,7 +1233,14 @@ window.MLS = (function () {
       if (!AppState.token) { finish(); return Promise.resolve(); }
       return Api.call('auth.logout', {}, { busy: true, noRedirect: true }).then(finish, finish);
     }
-    function refreshMe() { return Api.call('auth.me').then(function (me) { AppState.me = me; paintIdentity(); paintBranchSwitch(); Router.paintNav(); return me; }); }
+    function refreshMe() { return Api.call('auth.me').then(function (me) { AppState.me = me; repaint(); return me; }); }
+    /** Everything the sign-in context paints, again: after the server's answer replaces the saved context a returning session opened with. */
+    function repaint() {
+      paintIdentity(); paintBranchSwitch(); Router.paintNav();
+      var route = Router.current(); if (route && !Router.allowed(route)) Router.go(null);  // a module this role may no longer open
+      var must = !!(AppState.me && AppState.me.user.MustChangePassword), pm = document.querySelector('#password-modal.show');
+      if (must && !pm) openChangePassword(true); else if (!must && pm && pm.getAttribute('data-forced')) Modal.close('password-modal');  // the server's word on a forced change, either way
+    }
     function switchBranch(branchId) {
       return Api.call('auth.switchBranch', { branchId: branchId }, { busy: true }).then(function (me) { AppState.me = me; paintBranchSwitch(); Router.refreshAll(); Toast.info(branchId === 'ALL' ? 'Showing all branches' : 'Switched branch'); return me; });
     }
@@ -1230,7 +1253,7 @@ window.MLS = (function () {
       return Api.call('auth.changePassword', input, { busy: true }).then(function (r) { if (AppState.me) AppState.me.user.MustChangePassword = false; Toast.success('Password changed' + (r.otherSessionsRevoked ? '; ' + r.otherSessionsRevoked + ' other session(s) signed out' : '')); return r; });
     }
     function createFirstAdmin(input) { return Api.call('auth.createFirstAdmin', input, { busy: true, noRedirect: true }); }
-    return { can: can, showAuth: showAuth, showOffline: showOffline, showConnect: showConnect, connect: connect, showApp: showApp, login: login, logout: logout, refreshMe: refreshMe, switchBranch: switchBranch, openChangePassword: openChangePassword, changePassword: changePassword, createFirstAdmin: createFirstAdmin, paintBranchSwitch: paintBranchSwitch };
+    return { can: can, showAuth: showAuth, showOffline: showOffline, showConnect: showConnect, connect: connect, showApp: showApp, repaint: repaint, login: login, logout: logout, refreshMe: refreshMe, switchBranch: switchBranch, openChangePassword: openChangePassword, changePassword: changePassword, createFirstAdmin: createFirstAdmin, paintBranchSwitch: paintBranchSwitch };
   })();
 
   // ------------------------------------------------------------------ boot
@@ -1260,6 +1283,12 @@ window.MLS = (function () {
     UI.el('device-update').addEventListener('click', function () { if (!Pwa.update()) Toast.info('No update is waiting.'); });
     UI.el('device-install').addEventListener('click', function () { var b = this; b.disabled = true; Pwa.install().then(function (r) { b.disabled = false; if (r === 'accepted') Toast.success('Installing… the app gets its own icon and window.'); else if (r === 'dismissed') Toast.info('Not installed. The offer stays under This device.'); else Toast.info('The browser offers no install prompt here; use its menu.'); paintInstall(); }); });
     UI.el('device-check').addEventListener('click', function () { runDeviceCheck(); });
+    UI.el('device-timings').addEventListener('click', function () {
+      var text = Timing.csv(), rows = Timing.summary().length;
+      if (!rows) { Toast.info('Nothing measured on this device yet.'); return; }
+      var done = function () { Toast.success(rows + ' timing line' + (rows === 1 ? '' : 's') + ' copied as CSV.'); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { Toast.warning('Could not copy; open Settings → Maintenance → Browser error details instead.'); }); else Toast.warning('Could not copy; open Settings → Maintenance → Browser error details instead.');
+    });
     Pwa.onInstallChange(function () { paintInstall(); });
     UI.el('device-notify').addEventListener('change', function () {
       var box = this; if (!box.checked) { Notify.set(false); return; }
@@ -1309,14 +1338,30 @@ window.MLS = (function () {
     if (HOST === 'pwa' && !AppState.apiUrl()) { var q = ''; try { q = new URLSearchParams(location.search).get('api') || ''; } catch (e) { /* ignore */ } Auth.showConnect(q); return; }
     var token = AppState.load();
     if (!token) { Auth.showAuth(); return; }
-    Api.call('auth.me', {}, { noRedirect: true, noOffline: true }).then(function (me) { AppState.me = me; Auth.showApp(); }).catch(function (e) {
+    // A returning session (1.8.1): the app opens at once from the sign-in context the server gave this very session (the device keeps it under the
+    // token; it is the same context the offline start trusts) and the server's answer replaces it within one round trip — identity, role,
+    // permissions, branches, settings repainted. A session the server no longer accepts is signed out at that moment, before any
+    // request of the page could matter: every read and write still goes through the server's gate. Without a saved context the app
+    // waits for the server as before.
+    var opened = false, settled = false, startedAt = Date.now();
+    var saved = Api.offline && Api.offline.me ? Api.offline.me(token) : Promise.resolve(null);
+    saved.then(function (me) {
+      if (!me || settled || AppState.token !== token || AppState.me) return;
+      AppState.me = me; AppState.meFrom = 'saved'; opened = true; Auth.showApp(); try { Timing.view('start', Date.now() - startedAt, 'saved'); } catch (x) { /* ignore */ }
+    }, function () { /* no saved context: the server's answer opens the app */ });
+    Api.call('auth.me', {}, { noRedirect: true, noOffline: true }).then(function (me) {
+      settled = true; if (AppState.token !== token) return;
+      var before = AppState.me; AppState.me = me; AppState.meFrom = 'live';
+      if (opened) { Auth.repaint(); if (before && before.activeBranch !== me.activeBranch) Router.refreshAll(); try { Timing.view('start', Date.now() - startedAt, 'saved-then-live'); } catch (x) { /* ignore */ } } else { Auth.showApp(); try { Timing.view('start', Date.now() - startedAt, 'live'); } catch (x) { /* ignore */ } }
+    }).catch(function (e) {
+      settled = true; if (AppState.token !== token) return;
       if (e && (e.code === 'NETWORK' || e.code === 'TIMEOUT' || e.code === 'NO_SERVER')) {
         // no answer: the copy this device keeps may still open the app for the same session, read-only until the server answers
-        var cached = Api.offline && Api.offline.me ? Api.offline.me(token) : Promise.resolve(null);
-        cached.then(function (me) { if (me) { AppState.me = me; Auth.showApp(); if (window.MLS && window.MLS.Offline) window.MLS.Offline.paintBar(); } else Auth.showOffline(e); }, function () { Auth.showOffline(e); });
+        if (opened) { if (window.MLS && window.MLS.Offline) window.MLS.Offline.paintBar(); return; }
+        saved.then(function (me) { if (me) { AppState.me = me; AppState.meFrom = 'saved'; Auth.showApp(); if (window.MLS && window.MLS.Offline) window.MLS.Offline.paintBar(); } else Auth.showOffline(e); }, function () { Auth.showOffline(e); });
         return;
       }
-      AppState.clear(); Auth.showAuth();
+      AppState.clear(); Auth.showAuth(opened ? (e && e.message) || 'Your session has ended. Please sign in again.' : undefined);
     });
   }
   /** Browser notifications, opt-in under This device, used for one thing only: a sync that needs attention while the app is in the background. Never for a success. */
@@ -1797,7 +1842,7 @@ window.MLS = (function () {
         else if (op.action === 'customers.quickAdd' || op.action === 'customers.save') writes.push(Store.remove('customers', op.tempId));
         return Promise.all(writes);
       }
-      if (op.action === 'orders.create' && data && data.Id) { writes.push(Store.remove('orders', op.tempId).then(function () { return Store.put('orders', data.Id, data); })); }
+      if (op.action === 'orders.create' && data && data.Id) { if (data.Receipt) delete data.Receipt; writes.push(Store.remove('orders', op.tempId).then(function () { return Store.put('orders', data.Id, data); })); }
       else if ((op.action === 'customers.quickAdd' || op.action === 'customers.save') && data) { var c = data.customer || data; if (c && c.Id) { if (op.tempId && op.tempId !== c.Id) writes.push(Store.remove('customers', op.tempId)); writes.push(Store.put('customers', c.Id, Object.assign({}, c, { _pending: undefined }))); } }
       else if (op.action === 'payments.create' && data && data.order) writes.push(Store.put('orders', data.order.Id, data.order));
       else if ((op.action === 'production.advance' || op.action === 'production.qc') && data && data.order) writes.push(Store.put('orders', data.order.Id, data.order));
@@ -2270,8 +2315,12 @@ window.MLS = (function () {
     var more = UI.el('dash-followups-more'); more.hidden = !(f.unclaimed + f.balances > (f.sample || []).length) || !M.Router.allowed('orders'); more.onclick = function () { M.Router.go('orders', { status: 'READY' }); };
     card.hidden = false;
   }
+  // the tiles come from dashboard.summary; the follow-ups, the incidents tile and the getting-started checklist from dashboard.extras, a second call the tiles never wait for
+  var summary = null, extras = null;
+  function merged() { return Object.assign({}, summary || {}, extras ? { incidents: extras.incidents, followups: extras.followups } : {}); }
+  function paintExtras(x) { extras = x; paintSetup(x); paintFollowups(x); if (summary) paintTiles(merged()); }
   function paint(d, info) {
-    paintSetup(d); paintMe(d); paintTiles(d); paintFollowups(d);
+    summary = d; paintMe(d); paintTiles(merged()); if (extras) { paintSetup(extras); paintFollowups(extras); }
     var inv = d.inventory, card = UI.el('dash-lowstock-card');
     if (inv && inv.lowStockItems && inv.lowStockItems.length) {
       card.hidden = false;
@@ -2282,10 +2331,11 @@ window.MLS = (function () {
     // a saved answer names the time it was saved; the live one the time it arrived
     UI.el('dash-asof').textContent = 'as of ' + F.time(info && info.cached && info.asOf ? new Date(info.asOf) : new Date()) + (info && info.cached ? ' (saved on this device)' : '');
   }
-  var seq = M.Api.sequence();
+  var seq = M.Api.sequence(), extraSeq = M.Api.sequence();
   function load() {
     var btn = UI.el('dash-refresh'); btn.disabled = true;
-    return M.Api.read('dashboard.summary', {}, { seq: seq, paint: paint }).catch(function (e) { if (!(e && e.superseded)) M.Toast.danger('Dashboard: ' + UI.error(e)); }).then(function () { btn.disabled = false; });
+    var extra = M.Api.read('dashboard.extras', {}, { seq: extraSeq, paint: paintExtras, view: null }).catch(function (e) { if (!(e && e.superseded) && !(e && e.offline)) M.Toast.warning('Dashboard follow-ups: ' + UI.error(e)); });
+    return M.Api.read('dashboard.summary', {}, { seq: seq, paint: paint }).catch(function (e) { if (!(e && e.superseded)) M.Toast.danger('Dashboard: ' + UI.error(e)); }).then(function () { btn.disabled = false; return extra; });
   }
   M.Router.register('dashboard', {
     title: 'Dashboard',
@@ -2436,12 +2486,22 @@ window.MLS = (function () {
     return { lines: cart.lines.map(function (l) { return l.lineType === 'PRODUCT' ? { lineType: 'PRODUCT', itemId: l.itemId, qty: l.qty } : { lineType: 'SERVICE', serviceId: l.serviceId, qty: l.qty, weightKg: l.pricingType === 'PER_KILO' ? l.weightKg : '' }; }), isExpress: cart.isExpress, discountAmount: cart.discountAmount || 0, discountReason: cart.discountReason, promoCode: cart.promoCode || '', deliveryFee: cart.deliveryFee || 0, otherCharges: cart.otherCharges || 0, customerId: cart.customer ? cart.customer.Id : '' };
   }
   function signature() { return JSON.stringify(cartPayload()); }
-  var requestQuote = UI.debounce(function () { ensureQuote().catch(function () { /* shown in the note */ }); }, 450);
+  var serverQuoteSoon = UI.debounce(function () { ensureQuote().catch(function () { /* shown in the note */ }); }, 450);
+  /** Every cart change: the exact total at once from the shared pricing core over the catalogue this device holds, then the server's quote (debounced) which replaces it. */
+  function requestQuote() { localQuote(signature()); serverQuoteSoon(); }
+  /** The local quote: the same pricing code the server runs (the release gate proves them identical) over the device's copy of the catalogue; marked _local so the checkout still waits for the server's quote, which is the one that counts. Nothing happens when the device holds no catalogue yet. */
+  var localSig = '';
+  function localQuote(sig) {
+    var Q = M.Offline && M.Offline.quote; if (!Q || !Q.price || (quote && quoteSig === sig) || localSig === sig) return;
+    localSig = sig;
+    try { Q.price(cartPayload()).then(function (q) { if (q && signature() === sig && !(quote && quoteSig === sig)) { quote = Object.assign({}, q, { _local: true }); quoteSig = sig; renderTotals(); } }).catch(function () { /* the server's answer follows */ }); } catch (e) { /* ignore */ }
+  }
   function ensureQuote() {
     var sig = signature();
     if (!cart.lines.length) { quote = null; quoteSig = sig; renderTotals(); return Promise.resolve(null); }
-    if (quote && quoteSig === sig) return Promise.resolve(quote);
+    if (quote && quoteSig === sig && !quote._local) return Promise.resolve(quote);
     if (quotePending && quotePending.sig === sig) return quotePending.promise;
+    if (!(quote && quoteSig === sig)) localQuote(sig);
     var p = Api.call('services.quote', cartPayload()).then(function (q) { if (signature() === sig) { quote = q; quoteSig = sig; renderTotals(); } return q; }).catch(function (e) { if (signature() === sig) { quote = null; quoteSig = ''; UI.el('pos-quote-note').textContent = UI.error(e); UI.el('pos-quote-note').className = 'small text-danger mt-1'; if (e.fields && e.fields.promoCode) promoNote(e.message, true); } throw e; }).then(function (q) { if (quotePending && quotePending.sig === sig) quotePending = null; return q; }, function (e) { if (quotePending && quotePending.sig === sig) quotePending = null; throw e; });
     quotePending = { sig: sig, promise: p }; return p;
   }
@@ -2470,7 +2530,7 @@ window.MLS = (function () {
     if (fresh) promoNote(quote.promo ? 'Promo ' + quote.promo.Code + ' applied: -' + F.peso(quote.promoDiscount) + (Number(quote.manualDiscount) > 0 ? ' plus a discount of ' + F.peso(quote.manualDiscount) : '') : '', false);
     UI.html('pos-totals', '<span>Subtotal</span><span class="money">' + F.peso(sub) + '</span>' + (disc ? '<span>Discount' + (fresh && quote.promo ? ' <span class="text-soft small">' + UI.esc(quote.promo.Code) + '</span>' : '') + '</span><span class="money">-' + F.peso(disc) + '</span>' : '') + (del ? '<span>Delivery fee</span><span class="money">' + F.peso(del) + '</span>' : '') + (oth ? '<span>Other charges</span><span class="money">' + F.peso(oth) + '</span>' : '') + '<span class="fw-bold">Total</span><span class="grand money" id="pos-total">' + F.peso(total) + '</span>');
     var note = UI.el('pos-quote-note'); note.className = 'small text-faint mt-1';
-    note.textContent = !cart.lines.length ? '' : fresh ? ('Due ' + (quote.dueAt ? F.datetime(quote.dueAt) : 'in ' + quote.dueHours + ' h') + (quote.isExpress ? ' · express' : '') + (quote.customerType && quote.customerType !== 'REGULAR' ? ' · ' + F.status(quote.customerType) + ' price' : '')) : 'Estimated — confirming price…';
+    note.textContent = !cart.lines.length ? '' : fresh ? ('Due ' + (quote.dueAt ? F.datetime(quote.dueAt) : 'in ' + quote.dueHours + ' h') + (quote.isExpress ? ' · express' : '') + (quote.customerType && quote.customerType !== 'REGULAR' ? ' · ' + F.status(quote.customerType) + ' price' : '') + (quote._local ? ' · confirming with the server…' : '')) : 'Estimated — confirming price…';
     var btn = UI.el('pos-checkout'); btn.disabled = !cart.lines.length || !lensOk(); btn.innerHTML = '<i class="fa-solid fa-cash-register me-2"></i>' + (cart.lines.length ? 'Charge ' + F.peso(total) : 'Charge');
     // the phone cart bar: the stacked layout puts the cart below the tiles, so the running total and Charge stay within reach
     var on = cart.lines.length > 0 && lensOk() && M.Router.current() === 'pos';
@@ -2513,7 +2573,7 @@ window.MLS = (function () {
           var payload = Object.assign(cartPayload(), { requestId: requestId, notes: cart.notes, bagCount: cart.bagCount === '' ? '' : Number(cart.bagCount), serviceType: cart.serviceType, payment: payment ? { amount: payment.amount, method: payment.method, referenceNo: payment.referenceNo } : null });
           return Api.call('orders.create', payload, { busy: true }).then(function (o) {
             Toast.success('Order ' + o.OrderNo + ' created' + (payment ? ' · ' + F.peso(payment.amount) + ' ' + M.OrdersUI.methodLabel(payment.method).toLowerCase() : ' · pay later'));
-            newCart(); resetForm(); render(); M.OrdersUI.printReceipt(o.Id); return o;
+            newCart(); resetForm(); render(); M.OrdersUI.printReceipt(o.Id, o.Receipt); return o;
           });
         }
       });
@@ -2723,8 +2783,9 @@ window.MLS = (function () {
   function printLabels(orderId) {
     return Api.call('orders.receipt', { id: orderId }, { busy: true }).then(function (d) { M.Print.open(labelsHtml(d), { title: 'Labels ' + d.order.OrderNo, size: d.business.labelPaperSize, margin: d.business.labelPaperSize === '80mm' ? '2mm' : '10mm' }); return d; }).catch(function (e) { Toast.danger(UI.error(e)); });
   }
-  function printReceipt(orderId) {
-    return Api.call('orders.receipt', { id: orderId }, { busy: true }).then(function (d) {
+  /** The receipt dialog. given: the receipt the checkout's own answer carried (1.8.1), so the POS prints without a second round trip; otherwise orders.receipt is asked. */
+  function printReceipt(orderId, given) {
+    return (given && given.order && given.order.Id === orderId ? Promise.resolve(given) : Api.call('orders.receipt', { id: orderId }, { busy: true })).then(function (d) {
       UI.html('receipt-body', receiptHtml(d));
       var btn = UI.el('receipt-print'); btn.onclick = function () { M.Print.open(receiptHtml(d, true), { title: 'Receipt ' + d.order.OrderNo, size: d.business.paperSize }); };
       var sms = UI.el('receipt-sms'); sms.hidden = !(M.Sms && M.Sms.can(d.order.Mobile)); sms.onclick = function () { M.Sms.open({ workflow: 'ORDER_RECEIVED', orderId: d.order.Id }); };
@@ -6071,7 +6132,7 @@ window.MLS = (function () {
       UI.el('set-mt-cache').onclick = function () { Api.call('maintenance.clearCache', {}, { busy: true }).then(function (x) { out('<div class="alert alert-success py-2 small">Session cache cleared (' + x.cleared + ' entries); nobody was signed out.</div>'); }).catch(fail); };
       UI.el('set-mt-verify').onclick = function () { Api.call('maintenance.selfCheck', {}, { busy: true }).then(function (v) { var c = v.counts, bad = v.files.filter(function (f) { return f.status !== 'OK'; }); out('<div class="alert ' + (v.ok ? 'alert-success' : 'alert-danger') + ' py-2 small">' + (v.ok ? 'Installation verified' : 'Installation differs from the bundle') + ' — ' + v.level + ' check against release ' + UI.esc(v.version || '?') + (v.builtAt ? ' built ' + F.datetime(v.builtAt) : '') + ': ' + c.ok + ' OK' + (c.mismatch ? ', ' + c.mismatch + ' changed' : '') + (c.missing ? ', ' + c.missing + ' missing' : '') + (c.extra ? ', ' + c.extra + ' extra' : '') + (c.unverified ? ', ' + c.unverified + ' unverified' : '') + '</div>' + (v.notes.length ? '<ul class="small text-soft">' + v.notes.map(function (n) { return '<li>' + UI.esc(n) + '</li>'; }).join('') + '</ul>' : '') + '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>File</th><th>Status</th><th>Checked by</th><th>Note</th></tr></thead><tbody>' + bad.concat(v.files.filter(function (f) { return f.status === 'OK'; })).map(function (f) { return '<tr' + (f.status === 'OK' ? '' : ' class="table-danger"') + '><td class="font-monospace">' + UI.esc(f.name) + '</td><td>' + UI.badge(f.status === 'OK' ? 'OK' : (f.status === 'UNVERIFIED' ? 'PENDING' : 'REJECTED'), f.status) + '</td><td class="small text-soft">' + UI.esc(f.how) + '</td><td class="small">' + UI.esc(f.note || '') + '</td></tr>'; }).join('') + '</tbody></table></div>'); }).catch(fail); };
       UI.el('set-mt-endpoints').onclick = function () { Api.call('system.endpoints', {}, { busy: true }).then(function (list) { out('<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Action</th><th>Needs</th><th>Scope</th></tr></thead><tbody>' + list.map(function (e) { return '<tr><td class="font-monospace">' + UI.esc(e.action) + '</td><td class="small">' + (e.isPublic ? '<span class="text-soft">public</span>' : UI.esc(e.permission || 'any login')) + '</td><td class="small text-soft">' + UI.esc([e.branch ? 'branch ' + e.branch : '', e.own ? 'own ' + e.own : ''].filter(Boolean).join(' · ')) + '</td></tr>'; }).join('') + '</tbody></table></div>'); }).catch(fail); };
-      UI.el('set-mt-browser').onclick = function () { var e = window.__mlsFirstError, res = window.__mlsFailedResources || [], libs = { bootstrap: typeof window.bootstrap === 'object', Chart: typeof window.Chart === 'function' }; out('<pre class="small bg-light border rounded p-2 mb-0 pre-wrap">' + UI.esc((e ? 'FIRST SCRIPT ERROR\n' + JSON.stringify(e, null, 2) : 'No script error has been raised on this page since it loaded.') + '\n\nRESOURCES THAT FAILED TO LOAD: ' + (res.length ? '\n' + JSON.stringify(res, null, 2) : 'none') + '\n\nLIBRARIES PRESENT: ' + JSON.stringify(libs) + '\n\nMODULES REGISTERED: ' + M.Router.registered().join(', ') + '\n\nAPP: v' + M.version + ' phase ' + M.phase + ' · ' + navigator.userAgent + (M.Timing ? '\n\nTIMINGS ON THIS DEVICE (round trip avg/max · server avg/max · calls):\n' + (M.Timing.summary().map(function (t) { return t.action + ': ' + t.avgMs + '/' + t.maxMs + ' ms · ' + t.avgServerMs + '/' + t.maxServerMs + ' ms · ×' + t.count; }).join('\n') || 'none yet') : '')) + '</pre>'); };
+      UI.el('set-mt-browser').onclick = function () { var e = window.__mlsFirstError, res = window.__mlsFailedResources || [], libs = { bootstrap: typeof window.bootstrap === 'object', Chart: typeof window.Chart === 'function' }; out('<pre class="small bg-light border rounded p-2 mb-0 pre-wrap">' + UI.esc((e ? 'FIRST SCRIPT ERROR\n' + JSON.stringify(e, null, 2) : 'No script error has been raised on this page since it loaded.') + '\n\nRESOURCES THAT FAILED TO LOAD: ' + (res.length ? '\n' + JSON.stringify(res, null, 2) : 'none') + '\n\nLIBRARIES PRESENT: ' + JSON.stringify(libs) + '\n\nMODULES REGISTERED: ' + M.Router.registered().join(', ') + '\n\nAPP: v' + M.version + ' phase ' + M.phase + ' · ' + navigator.userAgent + (M.Timing ? '\n\nTIMINGS ON THIS DEVICE (round trip p50/p95/p99 · max · server p50/p95 · calls; percentiles over the last ' + 200 + ' of each):\n' + (M.Timing.summary().map(function (t) { return t.action + ': ' + t.p50Ms + '/' + t.p95Ms + '/' + t.p99Ms + ' ms · max ' + t.maxMs + ' · server ' + (t.p50ServerMs === null ? '—' : t.p50ServerMs + '/' + t.p95ServerMs) + ' ms · ×' + t.count + (t.sources ? ' · ' + JSON.stringify(t.sources) : ''); }).join('\n') || 'none yet') : '')) + '</pre>'); };
     }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
   }
   function chunk(a, n) { var out = []; for (var i = 0; i < a.length; i += n) out.push(a.slice(i, i + n)); return out; }
@@ -6294,6 +6355,7 @@ window.MLS = (function () {
           <button type="button" class="btn btn-primary btn-sm" id="device-install" hidden><i class="fa-solid fa-download me-1"></i>Install the app</button>
           <button type="button" class="btn btn-outline-primary btn-sm" id="device-update" hidden><i class="fa-solid fa-arrow-rotate-right me-1"></i>Update now</button>
           <button type="button" class="btn btn-outline-secondary btn-sm" id="device-check"><i class="fa-solid fa-stethoscope me-1"></i>Device check</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="device-timings" title="The round trips this device measured, per action and per screen, with p50 / p95 / p99 — copied as CSV"><i class="fa-solid fa-stopwatch me-1"></i>Copy timings (CSV)</button>
           <button type="button" class="btn btn-outline-secondary btn-sm" id="device-refresh"><i class="fa-solid fa-cloud-arrow-down me-1"></i>Refresh saved data</button>
           <button type="button" class="btn btn-outline-secondary btn-sm" id="device-clear"><i class="fa-solid fa-broom me-1"></i>Clear saved data</button>
           <button type="button" class="btn btn-outline-danger btn-sm" id="device-forget"><i class="fa-solid fa-eraser me-1"></i>Forget this device</button>
