@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '32467f0627', version: '1.9.0' };</script>
+  <script>window.MLS_PWA = { build: '6b8e17c1f6', version: '1.11.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -596,7 +596,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.9.0';
+  var VERSION = '1.11.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -708,6 +708,7 @@ window.MLS = (function () {
       };
       return attempt(0).then(function (d) { inflight--; if (opts.busy) UI.busy(false); return d; }, function (e) {
         inflight--; if (opts.busy) UI.busy(false);
+        if (!opts.url && e && (e.code === 'INTERNAL' || e.code === 'BUSY' || e.code === 'NETWORK' || e.code === 'TIMEOUT')) { try { Timing.fail(action, e.code); } catch (x) { /* ignore */ } }  // a failed request, counted on this device (1.10.0)
         if (!(e && (e.code === 'NETWORK' || e.code === 'TIMEOUT' || e.code === 'NO_SERVER'))) throw e;
         if (e.code !== 'NO_SERVER' && !e.skipped) Net.noteFailure(e);
         // the server could not be reached: the copy this device keeps may answer a read or take a queueable write; anything else needs the connection
@@ -794,35 +795,39 @@ window.MLS = (function () {
    * navigator.onLine is only the first signal; the answer to sync.health decides. Nothing here is ever assumed.
    */
   var Net = (function () {
-    var state = 'unknown', listeners = [], checking = null, timer = null, lastOk = null, started = false;
+    var state = 'unknown', listeners = [], checking = null, timer = null, lastOk = null, started = false, failures = 0, nextAt = 0;
     var LABEL = { online: 'Online', offline: 'Offline', unreachable: 'Server unreachable', checking: 'Checking…', unknown: '' };
+    // release 1.10.0: while the server is unreachable the probe backs off — 5 s, 10, 20 … up to 5 minutes, with a little jitter so many devices do not knock at once; a success, a network 'online' event or a tab brought to the front resets it
+    function nextDelay() { failures++; var base = Math.min(300000, 5000 * Math.pow(2, failures - 1)); return Math.round(base * (0.75 + Math.random() * 0.5)); }
+    function resetBackoff() { failures = 0; nextAt = 0; }
     function paint() {
       var b = UI.el('net-badge'), t = UI.el('net-badge-text'); if (!b || !t) return;
       b.hidden = state === 'unknown'; b.className = 'net-badge net-' + state; b.title = state === 'online' && lastOk ? 'Server answered at ' + new Date(lastOk).toLocaleTimeString() : (state === 'unreachable' ? 'The network is up but the server is not answering; retrying' : (state === 'offline' ? 'No network connection' : '')); t.textContent = LABEL[state] || '';
     }
     function set(s) { var prev = state; state = s; paint(); if (s !== prev) listeners.forEach(function (fn) { try { fn(s, prev); } catch (e) { console.error(e); } }); }
     function failState() { return (typeof navigator !== 'undefined' && navigator.onLine === false) ? 'offline' : 'unreachable'; }
-    function schedule(ms) { clearTimeout(timer); timer = setTimeout(function () { health(); }, ms); }
+    function schedule(ms) { clearTimeout(timer); nextAt = Date.now() + ms; timer = setTimeout(function () { health(); }, ms); }
     /** Asks the server (sync.health, no session, 8 s) and settles the state; resolves true or false, never rejects. opts.url checks another address without saving it. */
     function health(opts) {
       opts = opts || {};
       if (checking && !opts.url) return checking;
       if (!opts.url && HOST === 'pwa' && !AppState.apiUrl()) { set('unknown'); return Promise.resolve(false); }  // nothing to probe until the device is connected
       if (!opts.url && state !== 'online') set('checking');
-      var p = Api.call('sync.health', {}, { noRedirect: true, timeoutMs: opts.timeoutMs || 8000, url: opts.url }).then(function (d) { if (!opts.url) { lastOk = Date.now(); set('online'); } return !!(d && d.ok); }, function (e) { if (!opts.url) { if (e && e.code === 'NO_SERVER') set('unknown'); else { set(failState()); schedule(state === 'offline' ? 30000 : 15000); } } return false; });
+      var p = Api.call('sync.health', {}, { noRedirect: true, timeoutMs: opts.timeoutMs || 8000, url: opts.url }).then(function (d) { if (!opts.url) { lastOk = Date.now(); resetBackoff(); set('online'); } return !!(d && d.ok); }, function (e) { if (!opts.url) { if (e && e.code === 'NO_SERVER') set('unknown'); else { set(failState()); schedule(nextDelay()); } } return false; });
       if (!opts.url) { checking = p; p.then(function () { checking = null; }, function () { checking = null; }); }
       return p;
     }
-    function noteSuccess() { lastOk = Date.now(); if (state !== 'online') { clearTimeout(timer); set('online'); } }
-    function noteFailure() { if (HOST === 'pwa' && !AppState.apiUrl()) return; if (state === 'online' || state === 'unknown' || state === 'checking') set(failState()); schedule(5000); }
+    function noteSuccess() { lastOk = Date.now(); resetBackoff(); if (state !== 'online') { clearTimeout(timer); set('online'); } }
+    /** A call failed for lack of a server: the state turns and a probe is scheduled — once; a probe already due within the backoff is left alone (no duplicate checks). */
+    function noteFailure() { if (HOST === 'pwa' && !AppState.apiUrl()) return; if (state === 'online' || state === 'unknown' || state === 'checking') set(failState()); if (!timer || nextAt <= Date.now()) schedule(nextDelay()); }
     function init() {
       if (started) return; started = true;
-      window.addEventListener('online', function () { set('checking'); health(); });
-      window.addEventListener('offline', function () { clearTimeout(timer); set('offline'); });
-      document.addEventListener('visibilitychange', function () { if (!document.hidden && state !== 'online') health(); });
+      window.addEventListener('online', function () { resetBackoff(); set('checking'); health(); });
+      window.addEventListener('offline', function () { clearTimeout(timer); timer = null; set('offline'); });
+      document.addEventListener('visibilitychange', function () { if (!document.hidden && state !== 'online') { resetBackoff(); health(); } });
       if (navigator.onLine === false) set('offline'); else health();
     }
-    return { state: function () { return state; }, health: health, noteSuccess: noteSuccess, noteFailure: noteFailure, onChange: function (fn) { listeners.push(fn); }, init: init, paint: paint, lastOk: function () { return lastOk; } };
+    return { state: function () { return state; }, health: health, noteSuccess: noteSuccess, noteFailure: noteFailure, onChange: function (fn) { listeners.push(fn); }, init: init, paint: paint, lastOk: function () { return lastOk; }, backoff: function () { return { failures: failures, nextAt: nextAt }; } };
   })();
 
   // ------------------------------------------------------------------ installed app (service worker, updates)
@@ -887,6 +892,8 @@ window.MLS = (function () {
     function push(list, v) { list.push(Math.round(v)); if (list.length > SAMPLES) list.splice(0, list.length - SAMPLES); }
     /** The value below which p percent of the samples fall (nearest rank), over the last SAMPLES measurements. */
     function percentile(list, p) { if (!list || !list.length) return null; var a = list.slice().sort(function (x, y) { return x - y; }); return a[Math.min(a.length - 1, Math.max(0, Math.ceil(p / 100 * a.length) - 1))]; }
+    /** A call that failed for lack of an answer (release 1.10.0): counted per action with the last code, so the health panel can show failed requests from this device. */
+    function fail(action, code) { var d = load(), t = entry(d, action); t.errors = (t.errors || 0) + 1; t.lastError = { at: new Date().toISOString(), code: String(code || 'ERROR') }; save(); }
     function note(action, roundMs, serverMs) {
       var d = load(), t = entry(d, action);
       t.count++; t.totalMs += roundMs; t.maxMs = Math.max(t.maxMs, roundMs); push(t.samples, roundMs);
@@ -899,7 +906,7 @@ window.MLS = (function () {
     /** One line per action and per screen, most frequent first: count, average, max and the p50 / p95 / p99 of the last SAMPLES round trips and server times. */
     function summary() {
       var d = load(); if (data) save();
-      return Object.keys(d).map(function (a) { var t = entry(d, a); return { action: a, count: t.count, avgMs: Math.round(t.totalMs / t.count), maxMs: t.maxMs, p50Ms: percentile(t.samples, 50), p95Ms: percentile(t.samples, 95), p99Ms: percentile(t.samples, 99), avgServerMs: Math.round(t.totalServerMs / t.count), maxServerMs: t.maxServerMs, p50ServerMs: percentile(t.serverSamples, 50), p95ServerMs: percentile(t.serverSamples, 95), sampled: t.samples.length, sources: t.sources || null, last: t.last }; }).sort(function (x, y) { return y.count - x.count; });
+      return Object.keys(d).map(function (a) { var t = entry(d, a); return { action: a, count: t.count, avgMs: Math.round(t.totalMs / t.count), maxMs: t.maxMs, errors: t.errors || 0, lastError: t.lastError || null, p50Ms: percentile(t.samples, 50), p95Ms: percentile(t.samples, 95), p99Ms: percentile(t.samples, 99), avgServerMs: Math.round(t.totalServerMs / t.count), maxServerMs: t.maxServerMs, p50ServerMs: percentile(t.serverSamples, 50), p95ServerMs: percentile(t.serverSamples, 95), sampled: t.samples.length, sources: t.sources || null, last: t.last }; }).sort(function (x, y) { return y.count - x.count; });
     }
     /** A screen painted: how long after the navigation its content stood, and from where ('saved' = the device's copy, 'live' = the server, 'saved-then-live' = both). */
     function view(name, ms, source) {
@@ -914,7 +921,8 @@ window.MLS = (function () {
       return cols.join(',') + '\n' + summary().map(function (r) { return cols.map(function (c) { return q(r[c]); }).join(','); }).join('\n') + '\n';
     }
     function clear() { data = {}; save(); }
-    return { note: note, view: view, summary: summary, csv: csv, percentile: percentile, clear: clear };
+    function failures() { var d = load(); return Object.keys(d).reduce(function (n, a) { return n + (d[a].errors || 0); }, 0); }
+    return { note: note, fail: fail, failures: failures, view: view, summary: summary, csv: csv, percentile: percentile, clear: clear };
   })();
 
   // ------------------------------------------------------------------ ui helpers
@@ -1983,7 +1991,7 @@ window.MLS = (function () {
   var Sync = (function () {
     var pulling = null, lastPull = null, lastFull = null, pulledVersion = 0, pullMinutes = 5, readActions = null, debounce = null, listeners = [], lastError = null, served = 0;
     function emit() { listeners.forEach(function (fn) { try { fn(state()); } catch (e) { console.error(e); } }); }
-    function state() { return { pulling: !!pulling, lastPull: lastPull, lastFull: lastFull, dataVersion: pulledVersion, lastError: lastError, served: served }; }
+    function state() { return { pulling: !!pulling, lastPull: lastPull, lastFull: lastFull, dataVersion: pulledVersion, lastError: lastError, served: served, holdUntil: pullHoldUntil || null, failures: pullFailures }; }
     function loadMeta() { return Store.get('meta', 'sync').then(function (m) { m = m || {}; lastPull = m.lastPull || null; lastFull = m.lastFull || null; pulledVersion = m.dataVersion || 0; pullMinutes = m.pullMinutes || 5; readActions = m.readActions || null; return m; }).catch(function () { return {}; }); }
     /** How long a change elsewhere waits before this device refreshes its copy of the orders and customers (Settings → System, OfflinePullDebounceSeconds). */
     function debounceMs() { var st = AppState.me && AppState.me.settings, n = Number(st && st.OfflinePullDebounceSeconds); return (isFinite(n) && n >= 5 ? n : 60) * 1000; }
@@ -2046,12 +2054,16 @@ window.MLS = (function () {
             });
           });
         });
-      }).catch(function (e) { lastError = (e && e.message) || String(e); return null; }).then(function (r) { pulling = null; emit(); return r; });
+      }).then(function (r) { pullSucceeded(); return r; }).catch(function (e) { lastError = (e && e.message) || String(e); pullFailed(); return null; }).then(function (r) { pulling = null; emit(); return r; });
       emit();
       return pulling;
     }
     /** A full pull (screens included) is due every pullMinutes; a light one does not count. */
-    function due() { if (!lastFull) return true; return Date.now() - new Date(lastFull).getTime() >= pullMinutes * 60000; }
+    // release 1.10.0: a pull that failed (the server answered with an error while the badge says online) is not tried again at once — 1, 2, 4 … up to 10 minutes, reset by a success or a reconnection — so a struggling server is not polled every minute by every device
+    var pullFailures = 0, pullHoldUntil = 0;
+    function pullFailed() { pullFailures++; pullHoldUntil = Date.now() + Math.min(600000, 60000 * Math.pow(2, pullFailures - 1)) * (0.75 + Math.random() * 0.5); }
+    function pullSucceeded() { pullFailures = 0; pullHoldUntil = 0; }
+    function due() { if (Date.now() < pullHoldUntil) return false; if (!lastFull) return true; return Date.now() - new Date(lastFull).getTime() >= pullMinutes * 60000; }
     function tick() { if (AppState.me && Net.state() === 'online' && !document.hidden && due()) pull(); }
     /** A pull in ms from now; onlyIfDue re-checks the clock when the moment comes, so a pull that ran meanwhile (the sign-in pull, say) is not repeated; opts go to pull (light). */
     function schedule(ms, onlyIfDue, opts) { clearTimeout(debounce); debounce = setTimeout(function () { debounce = null; if (AppState.me && Net.state() === 'online' && (!onlyIfDue || due())) pull(opts); }, ms); }
@@ -2070,7 +2082,7 @@ window.MLS = (function () {
       document.addEventListener('mls:signedin', function () { if (navigator.storage && navigator.storage.persist && M.host === 'pwa') { navigator.storage.persist().catch(function () { /* ignore */ }); } var go = function () { return Queue.push({ quiet: false }).then(function () { return pull({ light: !due() }); }); };  /* a copy refreshed within OfflinePullMinutes gets its rows brought up to date, not every screen again */ if (Net.state() === 'online') go(); else Net.health().then(function (ok) { if (ok) go(); }); });
       document.addEventListener('visibilitychange', function () { if (!document.hidden) tick(); });
       document.addEventListener('mls:synced', function () { schedule(500, false, { light: true }); });
-      Net.onChange(function (s) { if (s === 'online' && AppState.me && due()) schedule(3000, true); });
+      Net.onChange(function (s) { if (s === 'online') { pullSucceeded(); if (AppState.me && due()) schedule(3000, true); } });
       setInterval(tick, 60000);
     }
     return { pull: pull, record: record, cachedMe: cachedMe, state: state, onChange: function (fn) { listeners.push(fn); }, init: init, noteServed: function () { served++; }, payloadKey: payloadKey };
@@ -2329,7 +2341,7 @@ window.MLS = (function () {
     UI.html('dash-health-level', h.level === 'ok' ? UI.badge('OK', 'All good') : h.level === 'warn' ? UI.badge('PENDING', 'Needs attention') : UI.badge('REJECTED', 'Action needed'));
     var jobs = h.jobs || {}, jobText = ['backup', 'archive', 'purgeSessions'].map(function (n) { var j = jobs[n]; return (n === 'purgeSessions' ? 'sessions' : n) + ' ' + (!j ? '<span class="text-soft">never ran</span>' : (j.ok ? '<i class="fa-solid fa-check text-success"></i>' : '<i class="fa-solid fa-xmark text-danger"></i>') + ' ' + UI.esc(F.relative(j.at))); }).join(' · ');
     var facts = '<div class="small mb-2"><b>Last good backup:</b> ' + (b.lastOkAt ? UI.esc(F.datetime(b.lastOkAt)) + ' (' + age(b.ageHours) + ', ' + (b.files || 0) + ' file' + (b.files === 1 ? '' : 's') + ')' : '<span class="text-danger">none yet</span>') + ' · nightly backups ' + (h.daily ? 'on' : '<span class="text-danger">off</span>') + (b.lastStatus === 'FAILED' ? ' · <span class="text-danger">last attempt failed</span>' : '') + '<br><b>Scheduled jobs:</b> ' + jobText + (h.archive && h.archive.files && h.archive.files.length ? '<br><b>Archive:</b> ' + h.archive.files.length + ' spreadsheet' + (h.archive.files.length === 1 ? '' : 's') + (h.archive.lastRun ? ', last run ' + UI.esc(F.relative(h.archive.lastRun.at)) : '') : '') + '</div>';
-    var list = (h.items || []).map(function (i) { var icon = i.level === 'danger' ? 'fa-circle-xmark text-danger' : i.level === 'warn' ? 'fa-triangle-exclamation text-warning' : 'fa-circle-info text-primary'; var go = i.where === 'recovery' ? '<span class="text-soft small">Sheet menu → Recovery information</span>' : '<a href="#/settings" class="small" data-health-tab="' + (i.where === 'settings' ? 'settings' : 'maintenance') + '">Open ' + (i.where === 'settings' ? 'Settings' : 'Maintenance') + '</a>'; return '<li class="mb-1"><i class="fa-solid ' + icon + ' me-2"></i>' + UI.esc(i.text) + ' ' + go + '</li>'; }).join('');
+    var list = (h.items || []).map(function (i) { var icon = i.level === 'danger' ? 'fa-circle-xmark text-danger' : i.level === 'warn' ? 'fa-triangle-exclamation text-warning' : 'fa-circle-info text-primary'; var go = i.where === 'recovery' ? '<span class="text-soft small">Sheet menu → Recovery information</span>' : i.where === 'sync' ? '<a href="#/sync" class="small">Open Sync</a>' : '<a href="#/settings" class="small" data-health-tab="' + (i.where === 'settings' ? 'settings' : 'maintenance') + '">Open ' + (i.where === 'settings' ? 'Settings' : 'Maintenance') + '</a>'; return '<li class="mb-1"><i class="fa-solid ' + icon + ' me-2"></i>' + UI.esc(i.text) + ' ' + go + '</li>'; }).join('');
     UI.html('dash-health', facts + (list ? '<ul class="list-unstyled small mb-0">' + list + '</ul>' : '<div class="small text-soft">Backups, scheduled jobs and the sign-in secret are in order.</div>'));
     UI.el('dash-health').querySelectorAll('[data-health-tab]').forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); M.Router.go('settings', { tab: a.getAttribute('data-health-tab') }); }; });
     UI.el('dash-health-more').onclick = function () { M.Router.go('settings', { tab: 'maintenance' }); };
@@ -2956,7 +2968,7 @@ window.MLS = (function () {
         rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-basket-shopping', title: state.search || state.from || state.to ? 'No orders match' : (state.status === 'OPEN' ? 'No open orders' : 'No orders here yet'), hint: state.search || state.from || state.to ? 'Change the search or the dates.' : 'Orders start at the point of sale and move through production to pickup or delivery.', action: !(state.search || state.from || state.to) && M.Auth.can('POS_CREATE') ? { label: 'Start an order', icon: 'fa-cash-register', href: '#/pos' } : null },
         onPage: function (p) { state.page = p; load(); }, onRow: function (row) { openOrder(row.Id, function () { load(); }); }
       });
-      UI.el('orders-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + r.total + ' order' + (r.total === 1 ? '' : 's');
+      UI.el('orders-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + r.total + ' order' + (r.total === 1 ? '' : 's') + (r.window && !state.from ? ' · last ' + r.window.days + ' days (set a date for older ones)' : '');
     } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Orders: ' + UI.error(e)); });
   }
   function wire() {
@@ -3475,7 +3487,7 @@ window.MLS = (function () {
         rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-right-left', title: 'No stock movements in this range', hint: 'Beginning counts, purchases, consumption, sales, adjustments and transfers appear here.' },
         onPage: function (p) { state.mvPage = p; loadMoves(); }, onRow: function (row) { open(row.ItemId); }
       });
-      UI.el('inv-count-moves').textContent = r.total;
+      UI.el('inv-count-moves').textContent = r.total + (r.window && !state.mvFrom ? ' (last 30 days — set a date for older ones)' : '');
     } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Movements: ' + UI.error(e)); });
   }
   function showTab(tab) {
@@ -4034,7 +4046,7 @@ window.MLS = (function () {
         onPage: function (p) { state.page = p; load(); }, onRow: function (j) { open(j.Id); }
       });
       var openCount = ['UNASSIGNED', 'ASSIGNED', 'ACCEPTED', 'OUT_FOR_DELIVERY'].reduce(function (t, s) { return t + (r.counts[s] || 0); }, 0);
-      UI.el('dsp-count-open').textContent = openCount || ''; UI.el('dsp-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + (r.counts.UNASSIGNED || 0) + ' unassigned';
+      UI.el('dsp-count-open').textContent = openCount || ''; UI.el('dsp-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + (r.counts.UNASSIGNED || 0) + ' unassigned' + (r.window && state.status === 'DONE' && !state.date ? ' · finished jobs of the last ' + r.window.days + ' days (set a date for older ones)' : '');
     } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Dispatch: ' + UI.error(e)); });
   }
 
@@ -5532,6 +5544,7 @@ window.MLS = (function () {
     <input class="form-control search" id="rp-search" placeholder="Search user, record, values" autocomplete="off" hidden>
   </div>
   <div class="sum-grid" id="rp-kpis"></div>
+  <p class="small text-soft mb-2" id="rp-covers" hidden></p>
   <div class="card mb-3" id="rp-chart-card" hidden><div class="card-body"><canvas id="rp-chart" height="90" aria-label="Chart"></canvas></div></div>
   <div class="card"><div class="card-body p-0" id="rp-table"></div></div>
   <div id="rp-extra" class="mt-3"></div>
@@ -5547,9 +5560,13 @@ window.MLS = (function () {
   function isoLocal(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function today() { return isoLocal(new Date()); }
   function peso(v) { return '<span class="money">' + F.peso(v) + '</span>'; }
+  /** The first column of a by-day table: a day, or an archived month's row (1.11.0: one row per month the archive holds). */
+  function dayLabel(v, r) { return r && r.Archived ? '<span class="fw-bold">' + UI.esc(r.Label) + '</span><div class="small text-soft">from the monthly summaries</div>' : '<span class="fw-bold">' + F.date(v) + '</span>'; }
+  function pct(v, dp) { return v === null || v === undefined ? '—' : F.number(v, dp === undefined ? 1 : dp) + '%'; }
+  function delta(v) { if (v === null || v === undefined) return '<span class="text-soft">—</span>'; var up = Number(v) > 0; return '<span class="' + (up ? 'text-success' : (Number(v) < 0 ? 'text-danger' : 'text-soft')) + '">' + (up ? '▲ ' : (Number(v) < 0 ? '▼ ' : '')) + F.number(Math.abs(Number(v)), 1) + '%</span>'; }
   function bold(v) { return '<span class="money fw-bold">' + F.peso(v) + '</span>'; }
-  var TABS = [['sales', 'Sales', 'REPORT_VIEW'], ['payments', 'Payments', 'REPORT_VIEW'], ['expenses', 'Expenses', 'REPORT_VIEW'], ['receivables', 'Receivables', 'REPORT_VIEW'], ['production', 'Production', 'REPORT_VIEW'], ['inventory', 'Inventory', 'REPORT_VIEW'], ['payroll', 'Payroll', ['STAFF_PAYROLL_ADMIN', 'STAFF_PAYROLL_HOURS_VIEW']], ['messages', 'Messages', 'SMS_VIEW_LOGS'], ['audit', 'Audit log', 'AUDIT_VIEW']];
-  var PRESETS = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This week'], ['month', 'This month'], ['lastMonth', 'Last month'], ['quarter', 'Last 90 days'], ['year', 'This year']];
+  var TABS = [['sales', 'Sales', 'REPORT_VIEW'], ['payments', 'Payments', 'REPORT_VIEW'], ['expenses', 'Expenses', 'REPORT_VIEW'], ['receivables', 'Receivables', 'REPORT_VIEW'], ['production', 'Production', 'REPORT_VIEW'], ['business', 'Business', 'REPORT_VIEW'], ['inventory', 'Inventory', 'REPORT_VIEW'], ['payroll', 'Payroll', ['STAFF_PAYROLL_ADMIN', 'STAFF_PAYROLL_HOURS_VIEW']], ['messages', 'Messages', 'SMS_VIEW_LOGS'], ['audit', 'Audit log', 'AUDIT_VIEW']];
+  var PRESETS = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This week'], ['month', 'This month'], ['lastMonth', 'Last month'], ['quarter', 'Last 90 days'], ['year', 'This year'], ['twelve', 'Last 12 months']];
   function tabAllowed(t) { var p = t[2]; return Array.isArray(p) ? p.some(can) : can(p); }
   function preset(code) {
     var d = new Date(), y = d.getFullYear(), m = d.getMonth(), r;
@@ -5559,6 +5576,7 @@ window.MLS = (function () {
     else if (code === 'month') r = [y + '-' + pad(m + 1) + '-01', today()];
     else if (code === 'lastMonth') { var f = new Date(y, m - 1, 1), l = new Date(y, m, 0); r = [isoLocal(f), isoLocal(l)]; }
     else if (code === 'quarter') { var q = new Date(d); q.setDate(d.getDate() - 89); r = [isoLocal(q), today()]; }
+    else if (code === 'twelve') r = [new Date(y, m - 11, 1).getFullYear() + '-' + pad(new Date(y, m - 11, 1).getMonth() + 1) + '-01', today()];
     else r = [y + '-01-01', today()];
     state.from = r[0]; state.to = r[1]; UI.el('rp-from').value = r[0]; UI.el('rp-to').value = r[1];
     UI.el('rp-presets').querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-preset') === code); });
@@ -5571,18 +5589,18 @@ window.MLS = (function () {
       kpis: function (d) { var t = d.totals; return [['Orders', t.orders], ['Sales', F.peso(t.sales)], ['Discounts', F.peso(t.discounts)], ['Collected', F.peso(t.collected)], ['Refunded', F.peso(t.refunded)], ['Expenses', F.peso(t.expenses)], ['Net cash flow', F.peso(t.net)], ['Unpaid balance', F.peso(t.balance)]]; },
       columns: function (d) {
         if (d.groupBy === 'service') return [{ key: 'Label', label: 'Service / product', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + F.status(r.Type) + (r.Category ? ' · ' + UI.esc(r.Category) : '') + '</div>'; } }, { key: 'Orders', label: 'Orders', align: 'right' }, { key: 'Qty', label: 'Qty', align: 'right', format: function (v) { return F.qty(v); } }, { key: 'WeightKg', label: 'Kg', align: 'right', format: function (v) { return v ? F.qty(v) : '—'; } }, { key: 'Sales', label: 'Sales', align: 'right', format: bold }];
-        return [{ key: 'Label', label: d.groupBy === 'day' ? 'Day' : (d.groupBy === 'cashier' ? 'Cashier' : 'Branch'), format: function (v) { return '<span class="fw-bold">' + (d.groupBy === 'day' ? F.date(v) : UI.esc(v)) + '</span>'; } }, { key: 'Orders', label: 'Orders', align: 'right' }, { key: 'Sales', label: 'Sales', align: 'right', format: bold }, { key: 'Discounts', label: 'Discounts', align: 'right', format: peso }, { key: 'Collected', label: 'Collected', align: 'right', format: peso }, { key: 'Refunded', label: 'Refunded', align: 'right', format: peso }, { key: 'Expenses', label: 'Expenses', align: 'right', format: peso }, { key: 'Net', label: 'Net', align: 'right', format: function (v) { return '<span class="money fw-bold ' + (Number(v) < 0 ? 'text-danger' : '') + '">' + F.peso(v) + '</span>'; } }];
+        return [{ key: 'Label', label: d.groupBy === 'day' ? 'Day' : (d.groupBy === 'cashier' ? 'Cashier' : 'Branch'), format: function (v, r) { return d.groupBy === 'day' ? dayLabel(r.Key, r) : '<span class="fw-bold">' + UI.esc(v) + '</span>'; } }, { key: 'Orders', label: 'Orders', align: 'right' }, { key: 'Sales', label: 'Sales', align: 'right', format: bold }, { key: 'Discounts', label: 'Discounts', align: 'right', format: peso }, { key: 'Collected', label: 'Collected', align: 'right', format: peso }, { key: 'Refunded', label: 'Refunded', align: 'right', format: peso }, { key: 'Expenses', label: 'Expenses', align: 'right', format: peso }, { key: 'Net', label: 'Net', align: 'right', format: function (v) { return '<span class="money fw-bold ' + (Number(v) < 0 ? 'text-danger' : '') + '">' + F.peso(v) + '</span>'; } }];
       },
       rows: function (d) { return d.rows; },
-      chart: function (d) { if (d.groupBy === 'service') return { type: 'bar', labels: d.rows.slice(0, 12).map(function (r) { return r.Label; }), datasets: [{ label: 'Sales', data: d.rows.slice(0, 12).map(function (r) { return r.Sales; }) }] }; return { type: d.groupBy === 'day' ? 'line' : 'bar', labels: d.rows.map(function (r) { return d.groupBy === 'day' ? r.Label.slice(5) : r.Label; }), datasets: [{ label: 'Sales', data: d.rows.map(function (r) { return r.Sales; }) }, { label: 'Collected', data: d.rows.map(function (r) { return r.Collected; }) }, { label: 'Expenses', data: d.rows.map(function (r) { return r.Expenses; }) }] }; },
+      chart: function (d) { if (d.groupBy === 'service') return { type: 'bar', labels: d.rows.slice(0, 12).map(function (r) { return r.Label; }), datasets: [{ label: 'Sales', data: d.rows.slice(0, 12).map(function (r) { return r.Sales; }) }] }; return { type: d.groupBy === 'day' ? 'line' : 'bar', labels: d.rows.map(function (r) { return d.groupBy === 'day' ? (r.Archived ? r.Key : r.Label.slice(5)) : r.Label; }), datasets: [{ label: 'Sales', data: d.rows.map(function (r) { return r.Sales; }) }, { label: 'Collected', data: d.rows.map(function (r) { return r.Collected; }) }, { label: 'Expenses', data: d.rows.map(function (r) { return r.Expenses; }) }] }; },
       extra: function (d) { return d.totals.byMethod.length ? '<div class="card"><div class="card-header">Collections by method</div><div class="card-body"><div class="sum-grid mb-0">' + d.totals.byMethod.map(function (m) { return '<div class="tile"><div class="k">' + UI.esc(F.status(m.Method)) + '</div><div class="v">' + F.peso(m.Amount) + '</div></div>'; }).join('') + '</div></div></div>' : ''; }
     },
     payments: {
       load: function () { return Api.call('reports.payments', { from: state.from, to: state.to }); },
       kpis: function (d) { var t = d.totals; return [['Rows', t.Count], ['Net collected', F.peso(t.Net)], ['Refunded', F.peso(t.Refunded)]].concat(d.methods.map(function (m) { return [F.status(m), F.peso(t[m])]; })); },
-      columns: function (d) { return [{ key: 'Label', label: 'Day', format: function (v) { return '<span class="fw-bold">' + F.date(v) + '</span>'; } }].concat(d.methods.map(function (m) { return { key: m, label: F.status(m), align: 'right', format: peso }; })).concat([{ key: 'Refunded', label: 'Refunds', align: 'right', format: peso }, { key: 'Net', label: 'Net', align: 'right', format: bold }, { key: 'Count', label: 'Rows', align: 'right' }]); },
+      columns: function (d) { return [{ key: 'Label', label: 'Day', format: function (v, r) { return dayLabel(r.Key, r); } }].concat(d.methods.map(function (m) { return { key: m, label: F.status(m), align: 'right', format: peso }; })).concat([{ key: 'Refunded', label: 'Refunds', align: 'right', format: peso }, { key: 'Net', label: 'Net', align: 'right', format: bold }, { key: 'Count', label: 'Rows', align: 'right' }]); },
       rows: function (d) { return d.rows; },
-      chart: function (d) { return { type: 'bar', stacked: true, labels: d.rows.map(function (r) { return r.Label.slice(5); }), datasets: d.methods.map(function (m) { return { label: F.status(m), data: d.rows.map(function (r) { return r[m]; }) }; }) }; },
+      chart: function (d) { return { type: 'bar', stacked: true, labels: d.rows.map(function (r) { return r.Archived ? r.Key : r.Label.slice(5); }), datasets: d.methods.map(function (m) { return { label: F.status(m), data: d.rows.map(function (r) { return r[m]; }) }; }) }; },
       extra: function (d) { return table('By cashier', [{ key: 'Label', label: 'Cashier' }].concat(d.methods.map(function (m) { return { key: m, label: F.status(m), align: 'right', format: peso }; })).concat([{ key: 'Refunded', label: 'Refunds', align: 'right', format: peso }, { key: 'Net', label: 'Net', align: 'right', format: bold }, { key: 'Count', label: 'Rows', align: 'right' }]), d.byCashier); }
     },
     expenses: {
@@ -5590,8 +5608,8 @@ window.MLS = (function () {
       kpis: function (d) { return [['Expenses', d.totals.count], ['Total', F.peso(d.totals.amount)], ['Average', F.peso(d.totals.average)]].concat(d.byMethod.map(function (m) { return [F.status(m.Label), F.peso(m.Amount)]; })); },
       columns: function () { return [{ key: 'Label', label: 'Category', format: function (v) { return '<span class="fw-bold">' + UI.esc(v) + '</span>'; } }, { key: 'Count', label: 'Expenses', align: 'right' }, { key: 'Amount', label: 'Amount', align: 'right', format: bold }, { key: 'Pct', label: '% of total', align: 'right', format: function (v) { return F.number(v, 1) + '%'; } }]; },
       rows: function (d) { return d.rows; },
-      chart: function (d) { return { type: 'bar', labels: d.byDay.map(function (r) { return r.Label.slice(5); }), datasets: [{ label: 'Expenses', data: d.byDay.map(function (r) { return r.Amount; }) }] }; },
-      extra: function (d) { return table('By day', [{ key: 'Label', label: 'Day', format: function (v) { return F.date(v); } }, { key: 'Count', label: 'Expenses', align: 'right' }, { key: 'Amount', label: 'Amount', align: 'right', format: bold }], d.byDay) + table('Top payees', [{ key: 'Label', label: 'Payee' }, { key: 'Count', label: 'Expenses', align: 'right' }, { key: 'Amount', label: 'Amount', align: 'right', format: bold }], d.byPayee); }
+      chart: function (d) { return { type: 'bar', labels: d.byDay.map(function (r) { return r.Archived ? r.Key : r.Label.slice(5); }), datasets: [{ label: 'Expenses', data: d.byDay.map(function (r) { return r.Amount; }) }] }; },
+      extra: function (d) { return table('By day', [{ key: 'Label', label: 'Day', format: function (v, r) { return dayLabel(r.Key, r); } }, { key: 'Count', label: 'Expenses', align: 'right' }, { key: 'Amount', label: 'Amount', align: 'right', format: bold }], d.byDay) + table(d.byPayeeLiveOnly ? 'Top payees (live rows only: the archived months keep no payee)' : 'Top payees', [{ key: 'Label', label: 'Payee' }, { key: 'Count', label: 'Expenses', align: 'right' }, { key: 'Amount', label: 'Amount', align: 'right', format: bold }], d.byPayee); }
     },
     receivables: {
       noRange: true,
@@ -5606,10 +5624,27 @@ window.MLS = (function () {
     production: {
       load: function () { return Api.call('reports.production', { from: state.from, to: state.to }); },
       kpis: function (d) { var t = d.totals; return [['Orders started', t.ordersStarted], ['Completed', t.completed], ['On time', t.onTime + ' (' + F.number(t.onTimePct, 1) + '%)'], ['Avg turnaround', F.number(t.avgTurnaroundHours, 1) + ' h'], ['QC passed', t.qcPass], ['QC failed', t.qcFail + (t.qcFail ? ' (' + F.number(t.qcFailPct, 1) + '%)' : '')], ['Kg completed', F.qty(t.weightKg)]]; },
-      columns: function () { return [{ key: 'Label', label: 'Day', format: function (v) { return '<span class="fw-bold">' + F.date(v) + '</span>'; } }, { key: 'Started', label: 'Started washing', align: 'right' }, { key: 'Completed', label: 'Completed', align: 'right' }, { key: 'QcFail', label: 'QC failed', align: 'right', format: function (v) { return v ? '<span class="text-danger fw-bold">' + v + '</span>' : '0'; } }]; },
+      columns: function () { return [{ key: 'Label', label: 'Day', format: function (v, r) { return dayLabel(r.Key, r); } }, { key: 'Started', label: 'Started washing', align: 'right' }, { key: 'Completed', label: 'Completed', align: 'right' }, { key: 'QcFail', label: 'QC failed', align: 'right', format: function (v) { return v ? '<span class="text-danger fw-bold">' + v + '</span>' : '0'; } }]; },
       rows: function (d) { return d.rows; },
-      chart: function (d) { return { type: 'bar', labels: d.rows.map(function (r) { return r.Label.slice(5); }), datasets: [{ label: 'Started', data: d.rows.map(function (r) { return r.Started; }) }, { label: 'Completed', data: d.rows.map(function (r) { return r.Completed; }) }] }; },
+      chart: function (d) { return { type: 'bar', labels: d.rows.map(function (r) { return r.Archived ? r.Key : r.Label.slice(5); }), datasets: [{ label: 'Started', data: d.rows.map(function (r) { return r.Started; }) }, { label: 'Completed', data: d.rows.map(function (r) { return r.Completed; }) }] }; },
       extra: function (d) { return table('By stage', [{ key: 'Label', label: 'Stage' }, { key: 'Count', label: 'Logs', align: 'right' }, { key: 'Open', label: 'Open now', align: 'right' }, { key: 'AvgMinutes', label: 'Average time', align: 'right', format: function (v) { return v ? F.minutes(v) : '—'; } }], d.byStage); }
+    },
+    business: {
+      load: function () { return Api.call('reports.business', { from: state.from, to: state.to }); },
+      kpis: function (d) { var t = d.totals; return [['Orders', t.orders], ['Sales', F.peso(t.sales)], ['Average order', F.peso(t.aov)], ['Net cash flow', F.peso(t.net)], ['New customers', t.newCustomers], ['Returning orders', pct(t.returningPct)], ['Refunds', pct(t.refundPct) + ' of collections'], ['Cancelled', t.cancelled], ['On time', pct(t.onTimePct)], ['Avg turnaround', F.number(t.avgTurnaroundHours, 1) + ' h'], ['QC failed', pct(t.qcFailPct)], ['Incidents', t.incidents + (t.incidents ? ' (' + pct(t.incidentPct) + ' of orders)' : '')]]; },
+      columns: function () { return [{ key: 'Label', label: 'Month', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (r.Archived ? '<div class="small text-soft">from the monthly summaries</div>' : ''); } }, { key: 'Orders', label: 'Orders', align: 'right', format: function (v, r) { return v + (r.vsPrevious ? '<div class="small">' + delta(r.vsPrevious.Orders) + '</div>' : ''); } }, { key: 'Sales', label: 'Sales', align: 'right', format: function (v, r) { return bold(v) + (r.vsPrevious ? '<div class="small">' + delta(r.vsPrevious.Sales) + '</div>' : ''); } }, { key: 'Aov', label: 'Avg order', align: 'right', format: peso }, { key: 'Collected', label: 'Collected', align: 'right', format: peso }, { key: 'Expenses', label: 'Expenses', align: 'right', format: peso }, { key: 'Net', label: 'Net', align: 'right', format: function (v, r) { return '<span class="money fw-bold ' + (Number(v) < 0 ? 'text-danger' : '') + '">' + F.peso(v) + '</span>' + (r.vsPrevious ? '<div class="small">' + delta(r.vsPrevious.Net) + '</div>' : ''); } }, { key: 'NewCustomers', label: 'New customers', align: 'right' }, { key: 'ReturningPct', label: 'Returning', align: 'right', format: function (v) { return pct(v); } }, { key: 'OnTimePct', label: 'On time', align: 'right', format: function (v, r) { return r.Completed ? pct(v) : '—'; } }, { key: 'Incidents', label: 'Incidents', align: 'right', format: function (v) { return v ? '<span class="text-danger fw-bold">' + v + '</span>' : '0'; } }]; },
+      rows: function (d) { return d.rows; },
+      chart: function (d) { return { type: 'bar', labels: d.rows.map(function (r) { return r.Month; }), datasets: [{ label: 'Sales', data: d.rows.map(function (r) { return r.Sales; }) }, { label: 'Net', data: d.rows.map(function (r) { return r.Net; }) }] }; },
+      extra: function (d) {
+        var share = function (v) { return pct(v); };
+        return table('By service', [{ key: 'Label', label: 'Service / product', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + F.status(r.Type) + '</div>'; } }, { key: 'Orders', label: 'Orders', align: 'right' }, { key: 'Qty', label: 'Qty', align: 'right', format: function (v) { return F.qty(v); } }, { key: 'WeightKg', label: 'Kg', align: 'right', format: function (v) { return v ? F.qty(v) : '—'; } }, { key: 'Sales', label: 'Sales', align: 'right', format: bold }, { key: 'SharePct', label: 'Share', align: 'right', format: share }], d.byService) +
+          table('By payment method', [{ key: 'Label', label: 'Method', format: function (v) { return UI.esc(F.status(v)); } }, { key: 'Payments', label: 'Payments', align: 'right' }, { key: 'Collected', label: 'Collected', align: 'right', format: bold }, { key: 'Refunded', label: 'Refunded', align: 'right', format: peso }, { key: 'SharePct', label: 'Share', align: 'right', format: share }], d.byMethod) +
+          (d.byBranch.length > 1 ? table('By branch', [{ key: 'Label', label: 'Branch' }, { key: 'Orders', label: 'Orders', align: 'right' }, { key: 'Sales', label: 'Sales', align: 'right', format: bold }, { key: 'Collected', label: 'Collected', align: 'right', format: peso }, { key: 'Expenses', label: 'Expenses', align: 'right', format: peso }, { key: 'Net', label: 'Net', align: 'right', format: bold }, { key: 'SharePct', label: 'Share', align: 'right', format: share }], d.byBranch) : '') +
+          table('Production by staff member', [{ key: 'Label', label: 'Staff' }, { key: 'Logs', label: 'Stages', align: 'right' }, { key: 'Closed', label: 'Finished', align: 'right' }, { key: 'AvgMinutes', label: 'Average time', align: 'right', format: function (v) { return v ? F.minutes(v) : '—'; } }, { key: 'QcFail', label: 'QC failed', align: 'right' }], d.byStaff) +
+          table('Production by machine', [{ key: 'Label', label: 'Machine' }, { key: 'Logs', label: 'Stages', align: 'right' }, { key: 'Closed', label: 'Finished', align: 'right' }, { key: 'AvgMinutes', label: 'Average time', align: 'right', format: function (v) { return v ? F.minutes(v) : '—'; } }], d.byMachine) +
+          table('Incidents by type', [{ key: 'Label', label: 'Type', format: function (v) { return UI.esc(F.status(v)); } }, { key: 'Incidents', label: 'Incidents', align: 'right' }, { key: 'Compensation', label: 'Compensation', align: 'right', format: peso }], d.byIncident) +
+          '<p class="small text-soft">New customers are those whose first order fell in the month; returning orders are the month\'s orders by customers who had ordered before. The live months are computed from the rows, the archived months from the monthly summaries the archive keeps — by the same aggregation.</p>';
+      }
     },
     inventory: {
       load: function () { return Api.call('reports.inventory', { from: state.from, to: state.to }); },
@@ -5666,7 +5701,7 @@ window.MLS = (function () {
   function spec() { return SPECS[state.tab]; }
   function paintTabs() {
     UI.html('rp-tabs', TABS.filter(tabAllowed).map(function (t) { return '<button type="button" data-tab="' + t[0] + '"' + (t[0] === state.tab ? ' class="active"' : '') + '>' + t[1] + '</button>'; }).join(''));
-    UI.el('rp-tabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { state.tab = b.getAttribute('data-tab'); state.page = 1; paintTabs(); paintToolbar(); load(); }; });
+    UI.el('rp-tabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { state.tab = b.getAttribute('data-tab'); state.page = 1; if (state.tab === 'business' && !state.wideRange) { preset('twelve'); state.wideRange = true; } paintTabs(); paintToolbar(); load(); }; });
   }
   function paintToolbar() {
     var s = spec();
@@ -5686,6 +5721,7 @@ window.MLS = (function () {
       UI.html('rp-kpis', s.kpis(d).map(function (k) { return '<div class="tile"><div class="k">' + UI.esc(k[0]) + '</div><div class="v">' + UI.esc(String(k[1])) + '</div></div>'; }).join(''));
       M.Table.render(UI.el('rp-table'), { columns: cols, rows: rows, total: d.total, page: d.page, pages: d.pages, empty: { icon: 'fa-chart-line', title: 'Nothing in this range', hint: 'Widen the dates or pick another preset.' }, onPage: function (p) { state.page = p; load(); }, onRow: s.onRow || null });
       UI.html('rp-extra', s.extra(d) || '');
+      var cv = UI.el('rp-covers'); if (d.covers && d.covers.note) { cv.hidden = false; cv.textContent = 'Covers ' + F.date(d.covers.from) + ' – ' + F.date(d.covers.to) + ': ' + d.covers.note + '.'; } else cv.hidden = true;
       if (s.auditFilters) { var ms = UI.el('rp-module'), as = UI.el('rp-action'); if (ms.options.length <= 1) ms.innerHTML = '<option value="">All modules</option>' + UI.options(d.modules, state.module, function (x) { return x; }, function (x) { return x; }); if (as.options.length <= 1) as.innerHTML = '<option value="">All actions</option>' + UI.options(d.actions, state.action, function (x) { return F.status(x); }, function (x) { return x; }); }
       paintChart(s.chart(d));
       UI.el('rp-scope').textContent = (s.noRange ? (s.yearPicker ? (state.year || 'all years') : 'as of ' + F.date(state.to || today())) : F.date(d.from || state.from) + ' – ' + F.date(d.to || state.to)) + ' · ' + UI.branchName(M.AppState.me.activeBranch);
@@ -6135,8 +6171,8 @@ window.MLS = (function () {
     Api.call('maintenance.report').then(function (r) {
       if (state.tab !== 'maintenance') return;
       var inst = r.install || {}, instText = !inst.version ? 'Bundle.gs missing' : (inst.ok ? 'matches release ' + inst.version : (inst.counts.mismatch + inst.counts.missing + inst.counts.extra) + ' file' + ((inst.counts.mismatch + inst.counts.missing + inst.counts.extra) === 1 ? '' : 's') + ' differ');
-      var tiles = [['Version', 'v' + r.version + ' · Phase ' + r.phase], ['Installation', instText], ['Setup version', r.setupVersion + (r.setupCurrent ? ' (current)' : ' — run Initialize Database')], ['Tables', r.tables], ['Business rows', F.number(r.businessRows, 0)], ['Users', r.users], ['Live sessions', r.sessions.live + ' / ' + r.sessions.total], ['Endpoints', r.endpoints], ['Validation', r.validation.ok ? 'OK' : r.validation.errors + ' error' + (r.validation.errors === 1 ? '' : 's')]];
-      body().innerHTML = card('System', '<div class="sum-grid mb-2">' + tiles.map(function (t) { var bad = (t[0] === 'Validation' && !r.validation.ok) || (t[0] === 'Installation' && !inst.ok) || (t[0] === 'Setup version' && !r.setupCurrent); return '<div class="tile' + (bad ? ' border-danger' : '') + '" data-tile="' + t[0].toLowerCase().replace(/ /g, '-') + '"><div class="k">' + t[0] + '</div><div class="v text">' + UI.esc(String(t[1])) + '</div></div>'; }).join('') + '</div><div class="small text-soft">Database: ' + UI.esc(r.spreadsheetName) + ' · ' + UI.esc(r.timeZone) + ' · triggers: ' + (r.triggers.length ? r.triggers.map(function (t) { return UI.esc(t.handler); }).join(', ') : '<span class="text-danger">none installed</span>') + ' · server time ' + F.datetime(r.serverTime) + '</div>', '<button type="button" class="btn btn-sm btn-outline-secondary ms-auto" id="set-mt-refresh"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>') +
+      var tiles = [['Version', 'v' + r.version + ' · Phase ' + r.phase], ['Installation', instText], ['Setup version', r.setupVersion + (r.setupCurrent ? ' (current)' : ' — run Initialize Database')], ['Tables', r.tables], ['Business rows', F.number(r.businessRows, 0)], ['Users', r.users], ['Live sessions', r.sessions.live + ' / ' + r.sessions.total], ['Endpoints', r.endpoints], ['Validation', r.validation ? (r.validation.ok ? 'OK' : r.validation.errors + ' error' + (r.validation.errors === 1 ? '' : 's')) : 'press Validate']];
+      body().innerHTML = card('System', '<div class="sum-grid mb-2">' + tiles.map(function (t) { var bad = (t[0] === 'Validation' && r.validation && !r.validation.ok) || (t[0] === 'Installation' && !inst.ok) || (t[0] === 'Setup version' && !r.setupCurrent); return '<div class="tile' + (bad ? ' border-danger' : '') + '" data-tile="' + t[0].toLowerCase().replace(/ /g, '-') + '"><div class="k">' + t[0] + '</div><div class="v text">' + UI.esc(String(t[1])) + '</div></div>'; }).join('') + '</div><div class="small text-soft">Database: ' + UI.esc(r.spreadsheetName) + ' · ' + UI.esc(r.timeZone) + ' · triggers: ' + (r.triggers.length ? r.triggers.map(function (t) { return UI.esc(t.handler); }).join(', ') : '<span class="text-danger">none installed</span>') + ' · server time ' + F.datetime(r.serverTime) + '</div>', '<button type="button" class="btn btn-sm btn-outline-secondary ms-auto" id="set-mt-refresh"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>') +
         healthCard(r.health) +
         card('Backups', '<div class="small mb-2" id="set-bk-status">' + backupStatusHtml(r.backup, r.health) + '</div><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-bk-run"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Back up now</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-bk-verify"' + (r.backup && r.backup.lastOkId ? '' : ' disabled') + '><i class="fa-solid fa-clipboard-check me-1"></i>Verify last backup</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-bk-list"><i class="fa-solid fa-list me-1"></i>Recent backups</button></div><p class="small text-soft mt-2 mb-0">A backup is a copy of the database spreadsheet — and of every archive spreadsheet that changed — in the Drive folder <b>Mrs Laundry Sys Backups</b> of the account that owns the script, made every night at about 1 am while <b>BackupDaily</b> is on and kept for <b>BackupKeepDays</b> days. Verify opens a copy and checks every table and its row count against what the run recorded; the live database is never touched. A failed run is listed here and in the audit log, and e-mailed to <b>AlertEmail</b> when set. How to restore: sheet menu → Recovery information, and DEPLOY.md section 9.</p><div id="set-bk-out" class="mt-3"></div><div id="set-bk-rows" class="mt-2"></div>') +
         card('Database', '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-mt-validate"><i class="fa-solid fa-check-double me-1"></i>Validate database</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-mt-repair"><i class="fa-solid fa-screwdriver-wrench me-1"></i>Repair database</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-triggers"><i class="fa-solid fa-clock me-1"></i>Install triggers</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-purge"><i class="fa-solid fa-broom me-1"></i>Purge sessions</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-cache"><i class="fa-solid fa-eraser me-1"></i>Clear cache</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-verify"><i class="fa-solid fa-fingerprint me-1"></i>Verify installation</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-endpoints"><i class="fa-solid fa-list me-1"></i>Endpoints</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-browser"><i class="fa-solid fa-bug me-1"></i>Browser error details</button></div><p class="small text-soft mt-2 mb-0">Validate reads only. Repair runs Initialize again (missing sheets, columns and seeds), then rebuilds stock levels from the ledger, recomputes order totals and fixes sequences; every fix is audited and nothing is deleted. Verify installation compares every installed file with the release it came from.</p><div id="set-mt-out" class="mt-3"></div>') +
@@ -6144,6 +6180,7 @@ window.MLS = (function () {
         card('Rows per table', '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><tbody>' + chunk(Object.keys(r.rows), 3).map(function (row) { return '<tr>' + row.map(function (t) { return '<td class="text-soft">' + UI.esc(t) + '</td><td class="text-end fw-bold">' + F.number(r.rows[t], 0) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>');
       var out = function (html) { UI.html('set-mt-out', html); };
       UI.el('set-mt-refresh').onclick = tabMaintenance;
+      if (UI.el('set-health-details')) UI.el('set-health-details').onclick = function () { Api.call('maintenance.health', {}, { busy: true }).then(function (h) { UI.html('set-health-panel', healthPanelHtml(h)); UI.html('set-health-level', h.level === 'ok' ? UI.badge('OK', 'All good') : h.level === 'warn' ? UI.badge('PENDING', 'Needs attention') : UI.badge('REJECTED', 'Action needed')); }).catch(fail); };
       // backups (release 1.9.0)
       var bkOut = function (html) { UI.html('set-bk-out', html); };
       var bkRows = function (rows, keepDays) { return '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Started</th><th>Kind</th><th>Status</th><th>Files</th><th class="text-end">Pruned</th><th>Notes</th><th></th></tr></thead><tbody>' + (rows.length ? rows.map(function (b) { return '<tr><td class="text-nowrap">' + UI.esc(F.datetime(b.StartedAt)) + (b.Seconds !== null ? ' <span class="text-soft">(' + b.Seconds + ' s)</span>' : '') + '</td><td>' + UI.esc(F.status(b.Kind)) + '</td><td>' + UI.badge(b.Status, b.Status === 'OK' ? 'OK' : F.status(b.Status)) + '</td><td class="small">' + (b.Files || []).map(function (f) { return '<a href="' + UI.esc(f.url) + '" target="_blank" rel="noopener">' + UI.esc(f.name) + '</a>'; }).join('<br>') + '</td><td class="text-end">' + (b.Pruned || 0) + '</td><td class="small text-soft">' + UI.esc(b.Error || b.Notes || '') + '</td><td class="text-end">' + (b.Status === 'OK' ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-bk-verify="' + UI.esc(b.Id) + '">Verify</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="7" class="text-soft">No backup yet.</td></tr>') + '</tbody></table></div><div class="small text-soft mt-1">Copies older than ' + keepDays + ' days are moved to the Drive trash by the next run.</div>'; };
@@ -6155,9 +6192,9 @@ window.MLS = (function () {
       UI.el('set-bk-list').onclick = listBackups;
       var arOut = function (html) { UI.html('set-ar-out', html); }, arGrid = function (counts, tables, live) { return '<div class="archive-grid">' + tables.map(function (tb) { return '<div class="cell"><span class="text-soft">' + UI.esc(tb) + '</span><b>' + F.number(counts[tb] || 0, 0) + (live ? ' <span class="small text-soft fw-normal">of ' + F.number(live[tb] || 0, 0) + '</span>' : '') + '</b></div>'; }).join('') + '</div>'; };
       UI.el('set-ar-plan').onclick = function () { Api.call('archive.plan', {}, { busy: true }).then(function (p) { UI.el('set-ar-run').disabled = !p.counts.total; arOut('<div class="alert ' + (p.counts.total ? 'alert-warning' : 'alert-success') + ' py-2 small">' + (p.counts.total ? F.number(p.counts.total, 0) + ' rows older than ' + p.cutoff + ' qualify (' + p.counts.ordersEligible + ' closed orders; up to ' + p.limit + ' orders per run)' : 'Nothing older than ' + p.cutoff + ' qualifies') + ' · keeping ' + p.keepMonths + ' months' + (p.archive ? ' · archive: <a href="' + UI.esc(p.archive.url) + '" target="_blank" rel="noopener">' + UI.esc(p.archive.name) + '</a>' : ' · the archive spreadsheet is created on the first run') + '</div>' + arGrid(p.counts, p.tables, p.live)); }).catch(fail); };
-      UI.el('set-ar-run').onclick = function () { M.Modal.confirm({ title: 'Archive closed history', body: 'Rows are copied to the archive spreadsheet first and removed from the live sheets only after the copy is written. The run is audited. Continue?', okText: 'Archive now', danger: true }).then(function (yes) { if (!yes) return; Api.call('archive.run', {}, { busy: true }).then(function (x) { UI.el('set-ar-run').disabled = !x.remaining; arOut('<div class="alert alert-success py-2 small">' + (x.total ? F.number(x.total, 0) + ' rows archived in ' + x.seconds + ' s' : x.message) + (x.archive ? ' · <a href="' + UI.esc(x.archive.url) + '" target="_blank" rel="noopener">' + UI.esc(x.archive.name) + '</a>' : '') + (x.remaining ? ' · ' + F.number(x.remaining, 0) + ' rows still qualify — run again' : ' · nothing left to archive') + '</div>' + (x.total ? arGrid(x.archived, Object.keys(x.archived)) : '')); }).catch(fail); }); };
+      UI.el('set-ar-run').onclick = function () { M.Modal.confirm({ title: 'Archive closed history', body: 'Rows are copied to the archive spreadsheet first and removed from the live sheets only after the copy is written. The run is audited. Continue?', okText: 'Archive now', danger: true }).then(function (yes) { if (!yes) return; Api.call('archive.run', {}, { busy: true }).then(function (x) { UI.el('set-ar-run').disabled = !x.remaining; arOut('<div class="alert alert-success py-2 small">' + (x.total ? F.number(x.total, 0) + ' rows archived in ' + x.seconds + ' s' : x.message) + (x.archive ? ' · <a href="' + UI.esc(x.archive.url) + '" target="_blank" rel="noopener">' + UI.esc(x.archive.name) + '</a>' : '') + (x.remaining ? ' · ' + F.number(x.remaining, 0) + ' rows still qualify — run again' : ' · nothing left to archive') + (x.summaries && x.summaries.rows ? ' · the figures of ' + x.summaries.months.length + ' month' + (x.summaries.months.length === 1 ? '' : 's') + ' went to the monthly summaries (' + x.summaries.months.join(', ') + ')' : '') + '</div>' + (x.total ? arGrid(x.archived, Object.keys(x.archived)) : '')); }).catch(fail); }); };
       UI.el('set-mt-validate').onclick = function () { Api.call('maintenance.validate', {}, { busy: true }).then(function (v) { out('<div class="alert ' + (v.ok ? 'alert-success' : 'alert-danger') + ' py-2 small">' + (v.ok ? 'No errors' : v.errors + ' error' + (v.errors === 1 ? '' : 's')) + ', ' + v.warnings + ' warning' + (v.warnings === 1 ? '' : 's') + ' · ' + v.tables + ' tables checked ' + F.datetime(v.checkedAt) + '</div>' + (v.problems.length ? '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Level</th><th>Table</th><th>Code</th><th>Message</th></tr></thead><tbody>' + v.problems.slice(0, 200).map(function (p) { return '<tr><td>' + UI.badge(p.level === 'ERROR' ? 'REJECTED' : 'PENDING', p.level) + '</td><td>' + UI.esc(p.table) + '</td><td>' + UI.esc(p.code) + '</td><td>' + UI.esc(p.message) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '')); }).catch(fail); };
-      UI.el('set-mt-repair').onclick = function () { M.Modal.confirm({ title: 'Repair the database', body: 'Initialize runs again, stock levels are rebuilt from the ledger, order totals recomputed and sequences fixed. Every change is audited; nothing is deleted. Continue?', okText: 'Repair', danger: true }).then(function (yes) { if (!yes) return; Api.call('maintenance.repair', {}, { busy: true }).then(function (x) { out('<div class="alert ' + (x.ok ? 'alert-success' : 'alert-warning') + ' py-2 small">Repair finished: ' + x.repaired.stockLevels + ' stock level' + (x.repaired.stockLevels === 1 ? '' : 's') + ', ' + x.repaired.orderTotals + ' order total' + (x.repaired.orderTotals === 1 ? '' : 's') + ', ' + x.repaired.sequences + ' sequence' + (x.repaired.sequences === 1 ? '' : 's') + ' fixed; ' + x.created.length + ' sheet' + (x.created.length === 1 ? '' : 's') + ' created · validation ' + (x.validation.ok ? 'OK' : x.validation.errors + ' errors') + '</div>'); }).catch(fail); }); };
+      UI.el('set-mt-repair').onclick = function () { M.Modal.confirm({ title: 'Repair the database', body: 'Initialize runs again, stock levels are rebuilt from the ledger, order totals recomputed and sequences fixed. Every change is audited; nothing is deleted. Continue?', okText: 'Repair', danger: true }).then(function (yes) { if (!yes) return; Api.call('maintenance.repair', {}, { busy: true }).then(function (x) { out('<div class="alert ' + (x.ok ? 'alert-success' : 'alert-warning') + ' py-2 small">Repair finished: ' + x.repaired.stockLevels + ' stock level' + (x.repaired.stockLevels === 1 ? '' : 's') + ', ' + x.repaired.orderTotals + ' order total' + (x.repaired.orderTotals === 1 ? '' : 's') + ', ' + x.repaired.sequences + ' sequence' + (x.repaired.sequences === 1 ? '' : 's') + ' fixed; ' + x.created.length + ' sheet' + (x.created.length === 1 ? '' : 's') + ' created' + (x.repaired.monthlySummaries ? '; monthly summaries rebuilt from ' + x.repaired.monthlySummaries.files + ' archive file' + (x.repaired.monthlySummaries.files === 1 ? '' : 's') + ' (' + x.repaired.monthlySummaries.months.length + ' month' + (x.repaired.monthlySummaries.months.length === 1 ? '' : 's') + ')' : '') + ' · validation ' + (x.validation.ok ? 'OK' : x.validation.errors + ' errors') + '</div>'); }).catch(fail); }); };
       UI.el('set-mt-triggers').onclick = function () { Api.call('maintenance.installTriggers', {}, { busy: true }).then(function (x) { out('<div class="alert alert-success py-2 small">' + (x.installed.length ? 'Installed ' + x.installed.join(', ') : 'Already installed: ' + x.alreadyInstalled.join(', ')) + '</div>'); }).catch(fail); };
       UI.el('set-mt-purge').onclick = function () { Api.call('maintenance.purgeSessions', {}, { busy: true }).then(function (x) { out('<div class="alert alert-success py-2 small">' + x.revoked + ' expired session' + (x.revoked === 1 ? '' : 's') + ' revoked, ' + x.removed + ' old row' + (x.removed === 1 ? '' : 's') + ' removed</div>'); }).catch(fail); };
       UI.el('set-mt-cache').onclick = function () { Api.call('maintenance.clearCache', {}, { busy: true }).then(function (x) { out('<div class="alert alert-success py-2 small">Session cache cleared (' + x.cleared + ' entries); nobody was signed out.</div>'); }).catch(fail); };
@@ -6179,8 +6216,40 @@ window.MLS = (function () {
     if (!h) return '';
     var badge = h.level === 'ok' ? UI.badge('OK', 'All good') : h.level === 'warn' ? UI.badge('PENDING', 'Needs attention') : UI.badge('REJECTED', 'Action needed');
     var items = (h.items || []).map(function (i) { var icon = i.level === 'danger' ? 'fa-circle-xmark text-danger' : i.level === 'warn' ? 'fa-triangle-exclamation text-warning' : 'fa-circle-info text-primary'; return '<li class="mb-1"><i class="fa-solid ' + icon + ' me-2"></i>' + UI.esc(i.text) + '</li>'; }).join('');
-    return card('System health', (items ? '<ul class="list-unstyled small mb-0" id="set-health-items">' + items + '</ul>' : '<div class="small text-soft" id="set-health-items">Backups, scheduled jobs and the sign-in secret are in order.</div>'), '<span class="ms-auto" id="set-health-level">' + badge + '</span>');
+    return card('System health', (items ? '<ul class="list-unstyled small mb-0" id="set-health-items">' + items + '</ul>' : '<div class="small text-soft" id="set-health-items">Backups, scheduled jobs and the sign-in secret are in order.</div>') + '<div class="d-flex flex-wrap gap-2 mt-2"><button type="button" class="btn btn-sm btn-outline-primary" id="set-health-details"><i class="fa-solid fa-heart-pulse me-1"></i>Full health panel</button></div><div id="set-health-panel" class="mt-3"></div>', '<span class="ms-auto" id="set-health-level">' + badge + '</span>');
   }
+  /** The full panel (release 1.10.0): the live-data window, the scheduled jobs, the week's failures and refusals, the sync reviews — and this device's own calls (p50 / p95 server ms, failed calls). Nothing here names a customer. */
+  function healthPanelHtml(h) {
+    var hours = function (x) { return x === null || x === undefined ? '—' : x < 48 ? Math.round(x) + ' h' : Math.round(x / 24) + ' days'; };
+    var tile = function (k, v, bad) { return '<div class="tile' + (bad ? ' border-danger' : '') + '"><div class="k">' + k + '</div><div class="v text">' + v + '</div></div>'; };
+    var live = h.live || {}, jobs = h.jobs || {};
+    var tiles = [tile('Last good backup', h.backup.lastOkAt ? UI.esc(F.datetime(h.backup.lastOkAt)) + ' <span class="text-soft">(' + hours(h.backup.ageHours) + ' ago)</span>' : '<span class="text-danger">none yet</span>', !h.backup.lastOkAt || h.backup.lastStatus === 'FAILED'),
+      tile('Last archive run', h.archive.lastRun ? UI.esc(F.datetime(h.archive.lastRun.at)) + ' <span class="text-soft">(' + F.number(h.archive.lastRun.total, 0) + ' rows)</span>' : 'never', false),
+      tile('Sync reviews waiting', h.syncOpen > 0 ? '<span class="text-warning fw-bold">' + h.syncOpen + '</span>' : '0', h.syncOpen > 0),
+      tile('Live orders', (live.orders === undefined ? '—' : F.number(live.orders, 0)) + (live.oldestOrderDate ? ' <span class="text-soft">since ' + UI.esc(live.oldestOrderDate) + ' (' + live.days + ' days)</span>' : ''), live.days > 400),
+      tile('Archive cutoff', UI.esc(live.archiveCutoff || '—') + ' <span class="text-soft">(keeps ' + (live.keepMonths || '—') + ' months)</span>', false),
+      tile('Lists look back', (live.listDays || '—') + ' days <span class="text-soft">(OrderListDays)</span>', false),
+      tile('Monthly summaries', h.summaries ? (h.summaries.months ? h.summaries.months + ' month' + (h.summaries.months === 1 ? '' : 's') + ' <span class="text-soft">(' + UI.esc(h.summaries.from) + (h.summaries.months > 1 ? ' to ' + UI.esc(h.summaries.to) : '') + ')</span>' : '<span class="text-soft">none yet (nothing archived)</span>') + (h.summaries.pending ? ' <span class="text-danger fw-bold">incomplete — run Repair</span>' : '') : '—', !!(h.summaries && h.summaries.pending)),
+      tile('Server errors (7 days)', String((h.failures || []).length), (h.failures || []).length > 5),
+      tile('Refused requests (7 days)', String(h.refusals === undefined ? '—' : h.refusals), false),
+      tile('Audit rows this week', h.auditRowsWeek === undefined ? '—' : F.number(h.auditRowsWeek, 0), false),
+      tile('Morning digest', h.digest ? 'on → ' + UI.esc(h.alertEmail || '(no AlertEmail!)') : 'off (HealthDigest)', h.digest && !h.alertEmail)];
+    var trig = (h.triggers || []).map(function (t) { return '<span class="status-badge ' + (t.installed ? 's-ok' : 's-failed') + ' me-1">' + UI.esc(t.handler) + (t.installed ? '' : ' — not installed') + '</span>'; }).join('');
+    var jobRows = Object.keys(jobs).map(function (n) { var j = jobs[n]; return '<tr><td>' + UI.esc(n) + '</td><td>' + (j ? UI.badge(j.ok ? 'OK' : 'FAILED', j.ok ? 'OK' : 'Failed') : '<span class="text-soft">never ran</span>') + '</td><td class="text-nowrap">' + (j ? UI.esc(F.datetime(j.at)) : '') + '</td><td class="small text-soft">' + (j ? UI.esc(String(j.note || '').slice(0, 120)) + (j.ms ? ' · ' + j.ms + ' ms' : '') : '') + '</td></tr>'; }).join('');
+    var failRows = (h.failures || []).map(function (f) { return '<tr><td class="text-nowrap">' + UI.esc(F.datetime(f.At)) + '</td><td>' + UI.esc(f.Action) + '</td><td class="font-monospace small">' + UI.esc(f.Reference || '') + '</td><td class="small">' + UI.esc(f.Notes || '') + '</td></tr>'; }).join('');
+    var sizes = live.sizes ? Object.keys(live.sizes).map(function (t) { return '<span class="me-2 text-nowrap">' + UI.esc(t) + ' <b>' + F.number(live.sizes[t] || 0, 0) + '</b></span>'; }).join('') : '';
+    var dev = M.Timing ? M.Timing.summary().filter(function (t) { return t.action.indexOf('view:') !== 0 && t.action !== 'start'; }).sort(function (a, b) { return (b.errors || 0) - (a.errors || 0) || b.count - a.count; }).slice(0, 15) : [];
+    var devRows = dev.map(function (t) { return '<tr><td class="font-monospace small">' + UI.esc(t.action) + '</td><td class="text-end">' + t.count + '</td><td class="text-end">' + (t.p50Ms === null ? '—' : t.p50Ms) + ' / ' + (t.p95Ms === null ? '—' : t.p95Ms) + '</td><td class="text-end">' + (t.p50ServerMs === null || t.p50ServerMs === undefined ? '—' : t.p50ServerMs + ' / ' + t.p95ServerMs) + '</td><td class="text-end' + (t.errors ? ' text-danger fw-bold' : '') + '">' + (t.errors || 0) + (t.lastError ? ' <span class="small text-soft">' + UI.esc(t.lastError.code) + '</span>' : '') + '</td></tr>'; }).join('');
+    return '<div class="sum-grid mb-2">' + tiles.join('') + '</div>' +
+      '<div class="small mb-2"><b>Scheduled jobs:</b> ' + (trig || '<span class="text-soft">unknown</span>') + '</div>' +
+      '<div class="table-wrap mb-2"><table class="table table-sm table-xs mb-0"><thead><tr><th>Job</th><th>Last outcome</th><th>When</th><th>Note</th></tr></thead><tbody>' + (jobRows || '<tr><td colspan="4" class="text-soft">No job has run yet.</td></tr>') + '</tbody></table></div>' +
+      '<div class="small text-soft mb-2"><b>Rows on the live sheets:</b> ' + sizes + '</div>' +
+      '<div class="table-wrap mb-2"><table class="table table-sm table-xs mb-0"><thead><tr><th>When</th><th>What</th><th>Reference</th><th>Message</th></tr></thead><tbody>' + (failRows || '<tr><td colspan="4" class="text-soft">No server error or failed job in the last seven days.</td></tr>') + '</tbody></table></div>' +
+      '<div class="small mb-1"><b>This device</b> — round trips in ms (p50 / p95), the server\'s own time (p50 / p95) and the calls that failed, over the last 200 of each action. The figures of other devices are in their own Timings (This device → Copy timings).</div>' +
+      '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Action</th><th class="text-end">Calls</th><th class="text-end">Round trip</th><th class="text-end">Server</th><th class="text-end">Failed</th></tr></thead><tbody>' + (devRows || '<tr><td colspan="5" class="text-soft">Nothing measured on this device yet.</td></tr>') + '</tbody></table></div>' +
+      '<p class="small text-soft mt-2 mb-0">' + UI.esc(h.quota || '') + '</p>';
+  }
+
 
   // ---------------------------------------------------------------- wiring
   function wire() { UI.el('set-user-form').onsubmit = submitUser; UI.el('set-branch-form').onsubmit = submitBranch; UI.el('set-role-form').onsubmit = submitRole; }
