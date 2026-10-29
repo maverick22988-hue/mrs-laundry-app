@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '6b8e17c1f6', version: '1.11.0' };</script>
+  <script>window.MLS_PWA = { build: '62da93f974', version: '1.12.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -596,7 +596,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.11.0';
+  var VERSION = '1.12.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -2320,18 +2320,21 @@ window.MLS = (function () {
   }
   /** Who to text today: ready orders nobody collected and balances left unpaid, each with a Text button that opens the right template. */
   function paintFollowups(d) {
-    var f = d.followups, card = UI.el('dash-followups-card'); if (!f || !(f.unclaimed + f.balances) || !M.Sms) { card.hidden = true; return; }
+    var f = d.followups, card = UI.el('dash-followups-card'), inactive = f ? (f.inactive || 0) : 0; if (!f || !(f.unclaimed + f.balances + inactive) || !M.Sms) { card.hidden = true; return; }
     var rows = (f.sample || []).map(function (r) {
-      var kind = r.Kind === 'UNCLAIMED' ? 'ready ' + r.Days + ' day' + (r.Days === 1 ? '' : 's') + ' and not collected' : 'balance ' + F.peso(r.BalanceAmount) + ' · ' + r.Days + ' day' + (r.Days === 1 ? '' : 's') + ' old';
+      var kind = r.Kind === 'UNCLAIMED' ? 'ready ' + r.Days + ' day' + (r.Days === 1 ? '' : 's') + ' and not collected' : r.Kind === 'INACTIVE' ? 'not seen for ' + r.Days + ' days · last order ' + F.date(r.LastOrderDate) + ' · ' + r.OrderCount + ' order' + (r.OrderCount === 1 ? '' : 's') : 'balance ' + F.peso(r.BalanceAmount) + ' · ' + r.Days + ' day' + (r.Days === 1 ? '' : 's') + ' old';
       var last = r.LastSms ? ' · last text ' + F.relative(r.LastSms.At) + ' (' + F.status(r.LastSms.ActionStatus).toLowerCase() + ')' : ' · never texted';
-      var btn = M.Sms.can(r.CanSms) ? '<button type="button" class="btn btn-sm btn-outline-primary" data-fu-order="' + UI.esc(r.OrderId) + '" data-fu-workflow="' + (r.Kind === 'UNCLAIMED' ? 'ORDER_READY' : 'BALANCE_REMINDER') + '"><i class="fa-solid fa-comment-sms me-1"></i>Text</button>' : '<span class="small text-soft">no mobile</span>';
-      return '<div class="fu-row"><div><a href="#" class="fw-bold" data-fu-open="' + UI.esc(r.OrderId) + '">' + UI.esc(r.OrderNo) + '</a> <span>' + UI.esc(r.CustomerName) + '</span><div class="fu-meta">' + UI.esc(kind) + UI.esc(last) + '</div></div>' + btn + '</div>';
+      var btn = M.Sms.can(r.CanSms) ? '<button type="button" class="btn btn-sm btn-outline-primary" ' + (r.Kind === 'INACTIVE' ? 'data-fu-customer="' + UI.esc(r.CustomerId) + '" data-fu-workflow="GENERAL"' : 'data-fu-order="' + UI.esc(r.OrderId) + '" data-fu-workflow="' + (r.Kind === 'UNCLAIMED' ? 'ORDER_READY' : 'BALANCE_REMINDER') + '"') + '><i class="fa-solid fa-comment-sms me-1"></i>Text</button>' : '<span class="small text-soft">' + (r.SmsOptOut ? 'no promos' : 'no mobile') + '</span>';
+      var head = r.Kind === 'INACTIVE' ? '<a href="#" class="fw-bold" data-fu-customer-open="' + UI.esc(r.CustomerId) + '">' + UI.esc(r.CustomerName) + '</a>' : '<a href="#" class="fw-bold" data-fu-open="' + UI.esc(r.OrderId) + '">' + UI.esc(r.OrderNo) + '</a> <span>' + UI.esc(r.CustomerName) + '</span>';
+      return '<div class="fu-row"><div>' + head + '<div class="fu-meta">' + UI.esc(kind) + UI.esc(last) + '</div></div>' + btn + '</div>';
     }).join('');
     UI.html('dash-followups', rows || '<div class="small text-soft">Nothing to follow up.</div>');
-    UI.el('dash-followups-sub').textContent = f.unclaimed + ' unclaimed after ' + f.unclaimedAfterDays + ' days · ' + f.balances + ' balance' + (f.balances === 1 ? '' : 's') + ' older than ' + f.balanceReminderAfterDays + ' days (' + F.peso(f.outstanding) + ')';
+    UI.el('dash-followups-sub').textContent = f.unclaimed + ' unclaimed after ' + f.unclaimedAfterDays + ' days · ' + f.balances + ' balance' + (f.balances === 1 ? '' : 's') + ' older than ' + f.balanceReminderAfterDays + ' days (' + F.peso(f.outstanding) + ')' + (f.inactiveAfterDays ? ' · ' + inactive + ' not seen for ' + f.inactiveAfterDays + ' days' : '');
     UI.el('dash-followups').querySelectorAll('[data-fu-order]').forEach(function (b) { b.onclick = function () { M.Sms.open({ workflow: b.getAttribute('data-fu-workflow'), orderId: b.getAttribute('data-fu-order'), onDone: load }); }; });
+    UI.el('dash-followups').querySelectorAll('[data-fu-customer]').forEach(function (b) { b.onclick = function () { M.Sms.open({ workflow: 'GENERAL', customerId: b.getAttribute('data-fu-customer'), onDone: load }); }; });
     UI.el('dash-followups').querySelectorAll('[data-fu-open]').forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); M.OrdersUI.openOrder(a.getAttribute('data-fu-open'), load); }; });
-    var more = UI.el('dash-followups-more'); more.hidden = !(f.unclaimed + f.balances > (f.sample || []).length) || !M.Router.allowed('orders'); more.onclick = function () { M.Router.go('orders', { status: 'READY' }); };
+    UI.el('dash-followups').querySelectorAll('[data-fu-customer-open]').forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); if (M.Router.allowed('customers')) M.Router.go('customers', { inactive: true }); }; });
+    var more = UI.el('dash-followups-more'); more.hidden = !(f.unclaimed + f.balances + inactive > (f.sample || []).length) || !M.Router.allowed('orders'); more.onclick = function () { M.Router.go('orders', { status: 'READY' }); };
     card.hidden = false;
   }
   /** System health (release 1.9.0), for database administrators: the last good backup, the scheduled jobs, the pepper, the setup version — each problem in plain words with where to act. */
@@ -2387,6 +2390,7 @@ window.MLS = (function () {
     <button type="button" class="btn btn-outline-primary btn-sm" id="pos-new"><i class="fa-solid fa-plus me-1"></i>New order</button>
   </div>
   <div class="alert alert-warning py-2 small" id="pos-lens-warning" hidden>Choose a branch in the header to sell. Orders cannot be created under "All branches".</div>
+  <div class="alert alert-info py-2 small d-flex align-items-center gap-2" id="pos-editing" hidden><i class="fa-solid fa-pen-to-square"></i><span id="pos-editing-text" class="flex-grow-1"></span><button type="button" class="btn btn-sm btn-outline-secondary" id="pos-editing-stop">Stop correcting</button></div>
   <div class="pos-layout">
     <div class="pos-catalog">
       <div class="card"><div class="card-body">
@@ -2441,9 +2445,9 @@ window.MLS = (function () {
 (function () {
   'use strict';
   var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast;
-  var catalog = { services: [], products: [], categories: [] }, cart = null, quote = null, quoteSig = '', quotePending = null, requestId = null, chip = 'ALL', search = '', listened = false;
+  var catalog = { services: [], products: [], categories: [] }, cart = null, quote = null, quoteSig = '', quotePending = null, requestId = null, chip = 'ALL', search = '', listened = false, editing = null;  // editing (1.12.0): the order being corrected { id, orderNo, total, paid }
 
-  function newCart() { cart = { lines: [], customer: null, isExpress: false, discountAmount: 0, discountReason: '', promoCode: '', deliveryFee: 0, otherCharges: 0, notes: '', bagCount: '', serviceType: 'WALK_IN' }; quote = null; quoteSig = ''; requestId = null; }
+  function newCart() { cart = { lines: [], customer: null, isExpress: false, discountAmount: 0, discountReason: '', promoCode: '', deliveryFee: 0, otherCharges: 0, notes: '', bagCount: '', serviceType: 'WALK_IN' }; quote = null; quoteSig = ''; requestId = null; editing = null; paintEditing(); }
   function setting(key, dflt) { var s = M.AppState.me && M.AppState.me.settings; return s && s[key] !== undefined && s[key] !== '' ? s[key] : dflt; }
   function lensOk() { var me = M.AppState.me; return !!(me && me.activeBranch && me.activeBranch !== 'ALL'); }
 
@@ -2515,7 +2519,7 @@ window.MLS = (function () {
     return total + (pct > 0 ? Math.round(total * pct) / 100 : 0);
   }
   function cartPayload() {
-    return { lines: cart.lines.map(function (l) { return l.lineType === 'PRODUCT' ? { lineType: 'PRODUCT', itemId: l.itemId, qty: l.qty } : { lineType: 'SERVICE', serviceId: l.serviceId, qty: l.qty, weightKg: l.pricingType === 'PER_KILO' ? l.weightKg : '' }; }), isExpress: cart.isExpress, discountAmount: cart.discountAmount || 0, discountReason: cart.discountReason, promoCode: cart.promoCode || '', deliveryFee: cart.deliveryFee || 0, otherCharges: cart.otherCharges || 0, customerId: cart.customer ? cart.customer.Id : '' };
+    return { lines: cart.lines.map(function (l) { return l.lineType === 'PRODUCT' ? { lineType: 'PRODUCT', itemId: l.itemId, qty: l.qty } : { lineType: 'SERVICE', serviceId: l.serviceId, qty: l.qty, weightKg: l.pricingType === 'PER_KILO' ? l.weightKg : '' }; }), isExpress: cart.isExpress, discountAmount: cart.discountAmount || 0, discountReason: cart.discountReason, promoCode: cart.promoCode || '', deliveryFee: cart.deliveryFee || 0, otherCharges: cart.otherCharges || 0, customerId: cart.customer ? cart.customer.Id : '', orderId: editing ? editing.id : '' };
   }
   function signature() { return JSON.stringify(cartPayload()); }
   var serverQuoteSoon = UI.debounce(function () { ensureQuote().catch(function () { /* shown in the note */ }); }, 450);
@@ -2563,18 +2567,19 @@ window.MLS = (function () {
     UI.html('pos-totals', '<span>Subtotal</span><span class="money">' + F.peso(sub) + '</span>' + (disc ? '<span>Discount' + (fresh && quote.promo ? ' <span class="text-soft small">' + UI.esc(quote.promo.Code) + '</span>' : '') + '</span><span class="money">-' + F.peso(disc) + '</span>' : '') + (del ? '<span>Delivery fee</span><span class="money">' + F.peso(del) + '</span>' : '') + (oth ? '<span>Other charges</span><span class="money">' + F.peso(oth) + '</span>' : '') + '<span class="fw-bold">Total</span><span class="grand money" id="pos-total">' + F.peso(total) + '</span>');
     var note = UI.el('pos-quote-note'); note.className = 'small text-faint mt-1';
     note.textContent = !cart.lines.length ? '' : fresh ? ('Due ' + (quote.dueAt ? F.datetime(quote.dueAt) : 'in ' + quote.dueHours + ' h') + (quote.isExpress ? ' · express' : '') + (quote.customerType && quote.customerType !== 'REGULAR' ? ' · ' + F.status(quote.customerType) + ' price' : '') + (quote._local ? ' · confirming with the server…' : '')) : 'Estimated — confirming price…';
-    var btn = UI.el('pos-checkout'); btn.disabled = !cart.lines.length || !lensOk(); btn.innerHTML = '<i class="fa-solid fa-cash-register me-2"></i>' + (cart.lines.length ? 'Charge ' + F.peso(total) : 'Charge');
+    var btn = UI.el('pos-checkout'); btn.disabled = !cart.lines.length || !lensOk(); btn.innerHTML = editing ? '<i class="fa-solid fa-pen-to-square me-2"></i>Save correction · ' + F.peso(total) : '<i class="fa-solid fa-cash-register me-2"></i>' + (cart.lines.length ? 'Charge ' + F.peso(total) : 'Charge');
     // the phone cart bar: the stacked layout puts the cart below the tiles, so the running total and Charge stay within reach
     var on = cart.lines.length > 0 && lensOk() && M.Router.current() === 'pos';
     UI.el('pos-cartbar').classList.toggle('on', on); document.body.classList.toggle('pos-cartbar-on', on);
-    UI.el('pos-cartbar-lines').textContent = cart.lines.length + ' line' + (cart.lines.length === 1 ? '' : 's') + (fresh ? '' : ' · estimating'); UI.el('pos-cartbar-total').textContent = F.peso(total); UI.el('pos-cartbar-charge').disabled = btn.disabled;
+    UI.el('pos-cartbar-lines').textContent = cart.lines.length + ' line' + (cart.lines.length === 1 ? '' : 's') + (fresh ? '' : ' · estimating'); UI.el('pos-cartbar-total').textContent = F.peso(total); UI.el('pos-cartbar-charge').disabled = btn.disabled; UI.el('pos-cartbar-charge').innerHTML = editing ? '<i class="fa-solid fa-pen-to-square me-1"></i>Save' : '<i class="fa-solid fa-cash-register me-1"></i>Charge';
   }
 
   // ---------------------------------------------------------------- customer
   function renderCustomer() {
     var c = cart.customer, chipEl = UI.el('pos-customer-chip');
+    if (editing && !c) c = { FullName: editing.customerName || 'Walk-in customer', Phone: '', walkIn: true };  // a correction keeps the order's customer: shown, never changed here
     chipEl.hidden = !c; UI.el('pos-customer-pick').hidden = !!c;
-    if (c) chipEl.innerHTML = '<div class="cust-chip"><i class="fa-solid fa-user-check text-success"></i><div><div class="fw-bold">' + UI.esc(c.FullName) + '</div><div class="small text-soft">' + UI.esc(c.Phone || 'no mobile') + (c.CustomerType && c.CustomerType !== 'REGULAR' ? ' · ' + F.status(c.CustomerType) : '') + (Number(c.Balance) > 0 ? ' · <span class="text-danger">owes ' + F.peso(c.Balance) + '</span>' : '') + '</div></div><button type="button" class="x" id="pos-customer-clear" aria-label="Remove customer"><i class="fa-solid fa-xmark"></i></button></div>';
+    if (c) chipEl.innerHTML = '<div class="cust-chip"><i class="fa-solid ' + (c.walkIn ? 'fa-user' : 'fa-user-check text-success') + '"></i><div><div class="fw-bold">' + UI.esc(c.FullName) + '</div><div class="small text-soft">' + UI.esc(c.Phone || 'no mobile') + (c.CustomerType && c.CustomerType !== 'REGULAR' ? ' · ' + F.status(c.CustomerType) : '') + (Number(c.Balance) > 0 ? ' · <span class="text-danger">owes ' + F.peso(c.Balance) + '</span>' : '') + (editing ? ' · unchanged by a correction' : '') + '</div></div>' + (editing ? '' : '<button type="button" class="x" id="pos-customer-clear" aria-label="Remove customer"><i class="fa-solid fa-xmark"></i></button>') + '</div>';
     var clear = UI.el('pos-customer-clear'); if (clear) clear.onclick = function () { cart.customer = null; render(); };
   }
   function setCustomer(c) { cart.customer = c; UI.el('pos-customer-results').hidden = true; UI.el('pos-customer-search').value = ''; UI.el('pos-customer-form').hidden = true; render(); }
@@ -2594,6 +2599,7 @@ window.MLS = (function () {
   function checkout() {
     if (!cart.lines.length || !lensOk()) return;
     if (Number(cart.discountAmount) > 0 && !cart.discountReason.trim()) { Toast.warning('Give a reason for the discount.'); UI.el('pos-discount-reason').focus(); return; }
+    if (editing) return saveCorrection();
     UI.el('pos-checkout').disabled = true;
     ensureQuote().then(function (q) {
       UI.el('pos-checkout').disabled = false;
@@ -2609,6 +2615,50 @@ window.MLS = (function () {
           });
         }
       });
+    }).catch(function (e) { UI.el('pos-checkout').disabled = false; Toast.danger(UI.error(e)); });
+  }
+
+  // ---------------------------------------------------------------- correcting an order (1.12.0)
+  /** The cart of an order being corrected, from its view: every line back from the catalogue (a line whose service or product has since gone keeps its text; the server says so when it is kept). */
+  function lineFromItem(i) {
+    if (i.LineType === 'PRODUCT') { var p = catalog.products.filter(function (x) { return x.Id === i.ItemId; })[0]; return { key: UI.uuid(), lineType: 'PRODUCT', itemId: i.ItemId, name: p ? p.Name : i.Description, pricingType: 'PER_PIECE', unit: (p && p.Unit) || i.Unit || 'pc', qty: Math.max(1, Math.floor(Number(i.Qty) || 1)), weightKg: '', price: p ? p.SellingPrice : i.UnitPrice, onHand: p ? p.QtyOnHand : 0 }; }
+    var s = catalog.services.filter(function (x) { return x.Id === i.ServiceId; })[0], perKilo = s ? s.PricingType === 'PER_KILO' : Number(i.WeightKg) > 0;
+    return { key: UI.uuid(), lineType: 'SERVICE', serviceId: i.ServiceId, name: s ? s.Name : i.Description, pricingType: s ? s.PricingType : (perKilo ? 'PER_KILO' : 'PER_PIECE'), unit: s ? s.Unit : i.Unit, qty: perKilo ? 0 : Math.max(1, Number(i.Qty) || 1), weightKg: perKilo ? (Number(i.WeightKg) || 0) : '', price: s ? s.Price : i.UnitPrice, minQty: s ? Number(s.MinimumQty) || 0 : 0, minAmount: s ? Number(s.MinimumAmount) || 0 : 0, surchargePct: s ? Number(s.ExpressSurchargePct) || 0 : 0 };
+  }
+  function paintEditing() {
+    var box = UI.el('pos-editing'); if (!box) return; box.hidden = !editing;
+    if (editing) UI.el('pos-editing-text').textContent = 'Correcting ' + editing.orderNo + ' (' + editing.status + ') · total ' + F.peso(editing.total) + (editing.paid > 0 ? ' · ' + F.peso(editing.paid) + ' paid' : '') + '. Change the lines, weights, express, fees or discount; the customer stays.';
+    var nw = UI.el('pos-new'); if (nw) nw.innerHTML = editing ? '<i class="fa-solid fa-xmark me-1"></i>Stop correcting' : '<i class="fa-solid fa-plus me-1"></i>New order';
+  }
+  /** Opens an order in the cart for correction (#/pos → { edit: id }); the catalogue must be in hand to rebuild the lines. */
+  function startEdit(id) {
+    return Api.call('orders.get', { id: id }, { busy: true }).then(function (o) {
+      if (!o.Correctable) { Toast.warning(o.OrderNo + ' is ' + String(o.StatusLabel || o.Status).toLowerCase() + '; it can no longer be corrected.'); return null; }
+      newCart(); resetForm();
+      editing = { id: o.Id, orderNo: o.OrderNo, status: o.StatusLabel, total: Number(o.OrderTotal) || 0, paid: Number(o.PaidAmount) || 0, customerName: o.CustomerName };
+      requestId = UI.uuid();
+      cart.customer = o.Customer ? { Id: o.Customer.Id, FullName: o.Customer.FullName, Phone: o.Customer.Phone, CustomerType: o.Customer.CustomerType } : null;
+      cart.lines = o.Items.map(lineFromItem);
+      cart.isExpress = !!o.IsExpress; cart.bagCount = Number(o.BagCount) > 0 ? String(o.BagCount) : ''; cart.deliveryFee = Number(o.DeliveryFee) || 0; cart.otherCharges = Number(o.OtherCharges) || 0;
+      cart.discountAmount = Number(o.ManualDiscount) || 0; cart.discountReason = o.ManualDiscountReason || ''; cart.promoCode = o.PromoCode || ''; cart.notes = o.Notes || ''; cart.serviceType = o.ServiceType || 'WALK_IN';
+      UI.el('pos-express').checked = cart.isExpress; UI.el('pos-bags').value = cart.bagCount; UI.el('pos-delivery').value = cart.deliveryFee ? cart.deliveryFee.toFixed(2) : ''; UI.el('pos-other').value = cart.otherCharges ? cart.otherCharges.toFixed(2) : '';
+      UI.el('pos-discount').value = cart.discountAmount ? cart.discountAmount.toFixed(2) : ''; UI.el('pos-discount-reason').value = cart.discountReason; UI.el('pos-discount-reason-wrap').hidden = !(cart.discountAmount > 0); UI.el('pos-promo').value = cart.promoCode; UI.el('pos-notes').value = cart.notes;
+      paintStatic(); paintEditing(); render();
+      return o;
+    }).catch(function (e) { Toast.danger(UI.error(e)); });
+  }
+  function saveCorrection() {
+    var was = editing; UI.el('pos-checkout').disabled = true;
+    ensureQuote().then(function (q) {
+      UI.el('pos-checkout').disabled = false;
+      var hint = 'New total ' + F.peso(q.total) + ' (was ' + F.peso(was.total) + ')' + (was.paid > 0 ? ' · ' + F.peso(was.paid) + ' paid' + (q.total + 0.004 < was.paid ? ' — more than the new total: refund the difference first' : ', balance ' + F.peso(Math.max(0, q.total - was.paid))) : '') + '. The lines it replaces stay on record; products go back to or leave the shelf by the difference.';
+      return M.OrdersUI.openReason({ title: 'Correct ' + was.orderNo, label: 'What is being corrected', hint: hint, confirmText: 'Save correction', onSubmit: function (d) {
+        var payload = Object.assign(cartPayload(), { id: was.id, requestId: requestId, reason: d.reason, notes: cart.notes, bagCount: cart.bagCount === '' ? '' : Number(cart.bagCount), serviceType: cart.serviceType });
+        return Api.call('orders.update', payload, { busy: true }).then(function (o) {
+          Toast.success(o.OrderNo + ' corrected · total ' + F.peso(o.OrderTotal) + (Number(o.BalanceAmount) > 0 ? ' · balance ' + F.peso(o.BalanceAmount) : ''));
+          newCart(); resetForm(); render(); M.Router.go('orders', { open: o.Id }); return o;
+        });
+      } });
     }).catch(function (e) { UI.el('pos-checkout').disabled = false; Toast.danger(UI.error(e)); });
   }
 
@@ -2634,7 +2684,8 @@ window.MLS = (function () {
     UI.el('pos-cartbar-sum').onclick = function () { var card = UI.el('pos-lines').closest('.card'); var y = card.getBoundingClientRect().top + window.scrollY - 70; window.scrollTo({ top: y, behavior: 'smooth' }); };
     UI.el('pos-cartbar-charge').onclick = checkout;
     UI.el('pos-reload').onclick = loadCatalog;
-    UI.el('pos-new').onclick = function () { if (!cart.lines.length) { newCart(); resetForm(); render(); return; } M.Modal.confirm({ title: 'New order', body: 'Clear the current cart?', okText: 'Clear' }).then(function (yes) { if (yes) { newCart(); resetForm(); render(); } }); };
+    UI.el('pos-new').onclick = function () { if (!cart.lines.length && !editing) { newCart(); resetForm(); render(); return; } M.Modal.confirm({ title: editing ? 'Stop correcting' : 'New order', body: editing ? 'Leave ' + editing.orderNo + ' as it is?' : 'Clear the current cart?', okText: editing ? 'Leave it' : 'Clear' }).then(function (yes) { if (yes) { newCart(); resetForm(); render(); } }); };
+    UI.el('pos-editing-stop').onclick = function () { UI.el('pos-new').onclick(); };
     UI.el('pos-customer-search').oninput = searchCustomers;
     UI.el('pos-customer-search').onkeydown = function (ev) { if (ev.key === 'Escape') UI.el('pos-customer-results').hidden = true; };
     UI.el('pos-customer-add').onclick = function () { var f = UI.el('pos-customer-form'); f.hidden = false; f.querySelector('[name=FullName]').value = UI.el('pos-customer-search').value.trim(); f.querySelector('[name=FullName]').focus(); UI.el('pos-customer-results').hidden = true; };
@@ -2667,13 +2718,19 @@ window.MLS = (function () {
     if (params && params.customerId) Api.call('customers.get', { id: params.customerId }).then(function (c) { setCustomer({ Id: c.Id, FullName: c.FullName, Phone: c.Phone, CustomerType: c.CustomerType, Balance: c.Balance }); }).catch(function () { /* stay without */ });
     setTimeout(focusSearch, 50);
   }
+  /** #/pos with { edit: id } (the order page's Correct button): the catalogue first, then the order's cart. */
+  function open(params, loading) {
+    if (params && params.edit) { newCart(); resetForm(); paintStatic(); render(); return loading.then(function () { return startEdit(params.edit); }); }
+    if ((params && params.customerId) || !cart || (!cart.lines.length && !editing)) start(params); else { paintStatic(); renderTotals(); setTimeout(focusSearch, 50); }
+    return loading;
+  }
   M.Router.register('pos', {
     title: 'Point of sale',
-    render: function (el, params) { wire(); loadCatalog(); start(params); },
-    refresh: function (el, params) { loadCatalog(); if ((params && params.customerId) || !cart || !cart.lines.length) start(params); else { paintStatic(); renderTotals(); setTimeout(focusSearch, 50); } },
+    render: function (el, params) { wire(); open(params, loadCatalog()); },
+    refresh: function (el, params) { open(params, loadCatalog()); },
     onLeave: function () { document.body.classList.remove('pos-cartbar-on'); }
   });
-  M.POS = { cart: function () { return cart; }, estimateLine: estimateLine };
+  M.POS = { cart: function () { return cart; }, estimateLine: estimateLine, editing: function () { return editing; } };
 })();
 </script>
 
@@ -2749,6 +2806,7 @@ window.MLS = (function () {
         <div class="row g-2" id="reason-amount-wrap" hidden>
           <div class="col-6"><label class="form-label" for="reason-amount">Amount</label><input class="form-control" id="reason-amount" name="amount" type="number" step="0.01" min="0.01" inputmode="decimal"></div>
           <div class="col-6"><label class="form-label" for="reason-method">Method</label><select class="form-select" id="reason-method" name="method"></select></div>
+          <div class="col-12" id="reason-ref-wrap" hidden><label class="form-label" for="reason-ref">Reference number</label><input class="form-control" id="reason-ref" name="referenceNo" maxlength="60" autocomplete="off" placeholder="The e-wallet or transfer reference"></div>
         </div>
         <label class="form-label mt-2" for="reason-text" id="reason-label">Reason</label><textarea class="form-control" id="reason-text" name="reason" rows="2" maxlength="300"></textarea>
         <div class="alert alert-danger py-2 small mt-3" id="reason-error" hidden></div>
@@ -2797,7 +2855,7 @@ window.MLS = (function () {
       '<div class="row big"><span>TOTAL</span><span>' + money(o.OrderTotal) + '</span></div>' + (pays ? '<hr>' + pays : '') +
       '<div class="row"><span>Paid</span><span>' + money(o.PaidAmount) + '</span></div><div class="row strong"><span>' + (Number(o.BalanceAmount) > 0 ? 'BALANCE DUE' : 'Balance') + '</span><span>' + money(o.BalanceAmount) + '</span></div>' +
       (o.Notes ? '<hr><div>' + esc(o.Notes) + '</div>' : '') + '<hr><div class="row"><span>Status</span><span>' + esc(o.StatusLabel) + '</span></div><div class="row"><span>Cashier</span><span>' + esc(o.Cashier) + '</span></div>' +
-      (b.footer ? '<hr><div class="c">' + esc(b.footer) + '</div>' : '') + (d.provisional ? '' : trackingBlock(d)) + '<div class="c foot">Printed ' + esc(F.datetime(d.printedAt)) + (d.provisional ? ' · provisional' : '') + '</div></div>';
+      (b.footer ? '<hr><div class="c">' + esc(b.footer) + '</div>' : '') + (b.privacy ? '<div class="c muted small">' + esc(b.privacy) + '</div>' : '') + (d.provisional ? '' : trackingBlock(d)) + '<div class="c foot">Printed ' + esc(F.datetime(d.printedAt)) + (d.provisional ? ' · provisional' : '') + '</div></div>';
     return html;
   }
   /** The tracking link on a receipt: a QR code when the setting is on and the library loaded, the link in text either way. */
@@ -2875,12 +2933,13 @@ window.MLS = (function () {
       });
     });
   }
-  /** openReason({ title, hint, label, withAmount, amountMax, confirmText, danger, onSubmit({ reason, amount, method }) → Promise }) */
+  /** openReason({ title, hint, label, withAmount, amountMax, confirmText, danger, onSubmit({ reason, amount, method, referenceNo }) → Promise }); with an amount, the method's reference number is asked for when the setting requires it (1.12.0). */
   function openReason(opts) {
     return getMeta().then(function (m) {
       var form = UI.el('reason-form'); form.reset(); UI.hide('reason-error');
       UI.el('reason-title').textContent = opts.title; UI.el('reason-hint').textContent = opts.hint || ''; UI.el('reason-label').textContent = opts.label || 'Reason';
       UI.el('reason-amount-wrap').hidden = !opts.withAmount; if (opts.withAmount) { UI.el('reason-amount').value = (Number(opts.amountMax) || 0).toFixed(2); UI.el('reason-amount').max = (Number(opts.amountMax) || 0).toFixed(2); UI.el('reason-method').innerHTML = UI.options(m.paymentMethods, 'CASH', methodLabel, function (x) { return x; }); }
+      var refSync = function () { UI.el('reason-ref-wrap').hidden = !(opts.withAmount && m.referenceRequiredFor.indexOf(UI.el('reason-method').value) >= 0); }; UI.el('reason-method').onchange = refSync; refSync();
       var btn = UI.el('reason-confirm'); btn.textContent = opts.confirmText || 'Confirm'; btn.className = 'btn ' + (opts.danger ? 'btn-danger' : 'btn-primary');
       return new Promise(function (resolve) {
         var done = false, inst = Modal.open('reason-modal'); var finish = function (v) { if (done) return; done = true; resolve(v); };
@@ -2888,8 +2947,9 @@ window.MLS = (function () {
           ev.preventDefault(); var d = Form.read(form); var fail = function (msg) { var e = UI.el('reason-error'); e.textContent = msg; e.hidden = false; };
           if (String(d.reason || '').trim().length < 3) return fail('Write the reason.');
           if (opts.withAmount && !(Number(d.amount) > 0)) return fail('Enter the amount.');
+          if (opts.withAmount && m.referenceRequiredFor.indexOf(d.method) >= 0 && !String(d.referenceNo || '').trim()) return fail('Enter the ' + methodLabel(d.method).toLowerCase() + ' reference number.');
           btn.disabled = true;
-          Promise.resolve(opts.onSubmit({ reason: d.reason, amount: Number(d.amount) || 0, method: d.method })).then(function (r) { btn.disabled = false; inst.hide(); finish(r); }, function (e) { btn.disabled = false; fail(UI.error(e)); });
+          Promise.resolve(opts.onSubmit({ reason: d.reason, amount: Number(d.amount) || 0, method: d.method, referenceNo: d.referenceNo || '' })).then(function (r) { btn.disabled = false; inst.hide(); finish(r); }, function (e) { btn.disabled = false; fail(UI.error(e)); });
         };
         UI.el('reason-modal').addEventListener('hidden.bs.modal', function onHide() { UI.el('reason-modal').removeEventListener('hidden.bs.modal', onHide); finish(undefined); });
       });
@@ -2919,6 +2979,7 @@ window.MLS = (function () {
     if (can('ORDER_STATUS') && t.indexOf('COMPLETED') >= 0) acts.push(['release', '', 'btn-success', 'fa-circle-check', 'Release to customer']);
     if (can('PAYMENT_CREATE') && Number(o.BalanceAmount) > 0 && ['CANCELLED', 'REFUNDED'].indexOf(o.Status) < 0) acts.push(['pay', '', 'btn-primary', 'fa-hand-holding-dollar', 'Add payment']);
     if (can('POS_REFUND') && Number(o.PaidAmount) > 0) acts.push(['refund', '', 'btn-outline-danger', 'fa-rotate-left', 'Refund']);
+    if (can('POS_EDIT') && o.Correctable && !o._pending && M.Router.allowed('pos')) acts.push(['correct', '', 'btn-outline-primary', 'fa-pen-to-square', 'Correct order']);  // 1.12.0: lines, weights, express, fees, discount — before production
     if (can('ORDER_CANCEL') && t.indexOf('CANCELLED') >= 0) acts.push(['cancel', '', 'btn-outline-danger', 'fa-ban', 'Cancel order']);
     acts.push(['note', '', 'btn-outline-secondary', 'fa-comment', 'Add note']); acts.push(['print', '', 'btn-outline-secondary', 'fa-print', 'Receipt']); acts.push(['labels', '', 'btn-outline-secondary', 'fa-tags', 'Labels']);
     if (can('INCIDENT_CREATE')) acts.push(['incident', '', 'btn-outline-warning', 'fa-triangle-exclamation', 'Report incident']);
@@ -2934,9 +2995,10 @@ window.MLS = (function () {
     if (action === 'status') return Api.call('orders.setStatus', { id: o.Id, status: arg }, { busy: true }).then(function (r) { Toast.success(o.OrderNo + ' is now ' + r.StatusLabel.toLowerCase()); changed(r); }).catch(fail);
     if (action === 'release') return M.Modal.confirm({ title: 'Release ' + o.OrderNo, body: Number(o.BalanceAmount) > 0 ? 'The balance of ' + F.peso(o.BalanceAmount) + ' stays as a receivable. Hand the laundry to the customer?' : 'Hand the laundry to the customer?', okText: 'Release' }).then(function (yes) { if (!yes) return; return Api.call('orders.release', { id: o.Id }, { busy: true }).then(function (r) { Toast.success(o.OrderNo + ' released'); changed(r); }).catch(fail); });
     if (action === 'pay') return openPayment({ title: 'Payment for ' + o.OrderNo, balance: o.BalanceAmount, onSubmit: function (p) { return Api.call('payments.create', { orderId: o.Id, amount: p.amount, method: p.method, referenceNo: p.referenceNo, notes: p.notes, requestId: UI.uuid() }).then(function (r) { Toast.success('Payment of ' + F.peso(p.amount) + ' recorded' + (M.Sms && M.Sms.can(r.order.Mobile) ? ' — Text customer › Payment received sends the confirmation' : '')); changed(r.order); return r; }); } });
-    if (action === 'refund') return openReason({ title: 'Refund on ' + o.OrderNo, hint: 'Up to ' + F.peso(o.PaidAmount) + ' has been paid. The refund is recorded against this order.', withAmount: true, amountMax: o.PaidAmount, confirmText: 'Refund', danger: true, onSubmit: function (d) { return Api.call('payments.refund', { orderId: o.Id, amount: d.amount, method: d.method, reason: d.reason, requestId: UI.uuid() }).then(function (r) { Toast.success('Refund of ' + F.peso(d.amount) + ' recorded'); changed(r.order); return r; }); } });
+    if (action === 'refund') return openReason({ title: 'Refund on ' + o.OrderNo, hint: 'Up to ' + F.peso(o.PaidAmount) + ' has been paid. The refund is recorded against this order.', withAmount: true, amountMax: o.PaidAmount, confirmText: 'Refund', danger: true, onSubmit: function (d) { return Api.call('payments.refund', { orderId: o.Id, amount: d.amount, method: d.method, referenceNo: d.referenceNo, reason: d.reason, requestId: UI.uuid() }).then(function (r) { Toast.success('Refund of ' + F.peso(d.amount) + ' recorded'); changed(r.order); return r; }); } });
     if (action === 'cancel') return openReason({ title: 'Cancel ' + o.OrderNo, hint: 'Products go back to stock. ' + (Number(o.PaidAmount) > 0 ? F.peso(o.PaidAmount) + ' has been paid and will need a refund.' : ''), confirmText: 'Cancel order', danger: true, onSubmit: function (d) { return Api.call('orders.cancel', { id: o.Id, reason: d.reason }).then(function (r) { Toast.warning(o.OrderNo + ' cancelled'); changed(r); return r; }); } });
     if (action === 'note') return openReason({ title: 'Note on ' + o.OrderNo, label: 'Note', confirmText: 'Add note', onSubmit: function (d) { return Api.call('orders.addNote', { id: o.Id, note: d.reason }).then(function (r) { changed(r); return r; }); } });
+    if (action === 'correct') { Modal.get('order-modal').hide(); M.Router.go('pos', { edit: o.Id }); return; }
     if (action === 'print') return printReceipt(o.Id);
     if (action === 'labels') return printLabels(o.Id);
     if (action === 'incident') return M.Incidents.report({ orderId: o.Id, orderNo: o.OrderNo }, function () { Api.call('orders.get', { id: o.Id }).then(changed).catch(fail); });
@@ -3000,6 +3062,7 @@ window.MLS = (function () {
     <select class="form-select" id="cust-type"><option value="">All types</option></select>
     <select class="form-select" id="cust-status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option><option value="ALL">All</option></select>
     <label class="form-check ms-1 mb-0"><input class="form-check-input" type="checkbox" id="cust-balance"><span class="form-check-label small">With balance</span></label>
+    <label class="form-check ms-1 mb-0"><input class="form-check-input" type="checkbox" id="cust-inactive"><span class="form-check-label small" id="cust-inactive-label">Not seen lately</span></label>
   </div>
   <div class="card"><div class="card-body p-0" id="cust-table"></div></div>
 </section>
@@ -3042,11 +3105,12 @@ window.MLS = (function () {
 (function () {
   'use strict';
   var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Form = M.Form;
-  var state = { search: '', type: '', status: 'ACTIVE', withBalance: false, page: 1 }, types = ['REGULAR', 'VIP', 'CORPORATE'], seq = Api.sequence();
+  var state = { search: '', type: '', status: 'ACTIVE', withBalance: false, inactive: false, page: 1 }, types = ['REGULAR', 'VIP', 'CORPORATE'], seq = Api.sequence();
 
   function load() {
     var box = UI.el('cust-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
-    return Api.read('customers.list', { search: state.search, type: state.type, status: state.status, withBalance: state.withBalance, page: state.page, size: 25 }, { seq: seq, paint: function (r) {
+    return Api.read('customers.list', { search: state.search, type: state.type, status: state.status, withBalance: state.withBalance, inactive: state.inactive, page: state.page, size: 25 }, { seq: seq, paint: function (r) {
+      if (r.inactiveAfterDays !== undefined) UI.el('cust-inactive-label').textContent = r.inactiveAfterDays ? 'Not seen for ' + r.inactiveAfterDays + ' days' : 'Not seen lately';
       types = r.types || types;
       var sel = UI.el('cust-type'); if (sel.options.length === 1) sel.innerHTML += UI.options(types, '', function (t) { return F.status(t); }, function (t) { return t; });
       M.Table.render(UI.el('cust-table'), {
@@ -3072,7 +3136,7 @@ window.MLS = (function () {
   }
   function open(id) {
     return Api.call('customers.get', { id: id }, { busy: true }).then(function (c) {
-      UI.el('cust-view-title').innerHTML = UI.esc(c.FullName) + ' ' + (c.CustomerType !== 'REGULAR' ? '<span class="badge text-bg-light border">' + F.status(c.CustomerType) + '</span> ' : '') + UI.badge(c.Status);
+      UI.el('cust-view-title').innerHTML = UI.esc(c.FullName) + ' ' + (c.CustomerType !== 'REGULAR' ? '<span class="badge text-bg-light border">' + F.status(c.CustomerType) + '</span> ' : '') + UI.badge(c.Status) + (c.Anonymised ? ' <span class="badge text-bg-secondary" title="The personal data was erased on ' + UI.esc(F.datetime(c.AnonymisedAt)) + '">data erased</span>' : '');
       var grid = [['Mobile', UI.esc(c.Phone || '—') + (c.Phone && !c.Mobile ? ' <span class="badge text-bg-light border" title="Not a mobile number: no SMS">no SMS</span>' : '') + (c.SmsOptOut ? ' <span class="badge text-bg-secondary" title="Opted out of promotional messages">no promos</span>' : '')], ['E-mail', UI.esc(c.Email || '—')], ['Address', UI.esc(c.Address || '—')], ['Branch', UI.esc(UI.branchName(c.BranchId))], ['Orders', c.OrderCount], ['Total paid', F.peso(c.TotalPaid)], ['Balance', '<span class="' + (Number(c.Balance) > 0 ? 'text-danger' : 'text-success') + '">' + F.peso(c.Balance) + '</span>'], ['Since', F.date(c.CreatedAt)]];
       var orders = c.Orders.length ? c.Orders.map(function (o) { return '<tr class="pointer" data-order="' + UI.esc(o.Id) + '"><td data-label="Order"><span class="fw-bold">' + UI.esc(o.OrderNo) + '</span>' + (o.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + '</td><td data-label="Date">' + F.date(o.OrderDate) + '</td><td data-label="Total" class="text-end money">' + F.peso(o.OrderTotal) + '</td><td data-label="Balance" class="text-end money ' + (Number(o.BalanceAmount) > 0 ? 'text-danger fw-bold' : '') + '">' + F.peso(o.BalanceAmount) + '</td><td data-label="Status">' + UI.badge(o.Status) + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="text-soft">No orders yet.</td></tr>';
       UI.html('cust-view-body', '<div class="detail-grid mb-3">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' + (c.Notes ? '<div class="alert alert-light border small">' + UI.esc(c.Notes) + '</div>' : '') +
@@ -3082,17 +3146,26 @@ window.MLS = (function () {
       if (M.Auth.can('SMS_VIEW_LOGS')) loadHistory(c.Id);
       var acts = [];
       if (M.Auth.can('POS_CREATE') && c.Status === 'ACTIVE') acts.push('<button type="button" class="btn btn-sm btn-primary" data-act="pos"><i class="fa-solid fa-cash-register me-1"></i>New order</button>');
-      if (M.Auth.can('CUSTOMER_EDIT')) acts.push('<button type="button" class="btn btn-sm btn-outline-primary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button>');
+      if (M.Auth.can('CUSTOMER_EDIT') && !c.Anonymised) acts.push('<button type="button" class="btn btn-sm btn-outline-primary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button>');
+      if (M.Auth.can('CUSTOMER_ERASE') && !c.Anonymised) acts.push('<button type="button" class="btn btn-sm btn-outline-danger" data-act="erase"><i class="fa-solid fa-user-slash me-1"></i>Erase personal data</button>');  // 1.12.0 (R11)
       if (M.Auth.can('INCIDENT_CREATE')) acts.push('<button type="button" class="btn btn-sm btn-outline-warning" data-act="incident"><i class="fa-solid fa-triangle-exclamation me-1"></i>Report incident</button>');
       // text the customer: the balance reminder for the newest order with a balance, a general message otherwise
       var withBalance = c.Orders.filter(function (o) { return Number(o.BalanceAmount) > 0 && ['CANCELLED', 'REFUNDED'].indexOf(o.Status) < 0; })[0];
       var smsItems = []; if (withBalance) smsItems.push({ code: 'BALANCE_REMINDER', label: 'Balance reminder · ' + withBalance.OrderNo, icon: 'fa-bell', suggested: true, arg: withBalance.Id }); smsItems.push({ code: 'GENERAL', label: 'General message', icon: 'fa-comment', suggested: !withBalance });
       var smsMenu = M.Sms && M.Sms.can(c.Mobile) && c.Status === 'ACTIVE' ? M.Sms.menuHtml({ id: 'cust-sms-menu', label: 'Send SMS', items: smsItems }) : '';
       UI.html('cust-view-actions', acts.join('') + smsMenu);
-      UI.el('cust-view-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); if (a === 'incident') return M.Incidents.report({ customerId: c.Id, customerName: c.FullName }); M.Modal.closeThen('cust-view-modal', function () { if (a === 'pos') M.Router.go('pos', { customerId: c.Id }); else openForm(c); }); }; });
+      UI.el('cust-view-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); if (a === 'incident') return M.Incidents.report({ customerId: c.Id, customerName: c.FullName }); if (a === 'erase') return erase(c); M.Modal.closeThen('cust-view-modal', function () { if (a === 'pos') M.Router.go('pos', { customerId: c.Id }); else openForm(c); }); }; });
       if (smsMenu) M.Sms.wireMenu(UI.el('cust-view-actions'), function (arg) { return { customerId: c.Id, orderId: arg || '' }; }, function () { if (M.Auth.can('SMS_VIEW_LOGS')) loadHistory(c.Id); });
       M.Modal.open('cust-view-modal');
     }).catch(function (e) { Toast.danger(UI.error(e)); });
+  }
+  /** Release 1.12.0 (R11): the erasure on request — irreversible, so the reason (the request and its date) is written down and the dialog says what goes. */
+  function erase(c) {
+    M.Modal.closeThen('cust-view-modal', function () {
+      M.OrdersUI.openReason({ title: 'Erase the personal data of ' + c.FullName, label: 'Why (the request and its date)', danger: true, confirmText: 'Erase — cannot be undone',
+        hint: 'Name, number, e-mail, address, location and notes are removed from this customer, from ' + c.OrderCount + ' order' + (c.OrderCount === 1 ? '' : 's') + ', from the deliveries, the messages, the audit copies and the archives. The orders and their amounts stay under "' + 'Customer #' + String(c.Id).replace(/^[A-Z]+-/, '') + '". ' + (Number(c.Balance) > 0 ? 'The open balance of ' + F.peso(c.Balance) + ' must be settled first. ' : '') + 'This cannot be undone.',
+        onSubmit: function (d) { return Api.call('customers.anonymise', { id: c.Id, reason: d.reason, confirm: true }, { busy: true }).then(function (r) { Toast.warning('Personal data erased: ' + Object.keys(r.erased.rows).map(function (t) { return r.erased.rows[t] + ' ' + t; }).join(', ') + (r.erased.archives && r.erased.archives.rows ? ', ' + r.erased.archives.rows + ' archived rows' : '')); load(); return r; }); } });
+    });
   }
   function loadHistory(customerId) {
     var box = UI.el('cust-sms-history'); if (!box) return;
@@ -3101,12 +3174,15 @@ window.MLS = (function () {
       box.className = ''; box.innerHTML = '<ul class="list-unstyled sms-history mb-0">' + r.rows.map(function (l) { return '<li><div class="d-flex flex-wrap gap-2 align-items-center"><span class="fw-bold">' + UI.esc(l.TemplateName) + '</span><span class="text-soft small">' + UI.esc(l.WorkflowLabel) + '</span>' + M.Sms.statusBadge(l.ActionStatus) + (l.OrderNo ? '<span class="small">' + UI.esc(l.OrderNo) + '</span>' : '') + '</div><div class="when">' + UI.esc(F.datetime(l.At)) + ' · ' + UI.esc(l.InitiatedBy) + ' · ' + UI.esc(l.PhoneNumber) + '</div><div class="body">' + UI.esc(l.Preview) + '</div></li>'; }).join('') + '</ul>' + (r.total > r.rows.length ? '<div class="small text-soft mt-1">' + r.total + ' messages in all — see Reports › Messages.</div>' : '');
     }).catch(function (e) { box.textContent = UI.error(e); });
   }
+  /** { inactive: true } from the dashboard's follow-ups (1.12.0): the list opens on the customers not seen lately. */
+  function applyParams(params) { if (params && params.inactive !== undefined) { state.inactive = !!params.inactive; state.page = 1; UI.el('cust-inactive').checked = state.inactive; } }
   function wire() {
     UI.el('cust-new').onclick = function () { openForm(null); };
     UI.el('cust-search').oninput = UI.debounce(function () { state.search = UI.el('cust-search').value.trim(); state.page = 1; load(); }, 350);
     UI.el('cust-type').onchange = function () { state.type = this.value; state.page = 1; load(); };
     UI.el('cust-status').onchange = function () { state.status = this.value; state.page = 1; load(); };
     UI.el('cust-balance').onchange = function () { state.withBalance = this.checked; state.page = 1; load(); };
+    UI.el('cust-inactive').onchange = function () { state.inactive = this.checked; state.page = 1; load(); };
     var f = UI.el('cust-form');
     f.onsubmit = function (ev) {
       ev.preventDefault(); if (Form.validate(f, { FullName: ['required'], Phone: ['phone'], Email: ['email'] })) return;
@@ -3116,8 +3192,8 @@ window.MLS = (function () {
   }
   M.Router.register('customers', {
     title: 'Customers',
-    render: function (el, params) { wire(); UI.el('cust-new').hidden = !M.Auth.can('CUSTOMER_CREATE'); load().then(function () { if (params && params.open) open(params.open); }); },
-    refresh: function (el, params) { UI.el('cust-new').hidden = !M.Auth.can('CUSTOMER_CREATE'); load().then(function () { if (params && params.open) open(params.open); }); }
+    render: function (el, params) { wire(); UI.el('cust-new').hidden = !M.Auth.can('CUSTOMER_CREATE'); applyParams(params); load().then(function () { if (params && params.open) open(params.open); }); },
+    refresh: function (el, params) { UI.el('cust-new').hidden = !M.Auth.can('CUSTOMER_CREATE'); applyParams(params); load().then(function () { if (params && params.open) open(params.open); }); }
   });
 })();
 </script>
@@ -3339,7 +3415,7 @@ window.MLS = (function () {
     <button type="button" class="btn btn-outline-primary btn-sm" id="inv-adjust" hidden><i class="fa-solid fa-sliders me-1"></i>Adjust stock</button>
     <button type="button" class="btn btn-primary btn-sm" id="inv-new" hidden><i class="fa-solid fa-plus me-1"></i>New item</button>
   </div>
-  <div class="tabs" id="inv-tabs"><button type="button" data-tab="items" class="active">Items<span class="count" id="inv-count-items">0</span></button><button type="button" data-tab="moves">Movements<span class="count" id="inv-count-moves">0</span></button></div>
+  <div class="tabs" id="inv-tabs"><button type="button" data-tab="items" class="active">Items<span class="count" id="inv-count-items">0</span></button><button type="button" data-tab="moves">Movements<span class="count" id="inv-count-moves">0</span></button><button type="button" data-tab="reorder">Reorder<span class="count" id="inv-count-reorder"></span></button></div>
   <div id="inv-tab-items">
     <div class="toolbar">
       <input class="form-control search" id="inv-search" placeholder="Search code, name or category" autocomplete="off">
@@ -3357,6 +3433,10 @@ window.MLS = (function () {
       <input class="form-control" id="mv-to" type="date" aria-label="To date">
     </div>
     <div class="card"><div class="card-body p-0" id="inv-moves-table"></div></div>
+  </div>
+  <div id="inv-tab-reorder" hidden>
+    <p class="small text-soft mb-2" id="inv-reorder-note"></p>
+    <div class="card"><div class="card-body p-0" id="inv-reorder-table"></div></div>
   </div>
 </section>
 
@@ -3376,6 +3456,7 @@ window.MLS = (function () {
           <div class="col-4" id="item-price-wrap"><label class="form-label">Selling price</label><input class="form-control money" name="SellingPrice" type="number" step="0.01" min="0" inputmode="decimal"></div>
           <div class="col-6"><label class="form-label">Reorder level</label><input class="form-control" name="ReorderLevel" type="number" step="any" min="0" inputmode="decimal"><div class="form-text">Low-stock alert at or below this</div></div>
           <div class="col-6" id="item-sellable-wrap"><label class="form-label d-block">Sold at the POS</label><label class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" name="IsSellable" checked><span class="form-check-label small">Show on the POS</span></label></div>
+          <div class="col-12" id="item-supplier-wrap" hidden><label class="form-label">Usual supplier</label><select class="form-select" name="SupplierId"><option value="">— none (the last purchase's) —</option></select><div class="form-text">Its lead time sets how far ahead the reorder suggestion looks</div></div>
           <div class="col-12" id="item-status-wrap" hidden><label class="form-label">Status</label><select class="form-select" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
         </div>
         <p class="small text-soft mt-2 mb-0">Stock on hand never changes here: use <strong>Adjust stock</strong> for beginning stock and corrections, <strong>Purchases</strong> for deliveries.</p>
@@ -3490,19 +3571,44 @@ window.MLS = (function () {
       UI.el('inv-count-moves').textContent = r.total + (r.window && !state.mvFrom ? ' (last 30 days — set a date for older ones)' : '');
     } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Movements: ' + UI.error(e)); });
   }
+  /** Release 1.12.0 (R15): what to reorder — the daily use measured on the ledger, the days of cover, the supplier's lead time and the quantity that covers lead time plus the cover days. */
+  var reorderSeq = Api.sequence();
+  function loadReorder() {
+    var box = UI.el('inv-reorder-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    return Api.read('inventory.reorder', {}, { seq: reorderSeq, paint: function (r) {
+      UI.el('inv-count-reorder').textContent = r.toReorder || '';
+      UI.el('inv-reorder-note').textContent = 'Daily use measured on sales and consumption since ' + F.date(r.from) + ' (' + r.windowDays + ' days) · a suggestion covers the supplier\'s lead time (' + r.defaultLeadTimeDays + ' days when none is set) plus ' + r.coverDays + ' days of use · an item at or below its reorder level with no measured use is brought to twice the level.';
+      var cover = function (x) { return x.DaysOfCover === null ? '<span class="text-soft">no use measured</span>' : (x.DaysOfCover <= x.LeadTimeDays ? '<span class="text-danger fw-bold">' : (x.Suggested > 0 ? '<span class="text-warning-emphasis fw-bold">' : '<span>')) + F.number(x.DaysOfCover, 1) + ' d</span>' + (x.RunsOutOn ? '<div class="small text-soft">runs out ' + F.date(x.RunsOutOn) + '</div>' : ''); };
+      M.Table.render(box, {
+        columns: [
+          { key: 'Name', label: 'Item', format: function (v, x) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(x.Code) + ' · ' + (x.ItemType === 'MATERIAL' ? 'material' : 'product') + '</div>'; } },
+          { key: 'QtyOnHand', label: 'On hand', align: 'right', format: function (v, x) { return (x.Low ? '<span class="text-danger fw-bold">' : '<span>') + F.qty(v, x.Unit) + '</span>' + (x.ReorderLevel ? '<div class="small text-soft">level ' + F.qty(x.ReorderLevel, x.Unit) + '</div>' : ''); } },
+          { key: 'PerDay', label: 'Use / day', align: 'right', format: function (v, x) { return F.qty(v, x.Unit) + '<div class="small text-soft">' + F.qty(x.UsedInWindow, x.Unit) + ' used</div>'; } },
+          { key: 'DaysOfCover', label: 'Cover', align: 'right', format: function (v, x) { return cover(x); } },
+          { key: 'LeadTimeDays', label: 'Lead time', align: 'right', format: function (v, x) { return v + ' d<div class="small text-soft">' + (x.LeadTimeFrom === 'supplier' ? UI.esc(x.Supplier) : 'default') + '</div>'; } },
+          { key: 'Suggested', label: 'Reorder', align: 'right', format: function (v, x) { return v > 0 ? '<span class="fw-bold">' + F.qty(v, x.Unit) + '</span><div class="small text-soft">' + F.peso(x.SuggestedCost) + (x.Supplier ? ' · ' + UI.esc(x.Supplier) + (x.SupplierFrom === 'last purchase' ? ' (last purchase)' : '') : '') + '</div>' : '<span class="text-soft">—</span>'; } }
+        ],
+        rows: r.rows, total: r.rows.length, page: 1, pages: 1, empty: { icon: 'fa-boxes-stacked', title: 'No active items', hint: 'Items appear here with their daily use once stock moves.' },
+        onRow: function (x) { open(x.Id); }
+      });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Reorder: ' + UI.error(e)); });
+  }
   function showTab(tab) {
     state.tab = tab;
     UI.el('inv-tabs').querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === tab); });
-    UI.el('inv-tab-items').hidden = tab !== 'items'; UI.el('inv-tab-moves').hidden = tab !== 'moves';
-    if (tab === 'moves') loadMoves(); else loadItems();
+    UI.el('inv-tab-items').hidden = tab !== 'items'; UI.el('inv-tab-moves').hidden = tab !== 'moves'; UI.el('inv-tab-reorder').hidden = tab !== 'reorder';
+    if (tab === 'moves') loadMoves(); else if (tab === 'reorder') loadReorder(); else loadItems();
   }
-  function reload() { all = null; if (state.tab === 'moves') { loadMoves(); loadItems(); } else { loadItems(); if (UI.el('inv-count-moves').textContent !== '0') loadMoves(); } }
+  function reload() { all = null; if (state.tab === 'moves') { loadMoves(); loadItems(); } else if (state.tab === 'reorder') { loadReorder(); loadItems(); } else { loadItems(); if (UI.el('inv-count-moves').textContent !== '0') loadMoves(); } }
 
   // ---------------------------------------------------------------- item form
   function openForm(i) {
     var f = UI.el('item-form'); f.reset(); Form.clearErrors(f);
     UI.el('item-form-title').textContent = i ? 'Edit ' + i.Name : 'New item'; UI.el('item-status-wrap').hidden = !i;
     if (i) Form.write(f, Object.assign({}, i, { Cost: i.Cost || '', SellingPrice: i.SellingPrice || '', ReorderLevel: i.ReorderLevel || '' })); else { f.querySelector('[name=Id]').value = ''; f.querySelector('[name=IsSellable]').checked = true; }
+    // the usual supplier (1.12.0): offered when the user may read suppliers; the list is read once per visit
+    var sw = UI.el('item-supplier-wrap'); sw.hidden = !M.Auth.can('PURCHASE_VIEW');
+    if (!sw.hidden) Api.call('purchases.suppliers', {}).then(function (list) { var sel = f.querySelector('[name=SupplierId]'), cur = i ? (i.SupplierId || '') : ''; sel.innerHTML = '<option value="">— none (the last purchase\'s) —</option>' + list.filter(function (s) { return s.Status === 'ACTIVE' || s.Id === cur; }).map(function (s) { return '<option value="' + UI.esc(s.Id) + '"' + (s.Id === cur ? ' selected' : '') + '>' + UI.esc(s.Name) + (s.LeadTimeDays !== '' ? ' · ' + s.LeadTimeDays + ' d' : '') + '</option>'; }).join(''); }).catch(function () { sw.hidden = true; });
     syncTypeFields();
     M.Modal.open('item-modal'); setTimeout(function () { if (!f.contains(document.activeElement)) f.querySelector('[name=Name]').focus(); }, 300);
   }
@@ -3688,7 +3794,8 @@ window.MLS = (function () {
             <div class="col-md-4"><label class="form-label small">Phone</label><input class="form-control form-control-sm" name="Phone" maxlength="30" inputmode="tel"></div>
             <div class="col-md-4"><label class="form-label small">E-mail</label><input class="form-control form-control-sm" name="Email" type="email"></div>
             <div class="col-md-4"><label class="form-label small">Terms</label><input class="form-control form-control-sm" name="Terms" maxlength="60" placeholder="COD, 15 days…"></div>
-            <div class="col-md-8"><label class="form-label small">Address</label><input class="form-control form-control-sm" name="Address" maxlength="200"></div>
+            <div class="col-md-4"><label class="form-label small">Lead time (days)</label><input class="form-control form-control-sm" name="LeadTimeDays" type="number" min="0" max="365" step="1" inputmode="numeric" placeholder="order to delivery"></div>
+            <div class="col-md-4"><label class="form-label small">Address</label><input class="form-control form-control-sm" name="Address" maxlength="200"></div>
             <div class="col-md-4"><label class="form-label small">Status</label><select class="form-select form-select-sm" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
           </div>
           <div class="d-flex gap-2 mt-3"><button type="submit" class="btn btn-sm btn-primary">Save supplier</button><button type="button" class="btn btn-sm btn-outline-secondary" id="sup-cancel">Cancel</button></div>
@@ -3811,7 +3918,7 @@ window.MLS = (function () {
 
   // ---------------------------------------------------------------- suppliers
   function paintSuppliers(list) {
-    UI.html('sup-rows', list.length ? list.map(function (s) { return '<tr><td data-label="Supplier"><span class="fw-bold">' + UI.esc(s.Name) + '</span>' + (s.Address ? '<div class="small text-soft">' + UI.esc(s.Address) + '</div>' : '') + '</td><td data-label="Contact" class="small">' + UI.esc([s.ContactPerson, s.Phone, s.Email].filter(Boolean).join(' · ') || '—') + '</td><td data-label="Terms" class="small">' + UI.esc(s.Terms || '—') + '</td><td data-label="Status">' + UI.badge(s.Status) + '</td><td class="text-end">' + (canSuppliers() ? '<button type="button" class="btn btn-sm btn-link p-0" data-edit="' + UI.esc(s.Id) + '">edit</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="text-soft">No suppliers yet.</td></tr>');
+    UI.html('sup-rows', list.length ? list.map(function (s) { return '<tr><td data-label="Supplier"><span class="fw-bold">' + UI.esc(s.Name) + '</span>' + (s.Address ? '<div class="small text-soft">' + UI.esc(s.Address) + '</div>' : '') + '</td><td data-label="Contact" class="small">' + UI.esc([s.ContactPerson, s.Phone, s.Email].filter(Boolean).join(' · ') || '—') + '</td><td data-label="Terms" class="small">' + UI.esc(s.Terms || '—') + (s.LeadTimeDays !== '' && s.LeadTimeDays !== undefined ? '<div class="text-soft">lead time ' + UI.esc(s.LeadTimeDays) + ' day' + (Number(s.LeadTimeDays) === 1 ? '' : 's') + '</div>' : '') + '</td><td data-label="Status">' + UI.badge(s.Status) + '</td><td class="text-end">' + (canSuppliers() ? '<button type="button" class="btn btn-sm btn-link p-0" data-edit="' + UI.esc(s.Id) + '">edit</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="text-soft">No suppliers yet.</td></tr>');
     UI.el('sup-rows').querySelectorAll('[data-edit]').forEach(function (b) { b.onclick = function () { var s = list.filter(function (x) { return x.Id === b.getAttribute('data-edit'); })[0]; openSupplierForm(s); }; });
   }
   function openSuppliers() {
@@ -6177,6 +6284,7 @@ window.MLS = (function () {
         card('Backups', '<div class="small mb-2" id="set-bk-status">' + backupStatusHtml(r.backup, r.health) + '</div><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-bk-run"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Back up now</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-bk-verify"' + (r.backup && r.backup.lastOkId ? '' : ' disabled') + '><i class="fa-solid fa-clipboard-check me-1"></i>Verify last backup</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-bk-list"><i class="fa-solid fa-list me-1"></i>Recent backups</button></div><p class="small text-soft mt-2 mb-0">A backup is a copy of the database spreadsheet — and of every archive spreadsheet that changed — in the Drive folder <b>Mrs Laundry Sys Backups</b> of the account that owns the script, made every night at about 1 am while <b>BackupDaily</b> is on and kept for <b>BackupKeepDays</b> days. Verify opens a copy and checks every table and its row count against what the run recorded; the live database is never touched. A failed run is listed here and in the audit log, and e-mailed to <b>AlertEmail</b> when set. How to restore: sheet menu → Recovery information, and DEPLOY.md section 9.</p><div id="set-bk-out" class="mt-3"></div><div id="set-bk-rows" class="mt-2"></div>') +
         card('Database', '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-mt-validate"><i class="fa-solid fa-check-double me-1"></i>Validate database</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-mt-repair"><i class="fa-solid fa-screwdriver-wrench me-1"></i>Repair database</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-triggers"><i class="fa-solid fa-clock me-1"></i>Install triggers</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-purge"><i class="fa-solid fa-broom me-1"></i>Purge sessions</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-cache"><i class="fa-solid fa-eraser me-1"></i>Clear cache</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-verify"><i class="fa-solid fa-fingerprint me-1"></i>Verify installation</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-endpoints"><i class="fa-solid fa-list me-1"></i>Endpoints</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-browser"><i class="fa-solid fa-bug me-1"></i>Browser error details</button></div><p class="small text-soft mt-2 mb-0">Validate reads only. Repair runs Initialize again (missing sheets, columns and seeds), then rebuilds stock levels from the ledger, recomputes order totals and fixes sequences; every fix is audited and nothing is deleted. Verify installation compares every installed file with the release it came from.</p><div id="set-mt-out" class="mt-3"></div>') +
         card('Archive', '<p class="small text-soft mb-2">Closed history older than the <b>ArchiveKeepMonths</b> setting (orders completed, cancelled or refunded with nothing open attached — with their lines, timeline, payments, production log, delivery items, messages and incidents — plus finished jobs, approved end-of-day reports, expenses and audit rows) moves to a separate archive spreadsheet so the live sheets stay fast. Customers, the catalog, stock and its ledger, purchases, staff, time logs and payroll are never archived.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-ar-plan"><i class="fa-solid fa-magnifying-glass me-1"></i>What would be archived</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-ar-run" disabled><i class="fa-solid fa-box-archive me-1"></i>Archive now</button></div><div id="set-ar-out" class="mt-3"></div>') +
+        card('Privacy', '<p class="small text-soft mb-2">A customer\'s personal data is erased on request from the customer page (<b>CUSTOMER_ERASE</b>): name, number, e-mail, address, location and notes go from the customer, the orders, the deliveries, the messages, the audit copies and the archives; the orders and their amounts stay under a pseudonym. The nightly job does the same for customers with no order for <b>CustomerRetentionDays</b> (0 keeps everyone); the receipt and the tracking page carry the <b>PrivacyNotice</b> line.</p><div class="small mb-2" id="set-rt-status">Loading…</div><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-danger btn-sm" id="set-rt-run" disabled><i class="fa-solid fa-user-slash me-1"></i>Apply retention now</button></div><div class="mt-2" id="set-rt-out"></div>');
         card('Rows per table', '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><tbody>' + chunk(Object.keys(r.rows), 3).map(function (row) { return '<tr>' + row.map(function (t) { return '<td class="text-soft">' + UI.esc(t) + '</td><td class="text-end fw-bold">' + F.number(r.rows[t], 0) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>');
       var out = function (html) { UI.html('set-mt-out', html); };
       UI.el('set-mt-refresh').onclick = tabMaintenance;
@@ -6193,6 +6301,10 @@ window.MLS = (function () {
       var arOut = function (html) { UI.html('set-ar-out', html); }, arGrid = function (counts, tables, live) { return '<div class="archive-grid">' + tables.map(function (tb) { return '<div class="cell"><span class="text-soft">' + UI.esc(tb) + '</span><b>' + F.number(counts[tb] || 0, 0) + (live ? ' <span class="small text-soft fw-normal">of ' + F.number(live[tb] || 0, 0) + '</span>' : '') + '</b></div>'; }).join('') + '</div>'; };
       UI.el('set-ar-plan').onclick = function () { Api.call('archive.plan', {}, { busy: true }).then(function (p) { UI.el('set-ar-run').disabled = !p.counts.total; arOut('<div class="alert ' + (p.counts.total ? 'alert-warning' : 'alert-success') + ' py-2 small">' + (p.counts.total ? F.number(p.counts.total, 0) + ' rows older than ' + p.cutoff + ' qualify (' + p.counts.ordersEligible + ' closed orders; up to ' + p.limit + ' orders per run)' : 'Nothing older than ' + p.cutoff + ' qualifies') + ' · keeping ' + p.keepMonths + ' months' + (p.archive ? ' · archive: <a href="' + UI.esc(p.archive.url) + '" target="_blank" rel="noopener">' + UI.esc(p.archive.name) + '</a>' : ' · the archive spreadsheet is created on the first run') + '</div>' + arGrid(p.counts, p.tables, p.live)); }).catch(fail); };
       UI.el('set-ar-run').onclick = function () { M.Modal.confirm({ title: 'Archive closed history', body: 'Rows are copied to the archive spreadsheet first and removed from the live sheets only after the copy is written. The run is audited. Continue?', okText: 'Archive now', danger: true }).then(function (yes) { if (!yes) return; Api.call('archive.run', {}, { busy: true }).then(function (x) { UI.el('set-ar-run').disabled = !x.remaining; arOut('<div class="alert alert-success py-2 small">' + (x.total ? F.number(x.total, 0) + ' rows archived in ' + x.seconds + ' s' : x.message) + (x.archive ? ' · <a href="' + UI.esc(x.archive.url) + '" target="_blank" rel="noopener">' + UI.esc(x.archive.name) + '</a>' : '') + (x.remaining ? ' · ' + F.number(x.remaining, 0) + ' rows still qualify — run again' : ' · nothing left to archive') + (x.summaries && x.summaries.rows ? ' · the figures of ' + x.summaries.months.length + ' month' + (x.summaries.months.length === 1 ? '' : 's') + ' went to the monthly summaries (' + x.summaries.months.join(', ') + ')' : '') + '</div>' + (x.total ? arGrid(x.archived, Object.keys(x.archived)) : '')); }).catch(fail); }); };
+      // privacy (release 1.12.0): what retention would erase, and the same by hand
+      var rtStatus = function () { Api.call('maintenance.retention', {}).then(function (s) { UI.html('set-rt-status', !s.days ? 'Retention is <b>off</b> (CustomerRetentionDays = 0): nothing is erased by the nightly job.' : 'Retention: <b>' + s.days + ' days</b> · ' + (s.due ? '<b>' + s.due + ' customer' + (s.due === 1 ? '' : 's') + '</b> with no order since ' + UI.esc(s.cutoff) + ' due (up to ' + s.batch + ' a run)' + (s.sample.length ? ': ' + s.sample.map(function (c) { return UI.esc(c.FullName) + (c.LastOrderDate ? ' (' + UI.esc(c.LastOrderDate) + ')' : ''); }).join(', ') + (s.due > s.sample.length ? ', …' : '') : '') : 'nobody due')); UI.el('set-rt-run').disabled = !(s.days && s.due); }).catch(function (e) { UI.html('set-rt-status', '<span class="text-danger">' + UI.esc(UI.error(e)) + '</span>'); }); };
+      rtStatus();
+      UI.el('set-rt-run').onclick = function () { M.Modal.confirm({ title: 'Apply customer retention', body: 'The personal data of the customers due is erased everywhere it is kept — the customer, the orders, the deliveries, the messages, the audit copies, the archives. It cannot be undone; the run is audited. Continue?', okText: 'Erase', danger: true }).then(function (yes) { if (!yes) return; Api.call('maintenance.applyRetention', {}, { busy: true }).then(function (x) { UI.html('set-rt-out', '<div class="alert alert-success py-2 small">' + x.erased + ' customer' + (x.erased === 1 ? '' : 's') + ' erased' + (x.remaining ? ', ' + x.remaining + ' more due (run again)' : '') + (x.rows && Object.keys(x.rows).length ? ' · rows: ' + Object.keys(x.rows).map(function (t) { return t + ' ' + x.rows[t]; }).join(', ') : '') + (x.archives && x.archives.rows ? ' · ' + x.archives.rows + ' archived row' + (x.archives.rows === 1 ? '' : 's') : '') + '</div>'); rtStatus(); }).catch(fail); }); };
       UI.el('set-mt-validate').onclick = function () { Api.call('maintenance.validate', {}, { busy: true }).then(function (v) { out('<div class="alert ' + (v.ok ? 'alert-success' : 'alert-danger') + ' py-2 small">' + (v.ok ? 'No errors' : v.errors + ' error' + (v.errors === 1 ? '' : 's')) + ', ' + v.warnings + ' warning' + (v.warnings === 1 ? '' : 's') + ' · ' + v.tables + ' tables checked ' + F.datetime(v.checkedAt) + '</div>' + (v.problems.length ? '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Level</th><th>Table</th><th>Code</th><th>Message</th></tr></thead><tbody>' + v.problems.slice(0, 200).map(function (p) { return '<tr><td>' + UI.badge(p.level === 'ERROR' ? 'REJECTED' : 'PENDING', p.level) + '</td><td>' + UI.esc(p.table) + '</td><td>' + UI.esc(p.code) + '</td><td>' + UI.esc(p.message) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '')); }).catch(fail); };
       UI.el('set-mt-repair').onclick = function () { M.Modal.confirm({ title: 'Repair the database', body: 'Initialize runs again, stock levels are rebuilt from the ledger, order totals recomputed and sequences fixed. Every change is audited; nothing is deleted. Continue?', okText: 'Repair', danger: true }).then(function (yes) { if (!yes) return; Api.call('maintenance.repair', {}, { busy: true }).then(function (x) { out('<div class="alert ' + (x.ok ? 'alert-success' : 'alert-warning') + ' py-2 small">Repair finished: ' + x.repaired.stockLevels + ' stock level' + (x.repaired.stockLevels === 1 ? '' : 's') + ', ' + x.repaired.orderTotals + ' order total' + (x.repaired.orderTotals === 1 ? '' : 's') + ', ' + x.repaired.sequences + ' sequence' + (x.repaired.sequences === 1 ? '' : 's') + ' fixed; ' + x.created.length + ' sheet' + (x.created.length === 1 ? '' : 's') + ' created' + (x.repaired.monthlySummaries ? '; monthly summaries rebuilt from ' + x.repaired.monthlySummaries.files + ' archive file' + (x.repaired.monthlySummaries.files === 1 ? '' : 's') + ' (' + x.repaired.monthlySummaries.months.length + ' month' + (x.repaired.monthlySummaries.months.length === 1 ? '' : 's') + ')' : '') + ' · validation ' + (x.validation.ok ? 'OK' : x.validation.errors + ' errors') + '</div>'); }).catch(fail); }); };
       UI.el('set-mt-triggers').onclick = function () { Api.call('maintenance.installTriggers', {}, { busy: true }).then(function (x) { out('<div class="alert alert-success py-2 small">' + (x.installed.length ? 'Installed ' + x.installed.join(', ') : 'Already installed: ' + x.alreadyInstalled.join(', ')) + '</div>'); }).catch(fail); };
@@ -6397,7 +6509,7 @@ window.MLS = (function () {
       root.querySelectorAll('[data-rv-dismiss]').forEach(function (b) { b.onclick = function () { var c = byId[b.getAttribute('data-rv-dismiss')]; M.OrdersUI.openReason({ title: 'Dismiss: ' + typeLabel(c.Type), hint: 'Say why nothing needs to be done; the note is kept with the item.', label: 'Note', confirmText: 'Dismiss', onSubmit: function (d) { return Api.call('sync.resolveConflict', { id: c.Id, resolution: 'DISMISSED', note: d.reason }, { noOffline: true }); } }).then(function (r) { if (r) { Toast.success('Review item dismissed.'); paintReview(); } }); }; });
       root.querySelectorAll('[data-rv-refund]').forEach(function (b) { b.onclick = function () { var c = byId[b.getAttribute('data-rv-refund')], d = c.Details || {};
         M.OrdersUI.openReason({ title: 'Refund the excess on ' + c.OrderNo, hint: F.peso(c.Amount) + ' was taken beyond the balance (' + (d.method || '') + (d.referenceNo ? ' ' + d.referenceNo : '') + '). The refund is recorded against the order and settles this item.', withAmount: true, amountMax: c.Amount, confirmText: 'Refund', danger: true,
-          onSubmit: function (r) { return Api.call('payments.refund', { orderId: c.OrderId, amount: r.amount, method: r.method, reason: r.reason, requestId: UI.uuid() }, { noOffline: true }).then(function (res) { return Api.call('sync.resolveConflict', { id: c.Id, resolution: 'REVERSED', referenceId: res.payment.Id, note: r.reason }, { noOffline: true }); }); }
+          onSubmit: function (r) { return Api.call('payments.refund', { orderId: c.OrderId, amount: r.amount, method: r.method, referenceNo: r.referenceNo, reason: r.reason, requestId: UI.uuid() }, { noOffline: true }).then(function (res) { return Api.call('sync.resolveConflict', { id: c.Id, resolution: 'REVERSED', referenceId: res.payment.Id, note: r.reason }, { noOffline: true }); }); }
         }).then(function (r) { if (r) { Toast.success('Refunded and settled.'); paintReview(); } }); }; });
       root.querySelectorAll('[data-rv-adjust]').forEach(function (b) { b.onclick = function () { var c = byId[b.getAttribute('data-rv-adjust')]; reversing = c; M.InventoryUI.openMove({ Id: c.ItemId, Name: c.Item, Unit: c.Unit }); Toast.info('Post the stock movement; it settles this item as reversed.', 5000); }; });
     }).catch(function (e) { UI.html('sync-review', '<li class="text-soft small">' + (e && (e.offline || e.code === 'NETWORK' || e.code === 'TIMEOUT') ? 'The review needs a connection.' : UI.esc(UI.error(e))) + '</li>'); UI.el('sync-review-scope').textContent = ''; });
