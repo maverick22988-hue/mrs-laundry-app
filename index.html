@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'cbcbea7b81', version: '1.13.0' };</script>
+  <script>window.MLS_PWA = { build: 'd3f255011b', version: '1.14.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -170,7 +170,10 @@
   .status-badge.s-prepared, .status-badge.s-unknown { background: #e2e8f0; color: #475569; }
   .status-badge.s-composer_open_requested, .status-badge.s-in_review { background: #fef3c7; color: #92400e; }
   .status-badge.s-user_confirmed_sent, .status-badge.s-resolved { background: #dcfce7; color: #166534; }
-  .status-badge.s-not_sent, .status-badge.s-failed_to_open { background: #fee2e2; color: #991b1b; }
+  .status-badge.s-not_sent, .status-badge.s-failed_to_open, .status-badge.s-gateway_failed { background: #fee2e2; color: #991b1b; }
+  .status-badge.s-gateway_queued { background: #e0f2fe; color: #075985; }
+  .status-badge.s-gateway_sent { background: #fef3c7; color: #92400e; }
+  .status-badge.s-gateway_delivered { background: #dcfce7; color: #166534; }
   /* backups (release 1.9.0): a run in progress, a good copy, a failed attempt */
   .status-badge.s-running { background: #fef3c7; color: #92400e; }
   .status-badge.s-ok { background: #dcfce7; color: #166534; }
@@ -596,7 +599,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.13.0';
+  var VERSION = '1.14.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -5807,12 +5810,22 @@ window.MLS = (function () {
     messages: {
       searchFilter: true,
       load: function () { return Api.call('sms.logs', { from: state.from, to: state.to, search: state.search, page: state.page, size: 50 }); },
-      kpis: function (d) { var c = d.counts; return [['Attempts', d.total], ['Confirmed sent', c.USER_CONFIRMED_SENT || 0], ['Composer opened', c.COMPOSER_OPEN_REQUESTED || 0], ['Not sent / failed', (c.NOT_SENT || 0) + (c.FAILED_TO_OPEN || 0)], ['Unknown', c.UNKNOWN || 0], ['Prepared only', c.PREPARED || 0]]; },
-      columns: function () { return [{ key: 'At', label: 'When', format: function (v) { return '<span class="text-nowrap">' + F.datetime(v) + '</span>'; } }, { key: 'CustomerName', label: 'To', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(r.PhoneNumber) + '</div>'; } }, { key: 'TemplateName', label: 'Template', format: function (v, r) { return UI.esc(v) + '<div class="small text-soft">' + UI.esc(r.WorkflowLabel) + '</div>'; } }, { key: 'OrderNo', label: 'Order', format: function (v) { return v ? UI.esc(v) : '<span class="text-soft">—</span>'; } }, { key: 'Preview', label: 'Message', format: function (v) { return '<span class="small">' + UI.esc(v) + '</span>'; } }, { key: 'InitiatedBy', label: 'By' }, { key: 'ActionStatus', label: 'Status', format: function (v) { return M.Sms ? M.Sms.statusBadge(v) : UI.badge(v); } }]; },
+      kpis: function (d) { var c = d.counts, g = d.capabilities && d.capabilities.configured; return g ? [['Attempts', d.total], ['Accepted by provider', c.GATEWAY_SENT || 0], ['Delivered (reported)', c.GATEWAY_DELIVERED || 0], ['Queued', c.GATEWAY_QUEUED || 0], ['Failed (gateway)', c.GATEWAY_FAILED || 0], ['Confirmed sent (Messages app)', c.USER_CONFIRMED_SENT || 0]] : [['Attempts', d.total], ['Confirmed sent', c.USER_CONFIRMED_SENT || 0], ['Composer opened', c.COMPOSER_OPEN_REQUESTED || 0], ['Not sent / failed', (c.NOT_SENT || 0) + (c.FAILED_TO_OPEN || 0)], ['Unknown', c.UNKNOWN || 0], ['Prepared only', c.PREPARED || 0]]; },
+      columns: function () { return [{ key: 'At', label: 'When', format: function (v) { return '<span class="text-nowrap">' + F.datetime(v) + '</span>'; } }, { key: 'CustomerName', label: 'To', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(r.PhoneNumber) + '</div>'; } }, { key: 'TemplateName', label: 'Template', format: function (v, r) { return UI.esc(v) + '<div class="small text-soft">' + UI.esc(r.WorkflowLabel) + '</div>'; } }, { key: 'OrderNo', label: 'Order', format: function (v) { return v ? UI.esc(v) : '<span class="text-soft">—</span>'; } }, { key: 'Preview', label: 'Message', format: function (v) { return '<span class="small">' + UI.esc(v) + '</span>'; } }, { key: 'InitiatedBy', label: 'By', format: function (v, r) { return UI.esc(v) + (r.Trigger === 'AUTO' ? '<div class="small text-soft">automatic</div>' : ''); } }, { key: 'ActionStatus', label: 'Status', format: function (v, r) { return (M.Sms ? M.Sms.statusBadge(v) : UI.badge(v)) + (r.ProviderId ? '<div class="small text-soft">' + UI.esc(r.ProviderStatus || '') + (r.DeliveredAt ? ' · ' + F.datetime(r.DeliveredAt) : '') + '</div>' : (v === 'GATEWAY_FAILED' || v === 'GATEWAY_QUEUED') && r.ProviderStatus ? '<div class="small text-danger">' + UI.esc(r.ProviderStatus) + '</div>' : ''); } }]; },
       rows: function (d) { return d.rows; },
       onRow: function (r) { if (r.OrderId && M.OrdersUI) M.OrdersUI.openOrder(r.OrderId); },
       chart: function () { return null; },
-      extra: function (d) { return '<p class="small text-soft">' + UI.esc(d.capabilities.note) + ' A status here is what the staff member reported after the Messages app opened; nothing confirms delivery.</p>'; }
+      extra: function (d) {
+        var cp = d.capabilities || {}, html = '<p class="small text-soft">' + UI.esc(cp.note) + (cp.configured ? '' : ' A status here is what the staff member reported after the Messages app opened; nothing confirms delivery.') + '</p>';
+        // release 1.14.0: the gateway's state and the two actions it needs — the queue by hand, a test message
+        if (cp.configured) html += '<div class="d-flex flex-wrap gap-2 align-items-center small mb-2"><span><i class="fa-solid fa-tower-broadcast me-1 text-primary"></i>Gateway: <b>' + UI.esc(cp.adapterName) + '</b>' + (cp.senderName ? ' · sender ' + UI.esc(cp.senderName) : '') + ' · automatic: ' + (cp.autoSend && cp.autoSend.length ? UI.esc(cp.autoSend.map(function (k) { return k.toLowerCase().replace(/_/g, ' '); }).join(', ')) : 'off') + ' · limit ' + cp.dailyLimit + ' a day</span>' + (can('SMS_VIEW_LOGS') ? '<button type="button" class="btn btn-sm btn-outline-primary" id="rp-sms-queue"><i class="fa-solid fa-paper-plane me-1"></i>Send queued now</button>' : '') + (can('SETTINGS_EDIT') ? '<button type="button" class="btn btn-sm btn-outline-secondary" id="rp-sms-test"><i class="fa-solid fa-vial me-1"></i>Test message</button>' : '') + '</div>';
+        else if (cp.providerNamedButNoKey) html += '<div class="alert alert-warning py-2 small">SmsProvider is set but the gateway is not complete (the API key, and for HTTP the address): nothing is sent until they are entered under Settings → Notifications.</div>';
+        return html;
+      },
+      after: function () {
+        var q = UI.el('rp-sms-queue'); if (q) q.onclick = function () { Api.call('sms.runQueue', {}, { busy: true }).then(function (r) { Toast.info(r.skipped ? r.skipped : r.sent + ' sent, ' + r.failed + ' failed, ' + r.requeued + ' to retry, ' + r.waiting + ' waiting' + (r.quiet ? ' (quiet hours)' : '') + ', ' + r.delivered + ' reported delivered, ' + r.queuedReminders + ' reminder' + (r.queuedReminders === 1 ? '' : 's') + ' queued'); load(); }).catch(function (e) { Toast.danger(UI.error(e)); }); };
+        var t = UI.el('rp-sms-test'); if (t) t.onclick = function () { M.OrdersUI.openReason({ title: 'Send a test message', label: 'Mobile number', hint: 'One message goes through the gateway to this number (it costs what the provider charges). The log keeps it like any message.', confirmText: 'Send test', onSubmit: function (d) { return Api.call('sms.test', { to: d.reason }).then(function (r) { if (r.sent) Toast.success('Accepted by ' + r.adapter + ' (' + r.providerId + ')'); else Toast.danger('Not sent: ' + r.error); load(); return r; }); } }); };
+      }
     },
     audit: {
       auditFilters: true,
@@ -5860,6 +5873,7 @@ window.MLS = (function () {
       UI.html('rp-kpis', s.kpis(d).map(function (k) { return '<div class="tile"><div class="k">' + UI.esc(k[0]) + '</div><div class="v">' + UI.esc(String(k[1])) + '</div></div>'; }).join(''));
       M.Table.render(UI.el('rp-table'), { columns: cols, rows: rows, total: d.total, page: d.page, pages: d.pages, empty: { icon: 'fa-chart-line', title: 'Nothing in this range', hint: 'Widen the dates or pick another preset.' }, onPage: function (p) { state.page = p; load(); }, onRow: s.onRow || null });
       UI.html('rp-extra', s.extra(d) || '');
+      if (s.after) s.after(d);
       var cv = UI.el('rp-covers'); if (d.covers && d.covers.note) { cv.hidden = false; cv.textContent = 'Covers ' + F.date(d.covers.from) + ' – ' + F.date(d.covers.to) + ': ' + d.covers.note + '.'; } else cv.hidden = true;
       if (s.auditFilters) { var ms = UI.el('rp-module'), as = UI.el('rp-action'); if (ms.options.length <= 1) ms.innerHTML = '<option value="">All modules</option>' + UI.options(d.modules, state.module, function (x) { return x; }, function (x) { return x; }); if (as.options.length <= 1) as.innerHTML = '<option value="">All actions</option>' + UI.options(d.actions, state.action, function (x) { return F.status(x); }, function (x) { return x; }); }
       paintChart(s.chart(d));
@@ -6098,7 +6112,7 @@ window.MLS = (function () {
       else if (r.kind === 'labels') input = '<div class="label-grid" data-key="' + s.Key + '" data-kind="labels">' + (r.keys || []).map(function (k) { return '<span class="small text-soft">' + UI.esc(F.status(k)) + '</span><input class="form-control form-control-sm" data-label="' + k + '" value="' + UI.esc((s.Value || {})[k] || '') + '"' + dis + '>'; }).join('') + '</div>';
       else if (r.kind === 'signatories') input = '<div class="row g-2" data-key="' + s.Key + '" data-kind="signatories">' + ['prepared', 'checked', 'approved'].map(function (k) { return '<div class="col-4"><input class="form-control form-control-sm" data-sig="' + k + '" placeholder="' + F.status(k) + ' by" value="' + UI.esc((s.Value || {})[k] || '') + '"' + dis + '></div>'; }).join('') + '</div>';
       else input = '<textarea class="form-control font-monospace small" rows="3" id="' + name + '" data-key="' + s.Key + '" data-kind="json"' + dis + '>' + UI.esc(JSON.stringify(s.Value)) + '</textarea>';
-    } else if (r.options) input = '<select class="form-select" id="' + name + '" data-key="' + s.Key + '"' + dis + '>' + UI.options(r.options, s.Value, function (o) { return F.status(o); }, function (o) { return o; }) + '</select>';
+    } else if (r.options) input = '<select class="form-select" id="' + name + '" data-key="' + s.Key + '"' + dis + '>' + UI.options(r.options, s.Value, function (o) { return o === '' ? '— none —' : F.status(o); }, function (o) { return o; }) + '</select>';
     else input = '<input class="form-control" id="' + name + '" data-key="' + s.Key + '" value="' + UI.esc(s.Value) + '"' + (r.max ? ' maxlength="' + r.max + '"' : '') + dis + '>';
     return '<div class="col-md-6 set-field" data-key="' + s.Key + '">' + label + input + help + '</div>';
   }
@@ -6670,7 +6684,8 @@ window.MLS = (function () {
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="sms-cancel">Cancel</button>
         <span class="spacer"></span>
         <button type="button" class="btn btn-outline-primary" id="sms-copy" title="Copy the text to send from another phone"><i class="fa-regular fa-copy me-1"></i>Copy text</button>
-        <a class="btn btn-primary" id="sms-open" href="#" role="button"><i class="fa-solid fa-comment-sms me-1"></i>Open Messages app</a>
+        <a class="btn btn-outline-primary" id="sms-open" href="#" role="button"><i class="fa-solid fa-comment-sms me-1"></i>Open Messages app</a>
+        <button type="button" class="btn btn-primary" id="sms-send" hidden><i class="fa-solid fa-paper-plane me-1"></i>Send now</button>
       </div>
     </div>
   </div>
@@ -6715,7 +6730,7 @@ window.MLS = (function () {
     var body = UI.el('sms-body').value, s = segments(body), left = placeholders(body);
     UI.el('sms-count').innerHTML = '<span>' + s.length + ' character' + (s.length === 1 ? '' : 's') + '</span> · <span>' + s.encoding + '</span> · <span>about ' + s.segments + ' segment' + (s.segments === 1 ? '' : 's') + '</span>' + (left.length ? ' · <span class="text-danger fw-bold">fill in ' + UI.esc(left.join(', ')) + '</span>' : '');
     var ok = !!(st.prep && st.prep.to && st.prep.to.valid) && body.trim().length > 0 && !left.length;
-    var a = UI.el('sms-open'); a.classList.toggle('disabled', !ok); a.setAttribute('aria-disabled', ok ? 'false' : 'true'); a.href = ok ? link(st.prep.to.mobile.e164, body) : '#';
+    var a = UI.el('sms-open'); a.classList.toggle('disabled', !ok); a.setAttribute('aria-disabled', ok ? 'false' : 'true'); UI.el('sms-send').disabled = !ok; a.href = ok ? link(st.prep.to.mobile.e164, body) : '#';
     UI.el('sms-copy').disabled = !(st.prep && body.trim().length > 0 && !left.length);
   }
   function paintWarnings(list) {
@@ -6752,7 +6767,7 @@ window.MLS = (function () {
     sel.innerHTML = rows.map(function (t) { return '<option value="' + UI.esc(t.Id) + '"' + (t.usable ? '' : ' disabled') + (t.Id === wanted ? ' selected' : '') + '>' + UI.esc(t.Name) + ' · ' + UI.esc(t.WorkflowLabel) + (t.Category === 'MARKETING' ? ' (promo)' : '') + (t.usable ? '' : ' — ' + t.blocked) + '</option>'; }).join('');
     if (!sel.value && rows.some(function (t) { return t.usable; })) sel.value = rows.filter(function (t) { return t.usable; })[0].Id;
   }
-  function showStep(report) { UI.el('sms-compose').hidden = report; UI.el('sms-report').hidden = !report; UI.el('sms-copy').hidden = report; UI.el('sms-open').hidden = report; UI.el('sms-cancel').textContent = report ? 'Close' : 'Cancel'; }
+  function showStep(report) { UI.el('sms-compose').hidden = report; UI.el('sms-report').hidden = !report; UI.el('sms-copy').hidden = report; UI.el('sms-open').hidden = report; UI.el('sms-send').hidden = report || !(st.options && st.options.capabilities && st.options.capabilities.automatic); UI.el('sms-cancel').textContent = report ? 'Close' : 'Cancel'; }
   /**
    * M.Sms.open({ workflow, templateId, customerId, orderId, deliveryId, paymentId, customMessage, onDone }) — the preview dialog for one recipient.
    * Buttons that call it should only appear for SMS_INITIATE holders and recipients with a mobile; the server checks both again.
@@ -6762,6 +6777,8 @@ window.MLS = (function () {
     setError(''); showStep(false); UI.el('sms-body').value = ''; UI.el('sms-custom').value = o.customMessage || ''; UI.html('sms-vars', ''); UI.html('sms-warnings', ''); UI.el('sms-count').textContent = ''; UI.el('sms-report-fallback').hidden = true;
     return Api.call('sms.options', Object.assign({ workflow: o.workflow || '' }, st.context), { busy: true }).then(function (opt) {
       st.options = opt; paintTo(opt.to, opt); paintTemplates(opt);
+      // release 1.14.0: with a gateway set the server can send the text itself; the Messages app stays available
+      var sb = UI.el('sms-send'); sb.hidden = !(opt.capabilities && opt.capabilities.automatic); if (!sb.hidden) { sb.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i>Send now via ' + UI.esc(opt.capabilities.adapterName.split(' (')[0]); UI.el('sms-open').classList.remove('btn-primary'); UI.el('sms-open').classList.add('btn-outline-primary'); } else { UI.el('sms-open').classList.add('btn-primary'); UI.el('sms-open').classList.remove('btn-outline-primary'); }
       if (!opt.templates.some(function (t) { return t.usable; })) paintWarnings([{ code: 'variables', text: 'No active template fits here. A manager can enable one under Settings → SMS templates.' }]);
       Modal.open('sms-modal'); return prepare();
     }).catch(function (e) { Toast.danger(UI.error(e)); });
@@ -6781,6 +6798,14 @@ window.MLS = (function () {
       UI.el('sms-report-to').textContent = to; UI.el('sms-report-body').value = UI.el('sms-body').value; UI.el('sms-report-fallback').hidden = false;
       logAttempt('COMPOSER_OPEN_REQUESTED').then(function () { showStep(true); }).catch(function (e) { ev.preventDefault(); setError('Not opened: ' + UI.error(e)); });
     });
+    UI.el('sms-send').onclick = function () {
+      var body = UI.el('sms-body').value, btn = UI.el('sms-send'); if (!(st.prep && body.trim().length > 0)) return; btn.disabled = true;
+      Api.call('sms.sendNow', Object.assign({ templateId: UI.el('sms-template').value, body: body }, st.context), { busy: true }).then(function (r) {
+        btn.disabled = false; st.logId = r.logId;
+        if (r.sent) { Toast.success('Accepted by ' + r.adapter + ' (' + (r.providerStatus || 'queued') + ') — delivery is what its report says later, under Reports → Messages.'); Modal.close('sms-modal'); if (st.opts.onDone) st.opts.onDone('GATEWAY_SENT'); }
+        else setError('The gateway did not take the message: ' + r.error + '. It stays logged as failed; open the Messages app or copy the text instead.');
+      }).catch(function (e) { btn.disabled = false; setError(UI.error(e)); });
+    };
     UI.el('sms-copy').onclick = function () {
       var body = UI.el('sms-body').value, done = function () { logAttempt('PREPARED').then(function () { Toast.info('Text copied and logged as prepared — it has not been sent.'); if (st.opts.onDone) st.opts.onDone('PREPARED'); }).catch(function (e) { setError(UI.error(e)); }); };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(body).then(done, function () { fallbackCopy(body); done(); }); else { fallbackCopy(body); done(); }
@@ -6815,7 +6840,7 @@ window.MLS = (function () {
     container.querySelectorAll('[data-sms-workflow]').forEach(function (b) { b.onclick = function () { var ctx = typeof context === 'function' ? context(b.getAttribute('data-sms-arg')) : context; open(Object.assign({ workflow: b.getAttribute('data-sms-workflow'), onDone: onDone }, ctx)); }; });
   }
   function can(mobile) { return M.Auth.can('SMS_INITIATE') && !!mobile; }
-  function statusBadge(s) { return UI.badge(s, { PREPARED: 'Prepared', COMPOSER_OPEN_REQUESTED: 'Composer opened', USER_CONFIRMED_SENT: 'Confirmed sent', NOT_SENT: 'Not sent', FAILED_TO_OPEN: 'Failed to open', UNKNOWN: 'Unknown' }[s] || F.status(s)); }
+  function statusBadge(s) { return UI.badge({ GATEWAY_QUEUED: 'PENDING', GATEWAY_SENT: 'ASSIGNED', GATEWAY_DELIVERED: 'COMPLETED', GATEWAY_FAILED: 'REJECTED' }[s] || s, { PREPARED: 'Prepared', COMPOSER_OPEN_REQUESTED: 'Composer opened', USER_CONFIRMED_SENT: 'Confirmed sent', NOT_SENT: 'Not sent', FAILED_TO_OPEN: 'Failed to open', UNKNOWN: 'Unknown', GATEWAY_QUEUED: 'Queued (gateway)', GATEWAY_SENT: 'Accepted by provider', GATEWAY_DELIVERED: 'Delivered (provider report)', GATEWAY_FAILED: 'Failed (gateway)' }[s] || F.status(s)); }
   wire();
   M.Sms = { open: open, link: link, segments: segments, workflowsForOrder: workflowsForOrder, menuHtml: menuHtml, wireMenu: wireMenu, can: can, statusBadge: statusBadge, WORKFLOWS: WORKFLOWS, isIos: isIos };
 })();
