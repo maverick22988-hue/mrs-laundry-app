@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '2eb6d4b9ee', version: '1.15.0' };</script>
+  <script>window.MLS_PWA = { build: 'a226b241eb', version: '1.16.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -34,6 +34,7 @@
   <script src="vendor/bootstrap.bundle.min.js"></script>
   <script src="vendor/chart.umd.min.js"></script>
   <script src="vendor/qrcode.js"></script>
+  <script src="vendor/jsQR.js" async></script>
   <style>
   /* Mrs Laundry Sys — the one stylesheet. Order: tokens, base, shell, shared components, modules, then one block per
      breakpoint (compact desktop, tablet, phone), accessibility and print. Every colour, radius and size is a token. */
@@ -287,6 +288,32 @@
   .proof-view { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; } .proof-view figure { margin: 0; min-width: 0; }
   .proof-view img { display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; border-radius: var(--mls-radius-sm); border: 1px solid var(--mls-line); background: #fff; }
   .proof-view figcaption { font-size: .8rem; color: var(--mls-ink-soft); margin-top: 4px; }
+  /* ---- Release 1.16.0 (R18): bag tracking — the scan station, the bag lists, the hand-over check ---- */
+  .bag-code { font-family: var(--mls-mono); font-weight: 800; letter-spacing: .08em; font-size: .9em; background: #f1f5f9; color: var(--mls-ink); border-radius: 6px; padding: .05rem .4rem; white-space: nowrap; }
+  .code-input { font-family: var(--mls-mono); letter-spacing: .06em; text-transform: uppercase; }
+  .code-input::placeholder { text-transform: none; letter-spacing: normal; font-family: var(--mls-font); font-size: .95rem; }
+  .scan-form { display: flex; gap: 8px; align-items: stretch; } .scan-form .form-control { min-width: 0; flex: 1 1 auto; } .scan-form .btn { flex: 0 0 auto; min-width: 52px; }
+  .scan-video { position: relative; border-radius: var(--mls-radius-sm); overflow: hidden; background: #0f172a; max-width: 560px; }
+  .scan-video video { display: block; width: 100%; max-height: 52vh; object-fit: cover; }
+  .scan-frame { position: absolute; inset: 16% 20%; border: 3px solid rgba(255, 255, 255, .9); border-radius: 14px; box-shadow: 0 0 0 999px rgba(15, 23, 42, .28); pointer-events: none; }
+  .scan-stop { position: absolute; top: 8px; right: 8px; }
+  .scan-card { background: var(--mls-card); border: 1px solid var(--mls-line); border-left: 6px solid var(--mls-ink-faint); border-radius: var(--mls-radius-sm); padding: 10px 12px; margin-bottom: 8px; min-width: 0; overflow-wrap: anywhere; }
+  .scan-card.ok { border-left-color: #16a34a; } .scan-card.found { border-left-color: #0284c7; background: #f0f9ff; } .scan-card.warn { border-left-color: #f59e0b; background: #fffbeb; } .scan-card.bad { border-left-color: #dc2626; background: #fef2f2; }
+  .scan-card .scan-result { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+  .scan-card.ok .scan-result { color: #15803d; } .scan-card.found .scan-result { color: #0369a1; } .scan-card.warn .scan-result { color: #92400e; } .scan-card.bad .scan-result { color: #991b1b; }
+  .scan-card .acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .bag-list { display: grid; gap: 6px; }
+  .bag-row { display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; width: 100%; text-align: left; background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px 10px; min-height: 44px; color: var(--mls-ink); min-width: 0; }
+  .bag-row:hover, .bag-row:focus-visible { border-color: var(--mls-primary); } .bag-row.void { opacity: .6; }
+  .bag-chip { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 700; padding: .05rem .45rem; border-radius: 999px; background: #dcfce7; color: #166534; white-space: nowrap; }
+  .bag-chip.short { background: #fef3c7; color: #92400e; } .bag-chip.missing { background: #fee2e2; color: #991b1b; }
+  .bag-card { border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 10px 12px; margin-bottom: 10px; min-width: 0; overflow-wrap: anywhere; }
+  .bag-card.focus { box-shadow: 0 0 0 2px var(--mls-primary); }
+  .bag-check { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+  .bag-check li { display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; padding: 6px 8px; border-radius: var(--mls-radius-sm); background: #f8fafc; min-width: 0; }
+  .bag-check li.done { background: #f0fdf4; } .bag-check li.miss { background: #fef2f2; } .bag-check .ico { width: 1.4rem; text-align: center; }
+  .scan-history { list-style: none; padding: 0; margin: 6px 0 0; font-size: .8rem; color: var(--mls-ink-soft); }
+  .scan-history li { padding: 3px 0; border-top: 1px dashed var(--mls-line); }
   .tc-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; align-items: start; }
   .clock-card { text-align: center; padding: 22px 16px; } .clock-time { font-size: 2.6rem; font-weight: 800; letter-spacing: .02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
   .clock-date { color: var(--mls-ink-soft); margin-bottom: 10px; } .btn-punch { width: 100%; max-width: 360px; padding: 1rem; font-size: 1.25rem; font-weight: 800; border-radius: 14px; }
@@ -628,7 +655,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.15.0';
+  var VERSION = '1.16.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -650,6 +677,7 @@ window.MLS = (function () {
     { route: 'deliveries', title: 'My Deliveries', icon: 'fa-motorcycle', section: 'Operations', permission: 'DELIVERY_SELF', phase: 5 },
     { route: 'production', title: 'Production', icon: 'fa-soap', section: 'Operations', permission: 'PRODUCTION_VIEW', phase: 5 },
     { route: 'equipment', title: 'Equipment', icon: 'fa-screwdriver-wrench', section: 'Operations', permission: 'EQUIPMENT_VIEW', phase: 11 },
+    { route: 'bags', title: 'Bags', icon: 'fa-tags', section: 'Operations', phase: 11 },  // 1.16.0: BAG_SCAN while BagTracking is on (the module says, allowed())
     { route: 'incidents', title: 'Incidents', icon: 'fa-triangle-exclamation', section: 'Operations', permission: 'INCIDENT_VIEW', phase: 10 },
     { route: 'timeclock', title: 'Time Clock', icon: 'fa-clock', section: 'People', permission: 'TIMECLOCK_SELF', phase: 5 },
     { route: 'staff', title: 'Staff', icon: 'fa-id-badge', section: 'People', phase: 5 },
@@ -1123,6 +1151,7 @@ window.MLS = (function () {
         '.receipt-paper{border:0;margin:0 auto;font-family:"Courier New",monospace;font-size:12px;width:' + (roll ? '72mm' : '100%') + ';max-width:' + (roll ? 'none' : '420px') + '}.receipt-paper .c{text-align:center}.receipt-paper .r{text-align:right}.receipt-paper .row{display:flex;justify-content:space-between;gap:8px}.receipt-paper hr{border:0;border-top:1px dashed #999;margin:6px 0}.receipt-paper .big{font-weight:800;font-size:15px}.receipt-paper .strong{font-weight:800}.receipt-paper .muted{color:#555}.receipt-paper .foot{color:#777;font-size:11px;margin-top:6px}' +
         '.qr-box{display:flex;justify-content:center;margin:6px 0 2px}.qr-box svg{width:26mm;height:26mm}.track-link{font-size:9.5px;word-break:break-all;color:#333}' +
         '.labels{display:grid;grid-template-columns:' + (roll ? '1fr' : 'repeat(2,1fr)') + ';gap:' + (roll ? '0' : '6mm') + '}.label{border:' + (roll ? '0' : '1px dashed #999') + ';border-radius:4px;padding:' + (roll ? '2mm 0' : '4mm') + ';text-align:center;page-break-inside:avoid;' + (roll ? 'page-break-after:always;' : '') + '}.label .no{font-size:' + (roll ? '20px' : '22px') + ';font-weight:900;letter-spacing:.02em;font-family:"Courier New",monospace}.label .who{font-size:14px;font-weight:700;margin-top:2px}.label .meta{font-size:11px;color:#444}.label .qr-box svg{width:22mm;height:22mm}' +
+        '.label .bag{font-size:14px;font-weight:800;margin-top:2px}.label .code{font-family:"Courier New",monospace;font-size:' + (roll ? '19px' : '20px') + ';font-weight:900;letter-spacing:.14em;margin-top:1px}.label .bag-qr svg{width:' + (roll ? '30mm' : '28mm') + ';height:' + (roll ? '30mm' : '28mm') + '}' +
         '@media print{.no-print{display:none}}';
     },
     /** The business block every full-page document starts with: Print.header({ title, subtitle, business: { name, address, phone, taxId, branch } }) — the business defaults to the sign-in settings. */
@@ -1146,13 +1175,41 @@ window.MLS = (function () {
   };
 
   // ------------------------------------------------------------------ QR codes
-  /** A QR code as inline SVG (qrcode-generator, loaded in Index.html); an empty string when the library is unavailable, so callers print the link as text instead. */
+  /** A QR code as inline SVG (qrcode-generator, loaded in Index.html); an empty string when the library is unavailable, so callers print the link as text instead. opts: { level, mode (1.16.0: 'Alphanumeric' for a bag code — a smaller code), cellSize, margin, alt } */
+  // ------------------------------------------------------------------ photos
+  /**
+   * A photo from the camera or the gallery made small enough to send from a phone (1.15.0's proof of delivery; 1.16.0's bag photos): a
+   * JPEG at most 1280 px on its longest side, smaller again while over opts.maxBytes (2 MB). Resolves a data URL ('' without a file).
+   */
+  var Photo = {
+    shrink: function (file, opts) {
+      opts = opts || {}; var maxChars = Math.floor((opts.maxBytes || 2 * 1024 * 1024) * 4 / 3);
+      return new Promise(function (resolve, reject) {
+        if (!file) { resolve(''); return; }
+        if (file.type && !/^image\//.test(file.type)) { reject(new Error('Choose a photo (an image file)')); return; }
+        var url = URL.createObjectURL(file), img = new Image();
+        var draw = function (maxPx, quality) { var scale = Math.min(1, maxPx / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.naturalWidth * scale)); c.height = Math.max(1, Math.round(img.naturalHeight * scale)); var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', quality); };
+        img.onload = function () {
+          try {
+            var out = draw(1280, 0.7); if (out.length > maxChars) out = draw(1024, 0.5); if (out.length > maxChars) out = draw(800, 0.4);
+            URL.revokeObjectURL(url);
+            if (!/^data:image\/jpeg;base64,/.test(out)) { reject(new Error('This phone could not convert the photo to JPEG; take it again')); return; }
+            if (out.length > maxChars) { reject(new Error('The photo is too large even after shrinking it')); return; }
+            resolve(out);
+          } catch (e) { URL.revokeObjectURL(url); reject(e); }
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('The photo could not be read; take it again')); };
+        img.src = url;
+      });
+    }
+  };
+
   var Qr = {
     available: function () { return typeof window.qrcode === 'function'; },
     svg: function (text, opts) {
       if (!Qr.available() || !text) return '';
       opts = opts || {};
-      try { var q = window.qrcode(0, opts.level || 'M'); q.addData(String(text)); q.make(); return q.createSvgTag({ cellSize: opts.cellSize || 2, margin: opts.margin === undefined ? 0 : opts.margin, scalable: true, alt: opts.alt || 'QR code' }); } catch (e) { return ''; }
+      try { var q = window.qrcode(0, opts.level || 'M'); q.addData(String(text), opts.mode || undefined); q.make(); return q.createSvgTag({ cellSize: opts.cellSize || 2, margin: opts.margin === undefined ? 0 : opts.margin, scalable: true, alt: opts.alt || 'QR code' }); } catch (e) { return ''; }
     }
   };
 
@@ -1464,7 +1521,7 @@ window.MLS = (function () {
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else setTimeout(boot, 0);
 
-  return { version: VERSION, phase: APP_PHASE, host: HOST, MODULES: MODULES, AppState: AppState, Api: Api, Net: Net, Pwa: Pwa, Notify: Notify, Timing: Timing, runDeviceCheck: runDeviceCheck, UI: UI, Toast: Toast, Modal: Modal, Form: Form, Validator: Validator, Formatter: Formatter, Table: Table, Print: Print, Qr: Qr, Keys: Keys, Router: Router, Auth: Auth, openDevice: openDevice, start: start };
+  return { version: VERSION, phase: APP_PHASE, host: HOST, MODULES: MODULES, AppState: AppState, Api: Api, Net: Net, Pwa: Pwa, Notify: Notify, Timing: Timing, runDeviceCheck: runDeviceCheck, UI: UI, Toast: Toast, Modal: Modal, Form: Form, Validator: Validator, Formatter: Formatter, Table: Table, Print: Print, Photo: Photo, Qr: Qr, Keys: Keys, Router: Router, Auth: Auth, openDevice: openDevice, start: start };
 })();
 </script>
 
@@ -2326,6 +2383,7 @@ window.MLS = (function () {
     if (d.syncReview) out.push({ key: 'syncReview', label: 'Sync to review', icon: 'fa-flag', tone: d.syncReview.open > 0 ? 'warn' : '', value: n(d.syncReview.open), sub: d.syncReview.open > 0 ? 'accepted from devices, needs a look' : 'nothing flagged', href: '#/sync' });
     if (d.incidents) out.push({ key: 'incidents', label: 'Open incidents', icon: 'fa-triangle-exclamation', tone: d.incidents.open + d.incidents.inReview > 0 ? 'warn' : '', value: n(d.incidents.open + d.incidents.inReview), sub: d.incidents.inReview + ' in review · ' + d.incidents.today + ' today', href: '#/incidents' });
     if (d.equipment) { var eq = d.equipment, dueNow = eq.due.filter(function (x) { return x.State === 'DUE'; }).length; out.push({ key: 'equipment', label: 'Machines in service', icon: 'fa-screwdriver-wrench', tone: eq.down.length ? 'danger' : (dueNow ? 'warn' : ''), value: n(eq.machines - eq.down.length), sub: 'of ' + eq.machines + (eq.down.length ? ' · ' + eq.down.length + ' out of service' : '') + (dueNow ? ' · ' + plural(dueNow, 'service') + ' due' : ''), href: '#/equipment' }); }
+    if (d.bags) out.push({ key: 'bags', label: 'Bags to find', icon: 'fa-tags', tone: d.bags.missing ? 'danger' : (d.bags.notReady ? 'warn' : ''), value: n(d.bags.missing), sub: d.bags.notReady + ' on ready orders not scanned at ready', href: '#/bags' });  // 1.16.0
     if (d.followups) out.push({ key: 'followups', label: 'To follow up', icon: 'fa-comment-sms', tone: d.followups.unclaimed + d.followups.balances > 0 ? 'warn' : '', value: n(d.followups.unclaimed + d.followups.balances), sub: d.followups.unclaimed + ' unclaimed · ' + d.followups.balances + ' with a balance' });
     return out;
   }
@@ -2396,7 +2454,7 @@ window.MLS = (function () {
   }
   // the tiles come from dashboard.summary; the follow-ups, the incidents tile, the system health and the getting-started checklist from dashboard.extras, a second call the tiles never wait for
   var summary = null, extras = null;
-  function merged() { return Object.assign({}, summary || {}, extras ? { incidents: extras.incidents, followups: extras.followups, equipment: extras.equipment } : {}); }
+  function merged() { return Object.assign({}, summary || {}, extras ? { incidents: extras.incidents, followups: extras.followups, equipment: extras.equipment, bags: extras.bags } : {}); }
   /** Release 1.15.0: the machines out of service and those whose service is due or near, each opening its page. */
   function paintEquipment(x) {
     var eq = x && x.equipment, card = UI.el('dash-equip-card'); if (!eq || (!eq.down.length && !eq.due.length)) { card.hidden = true; return; }
@@ -2917,14 +2975,24 @@ window.MLS = (function () {
     var qr = d.business.showQr ? M.Qr.svg(link, { alt: 'Order status link' }) : '';
     return '<hr>' + (qr ? '<div class="qr-box">' + qr + '</div><div class="c small">Scan to see your order status</div>' : '') + '<div class="c track-link">' + UI.esc(link) + '</div>';
   }
-  /** Bag labels: one per bag with the order number, the customer and the tracking QR, on the label paper from Settings. */
+  /** Bag labels without bag codes (bag tracking off, or printed offline): one per bag with the order number, the customer and the tracking QR, on the label paper from Settings. */
   function labelsHtml(d) {
     var o = d.order, n = Math.max(1, Number(o.BagCount) || 1), link = d.tracking && d.tracking.link, qr = link ? M.Qr.svg(link, { alt: 'Order status link' }) : '', out = '';
     for (var i = 1; i <= n; i++) out += '<div class="label"><div class="no">' + UI.esc(o.OrderNo) + '</div><div class="who">' + UI.esc(o.CustomerName) + '</div><div class="meta">Bag ' + i + ' of ' + n + (o.IsExpress ? ' · EXPRESS' : '') + (o.DueAt ? ' · due ' + UI.esc(F.datetime(o.DueAt)) : '') + '</div>' + (qr ? '<div class="qr-box">' + qr + '</div>' : '') + '<div class="meta">' + UI.esc(d.business.name) + (d.branch.name ? ' · ' + UI.esc(d.branch.name) : '') + '</div></div>';
     return '<div class="labels">' + out + '</div>';
   }
-  function printLabels(orderId) {
-    return Api.call('orders.receipt', { id: orderId }, { busy: true }).then(function (d) { M.Print.open(labelsHtml(d), { title: 'Labels ' + d.order.OrderNo, size: d.business.labelPaperSize, margin: d.business.labelPaperSize === '80mm' ? '2mm' : '10mm' }); return d; }).catch(function (e) { Toast.danger(UI.error(e)); });
+  function printPlainLabels(d) { M.Print.open(labelsHtml(d), { title: 'Labels ' + d.order.OrderNo, size: d.business.labelPaperSize, margin: d.business.labelPaperSize === '80mm' ? '2mm' : '10mm' }); return d; }
+  /**
+   * The labels of an order. With bag tracking on (1.16.0) each label carries its bag's code (M.Bags.printLabels, bagId for one bag); without a
+   * connection the labels print without the codes, and say so.
+   */
+  function printLabels(orderId, bagId) {
+    var plain = function () { return Api.call('orders.receipt', { id: orderId }, { busy: true }).then(printPlainLabels); };
+    if (M.Bags && M.Bags.on()) return M.Bags.printLabels(orderId, bagId).catch(function (e) {
+      if (e && (e.offline || e.code === 'NETWORK' || e.code === 'TIMEOUT')) return plain().then(function (d) { Toast.warning('No connection: these labels carry no bag codes. Print them again once the connection is back.', 9000); return d; });
+      throw e;
+    }).catch(function (e) { Toast.danger(UI.error(e)); });
+    return plain().catch(function (e) { Toast.danger(UI.error(e)); });
   }
   /** The receipt dialog. given: the receipt the checkout's own answer carried (1.8.1), so the POS prints without a second round trip; otherwise orders.receipt is asked. */
   function printReceipt(orderId, given) {
@@ -3024,8 +3092,10 @@ window.MLS = (function () {
       '<div class="row mt-3"><div class="col-md-7"><h6 class="fw-bold">Payments</h6><div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>When</th><th>Type</th><th>Method</th><th>By</th><th class="text-end">Amount</th><th></th></tr></thead><tbody>' + pays + '</tbody></table></div></div>' +
       '<div class="col-md-5"><div class="totals mt-2"><span>Subtotal</span><span class="money">' + F.peso(o.Subtotal) + '</span>' + (Number(o.DiscountAmount) ? '<span>Discount' + (o.DiscountReason ? ' <span class="text-soft small">' + UI.esc(o.DiscountReason) + '</span>' : '') + '</span><span class="money">-' + F.peso(o.DiscountAmount) + '</span>' : '') + (Number(o.DeliveryFee) ? '<span>Delivery fee</span><span class="money">' + F.peso(o.DeliveryFee) + '</span>' : '') + (Number(o.OtherCharges) ? '<span>Other charges</span><span class="money">' + F.peso(o.OtherCharges) + '</span>' : '') + '<span class="fw-bold">Total</span><span class="grand money">' + F.peso(o.OrderTotal) + '</span><span>Paid</span><span class="money">' + F.peso(o.PaidAmount) + '</span><span class="fw-bold">' + (Number(o.BalanceAmount) < 0 ? 'Overpaid' : 'Balance') + '</span><span class="money fw-bold ' + (Number(o.BalanceAmount) > 0 ? 'text-danger' : (Number(o.BalanceAmount) < 0 ? 'text-warning-emphasis' : 'text-success')) + '"' + (Number(o.BalanceAmount) < 0 ? ' title="More was paid than the order total — a payment taken offline on another device; refund the excess (Sync → Needs review)"' : '') + '>' + F.peso(Math.abs(Number(o.BalanceAmount))) + '</span></div></div></div>' +
       (o.Notes ? '<div class="alert alert-light border small mt-3 mb-0"><i class="fa-regular fa-note-sticky me-1"></i>' + UI.esc(o.Notes) + '</div>' : '') +
+      (o.Bags && M.Bags ? M.Bags.sectionHtml(o) : '') +  // 1.16.0: the order's bags while bag tracking is on
       '<h6 class="fw-bold mt-3">Timeline</h6><ul class="timeline">' + tl + '</ul>');
     UI.el('order-modal-body').querySelectorAll('[data-void]').forEach(function (b) { b.onclick = function () { voidPayment(b.getAttribute('data-void')); }; });
+    if (o.Bags && M.Bags) M.Bags.wireSection(UI.el('order-modal-body'), o, function () { Api.call('orders.get', { id: o.Id }).then(changed).catch(function () { /* keep the view */ }); });
     var t = o.Transitions, can = M.Auth.can, acts = [];
     if (can('ORDER_STATUS') && t.indexOf('PROCESSING') >= 0) acts.push(['status', 'PROCESSING', 'btn-outline-primary', 'fa-play', 'Start processing']);
     if (can('ORDER_STATUS') && t.indexOf('READY') >= 0) acts.push(['status', 'READY', 'btn-outline-success', 'fa-bag-shopping', 'Mark ready']);
@@ -3046,14 +3116,20 @@ window.MLS = (function () {
     var o = current; if (!o) return;
     var fail = function (e) { Toast.danger(UI.error(e)); };
     if (action === 'status') return Api.call('orders.setStatus', { id: o.Id, status: arg }, { busy: true }).then(function (r) { Toast.success(o.OrderNo + ' is now ' + r.StatusLabel.toLowerCase()); changed(r); }).catch(fail);
-    if (action === 'release') return M.Modal.confirm({ title: 'Release ' + o.OrderNo, body: Number(o.BalanceAmount) > 0 ? 'The balance of ' + F.peso(o.BalanceAmount) + ' stays as a receivable. Hand the laundry to the customer?' : 'Hand the laundry to the customer?', okText: 'Release' }).then(function (yes) { if (!yes) return; return Api.call('orders.release', { id: o.Id }, { busy: true }).then(function (r) { Toast.success(o.OrderNo + ' released'); changed(r); }).catch(fail); });
+    if (action === 'release') {
+      // 1.16.0: with bags not seen at ready the hand-over check opens first (scan them at the counter, or hand over without them as BagCheck allows)
+      var doRelease = function (extra) { return Api.call('orders.release', Object.assign({ id: o.Id }, extra || {}), { busy: true }).then(function (r) { Toast.success(o.OrderNo + ' released'); changed(r); return r; }); };
+      var viaBags = function () { return M.Bags.handover({ title: 'Release ' + o.OrderNo, orderIds: [o.Id], stage: 'COMPLETED', confirmText: 'Release', hint: Number(o.BalanceAmount) > 0 ? 'The balance of ' + F.peso(o.BalanceAmount) + ' stays as a receivable.' : '', onConfirm: doRelease }); };
+      if (M.Bags && M.Bags.unaccounted(o).length) return viaBags();
+      return M.Modal.confirm({ title: 'Release ' + o.OrderNo, body: Number(o.BalanceAmount) > 0 ? 'The balance of ' + F.peso(o.BalanceAmount) + ' stays as a receivable. Hand the laundry to the customer?' : 'Hand the laundry to the customer?', okText: 'Release' }).then(function (yes) { if (!yes) return; return doRelease().catch(function (e) { if (e && e.fields && e.fields.bags && M.Bags) return viaBags(); fail(e); }); });
+    }
     if (action === 'pay') return openPayment({ title: 'Payment for ' + o.OrderNo, balance: o.BalanceAmount, onSubmit: function (p) { return Api.call('payments.create', { orderId: o.Id, amount: p.amount, method: p.method, referenceNo: p.referenceNo, notes: p.notes, requestId: UI.uuid() }).then(function (r) { Toast.success('Payment of ' + F.peso(p.amount) + ' recorded' + (M.Sms && M.Sms.can(r.order.Mobile) ? ' — Text customer › Payment received sends the confirmation' : '')); changed(r.order); return r; }); } });
     if (action === 'refund') return openReason({ title: 'Refund on ' + o.OrderNo, hint: 'Up to ' + F.peso(o.PaidAmount) + ' has been paid. The refund is recorded against this order.', withAmount: true, amountMax: o.PaidAmount, confirmText: 'Refund', danger: true, onSubmit: function (d) { return Api.call('payments.refund', { orderId: o.Id, amount: d.amount, method: d.method, referenceNo: d.referenceNo, reason: d.reason, requestId: UI.uuid() }).then(function (r) { Toast.success('Refund of ' + F.peso(d.amount) + ' recorded'); changed(r.order); return r; }); } });
     if (action === 'cancel') return openReason({ title: 'Cancel ' + o.OrderNo, hint: 'Products go back to stock. ' + (Number(o.PaidAmount) > 0 ? F.peso(o.PaidAmount) + ' has been paid and will need a refund.' : ''), confirmText: 'Cancel order', danger: true, onSubmit: function (d) { return Api.call('orders.cancel', { id: o.Id, reason: d.reason }).then(function (r) { Toast.warning(o.OrderNo + ' cancelled'); changed(r); return r; }); } });
     if (action === 'note') return openReason({ title: 'Note on ' + o.OrderNo, label: 'Note', confirmText: 'Add note', onSubmit: function (d) { return Api.call('orders.addNote', { id: o.Id, note: d.reason }).then(function (r) { changed(r); return r; }); } });
     if (action === 'correct') { Modal.get('order-modal').hide(); M.Router.go('pos', { edit: o.Id }); return; }
     if (action === 'print') return printReceipt(o.Id);
-    if (action === 'labels') return printLabels(o.Id);
+    if (action === 'labels') return printLabels(o.Id).then(function (d) { if (d && d.bags && d.bags.length && !o.Bags) Api.call('orders.get', { id: o.Id }).then(changed).catch(function () { /* keep the view */ }); });  // labels printed for an order taken before tracking: its bags now exist
     if (action === 'incident') return M.Incidents.report({ orderId: o.Id, orderNo: o.OrderNo }, function () { Api.call('orders.get', { id: o.Id }).then(changed).catch(fail); });
   }
   function voidPayment(paymentId) {
@@ -3098,7 +3174,7 @@ window.MLS = (function () {
     render: function (el, params) { wire(); if (params && params.status) state.status = params.status; load().then(function () { if (params && params.open) openOrder(params.open, function () { load(); }); }); },
     refresh: function (el, params) { resetMeta(); if (params && params.status) { state.status = params.status; UI.el('orders-tabs').querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x.getAttribute('data-status') === state.status); }); } load().then(function () { if (params && params.open) openOrder(params.open, function () { load(); }); }); }
   });
-  M.OrdersUI = { meta: getMeta, resetMeta: resetMeta, openOrder: openOrder, openPayment: openPayment, openReason: openReason, printReceipt: printReceipt, printLabels: printLabels, receiptHtml: receiptHtml, methodLabel: methodLabel };
+  M.OrdersUI = { meta: getMeta, resetMeta: resetMeta, openOrder: openOrder, openPayment: openPayment, openReason: openReason, printReceipt: printReceipt, printLabels: printLabels, printPlainLabels: printPlainLabels, receiptHtml: receiptHtml, methodLabel: methodLabel };
 })();
 </script>
 
@@ -4013,7 +4089,7 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — ProductionPage.html: the Production module: the board (queue → washing → drying → folding → QC → ready) with one-tap stage moves, the machine each stage runs on (picked from the branch's registered machines, release 1.15.0) and the QC pass/fail decision. -->
+        <!-- Mrs Laundry Sys — ProductionPage.html: the Production module: the board (queue → washing → drying → folding → QC → ready) with one-tap stage moves, the machine each stage runs on (picked from the branch's registered machines, release 1.15.0), the QC pass/fail decision and (1.16.0) how many of each order's bags were scanned at its stage. -->
 <section id="view-production" class="view" hidden>
   <div class="view-head">
     <h2>Production</h2>
@@ -4053,6 +4129,12 @@ window.MLS = (function () {
   /** The registered machines of the order's branch that serve a stage (out-of-service ones included, shown disabled). */
   function machinesFor(c, stage) { return ((board && board.machines) || []).filter(function (m) { return m.BranchId === c.BranchId && (m.Stages || []).indexOf(stage) >= 0; }); }
 
+  /** 1.16.0: how many of the order's bags were scanned at its stage (in at intake, at ready for the ready column), while bag tracking is on. */
+  function bagChip(c, col) {
+    var b = c.Bags; if (!b || !b.n) return '';
+    var where = col === 'QUEUE' ? 'scanned in' : (col === 'READY' ? 'at ready' : 'here'), cls = b.missing ? ' missing' : (b.here < b.n ? ' short' : '');
+    return '<span class="bag-chip ms-auto' + cls + '" title="' + b.here + ' of ' + b.n + ' bags ' + where + (b.missing ? ' · ' + b.missing + ' missing' : '') + '"><i class="fa-solid fa-tags"></i>' + b.here + '/' + b.n + '</span>';
+  }
   function card(c, col) {
     var acts = '';
     if (canUpdate()) {
@@ -4062,7 +4144,7 @@ window.MLS = (function () {
     // the clock is this device's: minutes in stage and overdue are counted from the timestamps, not from the moment the server answered
     var now = Date.now(), overdue = c.DueAt ? new Date(c.DueAt).getTime() < now : !!c.Overdue, minutes = c.StageSince ? Math.max(0, Math.round((now - new Date(c.StageSince).getTime()) / 60000)) : c.MinutesInStage;
     return '<div class="kcard' + (c.IsExpress ? ' express' : '') + (overdue && col !== 'READY' ? ' overdue' : '') + '" data-open="' + UI.esc(c.Id) + '">' +
-      '<div class="d-flex align-items-center gap-2"><span class="no">' + UI.esc(c.OrderNo) + '</span>' + (c.IsExpress ? '<span class="badge text-bg-warning">Express</span>' : '') + (c.ServiceType === 'DELIVERY' ? '<i class="fa-solid fa-motorcycle text-soft" title="For delivery"></i>' : '') + '</div>' +
+      '<div class="d-flex align-items-center gap-2"><span class="no">' + UI.esc(c.OrderNo) + '</span>' + (c.IsExpress ? '<span class="badge text-bg-warning">Express</span>' : '') + (c.ServiceType === 'DELIVERY' ? '<i class="fa-solid fa-motorcycle text-soft" title="For delivery"></i>' : '') + bagChip(c, col) + '</div>' +
       '<div class="small">' + UI.esc(c.CustomerName) + '</div>' +
       '<div class="meta">' + UI.esc((c.Lines && c.Lines.length ? c.Lines.join(' · ') : F.qty(c.TotalWeightKg, 'kg'))) + (c.BagCount ? ' · ' + c.BagCount + ' bag' + (c.BagCount === 1 ? '' : 's') : '') + (c.MachineNo ? ' · machine ' + UI.esc(c.MachineNo) : '') + '</div>' +
       '<div class="meta"><span class="due">' + (c.DueAt ? (overdue && col !== 'READY' ? 'Overdue · due ' : 'Due ') + F.datetime(c.DueAt) : 'No due time') + '</span></div>' +
@@ -4905,16 +4987,22 @@ window.MLS = (function () {
     return items;
   }
 
+  /** A stop's bags (1.16.0, while bag tracking is on): how many, how many were seen at ready, how many are missing. */
+  function bagsText(b) { return b.n + ' bag' + (b.n === 1 ? '' : 's') + (b.n ? ' (' + b.ready + ' at ready' + (b.missing ? ', <b class="text-danger">' + b.missing + ' missing</b>' : '') + ')' : ''); }
+  function canScanBags(j) { return !!(M.Bags && M.Bags.on() && M.Auth.can('BAG_SCAN') && j.JobType === 'DELIVERY' && j.IsOpen && !j._pending && j.Items.some(function (i) { return i.Bags && i.Bags.n; })); }
+  /** The orders of a delivery whose bags were not all seen at ready: what the hand-over check would name when the rider starts. */
+  function unseenBags(j) { if (!M.Bags || !M.Bags.on() || M.Bags.checkMode() === 'OFF' || j.JobType !== 'DELIVERY') return 0; return j.Items.reduce(function (t, i) { return t + (i.Bags && i.OrderStatus === 'READY' ? i.Bags.n - i.Bags.ready : 0); }, 0); }
   /** The job card used by My Deliveries and the Dispatch job page. opts: { compact, onChange } */
   function jobCard(j, opts) {
     opts = opts || {};
-    var orders = j.Items.length ? '<ul class="orders list-unstyled mb-0 mt-2">' + j.Items.map(function (i) { return '<li><span><span class="fw-bold">' + UI.esc(i.OrderNo) + '</span> <span class="small text-soft">' + UI.esc(i.CustomerName) + (i.BagCount ? ' · ' + i.BagCount + ' bag' + (i.BagCount === 1 ? '' : 's') : '') + '</span></span><span class="small ' + (Number(i.AmountToCollect) > 0 ? 'text-danger fw-bold' : 'text-soft') + '">' + (Number(i.AmountToCollect) > 0 ? 'collect ' + F.peso(i.AmountToCollect) : 'paid') + (Number(i.CollectedAmount) > 0 ? ' · got ' + F.peso(i.CollectedAmount) : '') + '</span></li>'; }).join('') + '</ul>' : '';
+    var orders = j.Items.length ? '<ul class="orders list-unstyled mb-0 mt-2">' + j.Items.map(function (i) { return '<li><span><span class="fw-bold">' + UI.esc(i.OrderNo) + '</span> <span class="small text-soft">' + UI.esc(i.CustomerName) + (i.Bags && i.Bags.n ? ' · ' + bagsText(i.Bags) : (i.BagCount ? ' · ' + i.BagCount + ' bag' + (i.BagCount === 1 ? '' : 's') : '')) + '</span></span><span class="small ' + (Number(i.AmountToCollect) > 0 ? 'text-danger fw-bold' : 'text-soft') + '">' + (Number(i.AmountToCollect) > 0 ? 'collect ' + F.peso(i.AmountToCollect) : 'paid') + (Number(i.CollectedAmount) > 0 ? ' · got ' + F.peso(i.CollectedAmount) : '') + '</span></li>'; }).join('') + '</ul>' : '';
     var acts = (j.Actions || []).filter(function (a) { return ['accept', 'start', 'complete', 'fail'].indexOf(a) >= 0; }).map(function (a) {
       var spec = { accept: ['btn-primary', 'fa-hand', 'Accept'], start: ['btn-primary', 'fa-motorcycle', j.JobType === 'PICKUP' ? 'On my way' : 'Start delivery'], complete: ['btn-success', 'fa-check', j.JobType === 'PICKUP' ? 'Picked up' : 'Delivered'], fail: ['btn-outline-danger', 'fa-xmark', 'Could not ' + (j.JobType === 'PICKUP' ? 'pick up' : 'deliver')] }[a];
       return '<button type="button" class="btn ' + spec[0] + '" data-act="' + a + '" data-id="' + UI.esc(j.Id) + '"><i class="fa-solid ' + spec[1] + ' me-1"></i>' + spec[2] + '</button>';
     }).join('');
     var link = mapLink(j), nav = navLink(j);
-    var extra = (M.Sms && M.Sms.can(j.Mobile) ? M.Sms.menuHtml({ id: 'job-sms-' + j.Id, items: smsItems(j), cls: 'btn-outline-primary' }) : '') + (M.Auth.can('INCIDENT_CREATE') ? '<button type="button" class="btn btn-sm btn-outline-warning" data-incident="' + UI.esc(j.Id) + '"><i class="fa-solid fa-triangle-exclamation me-1"></i>Report incident</button>' : '');
+    var extra = (M.Sms && M.Sms.can(j.Mobile) ? M.Sms.menuHtml({ id: 'job-sms-' + j.Id, items: smsItems(j), cls: 'btn-outline-primary' }) : '') + (M.Auth.can('INCIDENT_CREATE') ? '<button type="button" class="btn btn-sm btn-outline-warning" data-incident="' + UI.esc(j.Id) + '"><i class="fa-solid fa-triangle-exclamation me-1"></i>Report incident</button>' : '') +
+      (canScanBags(j) && !opts.readOnly ? '<button type="button" class="btn btn-sm btn-outline-primary" data-bagscan="' + UI.esc(j.Id) + '"><i class="fa-solid fa-tags me-1"></i>Scan bags</button>' : '');
     return '<div class="job-card' + (j.IsOpen ? '' : ' done') + '" data-job="' + UI.esc(j.Id) + '">' +
       '<div class="d-flex align-items-center gap-2 flex-wrap"><span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>' + UI.badge(j.Status, statusLabel(j.Status)) + (j._pending ? '<span class="pending-tag" title="Recorded on this phone; the server has not received it yet">not synced</span>' : '') + windowTag(j) + '<span class="ms-auto small text-soft">' + UI.esc(j.Id) + '</span></div>' +
       '<div class="who mt-1">' + UI.esc(j.CustomerName || 'Customer') + '</div>' +
@@ -4933,15 +5021,31 @@ window.MLS = (function () {
       if (M.Sms) M.Sms.wireMenu(card, function (arg) { return { deliveryId: id, orderId: arg || '' }; });
       var inc = card.querySelector('[data-incident]'); if (inc) inc.onclick = function () { M.Incidents.report({ deliveryId: id, customerName: (card.querySelector('.who') || {}).textContent }); };
       var pr = card.querySelector('[data-proof]'); if (pr) pr.onclick = function () { openProof(id); };
+      var bs = card.querySelector('[data-bagscan]'); if (bs) bs.onclick = function () { scanBags(id, onChange); };
     });
   }
   function act(id, action, onChange) {
     var done = function (j, msg) { if (msg) Toast.success(msg); if (onChange) onChange(j); };
     var fail = function (e) { Toast.danger(UI.error(e)); };
     if (action === 'accept') return Api.call('deliveries.accept', { id: id }, { busy: true }).then(function (j) { done(j, 'Job accepted'); }).catch(fail);
-    if (action === 'start') return Api.call('deliveries.start', { id: id }, { busy: true }).then(function (j) { done(j, j.JobType === 'PICKUP' ? 'On the way to the customer' : 'Out for delivery'); }).catch(fail);
+    if (action === 'start') {
+      // 1.16.0: the bags of the delivery go through the hand-over check first when some were not seen at ready (scan them, or leave without them as BagCheck allows)
+      var go = function (extra) { return Api.call('deliveries.start', Object.assign({ id: id }, extra || {}), { busy: true }).then(function (j) { done(j, j.JobType === 'PICKUP' ? 'On the way to the customer' : 'Out for delivery'); return j; }); };
+      var viaBags = function (j) { return M.Bags.handover({ title: 'Start delivery ' + j.Id, orderIds: j.Items.filter(function (i) { return i.OrderStatus === 'READY'; }).map(function (i) { return i.OrderId; }), stage: 'OUT_FOR_DELIVERY', confirmText: 'Start delivery', hint: 'Scan each bag as it goes on the motorbike.', onConfirm: go }); };
+      // a device that has not yet learned that tracking was switched on (it learns a settings change when it next starts) is told by the server: its refusal opens the check
+      var told = function (e) { if (e && e.fields && e.fields.bags && M.Bags) return Api.call('dispatch.get', { id: id }, { noOffline: true }).then(viaBags); throw e; };
+      if (!M.Bags || !M.Bags.on() || (M.Net && M.Net.state() !== 'online')) return go().catch(told).catch(fail);  // offline the start is kept for the server, which flags bags not seen (never refused)
+      return Api.call('dispatch.get', { id: id }, { noOffline: true }).then(function (j) { if (unseenBags(j)) return viaBags(j); return go().catch(function (e) { if (e && e.fields && e.fields.bags) return viaBags(j); throw e; }); }, function (e) { if (e && (e.code === 'NETWORK' || e.code === 'TIMEOUT')) return go(); throw e; }).catch(fail);
+    }
     if (action === 'fail') return M.OrdersUI.openReason({ title: 'Could not complete the job', hint: 'The orders go back to the shop as ready.', label: 'Reason', confirmText: 'Mark failed', danger: true, onSubmit: function (d) { return Api.call('deliveries.fail', { id: id, reason: d.reason }).then(function (j) { Toast.warning('Job marked failed'); if (onChange) onChange(j); return j; }); } });
     if (action === 'complete') return Api.call('dispatch.get', { id: id }).then(function (j) { openComplete(j, onChange); }).catch(fail);
+  }
+  /** Scanning a delivery's bags without starting it (before leaving: at Out with the rider; on the road: at Handed over, at the door) — a bag of another order on the motorbike is refused. */
+  function scanBags(id, onChange) {
+    return Api.call('dispatch.get', { id: id }).then(function (j) {
+      var onRoad = j.Status === 'OUT_FOR_DELIVERY';
+      return M.Bags.handover({ title: 'Bags · job ' + j.Id, orderIds: j.Items.map(function (i) { return i.OrderId; }), stage: onRoad ? 'COMPLETED' : 'OUT_FOR_DELIVERY', checkOnly: true, hint: onRoad ? 'At the door: scan each bag as you hand it over.' : 'Before leaving: scan each bag as it goes on the motorbike.' }).then(function () { if (onChange) onChange(j); });
+    }).catch(function (e) { Toast.danger(UI.error(e)); });
   }
   // ---------------------------------------------------------------- proof of delivery (1.15.0, R17)
   /** ProofOfDelivery (OFF | OPTIONAL | REQUIRED) and ProofKinds as the settings say. */
@@ -4950,27 +5054,8 @@ window.MLS = (function () {
     kinds = kinds.map(function (k) { return String(k).toUpperCase(); });
     return { mode: ['OFF', 'OPTIONAL', 'REQUIRED'].indexOf(mode) >= 0 ? mode : 'OFF', photo: kinds.indexOf('PHOTO') >= 0, signature: kinds.indexOf('SIGNATURE') >= 0, keepDays: Number(st.ProofKeepDays) || 0 };
   }
-  var PHOTO_MAX_CHARS = Math.floor(2 * 1024 * 1024 * 4 / 3);
-  /** The camera's photo made small enough to send from a phone: a JPEG at most 1280 px on its longest side (smaller again when still over 2 MB). */
-  function shrinkPhoto(file) {
-    return new Promise(function (resolve, reject) {
-      if (!file) { resolve(''); return; }
-      if (file.type && !/^image\//.test(file.type)) { reject(new Error('Choose a photo (an image file)')); return; }
-      var url = URL.createObjectURL(file), img = new Image();
-      var draw = function (maxPx, quality) { var scale = Math.min(1, maxPx / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.naturalWidth * scale)); c.height = Math.max(1, Math.round(img.naturalHeight * scale)); var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', quality); };
-      img.onload = function () {
-        try {
-          var out = draw(1280, 0.7); if (out.length > PHOTO_MAX_CHARS) out = draw(1024, 0.5); if (out.length > PHOTO_MAX_CHARS) out = draw(800, 0.4);
-          URL.revokeObjectURL(url);
-          if (!/^data:image\/jpeg;base64,/.test(out)) { reject(new Error('This phone could not convert the photo to JPEG; take it again')); return; }
-          if (out.length > PHOTO_MAX_CHARS) { reject(new Error('The photo is too large even after shrinking it')); return; }
-          resolve(out);
-        } catch (e) { URL.revokeObjectURL(url); reject(e); }
-      };
-      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('The photo could not be read; take it again')); };
-      img.src = url;
-    });
-  }
+  /** The camera's photo made small enough to send from a phone (M.Photo.shrink: a JPEG at most 1280 px on its longest side, smaller again while over 2 MB). */
+  function shrinkPhoto(file) { return M.Photo.shrink(file, { maxBytes: 2 * 1024 * 1024 }); }
   /** A finger-drawn signature on a canvas; exported as a PNG at most 600 px wide on white. */
   function signaturePad(canvas) {
     var g = null, drawing = false, last = null, signed = false;
@@ -7051,7 +7136,7 @@ window.MLS = (function () {
         card('Backups', '<div class="small mb-2" id="set-bk-status">' + backupStatusHtml(r.backup, r.health) + '</div><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-bk-run"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Back up now</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-bk-verify"' + (r.backup && r.backup.lastOkId ? '' : ' disabled') + '><i class="fa-solid fa-clipboard-check me-1"></i>Verify last backup</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-bk-list"><i class="fa-solid fa-list me-1"></i>Recent backups</button></div><p class="small text-soft mt-2 mb-0">A backup is a copy of the database spreadsheet — and of every archive spreadsheet that changed — in the Drive folder <b>Mrs Laundry Sys Backups</b> of the account that owns the script, made every night at about 1 am while <b>BackupDaily</b> is on and kept for <b>BackupKeepDays</b> days. Verify opens a copy and checks every table and its row count against what the run recorded; the live database is never touched. A failed run is listed here and in the audit log, and e-mailed to <b>AlertEmail</b> when set. How to restore: sheet menu → Recovery information, and DEPLOY.md section 9.</p><div id="set-bk-out" class="mt-3"></div><div id="set-bk-rows" class="mt-2"></div>') +
         card('Database', '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-mt-validate"><i class="fa-solid fa-check-double me-1"></i>Validate database</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-mt-repair"><i class="fa-solid fa-screwdriver-wrench me-1"></i>Repair database</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-triggers"><i class="fa-solid fa-clock me-1"></i>Install triggers</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-purge"><i class="fa-solid fa-broom me-1"></i>Purge sessions</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-cache"><i class="fa-solid fa-eraser me-1"></i>Clear cache</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-verify"><i class="fa-solid fa-fingerprint me-1"></i>Verify installation</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-endpoints"><i class="fa-solid fa-list me-1"></i>Endpoints</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-browser"><i class="fa-solid fa-bug me-1"></i>Browser error details</button></div><p class="small text-soft mt-2 mb-0">Validate reads only. Repair runs Initialize again (missing sheets, columns and seeds), then rebuilds stock levels from the ledger, recomputes order totals and fixes sequences; every fix is audited and nothing is deleted. Verify installation compares every installed file with the release it came from.</p><div id="set-mt-out" class="mt-3"></div>') +
         card('Archive', '<p class="small text-soft mb-2">Closed history older than the <b>ArchiveKeepMonths</b> setting (orders completed, cancelled or refunded with nothing open attached — with their lines, timeline, payments, production log, delivery items, messages and incidents — plus finished jobs, approved end-of-day reports, expenses and audit rows) moves to a separate archive spreadsheet so the live sheets stay fast. Customers, the catalog, stock and its ledger, purchases, staff, time logs and payroll are never archived.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-ar-plan"><i class="fa-solid fa-magnifying-glass me-1"></i>What would be archived</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-ar-run" disabled><i class="fa-solid fa-box-archive me-1"></i>Archive now</button></div><div id="set-ar-out" class="mt-3"></div>') +
-        card('Privacy', '<p class="small text-soft mb-2">A customer\'s personal data is erased on request from the customer page (<b>CUSTOMER_ERASE</b>): name, number, e-mail, address, location and notes go from the customer, the orders, the deliveries, the messages, the audit copies and the archives; the orders and their amounts stay under a pseudonym. The nightly job does the same for customers with no order for <b>CustomerRetentionDays</b> (0 keeps everyone); the receipt and the tracking page carry the <b>PrivacyNotice</b> line. Proof-of-delivery photos and signatures (<b>ProofOfDelivery</b>) are personal data too: they stay in a private Drive folder, an erasure removes the customer\'s, and the nightly job removes those older than <b>ProofKeepDays</b>.</p><div class="small mb-2" id="set-rt-status">Loading…</div><div class="small mb-2" id="set-pf-status"></div><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-danger btn-sm" id="set-rt-run" disabled><i class="fa-solid fa-user-slash me-1"></i>Apply retention now</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-pf-run" disabled><i class="fa-solid fa-image me-1"></i>Remove expired proofs</button></div><div class="mt-2" id="set-rt-out"></div>');
+        card('Privacy', '<p class="small text-soft mb-2">A customer\'s personal data is erased on request from the customer page (<b>CUSTOMER_ERASE</b>): name, number, e-mail, address, location and notes go from the customer, the orders, the deliveries, the messages, the audit copies and the archives; the orders and their amounts stay under a pseudonym. The nightly job does the same for customers with no order for <b>CustomerRetentionDays</b> (0 keeps everyone); the receipt and the tracking page carry the <b>PrivacyNotice</b> line. Proof-of-delivery photos and signatures (<b>ProofOfDelivery</b>) and the bags\' before-processing photos (<b>BagPhotos</b>) are personal data too: they stay in private Drive folders, an erasure removes the customer\'s, and the nightly job removes those older than <b>ProofKeepDays</b> and <b>BagPhotoKeepDays</b>.</p><div class="small mb-2" id="set-rt-status">Loading…</div><div class="small mb-2" id="set-pf-status"></div><div class="small mb-2" id="set-bp-status"></div><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-danger btn-sm" id="set-rt-run" disabled><i class="fa-solid fa-user-slash me-1"></i>Apply retention now</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-pf-run" disabled><i class="fa-solid fa-image me-1"></i>Remove expired photos</button></div><div class="mt-2" id="set-rt-out"></div>');
         card('Rows per table', '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><tbody>' + chunk(Object.keys(r.rows), 3).map(function (row) { return '<tr>' + row.map(function (t) { return '<td class="text-soft">' + UI.esc(t) + '</td><td class="text-end fw-bold">' + F.number(r.rows[t], 0) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>');
       var out = function (html) { UI.html('set-mt-out', html); };
       UI.el('set-mt-refresh').onclick = tabMaintenance;
@@ -7072,10 +7157,12 @@ window.MLS = (function () {
       var rtStatus = function () { Api.call('maintenance.retention', {}).then(function (s) { UI.html('set-rt-status', !s.days ? 'Retention is <b>off</b> (CustomerRetentionDays = 0): nothing is erased by the nightly job.' : 'Retention: <b>' + s.days + ' days</b> · ' + (s.due ? '<b>' + s.due + ' customer' + (s.due === 1 ? '' : 's') + '</b> with no order since ' + UI.esc(s.cutoff) + ' due (up to ' + s.batch + ' a run)' + (s.sample.length ? ': ' + s.sample.map(function (c) { return UI.esc(c.FullName) + (c.LastOrderDate ? ' (' + UI.esc(c.LastOrderDate) + ')' : ''); }).join(', ') + (s.due > s.sample.length ? ', …' : '') : '') : 'nobody due')); UI.el('set-rt-run').disabled = !(s.days && s.due);
         // 1.15.0: the proofs of delivery kept, and how many are past ProofKeepDays
         var pf = s.proofs; UI.html('set-pf-status', !pf ? '' : 'Proofs of delivery: <b>' + pf.kept + '</b> file' + (pf.kept === 1 ? '' : 's') + ' kept (' + (pf.bytes >= 1048576 ? F.number(pf.bytes / 1048576, 1) + ' MB' : F.number(pf.bytes / 1024, 0) + ' KB') + ')' + (pf.keepDays ? ' · kept ' + pf.keepDays + ' days · ' + (pf.due ? '<b>' + pf.due + '</b> older than that (up to ' + pf.batch + ' a run)' : 'none older than that') : ' · ProofKeepDays is 0: kept until removed') + (pf.folder ? ' · Drive folder <i>' + UI.esc(pf.folder.name) + '</i>' : ''));
-        UI.el('set-pf-run').disabled = !(pf && pf.keepDays && pf.due); }).catch(function (e) { UI.html('set-rt-status', '<span class="text-danger">' + UI.esc(UI.error(e)) + '</span>'); }); };
+        // 1.16.0: the bags' before-processing photos, kept for BagPhotoKeepDays
+        var bp = s.bagPhotos, size = function (b) { return b >= 1048576 ? F.number(b / 1048576, 1) + ' MB' : F.number(b / 1024, 0) + ' KB'; }; UI.html('set-bp-status', !bp ? '' : 'Bag photos: <b>' + bp.kept + '</b> file' + (bp.kept === 1 ? '' : 's') + ' kept (' + size(bp.bytes) + ')' + (bp.keepDays ? ' · kept ' + bp.keepDays + ' days · ' + (bp.due ? '<b>' + bp.due + '</b> older than that (up to ' + bp.batch + ' a run)' : 'none older than that') : ' · BagPhotoKeepDays is 0: kept until removed') + (bp.folder ? ' · Drive folder <i>' + UI.esc(bp.folder.name) + '</i>' : ''));
+        UI.el('set-pf-run').disabled = !((pf && pf.keepDays && pf.due) || (bp && bp.keepDays && bp.due)); }).catch(function (e) { UI.html('set-rt-status', '<span class="text-danger">' + UI.esc(UI.error(e)) + '</span>'); }); };
       rtStatus();
       UI.el('set-rt-run').onclick = function () { M.Modal.confirm({ title: 'Apply customer retention', body: 'The personal data of the customers due is erased everywhere it is kept — the customer, the orders, the deliveries, the messages, the audit copies, the archives. It cannot be undone; the run is audited. Continue?', okText: 'Erase', danger: true }).then(function (yes) { if (!yes) return; Api.call('maintenance.applyRetention', {}, { busy: true }).then(function (x) { UI.html('set-rt-out', '<div class="alert alert-success py-2 small">' + x.erased + ' customer' + (x.erased === 1 ? '' : 's') + ' erased' + (x.remaining ? ', ' + x.remaining + ' more due (run again)' : '') + (x.rows && Object.keys(x.rows).length ? ' · rows: ' + Object.keys(x.rows).map(function (t) { return t + ' ' + x.rows[t]; }).join(', ') : '') + (x.archives && x.archives.rows ? ' · ' + x.archives.rows + ' archived row' + (x.archives.rows === 1 ? '' : 's') : '') + '</div>'); rtStatus(); }).catch(fail); }); };
-      UI.el('set-pf-run').onclick = function () { M.Modal.confirm({ title: 'Remove expired proofs', body: 'The proof-of-delivery photos and signatures older than ProofKeepDays go to the Drive trash (emptied by Drive after 30 days); each job keeps a line saying its proof was removed. The run is audited. Continue?', okText: 'Remove', danger: true }).then(function (yes) { if (!yes) return; Api.call('maintenance.pruneProofs', {}, { busy: true }).then(function (x) { UI.html('set-rt-out', '<div class="alert alert-success py-2 small">' + x.removed + ' proof file' + (x.removed === 1 ? '' : 's') + ' removed' + (x.remaining ? ', ' + x.remaining + ' more due (run again)' : '') + '</div>'); rtStatus(); }).catch(fail); }); };
+      UI.el('set-pf-run').onclick = function () { M.Modal.confirm({ title: 'Remove expired photos', body: 'The proof-of-delivery photos and signatures older than ProofKeepDays, and the bags\' photos older than BagPhotoKeepDays, go to the Drive trash (emptied by Drive after 30 days); each job keeps a line saying its proof was removed. The run is audited. Continue?', okText: 'Remove', danger: true }).then(function (yes) { if (!yes) return; Api.call('maintenance.pruneProofs', {}, { busy: true }).then(function (x) { var b = x.bags || { removed: 0, remaining: 0 }; UI.html('set-rt-out', '<div class="alert alert-success py-2 small">' + x.removed + ' proof file' + (x.removed === 1 ? '' : 's') + ' and ' + b.removed + ' bag photo' + (b.removed === 1 ? '' : 's') + ' removed' + (x.remaining || b.remaining ? ', ' + (x.remaining + b.remaining) + ' more due (run again)' : '') + '</div>'); rtStatus(); }).catch(fail); }); };
       UI.el('set-mt-validate').onclick = function () { Api.call('maintenance.validate', {}, { busy: true }).then(function (v) { out('<div class="alert ' + (v.ok ? 'alert-success' : 'alert-danger') + ' py-2 small">' + (v.ok ? 'No errors' : v.errors + ' error' + (v.errors === 1 ? '' : 's')) + ', ' + v.warnings + ' warning' + (v.warnings === 1 ? '' : 's') + ' · ' + v.tables + ' tables checked ' + F.datetime(v.checkedAt) + '</div>' + (v.problems.length ? '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Level</th><th>Table</th><th>Code</th><th>Message</th></tr></thead><tbody>' + v.problems.slice(0, 200).map(function (p) { return '<tr><td>' + UI.badge(p.level === 'ERROR' ? 'REJECTED' : 'PENDING', p.level) + '</td><td>' + UI.esc(p.table) + '</td><td>' + UI.esc(p.code) + '</td><td>' + UI.esc(p.message) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '')); }).catch(fail); };
       UI.el('set-mt-repair').onclick = function () { M.Modal.confirm({ title: 'Repair the database', body: 'Initialize runs again, stock levels are rebuilt from the ledger, order totals recomputed and sequences fixed. Every change is audited; nothing is deleted. Continue?', okText: 'Repair', danger: true }).then(function (yes) { if (!yes) return; Api.call('maintenance.repair', {}, { busy: true }).then(function (x) { out('<div class="alert ' + (x.ok ? 'alert-success' : 'alert-warning') + ' py-2 small">Repair finished: ' + x.repaired.stockLevels + ' stock level' + (x.repaired.stockLevels === 1 ? '' : 's') + ', ' + x.repaired.orderTotals + ' order total' + (x.repaired.orderTotals === 1 ? '' : 's') + ', ' + x.repaired.sequences + ' sequence' + (x.repaired.sequences === 1 ? '' : 's') + ' fixed; ' + x.created.length + ' sheet' + (x.created.length === 1 ? '' : 's') + ' created' + (x.repaired.monthlySummaries ? '; monthly summaries rebuilt from ' + x.repaired.monthlySummaries.files + ' archive file' + (x.repaired.monthlySummaries.files === 1 ? '' : 's') + ' (' + x.repaired.monthlySummaries.months.length + ' month' + (x.repaired.monthlySummaries.months.length === 1 ? '' : 's') + ')' : '') + ' · validation ' + (x.validation.ok ? 'OK' : x.validation.errors + ' errors') + '</div>'); }).catch(fail); }); };
       UI.el('set-mt-triggers').onclick = function () { Api.call('maintenance.installTriggers', {}, { busy: true }).then(function (x) { out('<div class="alert alert-success py-2 small">' + (x.installed.length ? 'Installed ' + x.installed.join(', ') : 'Already installed: ' + x.alreadyInstalled.join(', ')) + '</div>'); }).catch(fail); };
@@ -7300,6 +7387,635 @@ window.MLS = (function () {
     M.Net.onChange(function () { if (M.Router.current() === 'sync') load(); });
   }
   M.Router.register('sync', { title: 'Sync', render: function () { wire(); load(); }, refresh: load });
+})();
+</script>
+
+        <!-- Mrs Laundry Sys — BagsPage.html (release 1.16.0, audit R18): the Bags module — the scan station (a checkpoint, its machine, then the phone camera, a photo of a label, a barcode scanner or the code typed), the bags to look for, one order's bags looked up — and the pieces other pages share: an order's bags on the order page, their detail and photos, the labels with the bag codes, and the hand-over check before a release or a delivery. -->
+<section id="view-bags" class="view" hidden>
+  <div class="view-head">
+    <h2>Bags</h2>
+    <span class="text-soft small" id="bags-scope"></span>
+    <span class="spacer"></span>
+    <button type="button" class="btn btn-outline-primary btn-sm" id="bags-refresh"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
+  </div>
+  <div class="tabs" id="bags-tabs">
+    <button type="button" data-tab="scan" class="active">Scan</button>
+    <button type="button" data-tab="find">To find<span class="count" data-count="find"></span></button>
+    <button type="button" data-tab="lookup">Look up</button>
+  </div>
+  <div class="alert alert-light border small" id="bags-off" hidden></div>
+  <div data-pane="scan">
+    <div class="card mb-3"><div class="card-body">
+      <div class="form-label small mb-1" id="bags-stage-label">Checkpoint</div>
+      <div class="machine-pick" id="bags-stages" role="radiogroup" aria-labelledby="bags-stage-label"></div>
+      <div id="bags-machine-wrap" hidden><div class="form-label small mb-1" id="bags-machine-label">Machine</div><div class="machine-pick" id="bags-machines" role="radiogroup" aria-labelledby="bags-machine-label"></div></div>
+      <form class="scan-form" id="bags-form" autocomplete="off">
+        <input class="form-control form-control-lg code-input" id="bags-input" name="code" placeholder="Scan or type a bag code or an order number" aria-label="Bag code or order number" autocapitalize="characters" spellcheck="false" enterkeyhint="go">
+        <button type="submit" class="btn btn-primary btn-lg" id="bags-go" title="Record"><i class="fa-solid fa-arrow-right"></i><span class="visually-hidden">Record</span></button>
+      </form>
+      <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+        <button type="button" class="btn btn-outline-primary" id="bags-camera"><i class="fa-solid fa-camera me-1"></i>Camera</button>
+        <label class="btn btn-outline-secondary mb-0" for="bags-shot"><i class="fa-solid fa-image me-1"></i>Photo of a label</label>
+        <input type="file" class="visually-hidden" id="bags-shot" accept="image/*" capture="environment">
+        <label class="form-check ms-auto mb-0"><input class="form-check-input" type="checkbox" id="bags-sound" checked><span class="form-check-label small">Sound</span></label>
+      </div>
+      <div class="scan-video mt-2" id="bags-video-wrap" hidden><video id="bags-video" playsinline muted aria-label="Camera view"></video><div class="scan-frame" aria-hidden="true"></div><button type="button" class="btn btn-light btn-sm scan-stop" id="bags-camera-stop"><i class="fa-solid fa-xmark me-1"></i>Stop</button></div>
+      <div class="small text-soft mt-2" id="bags-hint"></div>
+    </div></div>
+    <div class="card mb-3" id="bags-hand" hidden><div class="card-body" id="bags-hand-body"></div></div>
+    <div id="bags-feed"></div>
+  </div>
+  <div data-pane="find" hidden><div id="bags-find"></div></div>
+  <div data-pane="lookup" hidden>
+    <form class="scan-form mb-3" id="bags-lookup-form" autocomplete="off"><input class="form-control code-input" id="bags-lookup-input" placeholder="Bag code, order number or label link" aria-label="Look up a bag or an order" autocapitalize="characters" spellcheck="false"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass me-1"></i>Find</button></form>
+    <div id="bags-lookup-out"></div>
+  </div>
+</section>
+
+<!-- One order's bags: where each was seen, its photos, its label, and what a manager may do -->
+<div class="modal fade" id="bags-detail-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="bags-detail-title">Bags</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body" id="bags-detail-body"></div>
+      <div class="modal-footer flex-wrap gap-2"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><span class="spacer"></span><button type="button" class="btn btn-outline-primary" id="bags-detail-add" hidden><i class="fa-solid fa-plus me-1"></i>Add a bag</button><button type="button" class="btn btn-primary" id="bags-detail-labels"><i class="fa-solid fa-tags me-1"></i>Print labels</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- The before-processing photos of one bag -->
+<div class="modal fade" id="bags-photo-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="bags-photo-title">Photos</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <div id="bags-photo-list"></div>
+        <div class="border rounded p-2 mt-3" id="bags-photo-add" hidden>
+          <label class="form-label small mb-1" for="bags-photo-input"><i class="fa-solid fa-camera me-1"></i>Photo of what is in the bag, before washing</label>
+          <input class="form-control" type="file" id="bags-photo-input" accept="image/jpeg,image/png,image/*" capture="environment">
+          <div class="small text-soft mt-1" id="bags-photo-note" hidden></div>
+          <img class="proof-thumb" id="bags-photo-preview" alt="The photo taken" hidden>
+        </div>
+        <p class="small text-soft mt-3 mb-0" id="bags-photo-privacy"></p>
+        <div class="alert alert-danger py-2 small mt-3" id="bags-photo-error" hidden></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button type="button" class="btn btn-primary" id="bags-photo-save" disabled><i class="fa-solid fa-cloud-arrow-up me-1"></i>Keep this photo</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- A label that could not be read: the order's bags to choose from -->
+<div class="modal fade" id="bags-pick-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="bags-pick-title">Choose the bag</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body"><p class="small text-soft" id="bags-pick-hint"></p><div class="bag-list" id="bags-pick-list"></div></div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- The hand-over check: every bag of the orders leaving, scanned here or seen at ready, before the release or the delivery -->
+<div class="modal fade" id="bags-hand-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="bags-hand-title">Hand-over</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p class="small text-soft mb-2" id="bags-hand-hint"></p>
+        <div id="bags-hand-list"></div>
+        <form class="scan-form mt-3" id="bags-hand-form" autocomplete="off">
+          <input class="form-control code-input" id="bags-hand-input" placeholder="Scan or type the bag code" aria-label="Bag code" autocapitalize="characters" spellcheck="false" enterkeyhint="go">
+          <button type="submit" class="btn btn-primary" title="Record"><i class="fa-solid fa-arrow-right"></i><span class="visually-hidden">Record</span></button>
+        </form>
+        <div class="d-flex flex-wrap gap-2 mt-2">
+          <button type="button" class="btn btn-outline-primary btn-sm" id="bags-hand-camera"><i class="fa-solid fa-camera me-1"></i>Camera</button>
+          <label class="btn btn-outline-secondary btn-sm mb-0" for="bags-hand-shot"><i class="fa-solid fa-image me-1"></i>Photo of a label</label>
+          <input type="file" class="visually-hidden" id="bags-hand-shot" accept="image/*" capture="environment">
+        </div>
+        <div class="scan-video mt-2" id="bags-hand-video-wrap" hidden><video id="bags-hand-video" playsinline muted aria-label="Camera view"></video><div class="scan-frame" aria-hidden="true"></div><button type="button" class="btn btn-light btn-sm scan-stop" id="bags-hand-camera-stop"><i class="fa-solid fa-xmark me-1"></i>Stop</button></div>
+        <div class="small mt-2" id="bags-hand-last"></div>
+        <div class="mt-3" id="bags-hand-without" hidden>
+          <label class="form-label small" for="bags-hand-reason" id="bags-hand-reason-label">Why do they leave without these bags?</label>
+          <textarea class="form-control" id="bags-hand-reason" rows="2" maxlength="150"></textarea>
+        </div>
+        <div class="alert alert-danger py-2 small mt-3" id="bags-hand-error" hidden></div>
+      </div>
+      <div class="modal-footer flex-wrap gap-2"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="bags-hand-cancel">Cancel</button><span class="spacer"></span><button type="button" class="btn btn-outline-danger" id="bags-hand-skip" hidden></button><button type="button" class="btn btn-success" id="bags-hand-ok"></button></div>
+    </div>
+  </div>
+</div>
+
+<!-- A note or a reason (adding, voiding, marking found, reporting lost): over the bag dialogs -->
+<div class="modal fade" id="bags-note-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" id="bags-note-form" autocomplete="off">
+      <div class="modal-header"><h5 class="modal-title" id="bags-note-title">Note</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p class="small text-soft mb-2" id="bags-note-hint"></p>
+        <label class="form-label" for="bags-note-text" id="bags-note-label">Note</label><textarea class="form-control" id="bags-note-text" rows="2" maxlength="200"></textarea>
+        <div class="alert alert-danger py-2 small mt-3" id="bags-note-error" hidden></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button type="submit" class="btn btn-primary" id="bags-note-ok">Confirm</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Modal = M.Modal;
+  var HANDOVER = ['OUT_FOR_DELIVERY', 'COMPLETED'], MACHINE_STAGES = ['WASHING', 'DRYING', 'FOLDING'], GONE = ['OUT_FOR_DELIVERY', 'COMPLETED'];
+  var LABEL = { RECEIVED: 'Intake', WASHING: 'Washing', DRYING: 'Drying', FOLDING: 'Folding', QC: 'Quality check', READY: 'Ready', OUT_FOR_DELIVERY: 'Out with the rider', COMPLETED: 'Handed over' };
+  var METHOD = { CAMERA: 'camera', PHOTO: 'photo of the label', SCANNER: 'scanner', TYPED: 'typed', MANUAL: 'chosen from the list' };
+  var RESULT = { RECORDED: 'Recorded', ADVANCED: 'Order moved', FOUND: 'Found', DUPLICATE: 'Already scanned here', WRONG_ORDER: 'Not this order', PICK: 'Choose the bag' };
+
+  // ---------------------------------------------------------------- the settings in force (the sign-in context carries them)
+  function settings() { return (M.AppState.me && M.AppState.me.settings) || {}; }
+  function on() { var v = settings().BagTracking; return v === true || v === 'true'; }
+  function checkMode() { var m = String(settings().BagCheck || 'WARN').toUpperCase(); return ['OFF', 'WARN', 'REQUIRED'].indexOf(m) >= 0 ? m : 'WARN'; }
+  function photoMode() { var m = String(settings().BagPhotos || 'OFF').toUpperCase(); return ['OFF', 'OPTIONAL', 'REQUIRED'].indexOf(m) >= 0 ? m : 'OFF'; }
+  function stageLabel(s) { return LABEL[s] || F.status(s); }
+  /** A per-device convenience (the checkpoint and machine last used): nothing depends on it, so a refused storage is ignored. */
+  function remember(key, value) { try { if (value === undefined) return localStorage.getItem('mls.bags.' + key); localStorage.setItem('mls.bags.' + key, value); } catch (e) { /* a private window keeps nothing */ } return null; }
+  function bagName(b) { return 'Bag ' + (b.K || b.Seq) + (b.N ? ' of ' + b.N : ''); }
+  function codeTag(c) { return '<span class="bag-code">' + UI.esc(c) + '</span>'; }
+  function statusLabel(b, order) {
+    if (b.Status === 'ACTIVE') return b.MissingAt && order && GONE.indexOf(order.Status) >= 0 ? 'Found: to give back' : (order && order.Status === 'OUT_FOR_DELIVERY' ? 'With the rider' : 'In the shop');
+    return { RELEASED: 'Handed over', MISSING: 'Missing', VOID: 'Voided' }[b.Status] || F.status(b.Status);
+  }
+  function lastSeen(b) { return b.LastStage ? 'last seen at ' + stageLabel(b.LastStage).toLowerCase() + (b.LastScanAt ? ' ' + F.datetime(b.LastScanAt) : '') + (b.LastScanBy ? ' · ' + b.LastScanBy : '') : 'not scanned yet'; }
+
+  // ---------------------------------------------------------------- feedback: a short tone and a buzz, so eyes can stay on the bags
+  var Beep = (function () {
+    var ac = null;
+    function tone(freq, ms, type) { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); var o = ac.createOscillator(), g = ac.createGain(); o.type = type || 'sine'; o.frequency.value = freq; g.gain.value = 0.08; o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + ms / 1000); } catch (e) { /* no sound on this device */ } }
+    function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) { /* no vibration */ } }
+    function enabled() { var box = UI.el('bags-sound'); return !box || box.checked; }
+    return { ok: function () { if (enabled()) { tone(880, 90); buzz(40); } }, warn: function () { if (enabled()) { tone(520, 150, 'triangle'); buzz([40, 60, 40]); } }, bad: function () { if (enabled()) { tone(220, 280, 'square'); buzz([120, 80, 120]); } } };
+  })();
+
+  // ---------------------------------------------------------------- reading a QR: the browser's own detector where it has one, jsQR otherwise
+  var Reader = (function () {
+    var detector = null, asked = null;
+    function native() {
+      if (asked) return asked;
+      asked = new Promise(function (resolve) {
+        if (!('BarcodeDetector' in window)) { resolve(null); return; }
+        try {
+          Promise.resolve(window.BarcodeDetector.getSupportedFormats ? window.BarcodeDetector.getSupportedFormats() : ['qr_code']).then(function (f) { if ((f || []).indexOf('qr_code') >= 0) detector = new window.BarcodeDetector({ formats: ['qr_code'] }); resolve(detector); }, function () { resolve(null); });
+        } catch (e) { resolve(null); }
+      });
+      return asked;
+    }
+    function viaJsQr(canvas, g, thorough) {
+      if (typeof window.jsQR !== 'function') return Promise.reject(new Error('The QR reader has not loaded yet: try again in a moment, or type the code'));
+      var img = g.getImageData(0, 0, canvas.width, canvas.height), r = window.jsQR(img.data, img.width, img.height, { inversionAttempts: thorough ? 'attemptBoth' : 'dontInvert' });
+      return Promise.resolve(r && r.data ? String(r.data) : '');
+    }
+    /** The text of the first QR code in a canvas ('' when none is seen). */
+    function read(canvas, g, thorough) {
+      return native().then(function (d) {
+        if (!d) return viaJsQr(canvas, g, thorough);
+        return d.detect(canvas).then(function (r) { return r && r.length ? String(r[0].rawValue || '') : (thorough ? viaJsQr(canvas, g, true).catch(function () { return ''; }) : ''); }, function () { return viaJsQr(canvas, g, thorough); });
+      });
+    }
+    /** A photo of a label (a file from the camera or the gallery) read at up to 1600 px. */
+    function readFile(file) {
+      return new Promise(function (resolve, reject) {
+        if (!file) { resolve(''); return; }
+        var url = URL.createObjectURL(file), img = new Image();
+        img.onload = function () {
+          try {
+            var c = document.createElement('canvas'), scale = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight)); c.width = Math.max(1, Math.round(img.naturalWidth * scale)); c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+            var g = c.getContext('2d', { willReadFrequently: true }); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+            read(c, g, true).then(resolve, reject);
+          } catch (e) { URL.revokeObjectURL(url); reject(e); }
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('The photo could not be read; take it again')); };
+        img.src = url;
+      });
+    }
+    return { read: read, readFile: readFile, engine: function () { return detector ? 'the browser\'s reader' : 'jsQR'; } };
+  })();
+
+  // ---------------------------------------------------------------- the live camera: one stream at a time, a frame read every 180 ms
+  var Camera = (function () {
+    var stream = null, timer = null, video = null, onText = null, busy = false, last = { text: '', at: 0 };
+    var canvas = document.createElement('canvas'), g = canvas.getContext('2d', { willReadFrequently: true });
+    function supported() { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); }
+    function tick() {
+      if (busy || !video || video.readyState < 2 || !video.videoWidth) return;
+      var w = video.videoWidth, h = video.videoHeight, scale = Math.min(1, 720 / Math.max(w, h));
+      canvas.width = Math.round(w * scale); canvas.height = Math.round(h * scale); g.drawImage(video, 0, 0, canvas.width, canvas.height); busy = true;
+      Reader.read(canvas, g, false).then(function (text) {
+        busy = false; if (!text) return;
+        var now = Date.now(), held = text === last.text && now - last.at < 2500;
+        last = { text: text, at: now }; if (held) return;  // a label held in view is one scan; out of view for 2.5 s and back, it is scanned again
+        if (onText) onText(text);
+      }, function () { busy = false; });
+    }
+    function stop() {
+      if (timer) { clearInterval(timer); timer = null; }
+      if (stream) { stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) { /* already stopped */ } }); stream = null; }
+      if (video) { try { video.pause(); } catch (e) { /* not playing */ } video.srcObject = null; video = null; }
+      busy = false; onText = null;
+    }
+    function start(videoEl, cb) {
+      stop();
+      if (!supported()) return Promise.reject({ name: 'NotSupportedError', message: 'this browser cannot open the camera here' });
+      return navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } }).then(function (s) {
+        stream = s; video = videoEl; onText = cb; last = { text: '', at: 0 }; video.srcObject = s; video.muted = true; video.setAttribute('playsinline', '');
+        return Promise.resolve(video.play()).catch(function () { /* the first frame comes anyway */ });
+      }).then(function () { timer = setInterval(tick, 180); });
+    }
+    /** Why the camera could not be opened, and what to do instead. */
+    function why(e) {
+      var n = e && e.name;
+      if (n === 'NotAllowedError' || n === 'SecurityError') return 'The camera is not allowed here' + (M.host === 'htmlservice' ? ' (Google keeps the camera out of the Apps Script page; the installed app can use it)' : ' (allow it in the browser\'s site settings)') + '. Use Photo of a label, a scanner, or type the code.';
+      if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'No camera was found on this device. Use a scanner, or type the code.';
+      if (n === 'NotReadableError') return 'The camera is busy in another app; close it and try again.';
+      return 'The camera could not be opened (' + ((e && e.message) || 'unknown reason') + '). Use Photo of a label, a scanner, or type the code.';
+    }
+    return { start: start, stop: stop, running: function () { return !!stream; }, supported: supported, why: why };
+  })();
+
+  /** A keyboard-wedge scanner types a whole code in a few milliseconds a key; a person does not: how the box was filled. */
+  function keyTimer(input) {
+    var times = [];
+    input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') return; if (!input.value) times = []; times.push(Date.now()); });
+    return function () { var n = times.length, fast = n >= 6 && (times[n - 1] - times[0]) / (n - 1) < 35; times = []; return fast ? 'SCANNER' : 'TYPED'; };
+  }
+
+  // ---------------------------------------------------------------- the station
+  var station = null, state = { stage: '', machine: '', hand: null }, feed = [], chain = Promise.resolve(), methodOf = null, wired = false;
+  function isHandover(s) { return HANDOVER.indexOf(s) >= 0; }
+  function machinesFor(stage) { return ((station && station.machines) || []).filter(function (m) { return (m.Stages || []).indexOf(stage) >= 0; }); }
+  function focusInput() { var i = UI.el('bags-input'); if (i && !UI.isTouch()) try { i.focus(); } catch (e) { /* hidden */ } }
+  function moves(c) { if (!station || !station.advance || c.HandOver || c.Code === 'RECEIVED') return false; return c.Code === 'READY' ? station.canReady : station.canAdvance; }
+  function paintStages() {
+    var box = UI.el('bags-stages');
+    box.innerHTML = (station ? station.checkpoints : []).map(function (c) { var act = c.Code === state.stage; return '<button type="button" role="radio" data-stage="' + c.Code + '" aria-checked="' + act + '"' + (act ? ' class="active"' : '') + '><span class="code">' + UI.esc(c.Label) + '</span><span class="sub">' + (c.HandOver ? 'hand-over' : (moves(c) ? 'moves the order' : 'records the bag')) + '</span></button>'; }).join('');
+    box.querySelectorAll('[data-stage]').forEach(function (b) { b.onclick = function () { setStage(b.getAttribute('data-stage')); }; });
+  }
+  function paintMachines() {
+    var ms = MACHINE_STAGES.indexOf(state.stage) >= 0 ? machinesFor(state.stage) : [], wrap = UI.el('bags-machine-wrap'), all = M.AppState.me.activeBranch === 'ALL';
+    wrap.hidden = !ms.length; if (!ms.length) { state.machine = ''; return; }
+    if (state.machine && !ms.some(function (m) { return m.Id === state.machine && m.Status !== 'DOWN'; })) state.machine = '';
+    UI.html('bags-machines', '<button type="button" role="radio" data-machine=""' + (state.machine ? '' : ' class="active"') + ' aria-checked="' + !state.machine + '"><span class="code">No machine</span><span class="sub">' + (station.machineRequired ? 'required when it moves the order' : 'not recorded') + '</span></button>' +
+      ms.map(function (m) { var down = m.Status === 'DOWN', act = m.Id === state.machine; return '<button type="button" role="radio" data-machine="' + UI.esc(m.Id) + '"' + (down ? ' disabled' : '') + (act ? ' class="active"' : '') + ' aria-checked="' + act + '" title="' + UI.esc(m.Name) + '"><span class="code">' + UI.esc(m.Code) + '</span><span class="sub">' + (down ? 'Out of service' : UI.esc(all ? UI.branchName(m.BranchId) : m.Name)) + '</span></button>'; }).join(''));
+    UI.el('bags-machines').querySelectorAll('[data-machine]').forEach(function (b) { b.onclick = function () { state.machine = b.getAttribute('data-machine'); remember('machine.' + state.stage, state.machine); paintMachines(); focusInput(); }; });
+  }
+  function paintHint() {
+    var s = state.stage, c = station ? station.checkpoints.filter(function (x) { return x.Code === s; })[0] : null, t = '';
+    if (!c) { UI.el('bags-hint').textContent = ''; return; }
+    if (s === 'RECEIVED') t = 'Intake: scan each bag as it comes in' + (photoMode() !== 'OFF' ? ', then take its before-processing photo' + (photoMode() === 'REQUIRED' ? ' (required before washing)' : '') : '') + '.';
+    else if (s === 'READY') t = 'Scan each bag as it goes on the shelf.' + (moves(c) ? ' The order becomes ready when its last bag is scanned (once its quality check has passed, if it is in one).' : '');
+    else if (s === 'OUT_FOR_DELIVERY') t = 'Hand-over to a rider: scan every bag of the order; a bag of another order is refused.';
+    else if (s === 'COMPLETED') t = 'Hand-over to the customer: scan every bag of the order in hand; a bag of another order is refused.';
+    else t = 'A scan records the bag at ' + c.Label.toLowerCase() + '.' + (moves(c) ? ' The first bag of an order scanned here moves the order to ' + c.Label.toLowerCase() + '.' : '');
+    UI.el('bags-hint').textContent = t + ' Reading: ' + (Camera.supported() ? 'camera, ' : '') + 'photo of a label, scanner or typing.';
+  }
+  function setStage(s) {
+    if (!s || state.stage === s) return;
+    state.stage = s; remember('stage', s); state.machine = remember('machine.' + s) || ''; state.hand = null;
+    paintStages(); paintMachines(); paintHand(); paintHint(); focusInput();
+  }
+
+  // ---- the order in hand at a hand-over checkpoint
+  function paintHand() {
+    var card = UI.el('bags-hand'), h = state.hand;
+    if (!h || !isHandover(state.stage)) { card.hidden = true; return; }
+    var o = h.order, bags = h.bags.filter(function (b) { return b.Status !== 'VOID'; }), here = bags.filter(function (b) { return b.LastStage === state.stage; }).length;
+    UI.html('bags-hand-body', '<div class="d-flex align-items-center gap-2 flex-wrap"><b>In hand: ' + UI.esc(o.OrderNo) + '</b><span>' + UI.esc(o.CustomerName) + '</span>' + UI.badge(o.Status, o.StatusLabel) + '<span class="ms-auto fw-bold' + (here === bags.length ? ' text-success' : '') + '">' + here + ' of ' + bags.length + ' scanned</span></div>' +
+      '<ul class="bag-check mt-2">' + bags.map(function (b) { var done = b.LastStage === state.stage; return '<li class="' + (done ? 'done' : (b.ReadyOk ? '' : 'miss')) + '"><span class="ico">' + (done ? '<i class="fa-solid fa-circle-check text-success"></i>' : (b.ReadyOk ? '<i class="fa-regular fa-circle-check text-soft"></i>' : '<i class="fa-solid fa-circle-xmark text-danger"></i>')) + '</span><b>' + bagName(b) + '</b>' + codeTag(b.Code) + '<span class="small text-soft">' + (done ? 'scanned here' : lastSeen(b)) + '</span></li>'; }).join('') + '</ul>' +
+      '<div class="d-flex flex-wrap gap-2 mt-2"><button type="button" class="btn btn-outline-secondary btn-sm" id="bags-hand-next"><i class="fa-solid fa-forward me-1"></i>Next order</button>' + (M.Auth.can('ORDER_VIEW') ? '<button type="button" class="btn btn-outline-primary btn-sm" id="bags-hand-open"><i class="fa-solid fa-up-right-from-square me-1"></i>Open order</button>' : '') + '</div>');
+    UI.el('bags-hand-next').onclick = function () { state.hand = null; paintHand(); focusInput(); };
+    if (UI.el('bags-hand-open')) UI.el('bags-hand-open').onclick = function () { M.OrdersUI.openOrder(o.Id); };
+    card.hidden = false;
+  }
+
+  // ---- the feed of what was read
+  function tone(r) { return r.result === 'WRONG_ORDER' ? 'bad' : (r.result === 'DUPLICATE' || r.result === 'PICK' ? 'warn' : (r.result === 'FOUND' ? 'found' : 'ok')); }
+  function feedCard(item, i) {
+    if (item.error) return '<div class="scan-card bad"><div class="d-flex gap-2 align-items-center flex-wrap"><span class="scan-result">Not recorded</span><span class="ms-auto small text-soft">' + F.time(item.at) + (item.method ? ' · ' + METHOD[item.method] : '') + '</span></div><div class="small">' + UI.esc(item.error) + '</div>' + (item.text ? '<div class="small text-soft">read: ' + UI.esc(String(item.text).slice(0, 60)) + '</div>' : '') + '</div>';
+    var r = item.r, b = r.bag, o = r.order || {}, acts = '';
+    if (b && r.result !== 'WRONG_ORDER' && photoMode() !== 'OFF' && (r.stage === 'RECEIVED' || item.photoWanted)) acts += '<button type="button" class="btn btn-sm btn-outline-primary" data-feed-photo="' + i + '"><i class="fa-solid fa-camera me-1"></i>Photos</button>';
+    if (M.Auth.can('ORDER_VIEW') && o.Id) acts += '<button type="button" class="btn btn-sm btn-outline-secondary" data-feed-order="' + i + '"><i class="fa-solid fa-up-right-from-square me-1"></i>Open order</button>';
+    return '<div class="scan-card ' + tone(r) + '"><div class="d-flex gap-2 align-items-center flex-wrap">' + (b ? '<b>' + bagName(b) + '</b>' + codeTag(b.Code) : '') + '<span class="scan-result">' + UI.esc(RESULT[r.result] || r.result) + '</span><span class="ms-auto small text-soft">' + F.time(item.at) + ' · ' + UI.esc(stageLabel(r.stage)) + (item.method ? ' · ' + METHOD[item.method] : '') + '</span></div>' +
+      '<div class="mt-1"><span class="fw-bold">' + UI.esc(o.OrderNo || '') + '</span> ' + UI.esc(o.CustomerName || '') + ' ' + (o.Status ? UI.badge(o.Status, o.StatusLabel) : '') + (o.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + '</div>' +
+      (r.moved ? '<div class="small fw-bold mt-1"><i class="fa-solid fa-arrow-right me-1"></i>Order ' + UI.esc(F.status(r.moved.from).toLowerCase()) + ' → ' + UI.esc(stageLabel(r.moved.to).toLowerCase()) + '</div>' : '') +
+      (r.note ? '<div class="small mt-1">' + UI.esc(r.note) + '</div>' : '') + (acts ? '<div class="acts">' + acts + '</div>' : '') + '</div>';
+  }
+  function paintFeed() {
+    var box = UI.el('bags-feed');
+    box.innerHTML = feed.length ? feed.map(feedCard).join('') : '<div class="card"><div class="card-body">' + UI.empty({ icon: 'fa-tags', title: 'Nothing scanned yet', hint: 'Choose the checkpoint, then scan a bag label: camera, a photo of the label, a barcode scanner, or type the code.' }) + '</div></div>';
+    box.querySelectorAll('[data-feed-photo]').forEach(function (btn) { btn.onclick = function () { var it = feed[Number(btn.getAttribute('data-feed-photo'))]; if (it && it.r && it.r.bag) openPhotos(it.r.bag.Id); }; });
+    box.querySelectorAll('[data-feed-order]').forEach(function (btn) { btn.onclick = function () { var it = feed[Number(btn.getAttribute('data-feed-order'))]; if (it && it.r && it.r.order) M.OrdersUI.openOrder(it.r.order.Id); }; });
+  }
+  function note(item) { feed.unshift(item); if (feed.length > 25) feed.length = 25; paintFeed(); }
+
+  // ---- a scan, in order: the next waits for the one before
+  function send(text, method, bagId) {
+    var p = { code: text || '', bagId: bagId || '', stage: state.stage, method: method };
+    if (state.machine && MACHINE_STAGES.indexOf(state.stage) >= 0) p.machineId = state.machine;
+    if (isHandover(state.stage) && state.hand) p.expectOrderId = state.hand.order.Id;
+    chain = chain.then(function () {
+      return Api.call('bags.scan', p, { noOffline: true }).then(function (r) {
+        if (r.result === 'PICK') { Beep.warn(); openPick(r); return; }
+        if (r.result === 'WRONG_ORDER') Beep.bad(); else if (r.result === 'DUPLICATE') Beep.warn(); else Beep.ok();
+        if (isHandover(state.stage) && r.order && r.result !== 'WRONG_ORDER') { state.hand = { order: r.order, bags: r.bags || [] }; paintHand(); }
+        note({ r: r, at: new Date(), method: method, photoWanted: photoMode() === 'REQUIRED' && r.stage === 'WASHING' });
+      }, function (e) {
+        Beep.bad(); note({ error: e && e.offline ? 'No connection: scanning needs the server. The board still moves orders offline.' : UI.error(e), text: text, at: new Date(), method: method });
+      });
+    });
+    return chain;
+  }
+  function openPick(r) {
+    UI.el('bags-pick-title').textContent = 'Choose the bag · ' + r.order.OrderNo;
+    UI.el('bags-pick-hint').textContent = r.order.CustomerName + ' — its label could not be read, so pick the bag in your hands. It is recorded at ' + stageLabel(r.stage).toLowerCase() + '.';
+    UI.html('bags-pick-list', r.bags.filter(function (b) { return b.Status !== 'VOID'; }).map(function (b) { return '<button type="button" class="bag-row" data-pick="' + UI.esc(b.Id) + '"><b>' + bagName(b) + '</b>' + codeTag(b.Code) + '<span class="small text-soft">' + lastSeen(b) + '</span></button>'; }).join('') || '<p class="text-soft mb-0">This order has no bags to choose from.</p>');
+    UI.el('bags-pick-list').querySelectorAll('[data-pick]').forEach(function (btn) { btn.onclick = function () { var id = btn.getAttribute('data-pick'); Modal.closeThen('bags-pick-modal', function () { send('', 'MANUAL', id); }); }; });
+    Modal.open('bags-pick-modal');
+  }
+  function toggleCamera(wrapId, videoId, onText, hintBox) {
+    var wrap = UI.el(wrapId);
+    if (Camera.running() && !wrap.hidden) { Camera.stop(); wrap.hidden = true; return Promise.resolve(); }
+    wrap.hidden = false;
+    return Camera.start(UI.el(videoId), onText).catch(function (e) { wrap.hidden = true; Camera.stop(); var msg = Camera.why(e); if (hintBox) { hintBox(msg); } else Toast.warning(msg, 9000); });
+  }
+
+  function loadStation() {
+    if (!on()) { UI.el('bags-off').innerHTML = '<i class="fa-solid fa-circle-info me-1"></i>Bag tracking is off. ' + (M.Auth.can('SETTINGS_EDIT') ? 'Switch <b>BagTracking</b> on under Settings → Bags; the labels then carry a code per bag.' : 'An administrator switches it on under Settings → Bags.'); UI.show('bags-off'); return Promise.resolve(); }
+    UI.hide('bags-off');
+    return Api.call('bags.station', {}).then(function (s) {
+      station = s; var saved = remember('stage');
+      if (!state.stage) state.stage = saved && s.checkpoints.some(function (c) { return c.Code === saved; }) ? saved : 'RECEIVED';
+      if (!state.machine) state.machine = remember('machine.' + state.stage) || '';
+      paintStages(); paintMachines(); paintHand(); paintHint(); paintFeed();
+      UI.el('bags-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · hand-over check ' + s.check.toLowerCase() + ' · photos ' + s.photos.toLowerCase();
+    }).catch(function (e) { Toast.danger('Bags: ' + UI.error(e)); });
+  }
+  function wire() {
+    if (wired) return; wired = true;
+    var input = UI.el('bags-input'); methodOf = keyTimer(input);
+    UI.el('bags-form').onsubmit = function (ev) { ev.preventDefault(); var text = input.value.trim(); if (!text) return; var how = methodOf(); input.value = ''; send(text, how); focusInput(); };
+    UI.el('bags-camera').onclick = function () { toggleCamera('bags-video-wrap', 'bags-video', function (text) { send(text, 'CAMERA'); }); };
+    UI.el('bags-camera-stop').onclick = function () { Camera.stop(); UI.hide('bags-video-wrap'); };
+    UI.el('bags-shot').onchange = function () { var f = this.files && this.files[0], box = this; if (!f) return; Reader.readFile(f).then(function (text) { box.value = ''; if (text) send(text, 'PHOTO'); else { Beep.bad(); note({ error: 'No QR code was found in the photo: hold the label flat, closer, in good light — or type the code.', at: new Date(), method: 'PHOTO' }); } }, function (e) { box.value = ''; Beep.bad(); note({ error: UI.error(e), at: new Date(), method: 'PHOTO' }); }); };
+    UI.el('bags-refresh').onclick = function () { refresh(); };
+    UI.el('bags-tabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { tab(b.getAttribute('data-tab')); }; });
+    UI.el('bags-lookup-form').onsubmit = function (ev) { ev.preventDefault(); var t = UI.el('bags-lookup-input').value.trim(); if (t) lookup(t); };
+  }
+  var current = 'scan';
+  function tab(name) {
+    current = name;
+    UI.el('bags-tabs').querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x.getAttribute('data-tab') === name); });
+    document.querySelectorAll('#view-bags [data-pane]').forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== name; });
+    if (name !== 'scan') { Camera.stop(); UI.hide('bags-video-wrap'); }
+    if (name === 'find') loadFind();
+    if (name === 'scan') focusInput();
+  }
+  function refresh() { station = null; return loadStation().then(function () { if (current === 'find') loadFind(); }); }
+
+  // ---------------------------------------------------------------- the bags to look for
+  function findRow(b, extra) {
+    var o = b.Order || {};
+    return '<button type="button" class="bag-row" data-find-order="' + UI.esc(o.Id || '') + '" data-find-bag="' + UI.esc(b.Id) + '"><b>' + UI.esc(o.OrderNo || '') + '</b><span>' + bagName(b) + '</span>' + codeTag(b.Code) + '<span class="small">' + UI.esc(o.CustomerName || '') + '</span>' + (o.Status ? UI.badge(o.Status, o.StatusLabel) : '') + '<span class="small text-soft w-100">' + (extra || lastSeen(b)) + (b.Notes ? ' · ' + UI.esc(b.Notes) : '') + (b.IncidentId ? ' · incident ' + UI.esc(b.IncidentId) : '') + '</span></button>';
+  }
+  var findSeq = Api.sequence();
+  function loadFind() {
+    var box = UI.el('bags-find'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    return Api.read('bags.missing', {}, { seq: findSeq, paint: function (r) {
+      if (!r.on) { box.innerHTML = '<div class="card"><div class="card-body">' + UI.empty({ icon: 'fa-tags', title: 'Bag tracking is off', hint: 'Nothing to look for.' }) + '</div></div>'; return; }
+      var total = r.missing.length + r.toReturn.length + r.notReady.length, cnt = document.querySelector('#bags-tabs [data-count="find"]'); if (cnt) cnt.textContent = r.missing.length + r.toReturn.length || '';
+      var section = function (title, hint, rows, extra) { return '<div class="card mb-3"><div class="card-header fw-bold">' + title + ' <span class="text-soft fw-normal">' + rows.length + '</span></div><div class="card-body">' + (rows.length ? '<p class="small text-soft">' + hint + '</p><div class="bag-list">' + rows.map(function (b) { return findRow(b, extra ? extra(b) : ''); }).join('') + '</div>' : '<p class="small text-soft mb-0">None.</p>') + '</div></div>'; };
+      box.innerHTML = (total ? '' : '<div class="card mb-3"><div class="card-body">' + UI.empty({ icon: 'fa-circle-check', title: 'Every bag is accounted for', hint: 'Bags marked missing at a hand-over, found after their order left, or not yet scanned at ready show here.' }) + '</div></div>') +
+        section('Missing', 'Not scanned at ready when their order was handed over. A scan anywhere finds them; a manager can mark one found or report it lost.', r.missing, function (b) { return 'missing since ' + F.datetime(b.MissingAt) + ' · ' + lastSeen(b); }) +
+        section('Found — to give back', 'Found in the shop after their order had left: get them to the customer, then scan them at Handed over.', r.toReturn, function (b) { return 'found ' + F.datetime(b.LastScanAt) + ' at ' + stageLabel(b.LastStage).toLowerCase(); }) +
+        section('Not on the shelf yet', 'Bags of ready orders not scanned at ready: find them before the customer or the rider comes.', r.notReady);
+      box.querySelectorAll('[data-find-order]').forEach(function (b) { b.onclick = function () { openDetail(b.getAttribute('data-find-order'), loadFind, b.getAttribute('data-find-bag')); }; });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Bags: ' + UI.error(e)); });
+  }
+
+  // ---------------------------------------------------------------- one order's bags in detail
+  var detail = { orderId: '', onChange: null, data: null };
+  function bagCard(b, d, focus) {
+    var o = d.order, manage = d.canManage, acts = [];
+    if (b.Status !== 'VOID') acts.push('<button type="button" class="btn btn-sm btn-outline-secondary" data-act="label" data-bag="' + UI.esc(b.Id) + '"><i class="fa-solid fa-tag me-1"></i>Label</button>');
+    if (d.photos !== 'OFF' && d.canScan) acts.push('<button type="button" class="btn btn-sm btn-outline-primary" data-act="photos" data-bag="' + UI.esc(b.Id) + '"><i class="fa-solid fa-camera me-1"></i>Photos' + (b.Photos ? ' (' + b.Photos + ')' : '') + '</button>');
+    if (manage && b.Status === 'MISSING') { acts.push('<button type="button" class="btn btn-sm btn-outline-success" data-act="found" data-bag="' + UI.esc(b.Id) + '"><i class="fa-solid fa-circle-check me-1"></i>Mark found</button>'); if (!b.IncidentId && M.Auth.can('INCIDENT_CREATE')) acts.push('<button type="button" class="btn btn-sm btn-outline-warning" data-act="lost" data-bag="' + UI.esc(b.Id) + '"><i class="fa-solid fa-triangle-exclamation me-1"></i>Report lost</button>'); }
+    if (manage && b.Status !== 'VOID' && b.Status !== 'RELEASED' && d.bags.filter(function (x) { return x.Status !== 'VOID'; }).length > 1) acts.push('<button type="button" class="btn btn-sm btn-outline-danger" data-act="void" data-bag="' + UI.esc(b.Id) + '"><i class="fa-solid fa-ban me-1"></i>Void label</button>');
+    var scans = (b.Scans || []).slice().reverse();
+    return '<div class="bag-card' + (focus ? ' focus' : '') + '" data-card="' + UI.esc(b.Id) + '"><div class="d-flex align-items-center gap-2 flex-wrap"><b>' + (b.Status === 'VOID' ? 'Voided label' : bagName(b)) + '</b>' + codeTag(b.Code) + UI.badge(b.Status, statusLabel(b, o)) + (b.Unaccounted ? '<span class="bag-chip short">not seen at ready</span>' : '') + (b.IncidentId ? '<span class="bag-chip missing">incident ' + UI.esc(b.IncidentId) + '</span>' : '') + '</div>' +
+      '<div class="small text-soft mt-1">' + lastSeen(b) + (b.MissingAt ? ' · marked missing ' + F.datetime(b.MissingAt) : '') + (b.Notes ? ' · ' + UI.esc(b.Notes) : '') + '</div>' +
+      (acts.length ? '<div class="d-flex flex-wrap gap-2 mt-2">' + acts.join('') + '</div>' : '') +
+      (scans.length ? '<ul class="scan-history">' + scans.map(function (s) { return '<li>' + F.datetime(s.At) + ' · <b>' + UI.esc(s.StageLabel) + '</b>' + (s.Machine ? ' · ' + UI.esc(s.Machine) : '') + ' · ' + UI.esc(s.By) + ' · ' + UI.esc(METHOD[s.Method] || F.status(s.Method)) + (s.Result === 'WRONG_ORDER' ? ' · <span class="text-danger fw-bold">scanned at another order\'s hand-over</span>' : (s.Result === 'FOUND' ? ' · <span class="text-primary fw-bold">found</span>' : (s.Result === 'ADVANCED' ? ' · moved the order' : ''))) + (s.Notes ? ' · ' + UI.esc(s.Notes) : '') + '</li>'; }).join('') + '</ul>' : '<div class="small text-faint mt-1">No scans yet.</div>') + '</div>';
+  }
+  function detailHtml(d, focusId) {
+    var o = d.order, live = d.bags.filter(function (b) { return b.Status !== 'VOID'; }), ready = live.filter(function (b) { return b.ReadyOk; }).length;
+    return '<div class="d-flex align-items-center gap-2 flex-wrap mb-2"><b>' + UI.esc(o.OrderNo) + '</b><span>' + UI.esc(o.CustomerName) + '</span>' + UI.badge(o.Status, o.StatusLabel) + '<span class="ms-auto small text-soft">' + live.length + ' bag' + (live.length === 1 ? '' : 's') + ' · ' + ready + ' seen at ready · hand-over check ' + UI.esc(d.check.toLowerCase()) + '</span></div>' +
+      (d.bags.length ? d.bags.map(function (b) { return bagCard(b, d, b.Id === focusId); }).join('') : '<p class="text-soft">No bags yet: they are made when the labels are printed.</p>');
+  }
+  function wireDetail(box, d, reload) {
+    box.querySelectorAll('[data-act]').forEach(function (btn) {
+      btn.onclick = function () {
+        var id = btn.getAttribute('data-bag'), act = btn.getAttribute('data-act'), b = d.bags.filter(function (x) { return x.Id === id; })[0] || {};
+        if (act === 'label') return printLabels(d.order.Id, id).catch(function (e) { Toast.danger(UI.error(e)); });
+        if (act === 'photos') return openPhotos(id, reload);
+        if (act === 'found') return openNote({ title: 'Mark ' + bagName(b).toLowerCase() + ' found', hint: GONE.indexOf(d.order.Status) >= 0 ? 'The order has left the shop: the bag is recorded as handed over.' : 'The bag goes back into the shop\'s flow; scan it at ready before the hand-over.', label: 'Where was it?', confirmText: 'Mark found', onSubmit: function (t) { return Api.call('bags.resolve', { bagId: id, action: 'FOUND', notes: t }).then(function () { Toast.success(b.Code + ' accounted for'); reload(); }); } });
+        if (act === 'lost') return openNote({ title: 'Report ' + bagName(b).toLowerCase() + ' lost', hint: 'A LOSS incident is reported for ' + d.order.OrderNo + ' and linked to the bag; the bag stays missing until it is found.', label: 'What was in it, what happened', confirmText: 'Report lost', danger: true, onSubmit: function (t) { return Api.call('bags.resolve', { bagId: id, action: 'INCIDENT', notes: t }).then(function (r) { Toast.warning('Incident ' + r.incident.Id + ' reported'); reload(); }); } });
+        if (act === 'void') return openNote({ title: 'Void the label of ' + bagName(b).toLowerCase(), hint: 'A voided label is refused at every station. The order keeps at least one bag; reprint the labels afterwards.', label: 'Why', confirmText: 'Void label', danger: true, onSubmit: function (t) { return Api.call('bags.void', { bagId: id, reason: t }).then(function () { Toast.warning(b.Code + ' voided — reprint the labels'); reload(); }); } });
+      };
+    });
+  }
+  /** One order's bags in the detail dialog (from the order page, the board, the lists). onChange runs after anything was changed. */
+  function openDetail(orderId, onChange, focusBagId) {
+    detail = { orderId: orderId, onChange: onChange || null, data: null };
+    var reload = function () { return Api.call('bags.detail', { orderId: orderId }).then(function (d) { paint(d); if (detail.onChange) detail.onChange(d); }).catch(function (e) { Toast.danger(UI.error(e)); }); };
+    var paint = function (d) {
+      detail.data = d; UI.el('bags-detail-title').textContent = 'Bags · ' + d.order.OrderNo;
+      var body = UI.el('bags-detail-body'); body.innerHTML = detailHtml(d, focusBagId); wireDetail(body, d, reload);
+      var add = UI.el('bags-detail-add'); add.hidden = !(d.canScan && ['COMPLETED', 'CANCELLED', 'REFUNDED'].indexOf(d.order.Status) < 0); add.onclick = function () { addBag(d.order, reload); };
+      UI.el('bags-detail-labels').onclick = function () { printLabels(d.order.Id).catch(function (e) { Toast.danger(UI.error(e)); }); };
+      if (focusBagId) { var el = body.querySelector('[data-card="' + focusBagId + '"]'); if (el && el.scrollIntoView) try { el.scrollIntoView({ block: 'nearest' }); } catch (e) { /* older engines */ } }
+    };
+    return Api.call('bags.detail', { orderId: orderId }, { busy: true }).then(function (d) { paint(d); Modal.open('bags-detail-modal'); return d; }).catch(function (e) { Toast.danger(UI.error(e)); });
+  }
+  function lookup(text) {
+    var out = UI.el('bags-lookup-out'); out.innerHTML = '<div class="text-soft">Looking…</div>';
+    var reload = function () { lookup(text); };
+    return Api.call('bags.detail', { text: text }).then(function (d) { out.innerHTML = '<div class="card"><div class="card-body">' + detailHtml(d, d.focus) + '<div class="d-flex flex-wrap gap-2 mt-2"><button type="button" class="btn btn-sm btn-primary" id="bags-lookup-labels"><i class="fa-solid fa-tags me-1"></i>Print labels</button>' + (M.Auth.can('ORDER_VIEW') ? '<button type="button" class="btn btn-sm btn-outline-secondary" id="bags-lookup-order"><i class="fa-solid fa-up-right-from-square me-1"></i>Open order</button>' : '') + '</div></div></div>'; wireDetail(out, d, reload);
+      UI.el('bags-lookup-labels').onclick = function () { printLabels(d.order.Id).catch(function (e) { Toast.danger(UI.error(e)); }); };
+      if (UI.el('bags-lookup-order')) UI.el('bags-lookup-order').onclick = function () { M.OrdersUI.openOrder(d.order.Id); };
+    }).catch(function (e) { out.innerHTML = '<div class="alert alert-warning py-2 small">' + UI.esc(UI.error(e)) + '</div>'; });
+  }
+  function addBag(order, after) {
+    var requestId = UI.uuid();
+    return openNote({ title: 'Add a bag to ' + order.OrderNo, hint: 'A load split in two, a bag the customer added: the order gets one more bag with its own code. Print its label next.', label: 'Why (optional)', optional: true, confirmText: 'Add bag', onSubmit: function (t) { return Api.call('bags.add', { orderId: order.Id, notes: t, requestId: requestId }).then(function (r) { Toast.success(bagName(r.bag) + ' added (' + r.bag.Code + ') — print its label'); if (after) after(r); return r; }); } });
+  }
+
+  // ---------------------------------------------------------------- a note or a reason
+  function openNote(opts) {
+    var form = UI.el('bags-note-form'); form.reset(); UI.hide('bags-note-error');
+    UI.el('bags-note-title').textContent = opts.title; UI.el('bags-note-hint').textContent = opts.hint || ''; UI.el('bags-note-label').textContent = opts.label || 'Note';
+    var btn = UI.el('bags-note-ok'); btn.textContent = opts.confirmText || 'Confirm'; btn.className = 'btn ' + (opts.danger ? 'btn-danger' : 'btn-primary'); btn.disabled = false;
+    form.onsubmit = function (ev) {
+      ev.preventDefault(); var t = UI.el('bags-note-text').value.trim(), box = UI.el('bags-note-error');
+      if (!opts.optional && t.length < 3) { box.textContent = 'Write a few words.'; box.hidden = false; return; }
+      btn.disabled = true;
+      Promise.resolve(opts.onSubmit(t)).then(function () { btn.disabled = false; Modal.close('bags-note-modal'); }, function (e) { btn.disabled = false; box.textContent = UI.error(e); box.hidden = false; });
+    };
+    Modal.open('bags-note-modal');
+  }
+
+  // ---------------------------------------------------------------- photos
+  var shot = { data: '', job: null, bagId: '', after: null };
+  function openPhotos(bagId, after) {
+    shot = { data: '', job: null, bagId: bagId, after: after || null };
+    var paint = function (r) {
+      UI.el('bags-photo-title').textContent = 'Photos · ' + bagName(r.bag) + ' · ' + r.order.OrderNo;
+      UI.html('bags-photo-list', r.photos.length ? '<div class="proof-view">' + r.photos.map(function (p, i) { return '<figure>' + (p.Url ? '<img src="' + UI.esc(p.Url) + '" alt="Photo ' + (i + 1) + ' of ' + UI.esc(r.bag.Code) + '">' : '<div class="text-soft small">The file is no longer in Drive.</div>') + '<figcaption>' + F.datetime(p.At) + ' · ' + UI.esc(p.By) + '</figcaption></figure>'; }).join('') + '</div>' : '<p class="text-soft mb-0">No photo of this bag yet.</p>');
+      if (r.removed.length) UI.el('bags-photo-list').insertAdjacentHTML('beforeend', '<p class="small text-soft mt-2 mb-0">Removed: ' + r.removed.map(function (x) { return F.date(x.RemovedAt) + (x.RemovedReason ? ' (' + UI.esc(x.RemovedReason) + ')' : ''); }).join('; ') + '</p>');
+      var room = r.mode !== 'OFF' && r.photos.length < r.max && r.bag.Status !== 'VOID';
+      UI.el('bags-photo-add').hidden = !room; UI.el('bags-photo-save').hidden = !room; UI.el('bags-photo-save').disabled = true;
+      UI.el('bags-photo-privacy').innerHTML = '<i class="fa-solid fa-user-shield me-1"></i>Up to ' + r.max + ' photo' + (r.max === 1 ? '' : 's') + ' a bag, kept privately ' + (r.keepDays ? 'for ' + r.keepDays + ' days (BagPhotoKeepDays)' : 'until the customer\'s data is erased') + '. They show the customer\'s belongings: do not copy or forward them.';
+      var input = UI.el('bags-photo-input'), prev = UI.el('bags-photo-preview'), noteBox = UI.el('bags-photo-note');
+      input.value = ''; prev.hidden = true; prev.removeAttribute('src'); noteBox.hidden = true;
+      input.onchange = function () {
+        var file = input.files && input.files[0]; shot.data = ''; prev.hidden = true; UI.el('bags-photo-save').disabled = true; UI.hide('bags-photo-error'); if (!file) { shot.job = null; return; }
+        noteBox.textContent = 'Preparing the photo…'; noteBox.hidden = false;
+        var job = shot.job = M.Photo.shrink(file).then(function (url) { if (shot.job !== job) return ''; shot.data = url; prev.src = url; prev.hidden = false; noteBox.textContent = 'Photo ready · ' + Math.round(url.length * 3 / 4 / 1024) + ' KB'; UI.el('bags-photo-save').disabled = false; return url; }, function (e) { if (shot.job === job) { shot.data = ''; input.value = ''; noteBox.textContent = UI.error(e); } return ''; });
+      };
+    };
+    var load = function (busy) { return Api.call('bags.photos', { bagId: bagId }, { busy: !!busy, noOffline: true }).then(function (r) { paint(r); return r; }); };
+    UI.el('bags-photo-save').onclick = function () {
+      var btn = UI.el('bags-photo-save'); btn.disabled = true; UI.hide('bags-photo-error');
+      Promise.resolve(shot.job).then(function () {
+        if (!shot.data) throw new Error('Take the photo first');
+        return Api.call('bags.photo', { bagId: bagId, data: shot.data }, { busy: true, timeoutMs: 120000, noOffline: true });
+      }).then(function (r) { Toast.success('Photo kept · ' + r.photos + ' of ' + r.max); shot.data = ''; shot.job = null; if (shot.after) shot.after(r); return load(false); }).catch(function (e) { btn.disabled = false; var box = UI.el('bags-photo-error'); box.textContent = UI.error(e); box.hidden = false; });
+    };
+    return load(true).then(function () { Modal.open('bags-photo-modal'); }).catch(function (e) { Toast.danger(UI.error(e)); });
+  }
+
+  // ---------------------------------------------------------------- labels with the bag codes
+  function labelsHtml(d) {
+    var o = d.order, esc = UI.esc, bags = d.bags || [], out = '';
+    var foot = '<div class="meta">' + (o.DueAt ? 'due ' + esc(F.datetime(o.DueAt)) + ' · ' : '') + esc(d.business.name) + (d.branch.name ? ' · ' + esc(d.branch.name) : '') + '</div>';
+    bags.forEach(function (b) {
+      var compact = String(b.Qr).indexOf('MLS-BAG:') === 0, qr = M.Qr.svg(b.Qr, { alt: 'Bag ' + b.Code, level: compact ? 'Q' : 'L', mode: compact ? 'Alphanumeric' : undefined });
+      out += '<div class="label"><div class="no">' + esc(o.OrderNo) + '</div><div class="who">' + esc(o.CustomerName) + '</div><div class="bag">Bag ' + b.K + ' of ' + b.N + (o.IsExpress ? ' · EXPRESS' : '') + '</div>' + (qr ? '<div class="qr-box bag-qr">' + qr + '</div>' : '') + '<div class="code">' + esc(b.Code) + '</div>' + foot + '</div>';
+    });
+    return '<div class="labels">' + out + '</div>';
+  }
+  /** The labels of an order with each bag's code (one bag's with bagId); the bags are made now for an order taken before tracking was on. */
+  function printLabels(orderId, bagId) {
+    return Api.call('bags.labels', { orderId: orderId, bagId: bagId || '' }, { busy: true }).then(function (d) {
+      if (!d.bags || !d.bags.length) { if (M.OrdersUI && M.OrdersUI.printPlainLabels) return M.OrdersUI.printPlainLabels(d); return d; }
+      M.Print.open(labelsHtml(d), { title: 'Labels ' + d.order.OrderNo, size: d.business.labelPaperSize, margin: d.business.labelPaperSize === '80mm' ? '2mm' : '10mm' });
+      return d;
+    });
+  }
+
+  // ---------------------------------------------------------------- the order page's bags
+  /** The bags block of the order page (orders.get carries Bags while tracking is on): each bag with where it was last seen; a tap opens the detail. */
+  function sectionHtml(o) {
+    if (!o || !o.Bags) return '';
+    var live = o.Bags.filter(function (b) { return b.Status !== 'VOID'; }), ready = live.filter(function (b) { return b.ReadyOk; }).length, missing = live.filter(function (b) { return b.Status === 'MISSING'; }).length;
+    var addable = M.Auth.can('BAG_SCAN') && ['COMPLETED', 'CANCELLED', 'REFUNDED'].indexOf(o.Status) < 0 && !o._pending;
+    return '<div class="mt-3" id="order-bags"><div class="d-flex align-items-center gap-2 flex-wrap"><h6 class="fw-bold mb-0">Bags</h6><span class="small text-soft">' + live.length + ' · ' + ready + ' seen at ready' + (missing ? ' · <span class="text-danger fw-bold">' + missing + ' missing</span>' : '') + '</span><span class="ms-auto"></span>' +
+      (addable ? '<button type="button" class="btn btn-sm btn-outline-primary" data-bags-act="add"><i class="fa-solid fa-plus me-1"></i>Add a bag</button>' : '') + '<button type="button" class="btn btn-sm btn-outline-secondary" data-bags-act="detail"><i class="fa-solid fa-clock-rotate-left me-1"></i>Scans</button></div>' +
+      '<div class="bag-list mt-2">' + (o.Bags.length ? o.Bags.map(function (b) { return '<button type="button" class="bag-row' + (b.Status === 'VOID' ? ' void' : '') + '" data-bags-bag="' + UI.esc(b.Id) + '"><b>' + (b.Status === 'VOID' ? 'Voided' : bagName(b)) + '</b>' + codeTag(b.Code) + UI.badge(b.Status, statusLabel(b, o)) + '<span class="small text-soft">' + lastSeen(b) + '</span>' + (b.Photos ? '<span class="small"><i class="fa-solid fa-camera me-1"></i>' + b.Photos + '</span>' : '') + '</button>'; }).join('') : '<div class="small text-soft">No bags yet: they are made when the labels are printed.</div>') + '</div></div>';
+  }
+  function wireSection(container, o, onChanged) {
+    if (!container || !o || !o.Bags) return;
+    container.querySelectorAll('[data-bags-bag]').forEach(function (b) { b.onclick = function () { openDetail(o.Id, onChanged, b.getAttribute('data-bags-bag')); }; });
+    container.querySelectorAll('[data-bags-act]').forEach(function (b) { b.onclick = function () { if (b.getAttribute('data-bags-act') === 'add') addBag(o, onChanged); else openDetail(o.Id, onChanged); }; });
+  }
+  /** The live bags of an order view not seen at ready or later: what the hand-over check would name. */
+  function unaccounted(o) { return o && o.Bags && checkMode() !== 'OFF' ? o.Bags.filter(function (b) { return b.Status !== 'VOID' && !b.ReadyOk; }) : []; }
+
+  // ---------------------------------------------------------------- the hand-over check
+  var hand = null, handHow = null;
+  function handMissing() { var n = 0; Object.keys(hand.orders).forEach(function (k) { n += hand.orders[k].bags.filter(function (b) { return b.Status !== 'VOID' && !b.ReadyOk; }).length; }); return n; }
+  function paintHandModal() {
+    var mode = checkMode(), missing = handMissing(), skipping = !UI.el('bags-hand-without').hidden;
+    UI.html('bags-hand-list', hand.ids.map(function (id) {
+      var x = hand.orders[id]; if (!x) return '';
+      var bags = x.bags.filter(function (b) { return b.Status !== 'VOID'; }), ok = bags.filter(function (b) { return b.ReadyOk; }).length;
+      return '<div class="mb-3"><div class="d-flex align-items-center gap-2 flex-wrap"><b>' + UI.esc(x.order.OrderNo) + '</b><span>' + UI.esc(x.order.CustomerName) + '</span><span class="ms-auto fw-bold' + (ok === bags.length ? ' text-success' : ' text-danger') + '">' + ok + ' of ' + bags.length + ' accounted for</span></div><ul class="bag-check mt-1">' +
+        bags.map(function (b) { var here = b.LastStage === hand.stage; return '<li class="' + (b.ReadyOk ? 'done' : 'miss') + '"><span class="ico">' + (b.ReadyOk ? '<i class="fa-solid fa-circle-check text-success"></i>' : '<i class="fa-solid fa-circle-xmark text-danger"></i>') + '</span><b>' + bagName(b) + '</b>' + codeTag(b.Code) + '<span class="small text-soft">' + (here ? 'scanned here' : lastSeen(b)) + '</span></li>'; }).join('') + '</ul></div>';
+    }).join(''));
+    var ok = UI.el('bags-hand-ok'), skip = UI.el('bags-hand-skip');
+    if (hand.opts.checkOnly) { ok.textContent = 'Done'; ok.className = 'btn btn-primary'; skip.hidden = true; return; }
+    var canSkip = mode !== 'REQUIRED' || M.Auth.can('BAG_MANAGE');
+    skip.hidden = !missing || mode === 'OFF' || skipping; skip.disabled = !canSkip;
+    skip.textContent = canSkip ? 'Hand over without ' + (missing === 1 ? 'it' : 'them') + '…' : 'A manager must hand over without ' + (missing === 1 ? 'it' : 'them');
+    ok.className = 'btn ' + (missing && mode !== 'OFF' ? (skipping ? 'btn-danger' : 'btn-success') : 'btn-success');
+    ok.disabled = !!missing && mode !== 'OFF' && !skipping;
+    ok.textContent = missing && mode !== 'OFF' && skipping ? (hand.opts.confirmText || 'Confirm') + ' without ' + missing + ' bag' + (missing === 1 ? '' : 's') : (hand.opts.confirmText || 'Confirm');
+    UI.el('bags-hand-hint').textContent = (missing && mode !== 'OFF' ? missing + ' bag' + (missing === 1 ? ' was' : 's were') + ' not scanned at ready. Scan ' + (missing === 1 ? 'it' : 'them') + ' here as ' + (missing === 1 ? 'it leaves' : 'they leave') + ' — a bag of another order is refused. ' : 'Every bag is accounted for. ') + (hand.opts.hint || '');
+  }
+  function handScan(text, method) {
+    var last = UI.el('bags-hand-last');
+    return Api.call('bags.scan', { code: text, stage: hand.stage, method: method, expectOrderIds: hand.ids }, { noOffline: true }).then(function (r) {
+      if (r.result === 'PICK') { Beep.warn(); last.innerHTML = '<span class="text-warning-emphasis">' + UI.esc(r.order.OrderNo) + ': scan the bag\'s own label (its code), not the order number.</span>'; return; }
+      if (r.result === 'WRONG_ORDER') { Beep.bad(); last.innerHTML = '<span class="text-danger fw-bold"><i class="fa-solid fa-circle-xmark me-1"></i>' + UI.esc(r.note) + '</span>'; return; }
+      if (r.result === 'DUPLICATE') Beep.warn(); else Beep.ok();
+      if (hand.orders[r.order.Id]) hand.orders[r.order.Id].bags = r.bags;
+      last.innerHTML = '<span class="text-success"><i class="fa-solid fa-circle-check me-1"></i>' + UI.esc(bagName(r.bag) + ' · ' + r.bag.Code + ' · ' + (RESULT[r.result] || r.result)) + '</span>';
+      paintHandModal();
+    }, function (e) { Beep.bad(); last.innerHTML = '<span class="text-danger">' + UI.esc(UI.error(e)) + '</span>'; });
+  }
+  /**
+   * The hand-over check before the laundry leaves (a release at the counter, a rider starting a delivery): each order's bags with the
+   * ones not seen at ready marked, a scan box (camera, photo of a label, scanner, typed) that records each bag at the hand-over and
+   * refuses a bag of another order, and the way on: every bag accounted for → the confirm button; otherwise "without them" (BagCheck
+   * WARN: anyone; REQUIRED: a manager, with the reason). opts: { title, orderIds, stage, confirmText, hint, checkOnly,
+   * onConfirm({ bagsAck, bagsReason }) → Promise }. Resolves true once confirmed, false when closed.
+   */
+  function handover(opts) {
+    hand = { opts: opts, ids: opts.orderIds.slice(), stage: opts.stage || 'COMPLETED', orders: {} };
+    UI.el('bags-hand-title').textContent = opts.title || 'Hand-over'; UI.hide('bags-hand-error'); UI.hide('bags-hand-without'); UI.el('bags-hand-reason').value = ''; UI.el('bags-hand-last').innerHTML = ''; UI.hide('bags-hand-video-wrap');
+    UI.el('bags-hand-reason-label').textContent = checkMode() === 'REQUIRED' ? 'Why do they leave without these bags? (required; recorded with your name)' : 'Why do they leave without these bags? (optional)';
+    return Promise.all(hand.ids.map(function (id) { return Api.call('bags.detail', { orderId: id }, { noOffline: true }); })).then(function (list) {
+      list.forEach(function (d) { hand.orders[d.order.Id] = { order: d.order, bags: d.bags }; });
+      paintHandModal();
+      var input = UI.el('bags-hand-input'), how = handHow || (handHow = keyTimer(input));  // one listener for the dialog's life, not one per opening
+      UI.el('bags-hand-form').onsubmit = function (ev) { ev.preventDefault(); var t = input.value.trim(); if (!t) return; var m = how(); input.value = ''; handScan(t, m); };
+      UI.el('bags-hand-camera').onclick = function () { toggleCamera('bags-hand-video-wrap', 'bags-hand-video', function (t) { handScan(t, 'CAMERA'); }, function (msg) { UI.el('bags-hand-last').innerHTML = '<span class="text-warning-emphasis">' + UI.esc(msg) + '</span>'; }); };
+      UI.el('bags-hand-camera-stop').onclick = function () { Camera.stop(); UI.hide('bags-hand-video-wrap'); };
+      UI.el('bags-hand-shot').onchange = function () { var f = this.files && this.files[0], box = this; if (!f) return; Reader.readFile(f).then(function (t) { box.value = ''; if (t) handScan(t, 'PHOTO'); else { Beep.bad(); UI.el('bags-hand-last').innerHTML = '<span class="text-danger">No QR code was found in the photo.</span>'; } }, function (e) { box.value = ''; UI.el('bags-hand-last').innerHTML = '<span class="text-danger">' + UI.esc(UI.error(e)) + '</span>'; }); };
+      UI.el('bags-hand-skip').onclick = function () { UI.show('bags-hand-without'); paintHandModal(); try { UI.el('bags-hand-reason').focus(); } catch (e) { /* hidden */ } };
+      return new Promise(function (resolve) {
+        var done = false, el = UI.el('bags-hand-modal'), finish = function (v) { if (done) return; done = true; Camera.stop(); resolve(v); };
+        UI.el('bags-hand-ok').onclick = function () {
+          if (hand.opts.checkOnly) { Modal.close('bags-hand-modal'); return; }
+          var missing = handMissing(), skipping = !UI.el('bags-hand-without').hidden, reason = UI.el('bags-hand-reason').value.trim(), box = UI.el('bags-hand-error');
+          box.hidden = true;
+          if (missing && checkMode() === 'REQUIRED' && reason.length < 3) { box.textContent = 'Write why the order leaves without ' + (missing === 1 ? 'this bag' : 'these bags') + '.'; box.hidden = false; return; }
+          var btn = UI.el('bags-hand-ok'); btn.disabled = true;
+          Promise.resolve(hand.opts.onConfirm({ bagsAck: !!(missing && skipping), bagsReason: reason })).then(function (r) { btn.disabled = false; finish(r === undefined ? true : r); Modal.close('bags-hand-modal'); }, function (e) {
+            btn.disabled = false; box.textContent = UI.error(e); box.hidden = false;
+            if (e && e.fields && e.fields.bags) Promise.all(hand.ids.map(function (id) { return Api.call('bags.detail', { orderId: id }, { noOffline: true }); })).then(function (l) { l.forEach(function (d) { hand.orders[d.order.Id] = { order: d.order, bags: d.bags }; }); paintHandModal(); }).catch(function () { /* keep what is shown */ });
+          });
+        };
+        el.addEventListener('hidden.bs.modal', function onHide() { el.removeEventListener('hidden.bs.modal', onHide); finish(false); });
+        Modal.open('bags-hand-modal');
+        el.addEventListener('shown.bs.modal', function once() { el.removeEventListener('shown.bs.modal', once); if (!UI.isTouch()) try { UI.el('bags-hand-input').focus(); } catch (e) { /* hidden */ } });
+      });
+    }).catch(function (e) { Toast.danger(UI.error(e)); return false; });
+  }
+
+  M.Router.register('bags', {
+    title: 'Bags',
+    allowed: function () { return M.Auth.can('BAG_SCAN') && on(); },
+    render: function (el, params) { wire(); loadStation().then(function () { if (on()) loadFind(); if (params && params.tab) tab(params.tab); if (params && params.stage) setStage(params.stage); if (params && params.order) openDetail(params.order); }); },  // the bags to find load once in the background: the tab shows their count
+    refresh: function (el, params) { refresh().then(function () { if (params && params.tab) tab(params.tab); if (params && params.stage) setStage(params.stage); }); },
+    onLeave: function () { Camera.stop(); UI.hide('bags-video-wrap'); }
+  });
+  M.Bags = { on: on, checkMode: checkMode, photoMode: photoMode, sectionHtml: sectionHtml, wireSection: wireSection, openDetail: openDetail, openPhotos: openPhotos, handover: handover, unaccounted: unaccounted, printLabels: printLabels, labelsHtml: labelsHtml, stageLabel: stageLabel };
 })();
 </script>
 
