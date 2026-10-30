@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'd3f255011b', version: '1.14.0' };</script>
+  <script>window.MLS_PWA = { build: '2eb6d4b9ee', version: '1.15.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -177,6 +177,11 @@
   /* backups (release 1.9.0): a run in progress, a good copy, a failed attempt */
   .status-badge.s-running { background: #fef3c7; color: #92400e; }
   .status-badge.s-ok { background: #dcfce7; color: #166534; }
+  /* equipment and proof of delivery (release 1.15.0): a machine out of service, a service due, a proof missing are problems; retired and removed are history */
+  .status-badge.s-down, .status-badge.s-due, .status-badge.s-missing { background: #fee2e2; color: #991b1b; }
+  .status-badge.s-soon { background: #fef3c7; color: #92400e; }
+  .status-badge.s-attached { background: #dcfce7; color: #166534; }
+  .status-badge.s-retired, .status-badge.s-removed { background: #e2e8f0; color: #475569; }
   .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 12px; }
   .toolbar .form-control, .toolbar .form-select { width: auto; min-width: 150px; flex: 0 0 auto; max-width: 100%; }
   .toolbar .search { min-width: 200px; flex: 1 1 220px; }
@@ -185,6 +190,7 @@
   .tabs button { border: 0; background: none; padding: .55rem .9rem; border-radius: var(--mls-radius-sm) var(--mls-radius-sm) 0 0; color: var(--mls-ink-soft); font-weight: 600; font-size: .9rem; white-space: nowrap; }
   .tabs button.active { color: var(--mls-primary); box-shadow: inset 0 -2px 0 var(--mls-primary); }
   .tabs button .count { margin-left: .35rem; font-size: .72rem; background: #e2e8f0; border-radius: 999px; padding: .1em .5em; color: #334155; }
+  .tabs button .count:empty { display: none; }  /* a tab's count shows only when there is one (1.15.0: no empty pill beside Machines, Open…) */
   .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 10px; }
   .chips button { border: 1px solid var(--mls-line); background: #fff; border-radius: 999px; padding: .3rem .8rem; font-size: .82rem; font-weight: 600; color: var(--mls-ink-soft); }
   .chips button.active { background: var(--mls-primary); color: #fff; border-color: var(--mls-primary); }
@@ -258,6 +264,29 @@
   .job-card .who { font-size: 1.1rem; font-weight: 800; } .job-card .addr { color: var(--mls-ink-soft); } .job-card .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
   .job-card .acts .btn { padding: .7rem .5rem; font-weight: 700; font-size: 1rem; } .job-card .orders li { display: flex; justify-content: space-between; gap: 8px; padding: .25rem 0; border-bottom: 1px dashed var(--mls-line); }
   .job-card.done { opacity: .75; }
+  /* ---- Equipment, delivery windows and proof of delivery (release 1.15.0) ---- */
+  .machine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .machine-card { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius); box-shadow: var(--mls-shadow); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; min-width: 0; }
+  .machine-card:hover { border-color: var(--mls-primary); } .machine-card.down { border-left: 4px solid var(--mls-danger); } .machine-card.retired { opacity: .65; }
+  .machine-card .code { font-weight: 800; font-size: 1.05rem; letter-spacing: .02em; font-variant-numeric: tabular-nums; } .machine-card .meta { font-size: .8rem; color: var(--mls-ink-soft); overflow-wrap: anywhere; }
+  .machine-card .acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .machine-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-bottom: 10px; }
+  .machine-pick button { border: 1px solid var(--mls-line); background: var(--mls-card); border-radius: var(--mls-radius-sm); padding: 8px 10px; text-align: left; min-height: 58px; min-width: 0; }
+  .machine-pick button .code { font-weight: 800; display: block; } .machine-pick button .sub { font-size: .74rem; color: var(--mls-ink-soft); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .machine-pick button.active { border-color: var(--mls-primary); background: var(--mls-primary-soft); box-shadow: 0 0 0 2px var(--mls-primary); }
+  .machine-pick button.busy .sub { color: #92400e; } .machine-pick button:disabled { opacity: .55; cursor: not-allowed; } .machine-pick button:disabled .sub { color: #991b1b; }
+  .slot-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .slot-pick button { border: 1px solid var(--mls-line); background: var(--mls-card); border-radius: var(--mls-radius-sm); padding: 8px 10px; text-align: left; min-height: 52px; }
+  .slot-pick button .nm { font-weight: 700; display: block; } .slot-pick button .sub { font-size: .74rem; color: var(--mls-ink-soft); display: block; }
+  .slot-pick button.active { border-color: var(--mls-primary); background: var(--mls-primary-soft); box-shadow: 0 0 0 2px var(--mls-primary); }
+  .slot-pick button.full .sub { color: #991b1b; } .slot-pick button:disabled { opacity: .5; cursor: not-allowed; }
+  .window-tag { display: inline-flex; align-items: center; gap: 4px; font-size: .8rem; font-weight: 700; padding: .1rem .5rem; border-radius: 999px; background: #e0f2fe; color: #075985; }
+  .window-tag.late { background: #fee2e2; color: #991b1b; }
+  .sig-pad { display: block; width: 100%; height: 180px; border: 1px dashed var(--mls-ink-faint); border-radius: var(--mls-radius-sm); background: #fff; touch-action: none; cursor: crosshair; }
+  .proof-thumb { display: block; max-width: 100%; max-height: 160px; border-radius: var(--mls-radius-sm); border: 1px solid var(--mls-line); margin-top: 6px; }
+  .proof-view { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; } .proof-view figure { margin: 0; min-width: 0; }
+  .proof-view img { display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; border-radius: var(--mls-radius-sm); border: 1px solid var(--mls-line); background: #fff; }
+  .proof-view figcaption { font-size: .8rem; color: var(--mls-ink-soft); margin-top: 4px; }
   .tc-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; align-items: start; }
   .clock-card { text-align: center; padding: 22px 16px; } .clock-time { font-size: 2.6rem; font-weight: 800; letter-spacing: .02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
   .clock-date { color: var(--mls-ink-soft); margin-bottom: 10px; } .btn-punch { width: 100%; max-width: 360px; padding: 1rem; font-size: 1.25rem; font-weight: 800; border-radius: 14px; }
@@ -599,7 +628,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.14.0';
+  var VERSION = '1.15.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -607,7 +636,7 @@ window.MLS = (function () {
    */
   var HOST = (typeof window.MLS_PWA === 'object' && window.MLS_PWA) ? 'pwa' : ((window.google && google.script && google.script.run) ? 'htmlservice' : 'pwa');
 
-  /** The sixteen navigation items of the design, with the phase that delivers each one. An item whose phase has not
+  /** The navigation items, with the phase that delivers each one. An item whose phase has not
    *  shipped is shown disabled with that phase on it — never pointed at a function that does not exist. */
   var MODULES = [
     { route: 'dashboard', title: 'Dashboard', icon: 'fa-gauge-high', section: 'Overview', phase: 3 },
@@ -620,6 +649,7 @@ window.MLS = (function () {
     { route: 'dispatch', title: 'Dispatch', icon: 'fa-map-location-dot', section: 'Operations', permission: 'DISPATCH_VIEW', phase: 5 },
     { route: 'deliveries', title: 'My Deliveries', icon: 'fa-motorcycle', section: 'Operations', permission: 'DELIVERY_SELF', phase: 5 },
     { route: 'production', title: 'Production', icon: 'fa-soap', section: 'Operations', permission: 'PRODUCTION_VIEW', phase: 5 },
+    { route: 'equipment', title: 'Equipment', icon: 'fa-screwdriver-wrench', section: 'Operations', permission: 'EQUIPMENT_VIEW', phase: 11 },
     { route: 'incidents', title: 'Incidents', icon: 'fa-triangle-exclamation', section: 'Operations', permission: 'INCIDENT_VIEW', phase: 10 },
     { route: 'timeclock', title: 'Time Clock', icon: 'fa-clock', section: 'People', permission: 'TIMECLOCK_SELF', phase: 5 },
     { route: 'staff', title: 'Staff', icon: 'fa-id-badge', section: 'People', phase: 5 },
@@ -1375,7 +1405,8 @@ window.MLS = (function () {
         saved.then(function (me) { if (me) { AppState.me = me; AppState.meFrom = 'saved'; Auth.showApp(); if (window.MLS && window.MLS.Offline) window.MLS.Offline.paintBar(); } else Auth.showOffline(e); }, function () { Auth.showOffline(e); });
         return;
       }
-      AppState.clear(); Auth.showAuth(opened ? (e && e.message) || 'Your session has ended. Please sign in again.' : undefined);
+      // the server refused the token this device kept: say so, whether or not the saved context had opened the app first (1.15.0: the answer can beat the device's own read)
+      AppState.clear(); Auth.showAuth((e && e.message) || 'Your session has ended. Please sign in again.');
     });
   }
   /** Browser notifications, opt-in under This device, used for one thing only: a sync that needs attention while the app is in the background. Never for a success. */
@@ -1751,6 +1782,7 @@ window.MLS = (function () {
           var b = board.data, card = null; Object.keys(b.columns).forEach(function (k) { b.columns[k] = b.columns[k].filter(function (c) { if (c.Id === o.Id) { card = c; return false; } return true; }); });
           var col = next === 'READY' ? 'READY' : (['NEW', 'RECEIVED', 'PROCESSING'].indexOf(next) >= 0 ? 'QUEUE' : (b.columns[next] ? next : null));
           if (col) { card = Object.assign(card || { Id: o.Id, OrderNo: o.OrderNo, CustomerName: o.CustomerName, CustomerPhone: o.CustomerPhone, IsExpress: o.IsExpress, BagCount: o.BagCount, TotalWeightKg: o.TotalWeightKg, Lines: (o.Items || []).filter(function (l) { return l.LineType === 'SERVICE'; }).map(function (l) { return (Number(l.WeightKg) > 0 ? Number(l.WeightKg) + ' kg' : Number(l.Qty) + ' ' + (l.Unit || 'pc')) + ' ' + l.Description; }), DueAt: o.DueAt, OrderDate: o.OrderDate, ServiceType: o.ServiceType, BranchId: o.BranchId }, { Status: next, StatusLabel: o.StatusLabel, MachineNo: extra && extra._machineNo !== undefined ? extra._machineNo : '', StageStartedAt: at, StageBy: myName(), MinutesInStage: 0, _pending: true }); b.columns[col].push(card); }
+          if (b.machines && extra && extra._machineNo !== undefined) b.machines.forEach(function (m) { if (m.InUse === o.OrderNo) m.InUse = ''; if (extra._machineId && m.Id === extra._machineId) m.InUse = o.OrderNo; });  // 1.15.0: the machine the stage runs on, as this device knows it
           b.counts = Object.keys(b.columns).reduce(function (m, k) { m[k] = b.columns[k].length; return m; }, {});
           writes.push(Store.put('snapshots', payloadKey('production.board', {}), Object.assign({}, board, { data: b })));
         }
@@ -1764,7 +1796,7 @@ window.MLS = (function () {
         var stage = p.stage ? String(p.stage).toUpperCase() : (['NEW', 'RECEIVED', 'PROCESSING'].indexOf(o.Status) >= 0 ? 'WASHING' : NEXT[o.Status]);
         if (!stage) throw fail('VALIDATION', o.Status === 'QC' ? 'Finish the quality check with pass or fail' : 'Order ' + o.OrderNo + ' is ' + lower(o.StatusLabel) + ' and has no next production stage', { stage: 'enum' });
         var machine = String(p.machineNo || '').trim().slice(0, 20), notes = String(p.notes || '').trim().slice(0, 300);
-        return moveOrder(o.Id, stage, labelOf(stage) + (machine ? ' · machine ' + machine : '') + (notes ? ' · ' + notes : '') + ' · offline', at, { _machineNo: machine }).then(function (updated) {
+        return moveOrder(o.Id, stage, labelOf(stage) + (machine ? ' · machine ' + machine : '') + (notes ? ' · ' + notes : '') + ' · offline', at, { _machineNo: machine, _machineId: String(p.machineId || '') }).then(function (updated) {
           return { result: { order: updated, log: { Id: tempId(), OrderId: o.Id, Stage: stage, MachineNo: machine, StartedAt: at, Notes: notes, _pending: true } }, label: o.OrderNo + ' → ' + labelOf(stage) + (machine ? ' (' + machine + ')' : '') };
         });
       });
@@ -1811,6 +1843,10 @@ window.MLS = (function () {
           if (collections.some(function (c) { return Number(c.amount) > 0; }) && (me().permissions || []).indexOf('PAYMENT_COLLECT') < 0) throw fail('FORBIDDEN', 'This action needs the PAYMENT_COLLECT permission');
           orderMoves = (d.Items || []).map(function (i) { var c = collections.filter(function (x) { return x && x.orderId === i.OrderId; })[0]; return { orderId: i.OrderId, status: d.JobType === 'DELIVERY' ? 'COMPLETED' : null, details: 'Delivered by ' + myName() + ' · offline', collect: c && Number(c.amount) > 0 ? c : null }; });
           details = String(p.notes || '').trim();
+          // 1.15.0: the proof taken offline travels inside this operation; the copy says it was taken (or is missing where the settings require it)
+          var pr = p.proof && typeof p.proof === 'object' ? p.proof : {}, st = me().settings || {}, mode = String(st.ProofOfDelivery || 'OFF').toUpperCase(), taken = mode !== 'OFF' && !!(pr.photo || pr.signature);
+          d._proofTaken = taken; if (mode !== 'OFF' && pr.receivedBy) d.ReceivedBy = String(pr.receivedBy).trim().slice(0, 80);
+          d.ProofStatus = taken ? 'ATTACHED' : (mode === 'REQUIRED' && d.JobType === 'DELIVERY' ? 'MISSING' : (d.ProofStatus || ''));
         }
         else if (action === 'deliveries.fail') { var reason = String(p.reason || '').trim(); if (reason.length < 3) throw fail('VALIDATION', 'Say why the delivery failed', { reason: 'required' }); if (['ACCEPTED', 'OUT_FOR_DELIVERY'].indexOf(d.Status) < 0) bad(' and cannot be failed'); next = 'FAILED'; d.FailureReason = reason; orderMoves = (d.Items || []).map(function (i) { return { orderId: i.OrderId, status: 'READY', details: 'Delivery failed: ' + reason + ' · offline', onlyFrom: 'OUT_FOR_DELIVERY' }; }); }
         return Answers.ordersMeta().then(function (om) {
@@ -1937,7 +1973,7 @@ window.MLS = (function () {
                 if (!v) { o.state = 'PENDING'; return; }  // not reached within the server's budget: it goes again
                 summary.sent++;
                 o.result = { status: v.status, resultId: v.resultId || '', resultRef: v.resultRef || '', flags: v.flags || [], conflicts: v.conflicts || [], error: v.error || null, at: new Date().toISOString() };
-                if (v.status === 'APPLIED' || v.status === 'DUPLICATE') { o.state = 'APPLIED'; if (v.status === 'APPLIED') summary.applied++; else summary.duplicate++; if (v.flags && v.flags.length) summary.flagged++; if (o.tempId && v.resultId) map[o.tempId] = v.resultId; if (v.data || (o.tempId && v.resultId)) confirms.push(Local.confirm(o, v)); summary.labels.push(o.label + (v.resultRef ? ' → ' + v.resultRef : '')); }
+                if (v.status === 'APPLIED' || v.status === 'DUPLICATE') { o.state = 'APPLIED'; if (o.payload && o.payload.proof && typeof o.payload.proof === 'object') o.payload.proof = { photo: o.payload.proof.photo ? '[sent]' : '', signature: o.payload.proof.signature ? '[sent]' : '', receivedBy: o.payload.proof.receivedBy || '' }; /* 1.15.0: the server keeps the images now; this phone does not */ if (v.status === 'APPLIED') summary.applied++; else summary.duplicate++; if (v.flags && v.flags.length) summary.flagged++; if (o.tempId && v.resultId) map[o.tempId] = v.resultId; if (v.data || (o.tempId && v.resultId)) confirms.push(Local.confirm(o, v)); summary.labels.push(o.label + (v.resultRef ? ' → ' + v.resultRef : '')); }
                 else { o.state = 'REJECTED'; summary.rejected++; summary.labels.push(o.label + ' ✗ ' + (v.error ? v.error.message : 'refused')); }
               });
               return Promise.all(confirms).then(function () { return Store.putMany('queue', batch.map(function (o) { return [o.opId, o]; })); }).then(function () { return remapPending(q, map); }).then(function () { lastPush = new Date().toISOString(); lastError = null; backoffReset(); return recount(); }).then(function () { return round(); });
@@ -2256,6 +2292,10 @@ window.MLS = (function () {
     <div class="card-header d-flex align-items-center gap-2"><i class="fa-solid fa-comment-sms text-primary me-1"></i>Follow-ups<span class="text-soft small fw-normal" id="dash-followups-sub"></span><span class="ms-auto"></span><button type="button" class="btn btn-sm btn-outline-secondary" id="dash-followups-more" hidden><i class="fa-solid fa-list me-1"></i>All</button></div>
     <div class="card-body" id="dash-followups"></div>
   </div>
+  <div class="card mt-3" id="dash-equip-card" hidden>
+    <div class="card-header d-flex align-items-center gap-2"><i class="fa-solid fa-screwdriver-wrench text-primary me-1"></i>Machines needing attention<span class="ms-auto"></span><a class="btn btn-sm btn-outline-secondary" href="#/equipment"><i class="fa-solid fa-list me-1"></i>Equipment</a></div>
+    <div class="card-body" id="dash-equip"></div>
+  </div>
   <div class="card mt-3" id="dash-lowstock-card" hidden>
     <div class="card-header"><i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>Items at or below reorder level</div>
     <div class="card-body p-0" id="dash-lowstock"></div>
@@ -2285,6 +2325,7 @@ window.MLS = (function () {
     if (c) out.push({ key: 'cashier', label: 'Cashier status', icon: 'fa-cash-register', text: true, value: c.eodOpen ? c.eodOpen + ' open' : (c.eodSubmitted ? c.eodSubmitted + ' submitted' : (c.eodApproved ? 'closed' : 'not started')), sub: 'end of day for ' + F.date(d.date), href: '#/eod' });
     if (d.syncReview) out.push({ key: 'syncReview', label: 'Sync to review', icon: 'fa-flag', tone: d.syncReview.open > 0 ? 'warn' : '', value: n(d.syncReview.open), sub: d.syncReview.open > 0 ? 'accepted from devices, needs a look' : 'nothing flagged', href: '#/sync' });
     if (d.incidents) out.push({ key: 'incidents', label: 'Open incidents', icon: 'fa-triangle-exclamation', tone: d.incidents.open + d.incidents.inReview > 0 ? 'warn' : '', value: n(d.incidents.open + d.incidents.inReview), sub: d.incidents.inReview + ' in review · ' + d.incidents.today + ' today', href: '#/incidents' });
+    if (d.equipment) { var eq = d.equipment, dueNow = eq.due.filter(function (x) { return x.State === 'DUE'; }).length; out.push({ key: 'equipment', label: 'Machines in service', icon: 'fa-screwdriver-wrench', tone: eq.down.length ? 'danger' : (dueNow ? 'warn' : ''), value: n(eq.machines - eq.down.length), sub: 'of ' + eq.machines + (eq.down.length ? ' · ' + eq.down.length + ' out of service' : '') + (dueNow ? ' · ' + plural(dueNow, 'service') + ' due' : ''), href: '#/equipment' }); }
     if (d.followups) out.push({ key: 'followups', label: 'To follow up', icon: 'fa-comment-sms', tone: d.followups.unclaimed + d.followups.balances > 0 ? 'warn' : '', value: n(d.followups.unclaimed + d.followups.balances), sub: d.followups.unclaimed + ' unclaimed · ' + d.followups.balances + ' with a balance' });
     return out;
   }
@@ -2355,10 +2396,19 @@ window.MLS = (function () {
   }
   // the tiles come from dashboard.summary; the follow-ups, the incidents tile, the system health and the getting-started checklist from dashboard.extras, a second call the tiles never wait for
   var summary = null, extras = null;
-  function merged() { return Object.assign({}, summary || {}, extras ? { incidents: extras.incidents, followups: extras.followups } : {}); }
-  function paintExtras(x) { extras = x; paintSetup(x); paintHealth(x); paintFollowups(x); if (summary) paintTiles(merged()); }
+  function merged() { return Object.assign({}, summary || {}, extras ? { incidents: extras.incidents, followups: extras.followups, equipment: extras.equipment } : {}); }
+  /** Release 1.15.0: the machines out of service and those whose service is due or near, each opening its page. */
+  function paintEquipment(x) {
+    var eq = x && x.equipment, card = UI.el('dash-equip-card'); if (!eq || (!eq.down.length && !eq.due.length)) { card.hidden = true; return; }
+    var rows = eq.down.map(function (m) { return '<li class="py-1"><a href="#" data-eq-open="' + UI.esc(m.Id) + '"><b>' + UI.esc(m.Code) + '</b> ' + UI.esc(m.Name) + '</a> — ' + UI.badge('DOWN', 'Out of service') + ' since ' + F.datetime(m.DownAt) + '</li>'; })
+      .concat(eq.due.map(function (m) { return '<li class="py-1"><a href="#" data-eq-open="' + UI.esc(m.Id) + '"><b>' + UI.esc(m.Code) + '</b> ' + UI.esc(m.Name) + '</a> — ' + UI.badge(m.State, m.State === 'DUE' ? 'Service due' : 'Service soon') + ' ' + (m.DaysLeft === null || m.DaysLeft === undefined ? '' : (m.DaysLeft < 0 ? 'overdue by ' + plural(-m.DaysLeft, 'day') : (m.DaysLeft === 0 ? 'today' : 'in ' + plural(m.DaysLeft, 'day')))) + '</li>'; }));
+    UI.html('dash-equip', '<ul class="list-unstyled small mb-0">' + rows.join('') + '</ul>');
+    UI.el('dash-equip').querySelectorAll('[data-eq-open]').forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); M.Router.go('equipment', { open: a.getAttribute('data-eq-open') }); }; });
+    card.hidden = false;
+  }
+  function paintExtras(x) { extras = x; paintSetup(x); paintHealth(x); paintFollowups(x); paintEquipment(x); if (summary) paintTiles(merged()); }
   function paint(d, info) {
-    summary = d; paintMe(d); paintTiles(merged()); if (extras) { paintSetup(extras); paintHealth(extras); paintFollowups(extras); }
+    summary = d; paintMe(d); paintTiles(merged()); if (extras) { paintSetup(extras); paintHealth(extras); paintFollowups(extras); paintEquipment(extras); }
     var inv = d.inventory, card = UI.el('dash-lowstock-card');
     if (inv && inv.lowStockItems && inv.lowStockItems.length) {
       card.hidden = false;
@@ -2964,7 +3014,7 @@ window.MLS = (function () {
   function lineQty(i) { return i.LineType === 'SERVICE' && i.WeightKg ? F.qty(i.WeightKg, 'kg') + (Number(i.Qty) !== Number(i.WeightKg) ? ' <span class="text-soft">(billed ' + F.qty(i.Qty, i.Unit) + ')</span>' : '') : F.qty(i.Qty, i.Unit); }
   function renderOrder(o) {
     current = o;
-    UI.el('order-modal-title').innerHTML = UI.esc(o.OrderNo) + ' ' + UI.badge(o.Status, o.StatusLabel) + (o.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + (o._pending ? ' <span class="pending-tag" title="Taken offline on this device; the server has not received it yet">not synced</span>' : (o.ProvisionalRef ? ' <span class="small text-soft">offline ref ' + UI.esc(o.ProvisionalRef) + '</span>' : ''));
+    UI.el('order-modal-title').innerHTML = UI.esc(o.OrderNo) + ' ' + UI.badge(o.Status, o.StatusLabel) + (o.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + (o.ReceiptConfirmedAt ? ' <span class="badge text-bg-success" title="Confirmed on the tracking link ' + UI.esc(F.datetime(o.ReceiptConfirmedAt)) + '">customer confirmed receipt</span>' : '') + (o.ProblemReportedAt ? ' <span class="badge text-bg-danger" title="Reported on the tracking link ' + UI.esc(F.datetime(o.ProblemReportedAt)) + '; see Incidents">problem reported</span>' : '') + (o._pending ? ' <span class="pending-tag" title="Taken offline on this device; the server has not received it yet">not synced</span>' : (o.ProvisionalRef ? ' <span class="small text-soft">offline ref ' + UI.esc(o.ProvisionalRef) + '</span>' : ''));
     var head = [['Customer', UI.esc(o.CustomerName) + (o.CustomerPhone ? '<div class="small text-soft">' + UI.esc(o.CustomerPhone) + (o.Mobile ? '' : ' <span class="badge text-bg-light border" title="Not a mobile number: no SMS">no SMS</span>') + (o.Customer && o.Customer.SmsOptOut ? ' <span class="badge text-bg-secondary" title="Opted out of promotional messages">no promos</span>' : '') + '</div>' : '')], ['Received', F.datetime(o.CreatedAt)], ['Due', o.DueAt ? F.datetime(o.DueAt) : '—'], ['Branch', UI.esc(o.Branch)], ['Cashier', UI.esc(o.Cashier)], ['Type', F.status(o.ServiceType)], ['Bags · weight', (o.BagCount || 0) + ' · ' + F.qty(o.TotalWeightKg, 'kg')], ['Released', o.ReleasedAt ? F.datetime(o.ReleasedAt) + (o.ReleasedByName ? ' by ' + UI.esc(o.ReleasedByName) : '') : '—']];
     var lines = o.Items.map(function (i) { return '<tr><td data-label="Item">' + UI.esc(i.Description) + (i.LineType === 'PRODUCT' ? ' <span class="badge text-bg-light border">product</span>' : '') + '</td><td data-label="Qty" class="text-end">' + lineQty(i) + '</td><td data-label="Unit price" class="text-end money">' + F.peso(i.UnitPrice) + '</td><td data-label="Line total" class="text-end money fw-bold">' + F.peso(i.LineTotal) + '</td></tr>'; }).join('');
     var pays = o.Payments.length ? o.Payments.map(function (p) { return '<tr><td data-label="When">' + F.datetime(p.CreatedAt) + '</td><td data-label="Type">' + (p.Type === 'REFUND' ? '<span class="text-danger fw-bold">Refund</span>' : 'Payment') + '</td><td data-label="Method">' + UI.esc(methodLabel(p.Method)) + (p.ReferenceNo ? ' <span class="text-soft small">' + UI.esc(p.ReferenceNo) + '</span>' : '') + '</td><td data-label="By">' + UI.esc(p.Cashier) + '</td><td data-label="Amount" class="text-end money fw-bold">' + (p.Type === 'REFUND' ? '-' : '') + F.peso(p.Amount) + '</td><td class="text-end no-print">' + (M.Auth.can('POS_VOID') ? '<button type="button" class="btn btn-sm btn-link text-danger p-0" data-void="' + UI.esc(p.Id) + '">void</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="6" class="text-soft">No payments yet.</td></tr>';
@@ -3963,7 +4013,7 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — ProductionPage.html: the Production module: the board (queue → washing → drying → folding → QC → ready) with one-tap stage moves and the QC pass/fail decision. -->
+        <!-- Mrs Laundry Sys — ProductionPage.html: the Production module: the board (queue → washing → drying → folding → QC → ready) with one-tap stage moves, the machine each stage runs on (picked from the branch's registered machines, release 1.15.0) and the QC pass/fail decision. -->
 <section id="view-production" class="view" hidden>
   <div class="view-head">
     <h2>Production</h2>
@@ -3972,18 +4022,21 @@ window.MLS = (function () {
     <span class="small text-soft me-2" id="prod-updated"></span>
     <button type="button" class="btn btn-outline-primary btn-sm" id="prod-refresh"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
   </div>
+  <div class="small text-soft mb-2" id="prod-machines" hidden></div>
   <div class="kanban" id="prod-board"></div>
 </section>
 
 <div class="modal fade" id="prod-start-modal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-sm">
+  <div class="modal-dialog modal-dialog-centered">
     <form class="modal-content" id="prod-start-form" autocomplete="off">
       <div class="modal-header"><h5 class="modal-title" id="prod-start-title">Start washing</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
-        <div class="mb-2"><label class="form-label">Machine (optional)</label><input class="form-control" name="machineNo" maxlength="20" placeholder="W1, D2…"></div>
-        <div><label class="form-label">Notes (optional)</label><input class="form-control" name="notes" maxlength="300"></div>
+        <div id="prod-start-pick-wrap" hidden><div class="form-label" id="prod-start-pick-label">Machine</div><div class="machine-pick" id="prod-start-pick" role="radiogroup" aria-labelledby="prod-start-pick-label"></div></div>
+        <div class="mb-2" id="prod-start-free-wrap"><label class="form-label" for="prod-start-machine">Machine (optional)</label><input class="form-control" id="prod-start-machine" name="machineNo" maxlength="20" placeholder="W1, D2…"></div>
+        <div><label class="form-label" for="prod-start-notes">Notes (optional)</label><input class="form-control" id="prod-start-notes" name="notes" maxlength="300"></div>
+        <div class="alert alert-danger py-2 small mt-3 mb-0" id="prod-start-error" hidden></div>
       </div>
-      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Start</button></div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" id="prod-start-submit">Start</button></div>
     </form>
   </div>
 </div>
@@ -3994,8 +4047,11 @@ window.MLS = (function () {
   var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast;
   var COLS = [['QUEUE', 'Queue', 'fa-inbox'], ['WASHING', 'Washing', 'fa-soap'], ['DRYING', 'Drying', 'fa-wind'], ['FOLDING', 'Folding', 'fa-shirt'], ['QC', 'Quality check', 'fa-magnifying-glass'], ['READY', 'Ready today', 'fa-bag-shopping']];
   var NEXT = { QUEUE: ['WASHING', 'Start washing', 'fa-play'], WASHING: ['DRYING', 'To drying', 'fa-arrow-right'], DRYING: ['FOLDING', 'To folding', 'fa-arrow-right'], FOLDING: ['QC', 'To QC', 'fa-arrow-right'] };
-  var board = null, timer = null, pendingStart = null, listened = false;
+  var STAGE_TITLE = { WASHING: 'Start washing', DRYING: 'To drying', FOLDING: 'To folding' };
+  var board = null, timer = null, pending = null, listened = false;
   function canUpdate() { return M.Auth.can('PRODUCTION_UPDATE'); }
+  /** The registered machines of the order's branch that serve a stage (out-of-service ones included, shown disabled). */
+  function machinesFor(c, stage) { return ((board && board.machines) || []).filter(function (m) { return m.BranchId === c.BranchId && (m.Stages || []).indexOf(stage) >= 0; }); }
 
   function card(c, col) {
     var acts = '';
@@ -4019,8 +4075,11 @@ window.MLS = (function () {
     UI.html('prod-board', COLS.map(function (col) { var rows = board.columns[col[0]] || []; return '<div class="kcol" data-col="' + col[0] + '"><h6><i class="fa-solid ' + col[2] + ' me-2"></i>' + col[1] + '<span class="count">' + rows.length + '</span></h6>' + (rows.length ? rows.map(function (c) { return card(c, col[0]); }).join('') : '<div class="text-faint small px-1 py-2 text-center">Nothing here</div>') + '</div>'; }).join(''));
     var el = UI.el('prod-board');
     el.querySelectorAll('[data-open]').forEach(function (k) { k.onclick = function (ev) { if (ev.target.closest('button')) return; M.OrdersUI.openOrder(k.getAttribute('data-open'), load); }; });
-    el.querySelectorAll('[data-adv]').forEach(function (b) { b.onclick = function () { var id = b.getAttribute('data-adv'), stage = b.getAttribute('data-stage'); if (stage === 'WASHING') { pendingStart = id; UI.el('prod-start-form').reset(); M.Modal.open('prod-start-modal'); } else advance(id, stage, {}); }; });
+    el.querySelectorAll('[data-adv]').forEach(function (b) { b.onclick = function () { var id = b.getAttribute('data-adv'), stage = b.getAttribute('data-stage'); if (STAGE_TITLE[stage]) openStart(id, stage); else advance(id, stage, {}); }; });
     el.querySelectorAll('[data-qc]').forEach(function (b) { b.onclick = function () { qc(b.getAttribute('data-id'), b.getAttribute('data-qc')); }; });
+    var ms = board.machines || [], strip = UI.el('prod-machines'), all = M.AppState.me.activeBranch === 'ALL';
+    strip.hidden = !ms.length;
+    if (ms.length) strip.innerHTML = '<i class="fa-solid fa-screwdriver-wrench me-1"></i>' + ms.map(function (m) { return '<span class="me-3 text-nowrap"><b>' + UI.esc(m.Code) + '</b>' + (all ? ' <span class="text-faint">' + UI.esc(UI.branchName(m.BranchId)) + '</span>' : '') + ' ' + (m.Status === 'DOWN' ? '<span class="text-danger">out of service</span>' : (m.InUse ? 'running ' + UI.esc(m.InUse) : 'free')) + '</span>'; }).join('') + (M.Auth.can('EQUIPMENT_VIEW') ? '<a href="#/equipment" class="small">Equipment</a>' : '');
     UI.el('prod-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · materials consumed at ' + F.status(board.consumptionStage).toLowerCase();
     UI.el('prod-updated').textContent = 'Updated ' + F.time(new Date());
   }
@@ -4034,10 +4093,37 @@ window.MLS = (function () {
     if (result === 'PASS') return Api.call('production.qc', { orderId: id, result: 'PASS' }, { busy: true }).then(function (r) { Toast.success(r.order.OrderNo + ' passed quality check · ready'); load(); }).catch(function (e) { Toast.danger(UI.error(e)); load(); });
     return M.OrdersUI.openReason({ title: 'Quality check failed' + (c ? ' · ' + c.OrderNo : ''), hint: 'The order goes back to washing with this reason on its timeline.', label: 'What failed', confirmText: 'Send back to washing', danger: true, onSubmit: function (d) { return Api.call('production.qc', { orderId: id, result: 'FAIL', notes: d.reason }).then(function (r) { Toast.warning(r.order.OrderNo + ' back to washing'); load(); return r; }); } });
   }
+  /**
+   * Starting a stage: the machine it runs on. With registered machines for the stage at the order's branch, one is picked from them (an
+   * out-of-service machine cannot be; a busy one can, the board may lag the floor); "No machine" unless MachineRequired. Without any,
+   * washing keeps the free-text field and the other stages move at once.
+   */
+  function openStart(id, stage) {
+    var c = findCard(id); if (!c) return;
+    var ms = machinesFor(c, stage);
+    if (!ms.length && stage !== 'WASHING') { advance(id, stage, {}); return; }
+    pending = { id: id, stage: stage, machines: ms, machine: null, required: !!board.machineRequired && ms.some(function (m) { return m.Status !== 'DOWN'; }) };
+    var f = UI.el('prod-start-form'); f.reset(); UI.hide('prod-start-error');
+    UI.el('prod-start-title').textContent = STAGE_TITLE[stage] + ' · ' + c.OrderNo;
+    UI.el('prod-start-submit').textContent = stage === 'WASHING' ? 'Start' : STAGE_TITLE[stage];
+    UI.el('prod-start-free-wrap').hidden = ms.length > 0; UI.el('prod-start-pick-wrap').hidden = !ms.length;
+    UI.el('prod-start-pick-label').textContent = 'Machine for ' + F.status(stage).toLowerCase() + (pending.required ? ' (required)' : '');
+    var pick = UI.el('prod-start-pick');
+    pick.innerHTML = (pending.required ? '' : '<button type="button" role="radio" data-pick="" class="active" aria-checked="true"><span class="code">No machine</span><span class="sub">not recorded</span></button>') +
+      ms.map(function (m) { var down = m.Status === 'DOWN'; return '<button type="button" role="radio" aria-checked="false" data-pick="' + UI.esc(m.Id) + '"' + (down ? ' disabled' : '') + (m.InUse && !down ? ' class="busy"' : '') + ' title="' + UI.esc(m.Name) + '"><span class="code">' + UI.esc(m.Code) + '</span><span class="sub">' + (down ? 'Out of service' : (m.InUse ? 'Running ' + UI.esc(m.InUse) : UI.esc(m.Name))) + '</span></button>'; }).join('');
+    pick.querySelectorAll('[data-pick]').forEach(function (b) { b.onclick = function () { var mid = b.getAttribute('data-pick'); pending.machine = mid ? ms.filter(function (m) { return m.Id === mid; })[0] || null : null; pick.querySelectorAll('[data-pick]').forEach(function (x) { var on = x === b; x.classList.toggle('active', on); x.setAttribute('aria-checked', on ? 'true' : 'false'); }); UI.hide('prod-start-error'); }; });
+    M.Modal.open('prod-start-modal');
+  }
   function findCard(id) { var out = null; if (!board) return null; Object.keys(board.columns).forEach(function (k) { board.columns[k].forEach(function (c) { if (c.Id === id) out = c; }); }); return out; }
   function wire() {
     UI.el('prod-refresh').onclick = load;
-    UI.el('prod-start-form').onsubmit = function (ev) { ev.preventDefault(); var d = M.Form.read(UI.el('prod-start-form')); var id = pendingStart; pendingStart = null; M.Modal.closeThen('prod-start-modal', function () { advance(id, 'WASHING', { machineNo: d.machineNo, notes: d.notes }); }); };
+    UI.el('prod-start-form').onsubmit = function (ev) {
+      ev.preventDefault(); var d = M.Form.read(UI.el('prod-start-form')), p = pending; if (!p) return;
+      if (p.required && !p.machine) { var box = UI.el('prod-start-error'); box.textContent = 'Choose the machine (the setting MachineRequired is on).'; box.hidden = false; return; }
+      var extra = { notes: d.notes };
+      if (p.machines.length) { if (p.machine) { extra.machineId = p.machine.Id; extra.machineNo = p.machine.Code; } } else extra.machineNo = d.machineNo;
+      pending = null; M.Modal.closeThen('prod-start-modal', function () { advance(p.id, p.stage, extra); });
+    };
     if (!listened) { listened = true; document.addEventListener('visibilitychange', function () { if (!document.hidden && M.Router.current() === 'production') load(); }); } // once: render() runs again after a branch switch
   }
   function startTimer() { stopTimer(); timer = setInterval(function () { if (!document.hidden && M.Router.current() === 'production' && !document.querySelector('.modal.show')) load(); }, 60000); }
@@ -4051,12 +4137,352 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — DispatchPage.html: the Dispatch module: delivery and pickup jobs, rider assignment, zones; the job page reuses the rider card from My Deliveries. -->
+        <!-- Mrs Laundry Sys — EquipmentPage.html: the Equipment module (release 1.15.0, audit R16): the machines of each branch with their service plan and whether they run, the out-of-service and back-in-service dialogs, maintenance and repairs with their cost (an expense when asked), utilisation from the production log, and every machine's history. -->
+<section id="view-equipment" class="view" hidden>
+  <div class="view-head">
+    <h2>Equipment</h2>
+    <span class="text-soft small" id="eq-scope"></span>
+    <span class="spacer"></span>
+    <button type="button" class="btn btn-outline-primary btn-sm" id="eq-refresh"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
+    <button type="button" class="btn btn-primary btn-sm" id="eq-new" hidden><i class="fa-solid fa-plus me-1"></i>Register machine</button>
+  </div>
+  <div class="tabs" id="eq-tabs"><button type="button" data-tab="machines" class="active">Machines<span class="count" id="eq-count-down"></span></button><button type="button" data-tab="utilisation">Utilisation</button><button type="button" data-tab="history">History</button></div>
+  <div id="eq-tab-machines">
+    <div class="sum-grid mb-3" id="eq-tiles"></div>
+    <div class="machine-grid" id="eq-machines"></div>
+  </div>
+  <div id="eq-tab-utilisation" hidden>
+    <div class="toolbar">
+      <input class="form-control" id="eq-util-from" type="date" aria-label="From">
+      <input class="form-control" id="eq-util-to" type="date" aria-label="To">
+      <button type="button" class="btn btn-outline-primary btn-sm" id="eq-util-go"><i class="fa-solid fa-chart-column me-1"></i>Show</button>
+    </div>
+    <div class="sum-grid mb-3" id="eq-util-tiles"></div>
+    <div class="card"><div class="card-body p-0" id="eq-util-table"></div></div>
+    <p class="small text-soft mt-2" id="eq-util-note"></p>
+  </div>
+  <div id="eq-tab-history" hidden>
+    <div class="toolbar">
+      <input class="form-control" id="eq-hist-from" type="date" aria-label="From">
+      <input class="form-control" id="eq-hist-to" type="date" aria-label="To">
+      <select class="form-select" id="eq-hist-type"><option value="">Every kind of entry</option><option value="BREAKDOWN">Breakdowns</option><option value="MAINTENANCE">Maintenance</option><option value="REPAIR">Repairs</option></select>
+    </div>
+    <div class="sum-grid mb-3" id="eq-hist-tiles"></div>
+    <div class="card"><div class="card-body p-0" id="eq-hist-table"></div></div>
+  </div>
+</section>
+
+<div class="modal fade" id="eq-machine-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="eq-machine-title">Machine</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body" id="eq-machine-body"></div>
+      <div class="modal-footer flex-wrap gap-2" id="eq-machine-actions"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="eq-form-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <form class="modal-content" id="eq-form" autocomplete="off">
+      <div class="modal-header"><h5 class="modal-title" id="eq-form-title">Register machine</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <input type="hidden" name="Id">
+        <div class="row g-2">
+          <div class="col-md-3"><label class="form-label" for="eq-f-code">Code</label><input class="form-control" id="eq-f-code" name="Code" maxlength="12" placeholder="W1" required></div>
+          <div class="col-md-5"><label class="form-label" for="eq-f-name">Name</label><input class="form-control" id="eq-f-name" name="Name" maxlength="60" placeholder="Front-load washer 8 kg" required></div>
+          <div class="col-md-4"><label class="form-label" for="eq-f-kind">Kind</label><select class="form-select" id="eq-f-kind" name="Kind"></select></div>
+          <div class="col-md-4" id="eq-f-branch-wrap"><label class="form-label" for="eq-f-branch">Branch</label><select class="form-select" id="eq-f-branch" name="BranchId"></select></div>
+          <div class="col-md-4"><label class="form-label" for="eq-f-brand">Brand</label><input class="form-control" id="eq-f-brand" name="Brand" maxlength="40"></div>
+          <div class="col-md-4"><label class="form-label" for="eq-f-model">Model</label><input class="form-control" id="eq-f-model" name="Model" maxlength="40"></div>
+          <div class="col-md-4"><label class="form-label" for="eq-f-serial">Serial number</label><input class="form-control" id="eq-f-serial" name="SerialNo" maxlength="60"></div>
+          <div class="col-md-4"><label class="form-label" for="eq-f-cap">Capacity (kg)</label><input class="form-control" id="eq-f-cap" name="CapacityKg" type="number" inputmode="decimal" step="0.1" min="0"></div>
+          <div class="col-md-4"><label class="form-label" for="eq-f-pdate">Bought on</label><input class="form-control" id="eq-f-pdate" name="PurchaseDate" type="date"></div>
+          <div class="col-md-4"><label class="form-label" for="eq-f-pcost">Price paid</label><input class="form-control money" id="eq-f-pcost" name="PurchaseCost" type="number" inputmode="decimal" step="0.01" min="0"></div>
+          <div class="col-md-4"><label class="form-label" for="eq-f-warranty">Warranty until</label><input class="form-control" id="eq-f-warranty" name="WarrantyUntil" type="date"></div>
+          <div class="col-12"><div class="small fw-bold mt-2">Service plan <span class="text-soft fw-normal">— either or both; blank: no plan</span></div></div>
+          <div class="col-md-4"><label class="form-label" for="eq-f-days">Service every (days)</label><input class="form-control" id="eq-f-days" name="ServiceEveryDays" type="number" inputmode="numeric" step="1" min="0" placeholder="90"></div>
+          <div class="col-md-4"><label class="form-label" for="eq-f-loads">or every (loads)</label><input class="form-control" id="eq-f-loads" name="ServiceEveryLoads" type="number" inputmode="numeric" step="1" min="0" placeholder="500"></div>
+          <div class="col-md-4" id="eq-f-status-wrap" hidden><label class="form-label" for="eq-f-status">Status</label><select class="form-select" id="eq-f-status" name="Status"><option value="ACTIVE">In use</option><option value="RETIRED">Retired</option></select></div>
+          <div class="col-12"><label class="form-label" for="eq-f-notes">Notes</label><input class="form-control" id="eq-f-notes" name="Notes" maxlength="300" placeholder="Supplier, technician's number, quirks"></div>
+        </div>
+        <div class="alert alert-danger py-2 small mt-3" id="eq-form-error" hidden></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" id="eq-form-submit">Save</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" id="eq-down-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" id="eq-down-form" autocomplete="off">
+      <div class="modal-header"><h5 class="modal-title" id="eq-down-title">Out of service</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <div class="chips" id="eq-down-type"><button type="button" data-type="BREAKDOWN" class="active"><i class="fa-solid fa-triangle-exclamation me-1"></i>It broke down</button><button type="button" data-type="MAINTENANCE" id="eq-down-maint"><i class="fa-solid fa-calendar-check me-1"></i>Planned maintenance</button></div>
+        <label class="form-label" for="eq-down-problem" id="eq-down-label">What is wrong</label>
+        <textarea class="form-control" id="eq-down-problem" name="problem" rows="3" maxlength="500" placeholder="Will not drain, leaking at the door, error E21…" required></textarea>
+        <p class="small text-soft mt-2 mb-0">The machine is taken off the production board until a manager returns it to service with what was done.</p>
+        <div class="alert alert-danger py-2 small mt-3" id="eq-down-error" hidden></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger" id="eq-down-submit"><i class="fa-solid fa-power-off me-1"></i>Take out of service</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" id="eq-work-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <form class="modal-content" id="eq-work-form" autocomplete="off">
+      <div class="modal-header"><h5 class="modal-title" id="eq-work-title">Back in service</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <div class="small text-soft mb-2" id="eq-work-about"></div>
+        <div class="row g-2" id="eq-work-record" hidden>
+          <div class="col-12"><div class="chips mb-0" id="eq-work-type"><button type="button" data-type="MAINTENANCE" class="active"><i class="fa-solid fa-calendar-check me-1"></i>Maintenance</button><button type="button" data-type="REPAIR"><i class="fa-solid fa-screwdriver-wrench me-1"></i>Repair</button></div></div>
+          <div class="col-7"><label class="form-label" for="eq-work-at">Done on</label><input class="form-control" id="eq-work-at" name="at" type="datetime-local"></div>
+          <div class="col-5"><label class="form-label" for="eq-work-down">Machine stopped (min)</label><input class="form-control" id="eq-work-down" name="downtimeMinutes" type="number" inputmode="numeric" step="1" min="0" value="0"></div>
+        </div>
+        <div class="row g-2 mt-1">
+          <div class="col-12"><label class="form-label" for="eq-work-done">What was done</label><textarea class="form-control" id="eq-work-done" name="workDone" rows="3" maxlength="500" placeholder="Replaced the drain pump, cleaned the filter…" required></textarea></div>
+          <div class="col-7"><label class="form-label" for="eq-work-tech">By (technician or shop)</label><input class="form-control" id="eq-work-tech" name="technician" maxlength="80"></div>
+          <div class="col-5"><label class="form-label" for="eq-work-cost">Cost</label><input class="form-control money" id="eq-work-cost" name="cost" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></div>
+        </div>
+        <div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="eq-work-service" name="countsAsService"><label class="form-check-label" for="eq-work-service">This was the machine's service <span class="text-soft small">— the service plan counts from today</span></label></div>
+        <div class="border rounded p-2 mt-2" id="eq-work-expense-wrap" hidden>
+          <div class="form-check"><input class="form-check-input" type="checkbox" id="eq-work-expense" name="asExpense" checked><label class="form-check-label" for="eq-work-expense">Record the cost as an expense <span class="text-soft small">— a cash expense counts in today's end of day</span></label></div>
+          <div class="row g-2 mt-1" id="eq-work-expense-fields">
+            <div class="col-md-5"><label class="form-label small" for="eq-work-cat">Category</label><select class="form-select form-select-sm" id="eq-work-cat" name="categoryId"></select></div>
+            <div class="col-md-3"><label class="form-label small" for="eq-work-method">Paid by</label><select class="form-select form-select-sm" id="eq-work-method" name="method"></select></div>
+            <div class="col-md-4"><label class="form-label small" for="eq-work-ref">Receipt / reference</label><input class="form-control form-control-sm" id="eq-work-ref" name="receiptRef" maxlength="60"></div>
+          </div>
+        </div>
+        <div class="alert alert-danger py-2 small mt-3" id="eq-work-error" hidden></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-success" id="eq-work-submit"><i class="fa-solid fa-check me-1"></i>Save</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Modal = M.Modal, Form = M.Form;
+  var KIND_ICON = { WASHER: 'fa-soap', DRYER: 'fa-wind', WASHER_DRYER: 'fa-rotate', IRON: 'fa-shirt', OTHER: 'fa-gear' };
+  var LOG_LABEL = { BREAKDOWN: 'Breakdown', MAINTENANCE: 'Maintenance', REPAIR: 'Repair' };
+  var state = { tab: 'machines', utilFrom: '', utilTo: '', histFrom: '', histTo: '', histType: '' }, data = null, current = null, categories = null;
+  function can(code) { return M.Auth.can(code); }
+  function hours(min) { var h = (Number(min) || 0) / 60; return (h >= 10 ? Math.round(h) : Math.round(h * 10) / 10) + ' h'; }
+  function serviceBadge(s) {
+    if (!s || !s.plan) return '<span class="text-soft small">no service plan</span>';
+    var bits = [];
+    if (s.next) bits.push(s.daysLeft < 0 ? 'overdue by ' + (-s.daysLeft) + ' day' + (s.daysLeft === -1 ? '' : 's') : (s.daysLeft === 0 ? 'due today' : 'due ' + F.date(s.next) + ' (in ' + s.daysLeft + ' day' + (s.daysLeft === 1 ? '' : 's') + ')'));
+    if (s.everyLoads && s.loads !== null && s.loads !== undefined) bits.push(s.loads + ' of ' + s.everyLoads + ' loads');
+    var cls = s.state === 'DUE' ? 'DUE' : (s.state === 'SOON' ? 'SOON' : 'OK');
+    return UI.badge(cls, s.state === 'DUE' ? 'Service due' : (s.state === 'SOON' ? 'Service soon' : 'Service OK')) + ' <span class="small text-soft">' + UI.esc(bits.join(' · ')) + '</span>';
+  }
+  function statusBadge(m) { return UI.badge(m.Status, m.Status === 'DOWN' ? 'Out of service' : (m.Status === 'RETIRED' ? 'Retired' : 'In service')); }
+
+  // ---------------------------------------------------------------- machines
+  function card(m) {
+    var acts = '';
+    if (m.Status === 'ACTIVE' && data.canReport) acts += '<button type="button" class="btn btn-sm btn-outline-danger" data-down="' + UI.esc(m.Id) + '"><i class="fa-solid fa-power-off me-1"></i>Out of service</button>';
+    if (m.Status === 'DOWN' && data.canEdit) acts += '<button type="button" class="btn btn-sm btn-success" data-up="' + UI.esc(m.Id) + '"><i class="fa-solid fa-check me-1"></i>Back in service</button>';
+    return '<div class="machine-card' + (m.Status === 'DOWN' ? ' down' : '') + (m.Status === 'RETIRED' ? ' retired' : '') + '" data-machine="' + UI.esc(m.Id) + '">' +
+      '<div class="d-flex align-items-center gap-2"><i class="fa-solid ' + (KIND_ICON[m.Kind] || 'fa-gear') + ' text-soft"></i><span class="code">' + UI.esc(m.Code) + '</span><span class="ms-auto">' + statusBadge(m) + '</span></div>' +
+      '<div class="fw-bold">' + UI.esc(m.Name) + '</div>' +
+      '<div class="meta">' + UI.esc(m.KindLabel) + (Number(m.CapacityKg) > 0 ? ' · ' + F.qty(m.CapacityKg, 'kg') : '') + (M.AppState.me.activeBranch === 'ALL' ? ' · ' + UI.esc(m.Branch) : '') + '</div>' +
+      (m.Status === 'DOWN' && m.OpenLog ? '<div class="meta text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>' + UI.esc(m.OpenLog.Problem) + ' · since ' + F.datetime(m.DownAt) + '</div>' : '') +
+      (m.InUse ? '<div class="meta"><i class="fa-solid fa-spinner me-1"></i>In use: ' + UI.esc(m.InUse.OrderNo) + ' since ' + F.time(m.InUse.Since) + '</div>' : '') +
+      '<div class="meta">' + serviceBadge(m.Service) + '</div>' +
+      (acts ? '<div class="acts">' + acts + '</div>' : '') + '</div>';
+  }
+  var listSeq = Api.sequence();
+  function load() {
+    return Api.read('equipment.list', {}, { seq: listSeq, paint: function (r) {
+      data = r; var c = r.counts;
+      UI.html('eq-tiles', [['Machines', c.total], ['In service', c.active], ['Out of service', c.down], ['Service due', c.due], ['Service soon', c.soon]].map(function (t) { return '<div class="tile"><div class="k">' + t[0] + '</div><div class="v">' + t[1] + '</div></div>'; }).join(''));
+      UI.html('eq-machines', r.rows.length ? r.rows.map(card).join('') : '<div class="card"><div class="card-body">' + UI.empty({ icon: 'fa-screwdriver-wrench', title: 'No machines registered yet', hint: 'Register each washer, dryer and iron once with the code the production board shows (W1, D2). Their service plan, breakdowns, repairs and use follow from there.', action: r.canEdit ? { label: 'Register machine', icon: 'fa-plus', onClick: function () { openForm(null); } } : null }) + '</div></div>');
+      var el = UI.el('eq-machines'), first = el.querySelector('[data-empty-action]'); if (first) first.onclick = function () { openForm(null); };
+      el.querySelectorAll('[data-machine]').forEach(function (k) { k.onclick = function (ev) { if (ev.target.closest('button')) return; open(k.getAttribute('data-machine')); }; });
+      el.querySelectorAll('[data-down]').forEach(function (b) { b.onclick = function () { openDown(findRow(b.getAttribute('data-down'))); }; });
+      el.querySelectorAll('[data-up]').forEach(function (b) { b.onclick = function () { openWork('up', findRow(b.getAttribute('data-up'))); }; });
+      UI.el('eq-count-down').textContent = c.down || '';
+      UI.el('eq-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + c.total + ' machine' + (c.total === 1 ? '' : 's') + (c.down ? ' · ' + c.down + ' out of service' : '');
+      UI.el('eq-new').hidden = !r.canEdit;
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Equipment: ' + UI.error(e)); });
+  }
+  function findRow(id) { return (data && data.rows || []).filter(function (m) { return m.Id === id; })[0] || current; }
+
+  // ---------------------------------------------------------------- one machine
+  function paint(m) {
+    current = m;
+    UI.el('eq-machine-title').innerHTML = '<i class="fa-solid ' + (KIND_ICON[m.Kind] || 'fa-gear') + ' me-2 text-soft"></i>' + UI.esc(m.Code) + ' · ' + UI.esc(m.Name) + ' ' + statusBadge(m);
+    var u = m.Utilisation || {};
+    var grid = [['Kind', UI.esc(m.KindLabel) + (Number(m.CapacityKg) > 0 ? ' · ' + F.qty(m.CapacityKg, 'kg') : '')], ['Branch', UI.esc(m.Branch)], ['Brand · model', UI.esc([m.Brand, m.Model].filter(Boolean).join(' · ') || '—')], ['Serial', UI.esc(m.SerialNo || '—')], ['Bought', m.PurchaseDate ? F.date(m.PurchaseDate) + (Number(m.PurchaseCost) > 0 ? ' · ' + F.peso(m.PurchaseCost) : '') : '—'], ['Warranty', m.WarrantyUntil ? 'until ' + F.date(m.WarrantyUntil) : '—'],
+      ['Service plan', m.Service.plan ? [m.Service.everyDays ? 'every ' + m.Service.everyDays + ' days' : '', m.Service.everyLoads ? 'every ' + m.Service.everyLoads + ' loads' : ''].filter(Boolean).join(' or ') : 'none'], ['Last service', m.LastServiceAt ? F.datetime(m.LastServiceAt) : 'not recorded'], ['Registered', F.date(m.CreatedAt)]];
+    var logs = m.Logs || [];
+    UI.html('eq-machine-body',
+      (m.Status === 'DOWN' && m.OpenLog ? '<div class="alert alert-danger py-2 small"><b>' + UI.esc(LOG_LABEL[m.OpenLog.LogType] || m.OpenLog.LogType) + ' since ' + F.datetime(m.DownAt) + '.</b> ' + UI.esc(m.OpenLog.Problem) + ' <span class="text-soft">— reported by ' + UI.esc(m.OpenLog.By) + '</span></div>' : '') +
+      (m.InUse ? '<div class="alert alert-info py-2 small"><i class="fa-solid fa-spinner me-1"></i>Running ' + UI.esc(m.InUse.OrderNo) + ' (' + UI.esc(F.status(m.InUse.Stage).toLowerCase()) + ') since ' + F.datetime(m.InUse.Since) + '</div>' : '') +
+      '<div class="mb-2">' + serviceBadge(m.Service) + '</div>' +
+      '<div class="detail-grid mb-3">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
+      '<h6 class="fw-bold">The last 30 days</h6><div class="sum-grid mb-3">' + [['Loads', u.Loads || 0], ['In use', hours(u.BusyMinutes)], ['Out of service', hours(u.DowntimeMinutes)], ['Could run', hours(u.AvailableMinutes)], ['Used', (u.UtilisationPct || 0) + '%']].map(function (t) { return '<div class="tile"><div class="k">' + t[0] + '</div><div class="v">' + t[1] + '</div></div>'; }).join('') + '</div>' +
+      (m.Notes ? '<p class="small"><i class="fa-regular fa-note-sticky me-1"></i>' + UI.esc(m.Notes) + '</p>' : '') +
+      '<h6 class="fw-bold">History</h6>' + (logs.length ? '<div class="table-wrap mb-3"><table class="table table-sm table-cards mb-0"><thead><tr><th>When</th><th>What</th><th class="text-end">Stopped</th><th class="text-end">Cost</th><th></th></tr></thead><tbody>' + logs.map(function (l) {
+        return '<tr' + (l.Status === 'VOID' ? ' class="text-faint"' : '') + '><td data-label="When">' + F.datetime(l.StartedAt) + '<div class="small text-soft">' + UI.esc(l.By) + '</div></td><td data-label="What"><span class="fw-bold">' + UI.esc(LOG_LABEL[l.LogType] || l.LogType) + '</span> ' + UI.badge(l.Status) + (l.IsService === true ? ' <span class="badge text-bg-light border">service</span>' : '') +
+          (l.Problem ? '<div class="small">' + UI.esc(l.Problem) + '</div>' : '') + (l.WorkDone ? '<div class="small text-soft">Done: ' + UI.esc(l.WorkDone) + (l.Technician ? ' · ' + UI.esc(l.Technician) : '') + '</div>' : '') + (l.Status === 'VOID' && l.Notes ? '<div class="small text-soft">' + UI.esc(l.Notes) + '</div>' : '') + '</td>' +
+          '<td data-label="Stopped" class="text-end">' + (l.Status === 'OPEN' ? '<span class="text-danger small">still down</span>' : (Number(l.DowntimeMinutes) ? F.minutes(l.DowntimeMinutes) : '—')) + '</td>' +
+          '<td data-label="Cost" class="text-end money">' + (Number(l.Cost) > 0 ? F.peso(l.Cost) : '—') + (l.Expense ? '<div class="small text-soft">' + UI.esc(l.Expense.Id) + (l.Expense.Status === 'VOID' ? ' (void)' : (l.Expense.Status === 'ARCHIVED' ? ' (archived)' : '')) + '</div>' : '') + '</td>' +
+          '<td class="text-end">' + (m.canEdit && l.Status !== 'VOID' ? '<button type="button" class="btn btn-sm btn-link px-2 py-0" data-void="' + UI.esc(l.Id) + '">Void</button>' : '') + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : '<p class="small text-soft">Nothing recorded yet: breakdowns, maintenance and repairs appear here with their downtime and cost.</p>') +
+      '<h6 class="fw-bold">Latest loads</h6>' + ((m.Recent || []).length ? '<div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>Started</th><th>Order</th><th>Stage</th><th class="text-end">Time</th></tr></thead><tbody>' + m.Recent.map(function (l) { return '<tr class="pointer" data-order="' + UI.esc(l.OrderId) + '"><td data-label="Started">' + F.datetime(l.StartedAt) + '<div class="small text-soft">' + UI.esc(l.By) + '</div></td><td data-label="Order" class="fw-bold">' + UI.esc(l.OrderNo) + (Number(l.WeightKg) > 0 ? ' <span class="small text-soft fw-normal">' + F.qty(l.WeightKg, 'kg') + '</span>' : '') + '</td><td data-label="Stage">' + UI.badge(l.Stage) + '</td><td data-label="Time" class="text-end">' + (l.EndedAt ? F.minutes(l.Minutes) : '<span class="small">running</span>') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="small text-soft">No production stage has named this machine yet.</p>'));
+    var body = UI.el('eq-machine-body');
+    body.querySelectorAll('[data-void]').forEach(function (b) { b.onclick = function () { voidEntry(b.getAttribute('data-void')); }; });
+    body.querySelectorAll('[data-order]').forEach(function (tr) { tr.onclick = function () { Modal.closeThen('eq-machine-modal', function () { M.OrdersUI.openOrder(tr.getAttribute('data-order')); }); }; });
+    var acts = '';
+    if (m.Status === 'ACTIVE' && m.canReport) acts += '<button type="button" class="btn btn-sm btn-outline-danger" data-act="down"><i class="fa-solid fa-power-off me-1"></i>Out of service</button>';
+    if (m.Status === 'DOWN' && m.canEdit) acts += '<button type="button" class="btn btn-sm btn-success" data-act="up"><i class="fa-solid fa-check me-1"></i>Back in service</button>';
+    if (m.Status !== 'RETIRED' && m.canEdit) acts += '<button type="button" class="btn btn-sm btn-outline-primary" data-act="record"><i class="fa-solid fa-screwdriver-wrench me-1"></i>Record maintenance or repair</button>';
+    if (m.canEdit) acts += '<button type="button" class="btn btn-sm btn-outline-secondary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button>';
+    UI.html('eq-machine-actions', acts + '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>');
+    UI.el('eq-machine-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); if (a === 'down') openDown(m); else if (a === 'up') openWork('up', m); else if (a === 'record') openWork('record', m); else if (a === 'edit') Modal.closeThen('eq-machine-modal', function () { openForm(m); }); }; });
+  }
+  function open(id) { return Api.call('equipment.get', { id: id }, { busy: true }).then(function (m) { paint(m); Modal.open('eq-machine-modal'); return m; }).catch(function (e) { Toast.danger(UI.error(e)); }); }
+  function changed(m, msg) { if (msg) Toast.success(msg); if (m && UI.el('eq-machine-modal').classList.contains('show')) paint(m); load(); }
+
+  // ---------------------------------------------------------------- register / edit
+  function openForm(m) {
+    var f = UI.el('eq-form'), me = M.AppState.me; f.reset(); Form.clearErrors(f); UI.hide('eq-form-error');
+    UI.el('eq-form-title').textContent = m ? 'Edit ' + m.Code : 'Register machine';
+    UI.el('eq-f-kind').innerHTML = UI.options((data && data.kinds) || [], m ? m.Kind : 'WASHER', function (k) { return k.Label; }, function (k) { return k.Code; });
+    UI.el('eq-f-branch').innerHTML = (me.branches.length > 1 ? '<option value="">Choose a branch</option>' : '') + UI.options(me.branches, m ? m.BranchId : (me.activeBranch !== 'ALL' ? me.activeBranch : ''));
+    UI.el('eq-f-branch-wrap').hidden = me.branches.length === 1 || !!m; UI.el('eq-f-status-wrap').hidden = !m;
+    if (m) Form.write(f, { Id: m.Id, Code: m.Code, Name: m.Name, Brand: m.Brand, Model: m.Model, SerialNo: m.SerialNo, CapacityKg: Number(m.CapacityKg) || '', PurchaseDate: m.PurchaseDate || '', PurchaseCost: Number(m.PurchaseCost) || '', WarrantyUntil: m.WarrantyUntil || '', ServiceEveryDays: Number(m.ServiceEveryDays) || '', ServiceEveryLoads: Number(m.ServiceEveryLoads) || '', Notes: m.Notes, Status: m.Status === 'RETIRED' ? 'RETIRED' : 'ACTIVE' });
+    f.onsubmit = function (ev) {
+      ev.preventDefault(); if (Form.validate(f, { Code: ['required'], Name: ['required'], CapacityKg: ['number'], PurchaseCost: ['number'], ServiceEveryDays: ['number'], ServiceEveryLoads: ['number'] })) return;
+      var d = Form.read(f); if (!m && me.branches.length > 1 && !d.BranchId) { var b = UI.el('eq-form-error'); b.textContent = 'Choose the branch the machine is at.'; b.hidden = false; return; }
+      if (!m) delete d.Status; UI.el('eq-form-submit').disabled = true;
+      Api.call('equipment.save', d, { busy: true }).then(function (r) { UI.el('eq-form-submit').disabled = false; Modal.closeThen('eq-form-modal', function () { changed(null, (m ? 'Saved ' : 'Registered ') + r.Code); paint(r); Modal.open('eq-machine-modal'); }); })
+        .catch(function (e) { UI.el('eq-form-submit').disabled = false; if (e.fields) Form.errors(f, e.fields, e.message); var b = UI.el('eq-form-error'); b.textContent = UI.error(e); b.hidden = false; });
+    };
+    Modal.open('eq-form-modal');
+  }
+
+  // ---------------------------------------------------------------- out of service / back in service / maintenance and repairs
+  function openDown(m) {
+    if (!m) return;
+    var f = UI.el('eq-down-form'), type = 'BREAKDOWN', requestId = UI.uuid(); f.reset(); UI.hide('eq-down-error');
+    UI.el('eq-down-title').textContent = m.Code + ' · out of service';
+    UI.el('eq-down-maint').hidden = !can('EQUIPMENT_EDIT');
+    var setType = function (t) { type = t; UI.el('eq-down-type').querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-type') === t); }); UI.el('eq-down-label').textContent = t === 'MAINTENANCE' ? 'What maintenance is planned' : 'What is wrong'; };
+    UI.el('eq-down-type').querySelectorAll('button').forEach(function (b) { b.onclick = function () { setType(b.getAttribute('data-type')); }; }); setType('BREAKDOWN');
+    f.onsubmit = function (ev) {
+      ev.preventDefault(); var problem = UI.el('eq-down-problem').value.trim(); if (problem.length < 3) { var box = UI.el('eq-down-error'); box.textContent = 'Say what is wrong (a few words).'; box.hidden = false; return; }
+      UI.el('eq-down-submit').disabled = true;
+      Api.call('equipment.down', { machineId: m.Id, logType: type, problem: problem, requestId: requestId }, { busy: true }).then(function (r) { UI.el('eq-down-submit').disabled = false; Modal.close('eq-down-modal'); Toast.warning(r.Code + ' is out of service'); changed(r); })
+        .catch(function (e) { UI.el('eq-down-submit').disabled = false; var box = UI.el('eq-down-error'); box.textContent = UI.error(e); box.hidden = false; });
+    };
+    Modal.open('eq-down-modal');
+  }
+  function loadCategories() { if (categories || !can('EXPENSE_CREATE')) return Promise.resolve(categories || []); return Api.call('expenses.categories', {}).then(function (c) { categories = c; return c; }).catch(function () { return []; }); }
+  /** mode: 'up' (back in service: closes the open entry) or 'record' (maintenance or a repair done already). */
+  function openWork(mode, m) {
+    if (!m) return;
+    var f = UI.el('eq-work-form'), type = 'MAINTENANCE', requestId = UI.uuid(), st = M.AppState.me.settings || {}; f.reset(); UI.hide('eq-work-error');
+    UI.el('eq-work-title').textContent = m.Code + ' · ' + (mode === 'up' ? 'back in service' : 'maintenance or repair');
+    UI.el('eq-work-about').textContent = mode === 'up' ? (m.OpenLog ? (m.OpenLog.LogType === 'MAINTENANCE' ? 'Planned maintenance' : 'Breakdown') + ' since ' + F.datetime(m.DownAt) + ': ' + m.OpenLog.Problem : 'Out of service since ' + F.datetime(m.DownAt)) : 'Work done already, recorded with the time the machine stood still.';
+    UI.el('eq-work-record').hidden = mode !== 'record';
+    var setType = function (t) { type = t; UI.el('eq-work-type').querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-type') === t); }); UI.el('eq-work-service').checked = t === 'MAINTENANCE'; };
+    UI.el('eq-work-type').querySelectorAll('button').forEach(function (b) { b.onclick = function () { setType(b.getAttribute('data-type')); }; });
+    if (mode === 'record') { setType('MAINTENANCE'); var now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); UI.el('eq-work-at').value = now.toISOString().slice(0, 16); }
+    else UI.el('eq-work-service').checked = !!(m.OpenLog && m.OpenLog.LogType === 'MAINTENANCE');
+    var canExpense = can('EXPENSE_CREATE'), wrap = UI.el('eq-work-expense-wrap');
+    var sync = function () { var cost = Number(UI.el('eq-work-cost').value) || 0; wrap.hidden = !(canExpense && cost > 0); UI.el('eq-work-expense-fields').hidden = !UI.el('eq-work-expense').checked; };
+    UI.el('eq-work-cost').oninput = sync; UI.el('eq-work-expense').onchange = sync; sync();
+    UI.el('eq-work-method').innerHTML = UI.options(st.PaymentMethods || ['CASH'], st.DefaultPaymentMethod || 'CASH', function (x) { return M.OrdersUI.methodLabel(x); }, function (x) { return x; });
+    loadCategories().then(function (cats) { var pick = (cats.filter(function (c) { return /repair|mainten/i.test(c.Name); })[0] || {}).Id || ''; UI.el('eq-work-cat').innerHTML = cats.length ? (pick ? '' : '<option value="">Choose a category</option>') + UI.options(cats, pick, function (c) { return c.Name; }) : '<option value="">No expense category yet (Expenses → Categories)</option>'; });
+    f.onsubmit = function (ev) {
+      ev.preventDefault(); var d = Form.read(f), box = UI.el('eq-work-error'); box.hidden = true;
+      if (String(d.workDone || '').trim().length < 3) { box.textContent = 'Say what was done (a few words).'; box.hidden = false; return; }
+      var cost = Number(d.cost) || 0, expense = null;
+      if (canExpense && cost > 0 && UI.el('eq-work-expense').checked) { if (!d.categoryId) { box.textContent = 'Choose the expense category, or untick "Record the cost as an expense".'; box.hidden = false; return; } expense = { categoryId: d.categoryId, method: d.method, receiptRef: d.receiptRef }; }
+      var payload = { machineId: m.Id, workDone: d.workDone, technician: d.technician, cost: d.cost, expense: expense, countsAsService: UI.el('eq-work-service').checked, requestId: requestId };
+      if (mode === 'record') { payload.logType = type; payload.at = d.at ? new Date(d.at).toISOString() : ''; payload.downtimeMinutes = d.downtimeMinutes; }
+      UI.el('eq-work-submit').disabled = true;
+      Api.call(mode === 'up' ? 'equipment.up' : 'equipment.record', payload, { busy: true }).then(function (r) { UI.el('eq-work-submit').disabled = false; Modal.close('eq-work-modal'); changed(r, mode === 'up' ? r.Code + ' is back in service' + (r.expense ? ' · expense ' + r.expense.Id : '') : (type === 'MAINTENANCE' ? 'Maintenance' : 'Repair') + ' recorded on ' + r.Code + (r.expense ? ' · expense ' + r.expense.Id : '')); })
+        .catch(function (e) { UI.el('eq-work-submit').disabled = false; if (e.fields) Form.errors(f, e.fields, e.message); box.textContent = UI.error(e); box.hidden = false; });
+    };
+    Modal.open('eq-work-modal');
+  }
+  function voidEntry(id) {
+    M.OrdersUI.openReason({ title: 'Void this entry', hint: 'The entry stays in the history marked void. A breakdown reported by mistake returns the machine to service; an expense recorded with it is not voided here — void it in Expenses.', label: 'Why', confirmText: 'Void entry', danger: true, onSubmit: function (d) {
+      return Api.call('equipment.voidLog', { id: id, reason: d.reason }).then(function (r) { changed(r, 'Entry voided' + (r.expenseStays ? ' · expense ' + r.expenseStays + ' still stands' : '')); return r; });
+    } });
+  }
+
+  // ---------------------------------------------------------------- utilisation and history
+  function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function loadUtil() {
+    var box = UI.el('eq-util-table'); box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    return Api.call('equipment.utilisation', { from: state.utilFrom, to: state.utilTo }).then(function (r) {
+      var t = r.totals;
+      UI.html('eq-util-tiles', [['Machines', t.machines], ['Loads', t.loads], ['In use', hours(t.busyMinutes)], ['Out of service', hours(t.downtimeMinutes)], ['Used', t.utilisationPct + '%'], ['Washed', F.qty(t.weightKg, 'kg')]].map(function (x) { return '<div class="tile"><div class="k">' + x[0] + '</div><div class="v">' + x[1] + '</div></div>'; }).join(''));
+      M.Table.render(box, { columns: [
+        { key: 'Code', label: 'Machine', format: function (v, x) { return '<span class="fw-bold">' + UI.esc(v) + '</span> <span class="small text-soft">' + UI.esc(x.Name) + '</span>' + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(x.Branch) + '</div>' : '') + (x.Status === 'DOWN' ? '<div>' + UI.badge('DOWN', 'Out of service') + '</div>' : ''); } },
+        { key: 'KindLabel', label: 'Kind' },
+        { key: 'Loads', label: 'Loads', align: 'right' },
+        { key: 'BusyMinutes', label: 'In use', align: 'right', format: function (v) { return hours(v); } },
+        { key: 'DowntimeMinutes', label: 'Out of service', align: 'right', format: function (v) { return Number(v) ? '<span class="text-danger">' + hours(v) + '</span>' : '—'; } },
+        { key: 'AvailableMinutes', label: 'Could run', align: 'right', format: function (v) { return hours(v); } },
+        { key: 'UtilisationPct', label: 'Used', align: 'right', format: function (v) { return '<span class="fw-bold">' + v + '%</span>'; } },
+        { key: 'WeightKg', label: 'Washed', align: 'right', format: function (v) { return Number(v) ? F.qty(v, 'kg') : '—'; } }
+      ], rows: r.rows, empty: { icon: 'fa-chart-column', title: 'No machines to measure', hint: 'Register the machines and name them when a stage starts on the production board.' }, onRow: function (x) { open(x.MachineId); } });
+      UI.el('eq-util-note').textContent = 'From ' + F.date(r.from) + ' to ' + F.date(r.to) + ' (' + r.days + ' day' + (r.days === 1 ? '' : 's') + ' × ' + r.hoursPerDay + ' h, the setting MachineHoursPerDay). In use is the time orders spent in a stage on the machine — from the start of the stage to the move to the next one — not the motor\'s running time.' + (r.covers && r.covers.note ? ' ' + r.covers.note + '.' : '') + (r.unregistered.length ? ' Codes typed on the board that no machine carries: ' + r.unregistered.map(function (u) { return u.Code + ' (' + u.Loads + ' load' + (u.Loads === 1 ? '' : 's') + ')'; }).join(', ') + ' — register them to count them.' : '');
+    }).catch(function (e) { box.innerHTML = UI.empty({ icon: 'fa-chart-column', title: 'Utilisation could not be loaded', hint: UI.error(e), compact: true }); });
+  }
+  function loadHistory() {
+    var box = UI.el('eq-hist-table'); box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    return Api.call('equipment.history', { from: state.histFrom, to: state.histTo, logType: state.histType }).then(function (r) {
+      var t = r.totals;
+      UI.html('eq-hist-tiles', [['Entries', t.entries], ['Breakdowns', t.breakdowns], ['Out of service', hours(t.downtimeMinutes)], ['Cost', F.peso(t.cost)]].map(function (x) { return '<div class="tile"><div class="k">' + x[0] + '</div><div class="v">' + x[1] + '</div></div>'; }).join(''));
+      M.Table.render(box, { columns: [
+        { key: 'StartedAt', label: 'When', format: function (v, l) { return F.datetime(v) + '<div class="small text-soft">' + UI.esc(l.By) + '</div>'; } },
+        { key: 'Code', label: 'Machine', format: function (v, l) { return '<span class="fw-bold">' + UI.esc(v) + '</span> <span class="small text-soft">' + UI.esc(l.MachineName) + '</span>'; } },
+        { key: 'LogType', label: 'What', format: function (v, l) { return '<span class="fw-bold">' + UI.esc(LOG_LABEL[v] || v) + '</span> ' + UI.badge(l.Status) + (l.Problem ? '<div class="small">' + UI.esc(l.Problem) + '</div>' : '') + (l.WorkDone ? '<div class="small text-soft">Done: ' + UI.esc(l.WorkDone) + '</div>' : ''); } },
+        { key: 'DowntimeMinutes', label: 'Stopped', align: 'right', format: function (v, l) { return l.Status === 'OPEN' ? '<span class="text-danger small">still down</span>' : (Number(v) ? F.minutes(v) : '—'); } },
+        { key: 'Cost', label: 'Cost', align: 'right', format: function (v, l) { return (Number(v) > 0 ? F.peso(v) : '—') + (l.Expense ? '<div class="small text-soft">' + UI.esc(l.Expense.Id) + '</div>' : ''); } }
+      ], rows: r.rows, empty: { icon: 'fa-screwdriver-wrench', title: 'Nothing recorded in this range', hint: 'Breakdowns, maintenance and repairs are listed here with the downtime and the cost.' }, onRow: function (l) { open(l.MachineId); } });
+    }).catch(function (e) { box.innerHTML = UI.empty({ icon: 'fa-screwdriver-wrench', title: 'The history could not be loaded', hint: UI.error(e), compact: true }); });
+  }
+  function showTab(t) {
+    state.tab = t; UI.el('eq-tabs').querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === t); });
+    ['machines', 'utilisation', 'history'].forEach(function (k) { UI.el('eq-tab-' + k).hidden = k !== t; });
+    if (t === 'machines') load(); else if (t === 'utilisation') loadUtil(); else loadHistory();
+  }
+  function wire() {
+    var today = new Date(), month = new Date(today.getTime() - 29 * 86400000), quarter = new Date(today.getTime() - 89 * 86400000);
+    if (!state.utilFrom) { state.utilFrom = iso(month); state.utilTo = iso(today); state.histFrom = iso(quarter); state.histTo = iso(today); }
+    UI.el('eq-util-from').value = state.utilFrom; UI.el('eq-util-to').value = state.utilTo; UI.el('eq-hist-from').value = state.histFrom; UI.el('eq-hist-to').value = state.histTo;
+    UI.el('eq-tabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { showTab(b.getAttribute('data-tab')); }; });
+    UI.el('eq-refresh').onclick = function () { showTab(state.tab); }; UI.el('eq-new').onclick = function () { openForm(null); };
+    UI.el('eq-util-go').onclick = function () { state.utilFrom = UI.el('eq-util-from').value; state.utilTo = UI.el('eq-util-to').value; loadUtil(); };
+    var hist = function () { state.histFrom = UI.el('eq-hist-from').value; state.histTo = UI.el('eq-hist-to').value; state.histType = UI.el('eq-hist-type').value; loadHistory(); };
+    UI.el('eq-hist-from').onchange = hist; UI.el('eq-hist-to').onchange = hist; UI.el('eq-hist-type').onchange = hist;
+  }
+  M.Router.register('equipment', {
+    title: 'Equipment',
+    render: function (el, params) { wire(); showTab(state.tab); if (params && params.open) open(params.open); },
+    refresh: function (el, params) { showTab(state.tab); if (params && params.open) open(params.open); }
+  });
+  M.EquipmentUI = { open: open, openDown: openDown };
+})();
+</script>
+
+        <!-- Mrs Laundry Sys — DispatchPage.html: the Dispatch module: delivery and pickup jobs, rider assignment, zones, and since 1.15.0 the delivery windows (booked with their places left, rescheduled) with each stop's proof and the customer's confirmation; the job page reuses the rider card from My Deliveries. -->
 <section id="view-dispatch" class="view" hidden>
   <div class="view-head">
     <h2>Dispatch</h2>
     <span class="text-soft small" id="dsp-scope"></span>
     <span class="spacer"></span>
+    <button type="button" class="btn btn-outline-primary btn-sm" id="dsp-windows" hidden><i class="fa-regular fa-clock me-1"></i>Windows</button>
     <button type="button" class="btn btn-outline-primary btn-sm" id="dsp-zones" hidden><i class="fa-solid fa-map me-1"></i>Zones</button>
     <button type="button" class="btn btn-primary btn-sm" id="dsp-new" hidden><i class="fa-solid fa-plus me-1"></i>New job</button>
   </div>
@@ -4089,7 +4515,12 @@ window.MLS = (function () {
           <div class="col-md-3"><label class="form-label">Longitude</label><input class="form-control" name="longitude" type="number" inputmode="decimal" step="any"></div>
           <div class="col-md-3"><label class="form-label">Zone</label><select class="form-select" name="zoneId"><option value="">No zone</option></select></div>
           <div class="col-md-3"><label class="form-label">Fee</label><input class="form-control money" name="fee" type="number" inputmode="decimal" step="0.01" min="0" placeholder="from zone"></div>
-          <div class="col-md-4"><label class="form-label">Scheduled</label><input class="form-control" name="scheduledAt" type="datetime-local"></div>
+          <div class="col-12" id="dsp-win-wrap" hidden>
+            <div class="d-flex align-items-end gap-3 flex-wrap mb-2"><div><label class="form-label" for="dsp-win-date">Day</label><input class="form-control" id="dsp-win-date" type="date"></div><div class="small text-soft pb-2" id="dsp-win-note"></div></div>
+            <div class="slot-pick" id="dsp-win-slots" role="radiogroup" aria-label="Delivery window"></div>
+            <div class="form-check mt-2" id="dsp-win-over-wrap" hidden><input class="form-check-input" type="checkbox" id="dsp-win-over"><label class="form-check-label" for="dsp-win-over">This window is full — book it anyway</label></div>
+          </div>
+          <div class="col-md-4" id="dsp-win-exact-wrap"><label class="form-label">Scheduled</label><input class="form-control" name="scheduledAt" type="datetime-local"></div>
           <div class="col-md-4"><label class="form-label">Rider</label><select class="form-select" name="riderUserId"><option value="">Assign later</option></select></div>
           <div class="col-md-4"><label class="form-label">Notes</label><input class="form-control" name="notes" maxlength="300" placeholder="Gate code, landmarks"></div>
         </div>
@@ -4106,6 +4537,50 @@ window.MLS = (function () {
       <div class="modal-header"><h5 class="modal-title" id="dsp-view-title">Job</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body" id="dsp-view-body"></div>
       <div class="modal-footer flex-wrap gap-2" id="dsp-view-actions"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="dsp-rs-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <form class="modal-content" id="dsp-rs-form" autocomplete="off">
+      <div class="modal-header"><h5 class="modal-title" id="dsp-rs-title">Reschedule</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <div id="dsp-rs-wrap" hidden>
+          <div class="d-flex align-items-end gap-3 flex-wrap mb-2"><div><label class="form-label" for="dsp-rs-date">Day</label><input class="form-control" id="dsp-rs-date" type="date"></div><div class="small text-soft pb-2" id="dsp-rs-note"></div></div>
+          <div class="slot-pick" id="dsp-rs-slots" role="radiogroup" aria-label="Delivery window"></div>
+          <div class="form-check mt-2" id="dsp-rs-over-wrap" hidden><input class="form-check-input" type="checkbox" id="dsp-rs-over"><label class="form-check-label" for="dsp-rs-over">This window is full — book it anyway</label></div>
+        </div>
+        <div class="mt-3" id="dsp-rs-exact-wrap"><label class="form-label" for="dsp-rs-exact">Exact time <span class="text-soft small">— leave blank for any time</span></label><input class="form-control" id="dsp-rs-exact" type="datetime-local"></div>
+        <div class="alert alert-danger py-2 small mt-3 mb-0" id="dsp-rs-error" hidden></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" id="dsp-rs-submit"><i class="fa-regular fa-calendar-check me-1"></i>Reschedule</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" id="dsp-slot-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Delivery windows</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p class="small text-soft">The windows a delivery or pickup is booked into: the customer's text message and tracking page show the window, and a full window refuses more jobs unless you book it anyway. Places 0 means no limit.</p>
+        <div class="table-wrap mb-3"><table class="table table-sm table-cards mb-0"><thead><tr><th>Window</th><th>Days</th><th>Zone</th><th>For</th><th class="text-end">Places</th><th>Status</th><th></th></tr></thead><tbody id="dsp-slot-rows"></tbody></table></div>
+        <form class="row g-2 align-items-end" id="dsp-slot-form" autocomplete="off">
+          <input type="hidden" name="Id">
+          <div class="col-md-4"><label class="form-label small" for="dsp-slot-name">Name</label><input class="form-control form-control-sm" id="dsp-slot-name" name="Name" maxlength="40" placeholder="Morning" required></div>
+          <div class="col-6 col-md-2"><label class="form-label small" for="dsp-slot-start">From</label><input class="form-control form-control-sm" id="dsp-slot-start" name="StartTime" type="time" required></div>
+          <div class="col-6 col-md-2"><label class="form-label small" for="dsp-slot-end">To</label><input class="form-control form-control-sm" id="dsp-slot-end" name="EndTime" type="time" required></div>
+          <div class="col-md-4"><label class="form-label small" for="dsp-slot-zone">Zone</label><select class="form-select form-select-sm" id="dsp-slot-zone" name="ZoneId"><option value="">Every zone</option></select></div>
+          <div class="col-12"><div class="small fw-bold mb-1">Open on</div><div class="d-flex flex-wrap gap-3" id="dsp-slot-days"></div></div>
+          <div class="col-md-3"><label class="form-label small" for="dsp-slot-type">For</label><select class="form-select form-select-sm" id="dsp-slot-type" name="JobType"><option value="">Deliveries and pickups</option><option value="DELIVERY">Deliveries</option><option value="PICKUP">Pickups</option></select></div>
+          <div class="col-md-3"><label class="form-label small" for="dsp-slot-cap">Places (0 = no limit)</label><input class="form-control form-control-sm" id="dsp-slot-cap" name="Capacity" type="number" inputmode="numeric" step="1" min="0" value="0"></div>
+          <div class="col-md-3"><label class="form-label small" for="dsp-slot-status">Status</label><select class="form-select form-select-sm" id="dsp-slot-status" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
+          <div class="col-md-3 d-grid"><button type="submit" class="btn btn-sm btn-primary">Save window</button></div>
+          <div class="col-12"><div class="alert alert-danger py-2 small mb-0" id="dsp-slot-error" hidden></div></div>
+        </form>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button></div>
     </div>
   </div>
 </div>
@@ -4133,7 +4608,8 @@ window.MLS = (function () {
 (function () {
   'use strict';
   var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Form = M.Form;
-  var state = { status: 'OPEN', search: '', rider: '', type: '', date: '', page: 1 }, riders = [], zones = [], ready = [], jobType = 'DELIVERY', requestId = null;
+  var state = { status: 'OPEN', search: '', rider: '', type: '', date: '', page: 1 }, riders = [], zones = [], ready = [], jobType = 'DELIVERY', requestId = null, slotDefs = null, newPicker = null, rsPicker = null;
+  var DAYS = [['1', 'Mon'], ['2', 'Tue'], ['3', 'Wed'], ['4', 'Thu'], ['5', 'Fri'], ['6', 'Sat'], ['7', 'Sun']];
   function canAssign() { return M.Auth.can('DISPATCH_ASSIGN'); }
   function lensBranch() { var me = M.AppState.me; return me.activeBranch && me.activeBranch !== 'ALL' ? me.activeBranch : (me.branches.length === 1 ? me.branches[0].Id : ''); }
   function loadRiders() { return Api.call('dispatch.riders', {}).then(function (r) { riders = r; var sel = UI.el('dsp-rider'); sel.innerHTML = '<option value="">All riders</option>' + UI.options(r, state.rider, function (x) { return x.DisplayName; }); return r; }); }
@@ -4148,9 +4624,9 @@ window.MLS = (function () {
           { key: 'CustomerName', label: 'Customer', format: function (v, j) { return '<span class="fw-bold">' + UI.esc(v || '—') + '</span><div class="small text-soft">' + UI.esc(j.Address || '') + (j.Phone ? ' · ' + UI.esc(j.Phone) : '') + '</div>'; } },
           { key: 'Items', label: 'Orders', format: function (v) { return v.length ? v.map(function (i) { return UI.esc(i.OrderNo); }).join('<br>') : '<span class="text-soft">—</span>'; } },
           { key: 'Rider', label: 'Rider', format: function (v) { return v ? UI.esc(v) : '<span class="text-danger small">unassigned</span>'; } },
-          { key: 'ScheduledAt', label: 'When', format: function (v, j) { return v ? F.datetime(v) : '<span class="text-soft">any time</span>' + (j.CompletedAt ? '<div class="small text-soft">done ' + F.datetime(j.CompletedAt) + '</div>' : ''); } },
+          { key: 'ScheduledAt', label: 'When', format: function (v, j) { return (j.Window ? M.DeliveriesUI.windowTag(j) : (v ? F.datetime(v) : '<span class="text-soft">any time</span>')) + (j.CompletedAt ? '<div class="small text-soft">done ' + F.datetime(j.CompletedAt) + '</div>' : ''); } },
           { key: 'ToCollect', label: 'To collect', align: 'right', format: function (v, j) { return Number(v) > 0 ? '<span class="money text-danger fw-bold">' + F.peso(v) + '</span>' + (Number(j.Collected) > 0 ? '<div class="small text-success">got ' + F.peso(j.Collected) + '</div>' : '') : '<span class="text-soft">—</span>'; } },
-          { key: 'Status', label: 'Status', format: function (v) { return UI.badge(v); } }
+          { key: 'Status', label: 'Status', format: function (v, j) { return UI.badge(v) + (j.ProofStatus === 'MISSING' ? ' ' + UI.badge('MISSING', 'proof missing') : '') + (j.Items.some(function (i) { return i.ProblemReportedAt; }) ? ' ' + UI.badge('FAILED', 'problem reported') : ''); } }
         ],
         rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: state.status === 'OPEN' ? { icon: 'fa-map-location-dot', title: 'No open jobs', hint: 'Create a delivery or pickup job from the ready orders and assign a rider.', action: canAssign() ? { label: 'New job', icon: 'fa-plus', onClick: openNew } : null } : { icon: 'fa-map-location-dot', title: 'No finished jobs here', hint: 'Delivered, picked-up and cancelled jobs are listed once they are done.' },
         onPage: function (p) { state.page = p; load(); }, onRow: function (j) { open(j.Id); }
@@ -4163,34 +4639,136 @@ window.MLS = (function () {
   // ---------------------------------------------------------------- job page
   function paintJob(j) {
     UI.el('dsp-view-title').innerHTML = (j.JobType === 'PICKUP' ? 'Pickup ' : 'Delivery ') + UI.esc(j.Id) + ' ' + UI.badge(j.Status);
-    var grid = [['Rider', j.Rider ? UI.esc(j.Rider) : '<span class="text-danger">unassigned</span>'], ['Zone', UI.esc(j.Zone || '—')], ['Fee', F.peso(j.Fee)], ['Scheduled', j.ScheduledAt ? F.datetime(j.ScheduledAt) : 'any time'], ['Created', F.datetime(j.CreatedAt) + ' · ' + UI.esc(j.CreatedBy || '')], ['Finished', j.CompletedAt ? F.datetime(j.CompletedAt) : '—'], ['Branch', UI.esc(j.Branch)]];
+    var when = j.Window ? (j.Window.Name ? UI.esc(j.Window.Name) + ' · ' : '') + F.date(j.Window.Start) + ' ' + F.time(j.Window.Start) + '–' + F.time(j.Window.End) + (j.Window.Late ? ' <span class="window-tag late">done late</span>' : (j.Window.Overdue ? ' <span class="window-tag late">window over</span>' : '')) : (j.ScheduledAt ? F.datetime(j.ScheduledAt) : 'any time');
+    var grid = [['Rider', j.Rider ? UI.esc(j.Rider) : '<span class="text-danger">unassigned</span>'], ['Zone', UI.esc(j.Zone || '—')], ['Fee', F.peso(j.Fee)], [j.Window ? 'Window' : 'Scheduled', when], ['Created', F.datetime(j.CreatedAt) + ' · ' + UI.esc(j.CreatedBy || '')], ['Finished', j.CompletedAt ? F.datetime(j.CompletedAt) : '—'], ['Branch', UI.esc(j.Branch)]];
     UI.html('dsp-view-body', '<div class="detail-grid mb-3">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' + M.DeliveriesUI.jobCard(j, { readOnly: !canAssign() }) +
-      (j.Items.length ? '<div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>Order</th><th>Status</th><th class="text-end">To collect</th><th class="text-end">Collected</th></tr></thead><tbody>' + j.Items.map(function (i) { return '<tr class="pointer" data-order="' + UI.esc(i.OrderId) + '"><td data-label="Order"><span class="fw-bold">' + UI.esc(i.OrderNo) + '</span> <span class="small text-soft">' + UI.esc(i.CustomerName) + '</span></td><td data-label="Status">' + UI.badge(i.OrderStatus, i.OrderStatusLabel) + '</td><td data-label="To collect" class="text-end money">' + F.peso(i.AmountToCollect) + '</td><td data-label="Collected" class="text-end money">' + F.peso(i.CollectedAmount) + '</td></tr>'; }).join('') + '</tbody></table></div>' : ''));
+      (j.Items.length ? '<div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>Order</th><th>Status</th><th>Customer</th><th class="text-end">To collect</th><th class="text-end">Collected</th></tr></thead><tbody>' + j.Items.map(function (i) { return '<tr class="pointer" data-order="' + UI.esc(i.OrderId) + '"><td data-label="Order"><span class="fw-bold">' + UI.esc(i.OrderNo) + '</span> <span class="small text-soft">' + UI.esc(i.CustomerName) + '</span></td><td data-label="Status">' + UI.badge(i.OrderStatus, i.OrderStatusLabel) + '</td><td data-label="Customer">' + receiptCell(i) + '</td><td data-label="To collect" class="text-end money">' + F.peso(i.AmountToCollect) + '</td><td data-label="Collected" class="text-end money">' + F.peso(i.CollectedAmount) + '</td></tr>'; }).join('') + '</tbody></table></div>' : ''));
     var body = UI.el('dsp-view-body');
     M.DeliveriesUI.wireCard(body, function () { open(j.Id); load(); });
     body.querySelectorAll('[data-order]').forEach(function (tr) { tr.onclick = function () { M.Modal.closeThen('dsp-view-modal', function () { M.OrdersUI.openOrder(tr.getAttribute('data-order')); }); }; });
     var acts = '';
     if (canAssign() && j.IsOpen && j.Status !== 'OUT_FOR_DELIVERY') acts += '<div class="input-group input-group-sm max-w-320"><select class="form-select" id="dsp-assign-sel"><option value="">Unassigned</option>' + UI.options(riders, j.RiderUserId, function (x) { return x.DisplayName + (x.OpenJobs ? ' (' + x.OpenJobs + ' open)' : ''); }) + '</select><button type="button" class="btn btn-primary" id="dsp-assign-btn"><i class="fa-solid fa-user-check me-1"></i>Assign</button></div>';
+    if (canAssign() && (j.Actions || []).indexOf('reschedule') >= 0) acts += '<button type="button" class="btn btn-sm btn-outline-primary" id="dsp-resched-btn"><i class="fa-regular fa-calendar me-1"></i>Reschedule</button>';
     if (canAssign() && j.IsOpen) acts += '<button type="button" class="btn btn-sm btn-outline-danger" id="dsp-cancel-btn"><i class="fa-solid fa-ban me-1"></i>Cancel job</button>';
     UI.html('dsp-view-actions', acts + '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>');
     var ab = UI.el('dsp-assign-btn'); if (ab) ab.onclick = function () { Api.call('dispatch.assign', { id: j.Id, riderUserId: UI.el('dsp-assign-sel').value }, { busy: true }).then(function (u) { Toast.success(u.Rider ? 'Assigned to ' + u.Rider : 'Rider removed'); paintJob(u); load(); loadRiders(); }).catch(function (e) { Toast.danger(UI.error(e)); }); };
+    var rb = UI.el('dsp-resched-btn'); if (rb) rb.onclick = function () { M.Modal.closeThen('dsp-view-modal', function () { openReschedule(j); }); };
     var cb = UI.el('dsp-cancel-btn'); if (cb) cb.onclick = function () { M.OrdersUI.openReason({ title: 'Cancel job ' + j.Id, hint: 'Orders out for delivery return to ready.', confirmText: 'Cancel job', danger: true, onSubmit: function (d) { return Api.call('dispatch.cancel', { id: j.Id, reason: d.reason }).then(function (u) { Toast.warning('Job cancelled'); paintJob(u); load(); return u; }); } }); };
+  }
+  /** What the customer said about a stop on the tracking link (1.15.0): received, or a problem reported. */
+  function receiptCell(i) {
+    var out = '';
+    if (i.ReceiptConfirmedAt) out += '<div class="text-success small"><i class="fa-solid fa-circle-check me-1"></i>confirmed received ' + F.datetime(i.ReceiptConfirmedAt) + '</div>';
+    if (i.ProblemReportedAt) out += '<div class="text-danger small"><i class="fa-solid fa-triangle-exclamation me-1"></i>problem reported ' + F.datetime(i.ProblemReportedAt) + '</div>';
+    return out || '<span class="text-soft small">—</span>';
   }
   function open(id) { return Api.call('dispatch.get', { id: id }, { busy: true }).then(function (j) { paintJob(j); M.Modal.open('dsp-view-modal'); }).catch(function (e) { Toast.danger(UI.error(e)); }); }
 
+  // ---------------------------------------------------------------- delivery windows (1.15.0, R17)
+  function isoOf(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function loadSlotDefs() { return Api.call('dispatch.slots', {}).then(function (r) { slotDefs = r || []; return slotDefs; }).catch(function () { slotDefs = slotDefs || []; return slotDefs; }); }
+  /**
+   * The window picker of a form (ids prefix-wrap, -date, -slots, -over-wrap, -over, -note, -exact-wrap): the day, the windows open that
+   * day for the job's branch, zone and type with their places left, "No window" (an exact time or any time) unless DeliverySlotsRequired.
+   * A full window can be booked anyway once the box is ticked; the server checks the places again under its lock.
+   */
+  function picker(prefix) {
+    var st = { args: null, rows: [], required: false, slot: null, any: false, weekday: '', seq: 0 };
+    var el = function (k) { return UI.el(prefix + '-' + k); };
+    function paint() {
+      el('wrap').hidden = !st.any;
+      if (!st.any) { el('exact-wrap').hidden = false; el('over-wrap').hidden = true; return; }
+      var list = el('slots');
+      list.innerHTML = (st.required ? '' : '<button type="button" role="radio" data-slot=""' + (st.slot ? ' aria-checked="false"' : ' class="active" aria-checked="true"') + '><span class="nm">No window</span><span class="sub">an exact time, or any time</span></button>') +
+        st.rows.map(function (s) {
+          var on = !!(st.slot && st.slot.Id === s.Id), sub = s.Past ? 'over for that day' : (s.Full ? 'full · ' + s.Booked + ' of ' + s.Capacity + ' booked' : (s.Left === null ? (s.Booked ? s.Booked + ' booked' : 'no limit') : s.Left + ' of ' + s.Capacity + ' left'));
+          return '<button type="button" role="radio" aria-checked="' + (on ? 'true' : 'false') + '" data-slot="' + UI.esc(s.Id) + '"' + (s.Past ? ' disabled' : '') + ' class="' + (on ? 'active' : '') + (s.Full ? ' full' : '') + '"><span class="nm">' + UI.esc(s.Name) + ' · ' + F.clock(s.StartTime) + '–' + F.clock(s.EndTime) + '</span><span class="sub">' + UI.esc(sub + (s.ZoneId ? ' · ' + s.Zone : '')) + '</span></button>';
+        }).join('') + (st.rows.length ? '' : '<div class="small text-soft">No window is open on ' + UI.esc(st.weekday ? st.weekday + 's' : 'that day') + '.</div>');
+      list.querySelectorAll('[data-slot]').forEach(function (b) { b.onclick = function () { var id = b.getAttribute('data-slot'); st.slot = id ? st.rows.filter(function (s) { return s.Id === id; })[0] || null : null; el('over').checked = false; paint(); }; });
+      el('exact-wrap').hidden = !!st.slot || st.required;
+      el('over-wrap').hidden = !(st.slot && st.slot.Full);
+      el('note').textContent = st.required ? 'This job must take a window (the setting DeliverySlotsRequired).' : (st.weekday ? st.weekday : '');
+    }
+    /** args: { branchId, zoneId, jobType }; keep: the window to keep selected when it is still offered. */
+    function load(args, keep) {
+      st.args = args; var my = ++st.seq;
+      st.any = !!args.branchId && (slotDefs || []).some(function (s) { return s.BranchId === args.branchId && (!s.ZoneId || s.ZoneId === args.zoneId) && (!s.JobType || s.JobType === args.jobType); });
+      if (!st.any) { st.rows = []; st.slot = null; st.required = false; paint(); return Promise.resolve(); }
+      var d = el('date'), today = new Date(), ahead = Number((M.AppState.me.settings || {}).DispatchAheadDays) || 30;
+      d.min = isoOf(today); d.max = isoOf(new Date(today.getTime() + ahead * 86400000)); if (!d.value) d.value = d.min;
+      var want = keep !== undefined ? keep : (st.slot ? st.slot.Id : '');
+      return Api.call('dispatch.slots', { branchId: args.branchId, zoneId: args.zoneId, jobType: args.jobType, date: d.value }).then(function (r) {
+        if (my !== st.seq) return;
+        st.rows = r.rows || []; st.required = !!r.required; st.weekday = r.weekday || '';
+        st.slot = want ? st.rows.filter(function (s) { return s.Id === want && !s.Past; })[0] || null : null;
+        paint();
+      }).catch(function (e) { if (my !== st.seq) return; st.rows = []; paint(); el('note').textContent = UI.error(e); });
+    }
+    function check() { if (st.any && st.required && !st.slot) return 'Choose a window for this job.'; if (st.slot && st.slot.Full && !el('over').checked) return 'The ' + st.slot.Name + ' window is full: tick "book it anyway" or choose another window.'; return ''; }
+    function value() { return st.slot ? { slotId: st.slot.Id, slotDate: el('date').value, overbook: !!(st.slot.Full && el('over').checked) } : null; }
+    function reset(date) { st.slot = null; st.rows = []; st.any = false; st.required = false; el('date').value = date || ''; el('over').checked = false; el('wrap').hidden = true; el('exact-wrap').hidden = false; el('over-wrap').hidden = true; }
+    el('date').onchange = function () { if (st.args) load(st.args, ''); };
+    return { load: load, check: check, value: value, reset: reset };
+  }
+  function ensurePickers() { if (!newPicker) { newPicker = picker('dsp-win'); rsPicker = picker('dsp-rs'); } }
+  function openReschedule(j) {
+    ensurePickers();
+    var f = UI.el('dsp-rs-form'), box = UI.el('dsp-rs-error'); f.reset(); box.hidden = true;
+    UI.el('dsp-rs-title').textContent = 'Reschedule ' + j.Id + (j.CustomerName ? ' · ' + j.CustomerName : '');
+    var start = j.ScheduledAt ? new Date(j.ScheduledAt) : null, day = start && start.getTime() > Date.now() - 86400000 ? isoOf(start) : '';
+    if (start && !j.Window) { var local = new Date(start.getTime() - start.getTimezoneOffset() * 60000); UI.el('dsp-rs-exact').value = local.toISOString().slice(0, 16); }
+    rsPicker.reset(day);
+    loadSlotDefs().then(function () { return rsPicker.load({ branchId: j.BranchId, zoneId: j.ZoneId || '', jobType: j.JobType }, j.SlotId || ''); });
+    f.onsubmit = function (ev) {
+      ev.preventDefault(); box.hidden = true; var err = rsPicker.check(); if (err) { box.textContent = err; box.hidden = false; return; }
+      var w = rsPicker.value(), exact = UI.el('dsp-rs-exact').value, payload = { id: j.Id };
+      if (w) Object.assign(payload, w); else payload.scheduledAt = exact ? new Date(exact).toISOString() : '';
+      var btn = UI.el('dsp-rs-submit'); btn.disabled = true;
+      Api.call('dispatch.reschedule', payload, { busy: true }).then(function (u) { btn.disabled = false; Toast.success('Job ' + u.Id + ' rescheduled'); M.Modal.closeThen('dsp-rs-modal', function () { load(); paintJob(u); M.Modal.open('dsp-view-modal'); }); })
+        .catch(function (e) { btn.disabled = false; box.textContent = UI.error(e); box.hidden = false; });
+    };
+    M.Modal.open('dsp-rs-modal');
+  }
+  function paintSlots(list) {
+    var all = M.AppState.me.activeBranch === 'ALL';
+    UI.html('dsp-slot-rows', list.length ? list.map(function (s) { return '<tr><td data-label="Window"><span class="fw-bold">' + UI.esc(s.Name) + '</span> ' + F.clock(s.StartTime) + '–' + F.clock(s.EndTime) + (all ? '<div class="small text-soft">' + UI.esc(UI.branchName(s.BranchId)) + '</div>' : '') + '</td><td data-label="Days">' + DAYS.filter(function (d) { return s.Weekdays.indexOf(d[0]) >= 0; }).map(function (d) { return d[1]; }).join(' ') + '</td><td data-label="Zone">' + UI.esc(s.Zone) + '</td><td data-label="For">' + (s.JobType === 'DELIVERY' ? 'Deliveries' : (s.JobType === 'PICKUP' ? 'Pickups' : 'Both')) + '</td><td data-label="Places" class="text-end">' + (s.Capacity || 'no limit') + '</td><td data-label="Status">' + UI.badge(s.Status) + '</td><td class="text-end"><button type="button" class="btn btn-sm btn-link px-2 py-0" data-slot-edit="' + UI.esc(s.Id) + '">Edit</button></td></tr>'; }).join('') : '<tr><td colspan="7" class="text-soft">No windows yet. Without windows a job takes an exact time, or any time.</td></tr>');
+    UI.el('dsp-slot-rows').querySelectorAll('[data-slot-edit]').forEach(function (b) { b.onclick = function () { var x = list.filter(function (y) { return y.Id === b.getAttribute('data-slot-edit'); })[0]; if (!x) return; var f = UI.el('dsp-slot-form'); Form.write(f, { Id: x.Id, Name: x.Name, StartTime: x.StartTime, EndTime: x.EndTime, ZoneId: x.ZoneId || '', JobType: x.JobType || '', Capacity: x.Capacity, Status: x.Status }); UI.el('dsp-slot-days').querySelectorAll('[data-day]').forEach(function (cb) { cb.checked = x.Weekdays.indexOf(cb.getAttribute('data-day')) >= 0; }); UI.el('dsp-slot-name').focus(); }; });
+  }
+  function resetSlotForm() { var f = UI.el('dsp-slot-form'); f.reset(); f.querySelector('[name=Id]').value = ''; UI.el('dsp-slot-error').hidden = true; UI.el('dsp-slot-days').querySelectorAll('[data-day]').forEach(function (cb) { cb.checked = true; }); }
+  function openWindows() {
+    UI.html('dsp-slot-days', DAYS.map(function (d) { return '<div class="form-check form-check-inline m-0"><input class="form-check-input" type="checkbox" id="dsp-slot-day-' + d[0] + '" data-day="' + d[0] + '" checked><label class="form-check-label" for="dsp-slot-day-' + d[0] + '">' + d[1] + '</label></div>'; }).join(''));
+    Promise.all([Api.call('dispatch.slots', { includeInactive: true }), Api.call('dispatch.zones', {})]).then(function (r) {
+      zones = r[1]; UI.el('dsp-slot-zone').innerHTML = '<option value="">Every zone</option>' + UI.options(zones, '', function (z) { return z.Name; });
+      resetSlotForm(); paintSlots(r[0]); M.Modal.open('dsp-slot-modal');
+    }).catch(function (e) { Toast.danger(UI.error(e)); });
+  }
+  function submitSlot(ev) {
+    ev.preventDefault(); var f = UI.el('dsp-slot-form'), box = UI.el('dsp-slot-error'); box.hidden = true;
+    if (Form.validate(f, { Name: ['required'], StartTime: ['required'], EndTime: ['required'], Capacity: ['number'] })) return;
+    var d = Form.read(f), days = []; UI.el('dsp-slot-days').querySelectorAll('[data-day]:checked').forEach(function (cb) { days.push(cb.getAttribute('data-day')); }); d.Weekdays = days.join('');
+    if (!days.length) { box.textContent = 'Tick the days the window is open.'; box.hidden = false; return; }
+    if (!d.Id && !d.ZoneId && M.AppState.me.activeBranch === 'ALL' && M.AppState.me.branches.length > 1) { box.textContent = 'Choose a branch in the header (or a zone) to add a window.'; box.hidden = false; return; }
+    if (!d.Id) d.BranchId = lensBranch();
+    Api.call('dispatch.saveSlot', d, { busy: true }).then(function (list) { Toast.success('Window saved'); resetSlotForm(); paintSlots(list); slotDefs = null; })
+      .catch(function (e) { if (e.fields) Form.errors(f, e.fields, e.message); box.textContent = UI.error(e); box.hidden = false; });
+  }
+
   // ---------------------------------------------------------------- new job
-  function setType(t) { jobType = t; UI.el('dsp-job-type').querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-type') === t); }); UI.el('dsp-orders-wrap').hidden = t !== 'DELIVERY'; }
+  function setType(t) { jobType = t; UI.el('dsp-job-type').querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-type') === t); }); UI.el('dsp-orders-wrap').hidden = t !== 'DELIVERY'; refreshWindows(); }
+  /** The new job's branch: the zone's, the one chosen, or the lens. */
+  function jobArgs() { var f = UI.el('dsp-job-form'), zoneId = f.querySelector('[name=zoneId]').value, z = zones.filter(function (x) { return x.Id === zoneId; })[0]; return { branchId: z ? z.BranchId : (f.querySelector('[name=branchId]').value || lensBranch()), zoneId: zoneId, jobType: jobType }; }
+  function refreshWindows() { if (newPicker && slotDefs) newPicker.load(jobArgs()); }
   function paintOrders() {
     UI.html('dsp-orders', ready.length ? ready.map(function (o) { return '<label class="d-flex align-items-start gap-2 py-1 border-bottom"><input class="form-check-input mt-1" type="checkbox" value="' + UI.esc(o.Id) + '" data-ready><span><span class="fw-bold">' + UI.esc(o.OrderNo) + '</span> ' + (o.ServiceType === 'DELIVERY' ? '<span class="badge text-bg-light border">for delivery</span>' : '') + '<div class="small text-soft">' + UI.esc(o.CustomerName) + (o.Address ? ' · ' + UI.esc(o.Address) : '') + (Number(o.BalanceAmount) > 0 ? ' · <span class="text-danger">balance ' + F.peso(o.BalanceAmount) + '</span>' : ' · paid') + '</div></span></label>'; }).join('') : '<div class="text-soft small p-2">No ready orders waiting for delivery.</div>');
     UI.el('dsp-orders').querySelectorAll('[data-ready]').forEach(function (cb) { cb.onchange = function () { var first = selectedOrders()[0]; if (first && cb.checked) { var f = UI.el('dsp-job-form'); ['customerName', 'phone', 'address', 'latitude', 'longitude'].forEach(function (k) { var el = f.querySelector('[name=' + k + ']'); var v = { customerName: first.CustomerName, phone: first.CustomerPhone, address: first.Address, latitude: first.Latitude, longitude: first.Longitude }[k]; if (!el.value && v !== '' && v !== null && v !== undefined) el.value = v; }); } }; });
   }
   function selectedOrders() { var ids = []; UI.el('dsp-orders').querySelectorAll('[data-ready]:checked').forEach(function (cb) { ids.push(cb.value); }); return ready.filter(function (o) { return ids.indexOf(o.Id) >= 0; }); }
   function openNew() {
-    var f = UI.el('dsp-job-form'), me = M.AppState.me; f.reset(); Form.clearErrors(f); UI.el('dsp-job-error').hidden = true; requestId = UI.uuid(); setType('DELIVERY');
+    ensurePickers(); var f = UI.el('dsp-job-form'), me = M.AppState.me; f.reset(); Form.clearErrors(f); UI.el('dsp-job-error').hidden = true; requestId = UI.uuid(); slotDefs = null; newPicker.reset(''); setType('DELIVERY');
     f.querySelector('[name=branchId]').innerHTML = (me.branches.length > 1 ? '<option value="">Choose a branch</option>' : '') + UI.options(me.branches, lensBranch()); UI.el('dsp-branch-wrap').hidden = me.branches.length === 1;
     UI.html('dsp-orders', '<div class="text-soft small p-2">Loading ready orders…</div>');
-    Promise.all([Api.call('dispatch.readyOrders', {}), Api.call('dispatch.zones', {}), loadRiders()]).then(function (res) {
-      ready = res[0]; zones = res[1]; paintOrders();
+    Promise.all([Api.call('dispatch.readyOrders', {}), Api.call('dispatch.zones', {}), loadRiders(), loadSlotDefs()]).then(function (res) {
+      ready = res[0]; zones = res[1]; paintOrders(); refreshWindows();
       f.querySelector('[name=zoneId]').innerHTML = '<option value="">No zone</option>' + UI.options(zones, '', function (z) { return z.Name + ' · ' + F.peso(z.Fee); });
       f.querySelector('[name=riderUserId]').innerHTML = '<option value="">Assign later</option>' + UI.options(riders, '', function (x) { return x.DisplayName + (x.OpenJobs ? ' (' + x.OpenJobs + ' open)' : ''); });
     }).catch(function (e) { Toast.danger(UI.error(e)); });
@@ -4202,14 +4780,17 @@ window.MLS = (function () {
     var d = Form.read(f), orderIds = selectedOrders().map(function (o) { return o.Id; });
     if (jobType === 'DELIVERY' && !orderIds.length) { box.textContent = 'Tick at least one ready order.'; box.hidden = false; return; }
     if (jobType === 'PICKUP' && !String(d.customerName || '').trim() && !String(d.address || '').trim()) { box.textContent = 'A pickup needs the customer name or an address.'; box.hidden = false; return; }
-    var payload = { requestId: requestId, jobType: jobType, branchId: d.branchId, orderIds: orderIds, customerName: d.customerName, phone: d.phone, address: d.address, latitude: d.latitude, longitude: d.longitude, zoneId: d.zoneId, fee: d.fee === '' ? '' : d.fee, scheduledAt: d.scheduledAt ? new Date(d.scheduledAt).toISOString() : '', riderUserId: d.riderUserId, notes: d.notes };
+    var werr = newPicker.check(); if (werr) { box.textContent = werr; box.hidden = false; return; }
+    var w = newPicker.value();
+    var payload = { requestId: requestId, jobType: jobType, branchId: d.branchId, orderIds: orderIds, customerName: d.customerName, phone: d.phone, address: d.address, latitude: d.latitude, longitude: d.longitude, zoneId: d.zoneId, fee: d.fee === '' ? '' : d.fee, scheduledAt: !w && d.scheduledAt ? new Date(d.scheduledAt).toISOString() : '', riderUserId: d.riderUserId, notes: d.notes };
+    if (w) Object.assign(payload, w);
     var btn = UI.el('dsp-job-submit'); btn.disabled = true;
     Api.call('dispatch.create', payload, { busy: true }).then(function (j) { btn.disabled = false; requestId = null; Toast.success((j.duplicate ? 'Already created: ' : 'Job created: ') + j.Id + (j.Rider ? ' · ' + j.Rider : '')); M.Modal.closeThen('dsp-job-modal', function () { load(); paintJob(j); M.Modal.open('dsp-view-modal'); }); }).catch(function (e) { btn.disabled = false; if (e.fields) Form.errors(f, e.fields, e.message); box.textContent = UI.error(e); box.hidden = false; });
   }
 
   // ---------------------------------------------------------------- zones
   function paintZones(list) {
-    UI.html('dsp-zone-rows', list.length ? list.map(function (z) { return '<tr><td data-label="Zone">' + UI.esc(z.Name) + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(UI.branchName(z.BranchId)) + '</div>' : '') + '</td><td data-label="Fee" class="text-end money">' + F.peso(z.Fee) + '</td><td data-label="Status">' + UI.badge(z.Status) + '</td><td class="text-end"><button type="button" class="btn btn-sm btn-link p-0" data-zone="' + UI.esc(z.Id) + '">edit</button></td></tr>'; }).join('') : '<tr><td colspan="4" class="text-soft">No zones yet. A zone sets the default delivery fee.</td></tr>');
+    UI.html('dsp-zone-rows', list.length ? list.map(function (z) { return '<tr><td data-label="Zone">' + UI.esc(z.Name) + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(UI.branchName(z.BranchId)) + '</div>' : '') + '</td><td data-label="Fee" class="text-end money">' + F.peso(z.Fee) + '</td><td data-label="Status">' + UI.badge(z.Status) + '</td><td class="text-end"><button type="button" class="btn btn-sm btn-link px-2 py-0" data-zone="' + UI.esc(z.Id) + '">Edit</button></td></tr>'; }).join('') : '<tr><td colspan="4" class="text-soft">No zones yet. A zone sets the default delivery fee.</td></tr>');
     UI.el('dsp-zone-rows').querySelectorAll('[data-zone]').forEach(function (b) { b.onclick = function () { var z = list.filter(function (x) { return x.Id === b.getAttribute('data-zone'); })[0]; Form.write(UI.el('dsp-zone-form'), z); }; });
   }
   function openZones() { Api.call('dispatch.zones', { includeInactive: true }).then(function (z) { UI.el('dsp-zone-form').reset(); paintZones(z); M.Modal.open('dsp-zone-modal'); }).catch(function (e) { Toast.danger(UI.error(e)); }); }
@@ -4219,25 +4800,27 @@ window.MLS = (function () {
     Api.call('dispatch.saveZone', d, { busy: true }).then(function (z) { Toast.success('Zone saved'); f.reset(); paintZones(z); }).catch(function (e) { if (e.fields) Form.errors(f, e.fields, e.message); Toast.danger(UI.error(e)); });
   }
 
-  function paintButtons() { UI.el('dsp-new').hidden = !canAssign(); UI.el('dsp-zones').hidden = !canAssign(); }
+  function paintButtons() { UI.el('dsp-new').hidden = !canAssign(); UI.el('dsp-zones').hidden = !canAssign(); UI.el('dsp-windows').hidden = !canAssign(); }
   function wire() {
     UI.el('dsp-tabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { UI.el('dsp-tabs').querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); }); state.status = b.getAttribute('data-status'); state.page = 1; load(); }; });
     UI.el('dsp-search').oninput = UI.debounce(function () { state.search = UI.el('dsp-search').value.trim(); state.page = 1; load(); }, 350);
     UI.el('dsp-rider').onchange = function () { state.rider = this.value; state.page = 1; load(); }; UI.el('dsp-type').onchange = function () { state.type = this.value; state.page = 1; load(); }; UI.el('dsp-date').onchange = function () { state.date = this.value; state.page = 1; load(); };
-    UI.el('dsp-new').onclick = openNew; UI.el('dsp-zones').onclick = openZones; UI.el('dsp-job-form').onsubmit = submitNew; UI.el('dsp-zone-form').onsubmit = submitZone;
+    ensurePickers();
+    UI.el('dsp-new').onclick = openNew; UI.el('dsp-zones').onclick = openZones; UI.el('dsp-windows').onclick = openWindows; UI.el('dsp-job-form').onsubmit = submitNew; UI.el('dsp-zone-form').onsubmit = submitZone; UI.el('dsp-slot-form').onsubmit = submitSlot;
+    UI.el('dsp-job-form').querySelector('[name=branchId]').onchange = refreshWindows;
     UI.el('dsp-job-type').querySelectorAll('button').forEach(function (b) { b.onclick = function () { setType(b.getAttribute('data-type')); }; });
-    UI.el('dsp-job-form').querySelector('[name=zoneId]').onchange = function () { var z = zones.filter(function (x) { return x.Id === this.value; }.bind(this))[0]; var fee = UI.el('dsp-job-form').querySelector('[name=fee]'); if (z) fee.value = Number(z.Fee).toFixed(2); };
+    UI.el('dsp-job-form').querySelector('[name=zoneId]').onchange = function () { var z = zones.filter(function (x) { return x.Id === this.value; }.bind(this))[0]; var fee = UI.el('dsp-job-form').querySelector('[name=fee]'); if (z) fee.value = Number(z.Fee).toFixed(2); refreshWindows(); };
   }
   M.Router.register('dispatch', {
     title: 'Dispatch',
     render: function (el, params) { wire(); paintButtons(); loadRiders().catch(function () { /* list still works */ }); load().then(function () { if (params && params.open) open(params.open); }); },
     refresh: function (el, params) { paintButtons(); loadRiders().catch(function () { /* ignore */ }); load().then(function () { if (params && params.open) open(params.open); }); }
   });
-  M.DispatchUI = { openJob: open, openNew: openNew };
+  M.DispatchUI = { openJob: open, openNew: openNew, openWindows: openWindows };
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — DeliveriesPage.html: the My Deliveries module: the rider's own jobs on a phone (accept, start, deliver with collection, fail) plus the job dialogs Dispatch reuses. -->
+        <!-- Mrs Laundry Sys — DeliveriesPage.html: the My Deliveries module: the rider's own jobs on a phone (accept, start, deliver with collection and, since 1.15.0, the proof of delivery: a photo, the customer's signature, who received it; fail) plus the job dialogs Dispatch reuses (the proof viewer among them). -->
 <section id="view-deliveries" class="view" hidden>
   <div class="view-head">
     <h2>My deliveries</h2>
@@ -4258,6 +4841,13 @@ window.MLS = (function () {
         <div class="mt-2"><label class="form-label">Notes (optional)</label><input class="form-control" name="notes" maxlength="200" placeholder="Left with the guard, paid by the neighbour…"></div>
         <div class="form-check mt-2" id="dlv-pin-wrap" hidden><input class="form-check-input" type="checkbox" name="saveCustomerLocation" id="dlv-pin"><label class="form-check-label" for="dlv-pin">Save my current location as this customer's pin <span class="text-soft small">— the next rider navigates straight here</span></label></div>
         <div class="small text-soft mt-1" id="dlv-geo-note" hidden><i class="fa-solid fa-location-crosshairs me-1"></i>Your phone's location is attached to the job when it allows it.</div>
+        <div class="border rounded p-2 mt-3" id="dlv-proof" hidden>
+          <div class="fw-bold" id="dlv-proof-head">Proof of delivery</div>
+          <div class="small text-soft mb-2" id="dlv-proof-hint"></div>
+          <div id="dlv-proof-photo-wrap"><label class="form-label small mb-1" for="dlv-proof-photo"><i class="fa-solid fa-camera me-1"></i>Photo of the laundry handed over</label><input class="form-control" type="file" id="dlv-proof-photo" accept="image/jpeg,image/png,image/*" capture="environment"><div class="small text-soft mt-1" id="dlv-proof-photo-note" hidden></div><img class="proof-thumb" id="dlv-proof-photo-preview" alt="The photo taken" hidden></div>
+          <div class="mt-2" id="dlv-proof-sig-wrap"><div class="d-flex align-items-center"><span class="form-label small mb-1" id="dlv-proof-sig-label"><i class="fa-solid fa-signature me-1"></i>Customer's signature</span><button type="button" class="btn btn-link btn-sm ms-auto p-0" id="dlv-proof-sig-clear">Clear</button></div><canvas class="sig-pad" id="dlv-proof-sig" role="img" aria-labelledby="dlv-proof-sig-label"></canvas></div>
+          <div class="mt-2"><label class="form-label small mb-1" for="dlv-proof-received">Received by</label><input class="form-control" id="dlv-proof-received" maxlength="80" placeholder="Name of the person who took the laundry"></div>
+        </div>
         <div class="alert alert-danger py-2 small mt-3" id="dlv-complete-error" hidden></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button type="submit" class="btn btn-success" id="dlv-complete-ok"><i class="fa-solid fa-check me-1"></i>Confirm</button></div>
@@ -4265,11 +4855,21 @@ window.MLS = (function () {
   </div>
 </div>
 
+<div class="modal fade" id="dlv-proof-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="dlv-proof-title">Proof of delivery</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body" id="dlv-proof-body"></div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button></div>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   'use strict';
   var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast;
-  var data = null, completeRequest = null;
+  var data = null, completeRequest = null, pad = null, photo = { data: '', job: null };
   function stopOf(j) { return j.Latitude && j.Longitude ? j.Latitude + ',' + j.Longitude : (j.Address || ''); }
   function mapLink(j) { var q = stopOf(j); return q ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q) : ''; }
   /** Turn-by-turn from where the rider is (Google Maps picks the current location when no origin is given). */
@@ -4283,6 +4883,19 @@ window.MLS = (function () {
   /** The phone's position, or null when the browser refuses or takes too long; never blocks the job. */
   function locate(ms) { return new Promise(function (resolve) { if (!navigator.geolocation) return resolve(null); var done = false, t = setTimeout(function () { if (!done) { done = true; resolve(null); } }, ms || 8000); navigator.geolocation.getCurrentPosition(function (pos) { if (done) return; done = true; clearTimeout(t); resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }); }, function () { if (done) return; done = true; clearTimeout(t); resolve(null); }, { enableHighAccuracy: true, timeout: ms || 8000, maximumAge: 60000 }); }); }
   function statusLabel(s) { return F.status(s); }
+  /** The window booked (1.15.0): "Morning · Oct 30 9:00 AM–12:00 PM", marked late when the stop was made after it or is still open after it. */
+  function windowTag(j) {
+    if (!j.Window) return '<span class="small text-soft">' + (j.ScheduledAt ? F.datetime(j.ScheduledAt) : 'any time') + '</span>';
+    var w = j.Window, late = w.Late || w.Overdue;
+    return '<span class="window-tag' + (late ? ' late' : '') + '" title="' + (w.Overdue ? 'The window has ended and the stop is still open' : (w.Late ? 'Completed after the window' : 'The window booked with the customer')) + '"><i class="fa-regular fa-clock"></i>' + (w.Name ? UI.esc(w.Name) + ' · ' : '') + F.date(w.Start) + ' ' + F.time(w.Start) + '–' + F.time(w.End) + (late ? ' · late' : '') + '</span>';
+  }
+  /** The proof line of a finished job: kept (with who received it and a button to see it), missing, or removed. */
+  function proofLine(j) {
+    if (j._pending && j._proofTaken) return '<div class="small mt-1"><i class="fa-solid fa-camera me-1"></i>Proof kept on this phone until it syncs</div>';
+    if (!j.ProofStatus) return '';
+    var label = { ATTACHED: 'Proof kept', MISSING: 'Proof missing', REMOVED: 'Proof removed' }[j.ProofStatus] || F.status(j.ProofStatus);
+    return '<div class="small mt-1 d-flex align-items-center gap-2 flex-wrap">' + UI.badge(j.ProofStatus, label) + (j.ReceivedBy ? '<span>received by ' + UI.esc(j.ReceivedBy) + '</span>' : '') + (j.HasProof && !j._pending ? '<button type="button" class="btn btn-link btn-sm p-0" data-proof="' + UI.esc(j.Id) + '"><i class="fa-solid fa-image me-1"></i>View proof</button>' : '') + '</div>';
+  }
   /** The text-message choices for a job: pickup confirmation, rider on the way, order completed per order, a general note. */
   function smsItems(j) {
     var items = [];
@@ -4303,13 +4916,14 @@ window.MLS = (function () {
     var link = mapLink(j), nav = navLink(j);
     var extra = (M.Sms && M.Sms.can(j.Mobile) ? M.Sms.menuHtml({ id: 'job-sms-' + j.Id, items: smsItems(j), cls: 'btn-outline-primary' }) : '') + (M.Auth.can('INCIDENT_CREATE') ? '<button type="button" class="btn btn-sm btn-outline-warning" data-incident="' + UI.esc(j.Id) + '"><i class="fa-solid fa-triangle-exclamation me-1"></i>Report incident</button>' : '');
     return '<div class="job-card' + (j.IsOpen ? '' : ' done') + '" data-job="' + UI.esc(j.Id) + '">' +
-      '<div class="d-flex align-items-center gap-2 flex-wrap"><span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>' + UI.badge(j.Status, statusLabel(j.Status)) + (j._pending ? '<span class="pending-tag" title="Recorded on this phone; the server has not received it yet">not synced</span>' : '') + '<span class="small text-soft">' + (j.ScheduledAt ? F.datetime(j.ScheduledAt) : 'any time') + '</span><span class="ms-auto small text-soft">' + UI.esc(j.Id) + '</span></div>' +
+      '<div class="d-flex align-items-center gap-2 flex-wrap"><span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>' + UI.badge(j.Status, statusLabel(j.Status)) + (j._pending ? '<span class="pending-tag" title="Recorded on this phone; the server has not received it yet">not synced</span>' : '') + windowTag(j) + '<span class="ms-auto small text-soft">' + UI.esc(j.Id) + '</span></div>' +
       '<div class="who mt-1">' + UI.esc(j.CustomerName || 'Customer') + '</div>' +
       (j.Address || nav ? '<div class="addr">' + UI.esc(j.Address || 'Pinned location') + (link ? ' <a href="' + link + '" target="_blank" rel="noopener" class="ms-1"><i class="fa-solid fa-map-location-dot"></i> Map</a>' : '') + (nav && j.IsOpen ? ' <a href="' + nav + '" target="_blank" rel="noopener" class="ms-1 fw-bold"><i class="fa-solid fa-diamond-turn-right"></i> Navigate</a>' : '') + (j.Latitude && j.Longitude ? ' <span class="small text-soft" title="Pinned coordinates"><i class="fa-solid fa-location-dot"></i></span>' : '') + '</div>' : '') +
       (j.Phone ? '<div><a href="tel:' + UI.esc(j.Phone) + '"><i class="fa-solid fa-phone me-1"></i>' + UI.esc(j.Phone) + '</a></div>' : '') +
       (j.Notes ? '<div class="small text-soft mt-1"><i class="fa-regular fa-note-sticky me-1"></i>' + UI.esc(j.Notes) + '</div>' : '') + orders +
       (Number(j.ToCollect) > 0 ? '<div class="mt-2 fw-bold">To collect: <span class="text-danger">' + F.peso(j.ToCollect) + '</span>' + (Number(j.Collected) > 0 ? ' · collected ' + F.peso(j.Collected) : '') + '</div>' : '') +
       (j.FailureReason ? '<div class="small text-danger mt-1">' + UI.esc(j.FailureReason) + '</div>' : '') +
+      (j.IsOpen ? '' : proofLine(j)) +
       ((acts && !opts.readOnly) || extra ? '<div class="acts">' + (opts.readOnly ? '' : acts) + extra + '</div>' : '') + '</div>';
   }
   function wireCard(container, onChange) {
@@ -4318,6 +4932,7 @@ window.MLS = (function () {
       var id = card.getAttribute('data-job');
       if (M.Sms) M.Sms.wireMenu(card, function (arg) { return { deliveryId: id, orderId: arg || '' }; });
       var inc = card.querySelector('[data-incident]'); if (inc) inc.onclick = function () { M.Incidents.report({ deliveryId: id, customerName: (card.querySelector('.who') || {}).textContent }); };
+      var pr = card.querySelector('[data-proof]'); if (pr) pr.onclick = function () { openProof(id); };
     });
   }
   function act(id, action, onChange) {
@@ -4328,6 +4943,99 @@ window.MLS = (function () {
     if (action === 'fail') return M.OrdersUI.openReason({ title: 'Could not complete the job', hint: 'The orders go back to the shop as ready.', label: 'Reason', confirmText: 'Mark failed', danger: true, onSubmit: function (d) { return Api.call('deliveries.fail', { id: id, reason: d.reason }).then(function (j) { Toast.warning('Job marked failed'); if (onChange) onChange(j); return j; }); } });
     if (action === 'complete') return Api.call('dispatch.get', { id: id }).then(function (j) { openComplete(j, onChange); }).catch(fail);
   }
+  // ---------------------------------------------------------------- proof of delivery (1.15.0, R17)
+  /** ProofOfDelivery (OFF | OPTIONAL | REQUIRED) and ProofKinds as the settings say. */
+  function proofSettings() {
+    var st = M.AppState.me.settings || {}, mode = String(st.ProofOfDelivery || 'OFF').toUpperCase(), kinds = Array.isArray(st.ProofKinds) ? st.ProofKinds : String(st.ProofKinds || '').split(/[\s,]+/);
+    kinds = kinds.map(function (k) { return String(k).toUpperCase(); });
+    return { mode: ['OFF', 'OPTIONAL', 'REQUIRED'].indexOf(mode) >= 0 ? mode : 'OFF', photo: kinds.indexOf('PHOTO') >= 0, signature: kinds.indexOf('SIGNATURE') >= 0, keepDays: Number(st.ProofKeepDays) || 0 };
+  }
+  var PHOTO_MAX_CHARS = Math.floor(2 * 1024 * 1024 * 4 / 3);
+  /** The camera's photo made small enough to send from a phone: a JPEG at most 1280 px on its longest side (smaller again when still over 2 MB). */
+  function shrinkPhoto(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file) { resolve(''); return; }
+      if (file.type && !/^image\//.test(file.type)) { reject(new Error('Choose a photo (an image file)')); return; }
+      var url = URL.createObjectURL(file), img = new Image();
+      var draw = function (maxPx, quality) { var scale = Math.min(1, maxPx / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.naturalWidth * scale)); c.height = Math.max(1, Math.round(img.naturalHeight * scale)); var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', quality); };
+      img.onload = function () {
+        try {
+          var out = draw(1280, 0.7); if (out.length > PHOTO_MAX_CHARS) out = draw(1024, 0.5); if (out.length > PHOTO_MAX_CHARS) out = draw(800, 0.4);
+          URL.revokeObjectURL(url);
+          if (!/^data:image\/jpeg;base64,/.test(out)) { reject(new Error('This phone could not convert the photo to JPEG; take it again')); return; }
+          if (out.length > PHOTO_MAX_CHARS) { reject(new Error('The photo is too large even after shrinking it')); return; }
+          resolve(out);
+        } catch (e) { URL.revokeObjectURL(url); reject(e); }
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('The photo could not be read; take it again')); };
+      img.src = url;
+    });
+  }
+  /** A finger-drawn signature on a canvas; exported as a PNG at most 600 px wide on white. */
+  function signaturePad(canvas) {
+    var g = null, drawing = false, last = null, signed = false;
+    function size() { var r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1; if (!r.width) return; canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr); g = canvas.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.lineWidth = 2.2; g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#0f172a'; g.fillStyle = '#0f172a'; signed = false; }
+    function at(ev) { var r = canvas.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
+    canvas.addEventListener('pointerdown', function (ev) { if (!g) size(); if (!g) return; drawing = true; last = at(ev); try { canvas.setPointerCapture(ev.pointerId); } catch (e) { /* older engines */ } g.beginPath(); g.arc(last.x, last.y, 1.1, 0, Math.PI * 2); g.fill(); signed = true; ev.preventDefault(); });
+    canvas.addEventListener('pointermove', function (ev) { if (!drawing || !g) return; var p = at(ev); g.beginPath(); g.moveTo(last.x, last.y); g.lineTo(p.x, p.y); g.stroke(); last = p; ev.preventDefault(); });
+    ['pointerup', 'pointercancel'].forEach(function (t) { canvas.addEventListener(t, function () { drawing = false; }); });
+    return {
+      reset: size, signed: function () { return signed; },
+      dataUrl: function () { if (!signed) return ''; var w = Math.min(600, canvas.width), h = Math.max(1, Math.round(canvas.height * w / canvas.width)), c = document.createElement('canvas'); c.width = w; c.height = h; var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(canvas, 0, 0, w, h); return c.toDataURL('image/png'); }
+    };
+  }
+  /** The proof section of the completion dialog, set for this job and the settings; the photo is shrunk as soon as it is taken. */
+  function setupProof(j) {
+    var ps = proofSettings(), wrap = UI.el('dlv-proof'), pickup = j.JobType === 'PICKUP';
+    photo = { data: '', job: null };
+    wrap.hidden = ps.mode === 'OFF' || (!ps.photo && !ps.signature);
+    if (wrap.hidden) return ps;
+    var required = ps.mode === 'REQUIRED' && !pickup;
+    UI.el('dlv-proof-head').textContent = (pickup ? 'Proof of pickup' : 'Proof of delivery') + (required ? ' (required)' : ' (optional)');
+    UI.el('dlv-proof-hint').textContent = (required ? (ps.photo && ps.signature ? 'Take a photo or have the customer sign — at least one. ' : (ps.photo ? 'Take a photo. ' : 'Have the customer sign. ')) : '') + 'Kept privately ' + (ps.keepDays ? 'for ' + ps.keepDays + ' days' : 'until removed') + ' as personal data; only the shop sees it.';
+    UI.el('dlv-proof-photo-wrap').hidden = !ps.photo; UI.el('dlv-proof-sig-wrap').hidden = !ps.signature;
+    var input = UI.el('dlv-proof-photo'), prev = UI.el('dlv-proof-photo-preview'), note = UI.el('dlv-proof-photo-note');
+    input.value = ''; prev.hidden = true; prev.removeAttribute('src'); note.hidden = true; UI.el('dlv-proof-received').value = '';
+    input.onchange = function () {
+      var file = input.files && input.files[0]; photo.data = ''; prev.hidden = true; note.hidden = true; if (!file) { photo.job = null; return; }
+      UI.el('dlv-complete-error').hidden = true;  // a proof is being added: the "required" message from the last try no longer applies
+      note.textContent = 'Preparing the photo…'; note.hidden = false;
+      var job = photo.job = shrinkPhoto(file).then(function (url) { if (photo.job !== job) return ''; photo.data = url; prev.src = url; prev.hidden = false; note.textContent = 'Photo ready · ' + Math.round(url.length * 3 / 4 / 1024) + ' KB'; return url; })
+        .catch(function (e) { if (photo.job === job) { photo.data = ''; input.value = ''; note.textContent = UI.error(e); } return ''; });
+    };
+    if (ps.signature) {
+      var canvas = UI.el('dlv-proof-sig'); if (!pad) pad = signaturePad(canvas);
+      canvas.onpointerdown = function () { UI.el('dlv-complete-error').hidden = true; };
+      UI.el('dlv-proof-sig-clear').onclick = function () { pad.reset(); };
+      var modal = UI.el('dlv-complete-modal');
+      if (modal.classList.contains('show')) pad.reset(); else modal.addEventListener('shown.bs.modal', function once() { modal.removeEventListener('shown.bs.modal', once); pad.reset(); });
+    }
+    return ps;
+  }
+  /** The proof to send: { photo, signature, receivedBy }, or null when nothing was taken; refuses (returns a message) when REQUIRED and nothing was. */
+  function proofToSend(j, ps) {
+    if (ps.mode === 'OFF' || UI.el('dlv-proof').hidden) return { proof: null };
+    var sig = ps.signature && pad && pad.signed() ? pad.dataUrl() : '', received = UI.el('dlv-proof-received').value.trim(), pic = ps.photo ? photo.data : '';
+    if (ps.mode === 'REQUIRED' && j.JobType === 'DELIVERY' && !pic && !sig) return { error: 'A proof of delivery is required: ' + (ps.photo && ps.signature ? 'take a photo or have the customer sign' : (ps.photo ? 'take a photo' : 'have the customer sign')) + '.' };
+    return { proof: pic || sig || received ? { photo: pic, signature: sig, receivedBy: received } : null };
+  }
+  /** The proof of a job (a dispatcher, or the rider whose job it was): the images as the server keeps them, who received it, or why they are gone. */
+  function openProof(id) {
+    return Api.call('deliveries.proof', { id: id }, { busy: true, noOffline: true }).then(function (r) {
+      UI.el('dlv-proof-title').textContent = 'Proof · job ' + r.id;
+      var figs = [];
+      if (r.photo) figs.push('<figure><img src="' + UI.esc(r.photo) + '" alt="Photo taken when the job was completed"><figcaption>Photo</figcaption></figure>');
+      if (r.signature) figs.push('<figure><img src="' + UI.esc(r.signature) + '" alt="The customer\'s signature"><figcaption>Signature' + (r.receivedBy ? ' of ' + UI.esc(r.receivedBy) : '') + '</figcaption></figure>');
+      var label = { ATTACHED: 'Kept', MISSING: 'Missing', REMOVED: 'Removed' }[r.status] || 'None taken';
+      UI.html('dlv-proof-body', '<div class="mb-3 d-flex gap-2 align-items-center flex-wrap">' + UI.badge(r.status || 'NONE', label) + (r.at ? '<span>taken ' + F.datetime(r.at) + '</span>' : '') + (r.receivedBy ? '<span>· received by <b>' + UI.esc(r.receivedBy) + '</b></span>' : '') + '</div>' +
+        (figs.length ? '<div class="proof-view">' + figs.join('') + '</div>' : '<p class="text-soft">' + (r.status === 'REMOVED' ? 'The files were removed and are no longer kept.' : (r.status === 'MISSING' ? 'The job was completed without the proof the settings require.' : 'No proof was taken for this job.')) + '</p>') +
+        (r.removed && r.removed.length ? '<p class="small text-soft mt-2 mb-0">Removed: ' + r.removed.map(function (a) { return (a.Kind === 'DELIVERY_PHOTO' ? 'photo' : 'signature') + ' on ' + F.date(a.RemovedAt) + (a.RemovedReason ? ' (' + UI.esc(a.RemovedReason) + ')' : ''); }).join('; ') + '</p>' : '') +
+        '<p class="small text-soft mt-3 mb-0"><i class="fa-solid fa-user-shield me-1"></i>Personal data: kept ' + (r.keepDays ? r.keepDays + ' days, then removed automatically (ProofKeepDays)' : 'until removed (ProofKeepDays is 0)') + '. Do not copy or forward it.</p>');
+      M.Modal.open('dlv-proof-modal');
+      return r;
+    }).catch(function (e) { Toast.danger(UI.error(e)); });
+  }
+
   function openComplete(j, onChange) {
     var meta = data || { paymentMethods: (M.AppState.me.settings.PaymentMethods || ['CASH']), referenceRequiredFor: (M.AppState.me.settings.ReferenceRequiredFor || []) };
     completeRequest = UI.uuid();
@@ -4338,6 +5046,7 @@ window.MLS = (function () {
     }).join('') : '<p class="mb-0">Every order on this job is fully paid. Hand over the laundry and confirm.</p>'));
     UI.el('dlv-collect').querySelectorAll('[data-f=method]').forEach(function (sel) { var sync = function () { sel.closest('[data-order]').querySelector('[data-ref]').hidden = meta.referenceRequiredFor.indexOf(sel.value) < 0; }; sel.onchange = sync; sync(); });
     UI.el('dlv-complete-form').reset(); UI.el('dlv-complete-error').hidden = true;
+    var ps = setupProof(j);
     var hasGeo = !!navigator.geolocation; UI.el('dlv-pin-wrap').hidden = !(hasGeo && j.CustomerId); UI.el('dlv-geo-note').hidden = !hasGeo;
     UI.el('dlv-complete-form').onsubmit = function (ev) {
       ev.preventDefault(); var box = UI.el('dlv-complete-error'); box.hidden = true;
@@ -4345,10 +5054,17 @@ window.MLS = (function () {
       UI.el('dlv-collect').querySelectorAll('[data-order]').forEach(function (row) { var amt = Number(row.querySelector('[data-f=amount]').value) || 0, method = row.querySelector('[data-f=method]').value, ref = (row.querySelector('[data-f=referenceNo]').value || '').trim(); if (amt > 0) { if (meta.referenceRequiredFor.indexOf(method) >= 0 && !ref) bad = 'Enter the ' + M.OrdersUI.methodLabel(method).toLowerCase() + ' reference number for ' + row.querySelector('.fw-bold').textContent.trim().split(' ')[0] + '.'; collections.push({ orderId: row.getAttribute('data-order'), amount: amt, method: method, referenceNo: ref }); } });
       if (bad) { box.textContent = bad; box.hidden = false; return; }
       var btn = UI.el('dlv-complete-ok'); btn.disabled = true; var pin = UI.el('dlv-pin').checked && !UI.el('dlv-pin-wrap').hidden;
-      // the phone's position rides along when it is available in time; the job never waits on it for more than a few seconds
-      (hasGeo ? locate(6000) : Promise.resolve(null)).then(function (loc) {
-        return Api.call('deliveries.complete', { id: j.Id, collections: collections, notes: UI.el('dlv-complete-form').querySelector('[name=notes]').value, requestId: completeRequest, location: loc ? { lat: loc.lat, lng: loc.lng } : null, saveCustomerLocation: !!(pin && loc) }, { busy: true }).then(function (r) {
-          btn.disabled = false; M.Modal.close('dlv-complete-modal'); Toast.success((j.JobType === 'PICKUP' ? 'Pickup done' : 'Delivered') + (r.payments && r.payments.length ? ' · ' + F.peso(r.payments.reduce(function (t, p) { return t + Number(p.Amount); }, 0)) + ' collected' : '') + (pin ? (loc ? ' · customer location pinned' : ' · no GPS fix, pin not saved') : '')); if (onChange) onChange(r);
+      // a photo still being prepared is waited for; then the proof is checked here first (REQUIRED), and again by the server
+      Promise.resolve(photo.job).then(function () {
+        var pr = proofToSend(j, ps); if (pr.error) { var e = new Error(pr.error); e.local = true; throw e; }
+        // the phone's position rides along when it is available in time; the job never waits on it for more than a few seconds
+        return (hasGeo ? locate(6000) : Promise.resolve(null)).then(function (loc) {
+          var payload = { id: j.Id, collections: collections, notes: UI.el('dlv-complete-form').querySelector('[name=notes]').value, requestId: completeRequest, location: loc ? { lat: loc.lat, lng: loc.lng } : null, saveCustomerLocation: !!(pin && loc) };
+          if (pr.proof) payload.proof = pr.proof;
+          return Api.call('deliveries.complete', payload, { busy: true, timeoutMs: pr.proof ? 120000 : undefined }).then(function (r) {
+            btn.disabled = false; M.Modal.close('dlv-complete-modal'); photo = { data: '', job: null };
+            Toast.success((j.JobType === 'PICKUP' ? 'Pickup done' : 'Delivered') + (r.payments && r.payments.length ? ' · ' + F.peso(r.payments.reduce(function (t, p) { return t + Number(p.Amount); }, 0)) + ' collected' : '') + (r.proof && r.proof.stored ? ' · proof kept' : (r._pending && pr.proof ? ' · proof kept on this phone until it syncs' : '')) + (pin ? (loc ? ' · customer location pinned' : ' · no GPS fix, pin not saved') : '')); if (onChange) onChange(r);
+          });
         });
       }).catch(function (e) { btn.disabled = false; box.textContent = UI.error(e); box.hidden = false; });
     };
@@ -4367,7 +5083,7 @@ window.MLS = (function () {
     } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Deliveries: ' + UI.error(e)); });
   }
   M.Router.register('deliveries', { title: 'My deliveries', render: function () { UI.el('dlv-refresh').onclick = load; load(); }, refresh: load });
-  M.DeliveriesUI = { jobCard: jobCard, wireCard: wireCard, act: act, openComplete: openComplete, mapLink: mapLink, navLink: navLink, routeLink: routeLink, locate: locate };
+  M.DeliveriesUI = { jobCard: jobCard, wireCard: wireCard, act: act, openComplete: openComplete, openProof: openProof, windowTag: windowTag, proofLine: proofLine, mapLink: mapLink, navLink: navLink, routeLink: routeLink, locate: locate };
 })();
 </script>
 
@@ -4466,11 +5182,12 @@ window.MLS = (function () {
   function render(i) {
     current = i;
     UI.el('inc-title').innerHTML = UI.esc(i.Id) + ' ' + typeBadge(i.Type) + ' ' + UI.badge(i.Status);
-    var grid = [['Reported', F.datetime(i.CreatedAt) + ' · ' + UI.esc(i.ReportedBy)], ['Order', i.OrderId ? '<a href="#" data-open-order="' + UI.esc(i.OrderId) + '">' + UI.esc(i.OrderNo || i.OrderId) + '</a>' + (i.OrderStatus ? ' ' + UI.badge(i.OrderStatus) : '') : '—'], ['Customer', UI.esc(i.CustomerName || '—') + (i.CustomerPhone ? '<div class="small text-soft">' + UI.esc(i.CustomerPhone) + '</div>' : '')], ['Delivery job', i.DeliveryId ? UI.esc(i.DeliveryId) + (i.Rider ? ' · ' + UI.esc(i.Rider) : '') : '—'], ['Branch', UI.esc(i.Branch)], ['Resolved', i.ResolvedAt ? F.datetime(i.ResolvedAt) + (i.ResolvedByName ? ' by ' + UI.esc(i.ResolvedByName) : '') : '—']];
+    var grid = [['Reported', F.datetime(i.CreatedAt) + ' · ' + UI.esc(i.ReportedBy)], ['Order', i.OrderId ? '<a href="#" data-open-order="' + UI.esc(i.OrderId) + '">' + UI.esc(i.OrderNo || i.OrderId) + '</a>' + (i.OrderStatus ? ' ' + UI.badge(i.OrderStatus) : '') : '—'], ['Customer', UI.esc(i.CustomerName || '—') + (i.CustomerPhone ? '<div class="small text-soft">' + UI.esc(i.CustomerPhone) + '</div>' : '')], ['Delivery job', i.DeliveryId ? UI.esc(i.DeliveryId) + (i.Rider ? ' · ' + UI.esc(i.Rider) : '') + (i.ProofStatus ? '<div class="small">' + UI.badge(i.ProofStatus, { ATTACHED: 'Proof kept', MISSING: 'Proof missing', REMOVED: 'Proof removed' }[i.ProofStatus] || i.ProofStatus) + (i.ReceivedBy ? ' received by ' + UI.esc(i.ReceivedBy) : '') + (i.ProofStatus === 'ATTACHED' && M.Auth.can('DISPATCH_VIEW') ? ' <a href="#" data-open-proof="' + UI.esc(i.DeliveryId) + '">view proof</a>' : '') + '</div>' : '') : '—'], ['Branch', UI.esc(i.Branch)], ['Resolved', i.ResolvedAt ? F.datetime(i.ResolvedAt) + (i.ResolvedByName ? ' by ' + UI.esc(i.ResolvedByName) : '') : '—']];
     UI.html('inc-body', '<div class="detail-grid mb-3">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
       '<h6 class="fw-bold">What happened</h6><p class="inc-desc">' + UI.esc(i.Description) + '</p>' +
       (i.Resolution ? '<h6 class="fw-bold">Resolution</h6><div class="inc-res">' + UI.esc(i.Resolution) + (Number(i.CompensationAmount) > 0 ? '<div class="mt-1 small"><b>Compensation:</b> ' + F.peso(i.CompensationAmount) + '</div>' : '') + '</div>' : ''));
     UI.el('inc-body').querySelectorAll('[data-open-order]').forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); Modal.closeThen('inc-modal', function () { M.OrdersUI.openOrder(a.getAttribute('data-open-order')); }); }; });
+    UI.el('inc-body').querySelectorAll('[data-open-proof]').forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); M.DeliveriesUI.openProof(a.getAttribute('data-open-proof')); }; });  // 1.15.0: the proof kept with the delivery
     var acts = [], t = i.Transitions || [];
     if (t.indexOf('IN_REVIEW') >= 0) acts.push(['IN_REVIEW', 'btn-outline-primary', 'fa-magnifying-glass', 'Start review']);
     if (t.indexOf('RESOLVED') >= 0) acts.push(['RESOLVED', 'btn-success', 'fa-circle-check', 'Resolve']);
@@ -5769,7 +6486,11 @@ window.MLS = (function () {
       columns: function () { return [{ key: 'Label', label: 'Day', format: function (v, r) { return dayLabel(r.Key, r); } }, { key: 'Started', label: 'Started washing', align: 'right' }, { key: 'Completed', label: 'Completed', align: 'right' }, { key: 'QcFail', label: 'QC failed', align: 'right', format: function (v) { return v ? '<span class="text-danger fw-bold">' + v + '</span>' : '0'; } }]; },
       rows: function (d) { return d.rows; },
       chart: function (d) { return { type: 'bar', labels: d.rows.map(function (r) { return r.Archived ? r.Key : r.Label.slice(5); }), datasets: [{ label: 'Started', data: d.rows.map(function (r) { return r.Started; }) }, { label: 'Completed', data: d.rows.map(function (r) { return r.Completed; }) }] }; },
-      extra: function (d) { return table('By stage', [{ key: 'Label', label: 'Stage' }, { key: 'Count', label: 'Logs', align: 'right' }, { key: 'Open', label: 'Open now', align: 'right' }, { key: 'AvgMinutes', label: 'Average time', align: 'right', format: function (v) { return v ? F.minutes(v) : '—'; } }], d.byStage); }
+      extra: function (d) {
+        return table('By stage', [{ key: 'Label', label: 'Stage' }, { key: 'Count', label: 'Logs', align: 'right' }, { key: 'Open', label: 'Open now', align: 'right' }, { key: 'AvgMinutes', label: 'Average time', align: 'right', format: function (v) { return v ? F.minutes(v) : '—'; } }], d.byStage) +
+          // 1.15.0 (R16): the stages each machine ran, by the code the board named (a registered machine shows its name)
+          ((d.byMachine || []).length ? table('By machine', [{ key: 'Label', label: 'Machine', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (r.MachineId ? '' : ' <span class="small text-soft">not registered</span>') + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(r.Branch) + '</div>' : ''); } }, { key: 'Logs', label: 'Stages', align: 'right' }, { key: 'Closed', label: 'Finished', align: 'right' }, { key: 'AvgMinutes', label: 'Average time', align: 'right', format: function (v) { return v ? F.minutes(v) : '—'; } }], d.byMachine) + (M.Auth.can('EQUIPMENT_VIEW') ? '<p class="small text-soft">Utilisation, downtime and each machine\'s history are in <a href="#/equipment">Equipment</a>.</p>' : '') : '');
+      }
     },
     business: {
       load: function () { return Api.call('reports.business', { from: state.from, to: state.to }); },
@@ -6330,7 +7051,7 @@ window.MLS = (function () {
         card('Backups', '<div class="small mb-2" id="set-bk-status">' + backupStatusHtml(r.backup, r.health) + '</div><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-bk-run"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Back up now</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-bk-verify"' + (r.backup && r.backup.lastOkId ? '' : ' disabled') + '><i class="fa-solid fa-clipboard-check me-1"></i>Verify last backup</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-bk-list"><i class="fa-solid fa-list me-1"></i>Recent backups</button></div><p class="small text-soft mt-2 mb-0">A backup is a copy of the database spreadsheet — and of every archive spreadsheet that changed — in the Drive folder <b>Mrs Laundry Sys Backups</b> of the account that owns the script, made every night at about 1 am while <b>BackupDaily</b> is on and kept for <b>BackupKeepDays</b> days. Verify opens a copy and checks every table and its row count against what the run recorded; the live database is never touched. A failed run is listed here and in the audit log, and e-mailed to <b>AlertEmail</b> when set. How to restore: sheet menu → Recovery information, and DEPLOY.md section 9.</p><div id="set-bk-out" class="mt-3"></div><div id="set-bk-rows" class="mt-2"></div>') +
         card('Database', '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-mt-validate"><i class="fa-solid fa-check-double me-1"></i>Validate database</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-mt-repair"><i class="fa-solid fa-screwdriver-wrench me-1"></i>Repair database</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-triggers"><i class="fa-solid fa-clock me-1"></i>Install triggers</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-purge"><i class="fa-solid fa-broom me-1"></i>Purge sessions</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-cache"><i class="fa-solid fa-eraser me-1"></i>Clear cache</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-verify"><i class="fa-solid fa-fingerprint me-1"></i>Verify installation</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-endpoints"><i class="fa-solid fa-list me-1"></i>Endpoints</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-browser"><i class="fa-solid fa-bug me-1"></i>Browser error details</button></div><p class="small text-soft mt-2 mb-0">Validate reads only. Repair runs Initialize again (missing sheets, columns and seeds), then rebuilds stock levels from the ledger, recomputes order totals and fixes sequences; every fix is audited and nothing is deleted. Verify installation compares every installed file with the release it came from.</p><div id="set-mt-out" class="mt-3"></div>') +
         card('Archive', '<p class="small text-soft mb-2">Closed history older than the <b>ArchiveKeepMonths</b> setting (orders completed, cancelled or refunded with nothing open attached — with their lines, timeline, payments, production log, delivery items, messages and incidents — plus finished jobs, approved end-of-day reports, expenses and audit rows) moves to a separate archive spreadsheet so the live sheets stay fast. Customers, the catalog, stock and its ledger, purchases, staff, time logs and payroll are never archived.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-ar-plan"><i class="fa-solid fa-magnifying-glass me-1"></i>What would be archived</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-ar-run" disabled><i class="fa-solid fa-box-archive me-1"></i>Archive now</button></div><div id="set-ar-out" class="mt-3"></div>') +
-        card('Privacy', '<p class="small text-soft mb-2">A customer\'s personal data is erased on request from the customer page (<b>CUSTOMER_ERASE</b>): name, number, e-mail, address, location and notes go from the customer, the orders, the deliveries, the messages, the audit copies and the archives; the orders and their amounts stay under a pseudonym. The nightly job does the same for customers with no order for <b>CustomerRetentionDays</b> (0 keeps everyone); the receipt and the tracking page carry the <b>PrivacyNotice</b> line.</p><div class="small mb-2" id="set-rt-status">Loading…</div><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-danger btn-sm" id="set-rt-run" disabled><i class="fa-solid fa-user-slash me-1"></i>Apply retention now</button></div><div class="mt-2" id="set-rt-out"></div>');
+        card('Privacy', '<p class="small text-soft mb-2">A customer\'s personal data is erased on request from the customer page (<b>CUSTOMER_ERASE</b>): name, number, e-mail, address, location and notes go from the customer, the orders, the deliveries, the messages, the audit copies and the archives; the orders and their amounts stay under a pseudonym. The nightly job does the same for customers with no order for <b>CustomerRetentionDays</b> (0 keeps everyone); the receipt and the tracking page carry the <b>PrivacyNotice</b> line. Proof-of-delivery photos and signatures (<b>ProofOfDelivery</b>) are personal data too: they stay in a private Drive folder, an erasure removes the customer\'s, and the nightly job removes those older than <b>ProofKeepDays</b>.</p><div class="small mb-2" id="set-rt-status">Loading…</div><div class="small mb-2" id="set-pf-status"></div><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-danger btn-sm" id="set-rt-run" disabled><i class="fa-solid fa-user-slash me-1"></i>Apply retention now</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-pf-run" disabled><i class="fa-solid fa-image me-1"></i>Remove expired proofs</button></div><div class="mt-2" id="set-rt-out"></div>');
         card('Rows per table', '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><tbody>' + chunk(Object.keys(r.rows), 3).map(function (row) { return '<tr>' + row.map(function (t) { return '<td class="text-soft">' + UI.esc(t) + '</td><td class="text-end fw-bold">' + F.number(r.rows[t], 0) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>');
       var out = function (html) { UI.html('set-mt-out', html); };
       UI.el('set-mt-refresh').onclick = tabMaintenance;
@@ -6348,9 +7069,13 @@ window.MLS = (function () {
       UI.el('set-ar-plan').onclick = function () { Api.call('archive.plan', {}, { busy: true }).then(function (p) { UI.el('set-ar-run').disabled = !p.counts.total; arOut('<div class="alert ' + (p.counts.total ? 'alert-warning' : 'alert-success') + ' py-2 small">' + (p.counts.total ? F.number(p.counts.total, 0) + ' rows older than ' + p.cutoff + ' qualify (' + p.counts.ordersEligible + ' closed orders; up to ' + p.limit + ' orders per run)' : 'Nothing older than ' + p.cutoff + ' qualifies') + ' · keeping ' + p.keepMonths + ' months' + (p.archive ? ' · archive: <a href="' + UI.esc(p.archive.url) + '" target="_blank" rel="noopener">' + UI.esc(p.archive.name) + '</a>' : ' · the archive spreadsheet is created on the first run') + '</div>' + arGrid(p.counts, p.tables, p.live)); }).catch(fail); };
       UI.el('set-ar-run').onclick = function () { M.Modal.confirm({ title: 'Archive closed history', body: 'Rows are copied to the archive spreadsheet first and removed from the live sheets only after the copy is written. The run is audited. Continue?', okText: 'Archive now', danger: true }).then(function (yes) { if (!yes) return; Api.call('archive.run', {}, { busy: true }).then(function (x) { UI.el('set-ar-run').disabled = !x.remaining; arOut('<div class="alert alert-success py-2 small">' + (x.total ? F.number(x.total, 0) + ' rows archived in ' + x.seconds + ' s' : x.message) + (x.archive ? ' · <a href="' + UI.esc(x.archive.url) + '" target="_blank" rel="noopener">' + UI.esc(x.archive.name) + '</a>' : '') + (x.remaining ? ' · ' + F.number(x.remaining, 0) + ' rows still qualify — run again' : ' · nothing left to archive') + (x.summaries && x.summaries.rows ? ' · the figures of ' + x.summaries.months.length + ' month' + (x.summaries.months.length === 1 ? '' : 's') + ' went to the monthly summaries (' + x.summaries.months.join(', ') + ')' : '') + '</div>' + (x.total ? arGrid(x.archived, Object.keys(x.archived)) : '')); }).catch(fail); }); };
       // privacy (release 1.12.0): what retention would erase, and the same by hand
-      var rtStatus = function () { Api.call('maintenance.retention', {}).then(function (s) { UI.html('set-rt-status', !s.days ? 'Retention is <b>off</b> (CustomerRetentionDays = 0): nothing is erased by the nightly job.' : 'Retention: <b>' + s.days + ' days</b> · ' + (s.due ? '<b>' + s.due + ' customer' + (s.due === 1 ? '' : 's') + '</b> with no order since ' + UI.esc(s.cutoff) + ' due (up to ' + s.batch + ' a run)' + (s.sample.length ? ': ' + s.sample.map(function (c) { return UI.esc(c.FullName) + (c.LastOrderDate ? ' (' + UI.esc(c.LastOrderDate) + ')' : ''); }).join(', ') + (s.due > s.sample.length ? ', …' : '') : '') : 'nobody due')); UI.el('set-rt-run').disabled = !(s.days && s.due); }).catch(function (e) { UI.html('set-rt-status', '<span class="text-danger">' + UI.esc(UI.error(e)) + '</span>'); }); };
+      var rtStatus = function () { Api.call('maintenance.retention', {}).then(function (s) { UI.html('set-rt-status', !s.days ? 'Retention is <b>off</b> (CustomerRetentionDays = 0): nothing is erased by the nightly job.' : 'Retention: <b>' + s.days + ' days</b> · ' + (s.due ? '<b>' + s.due + ' customer' + (s.due === 1 ? '' : 's') + '</b> with no order since ' + UI.esc(s.cutoff) + ' due (up to ' + s.batch + ' a run)' + (s.sample.length ? ': ' + s.sample.map(function (c) { return UI.esc(c.FullName) + (c.LastOrderDate ? ' (' + UI.esc(c.LastOrderDate) + ')' : ''); }).join(', ') + (s.due > s.sample.length ? ', …' : '') : '') : 'nobody due')); UI.el('set-rt-run').disabled = !(s.days && s.due);
+        // 1.15.0: the proofs of delivery kept, and how many are past ProofKeepDays
+        var pf = s.proofs; UI.html('set-pf-status', !pf ? '' : 'Proofs of delivery: <b>' + pf.kept + '</b> file' + (pf.kept === 1 ? '' : 's') + ' kept (' + (pf.bytes >= 1048576 ? F.number(pf.bytes / 1048576, 1) + ' MB' : F.number(pf.bytes / 1024, 0) + ' KB') + ')' + (pf.keepDays ? ' · kept ' + pf.keepDays + ' days · ' + (pf.due ? '<b>' + pf.due + '</b> older than that (up to ' + pf.batch + ' a run)' : 'none older than that') : ' · ProofKeepDays is 0: kept until removed') + (pf.folder ? ' · Drive folder <i>' + UI.esc(pf.folder.name) + '</i>' : ''));
+        UI.el('set-pf-run').disabled = !(pf && pf.keepDays && pf.due); }).catch(function (e) { UI.html('set-rt-status', '<span class="text-danger">' + UI.esc(UI.error(e)) + '</span>'); }); };
       rtStatus();
       UI.el('set-rt-run').onclick = function () { M.Modal.confirm({ title: 'Apply customer retention', body: 'The personal data of the customers due is erased everywhere it is kept — the customer, the orders, the deliveries, the messages, the audit copies, the archives. It cannot be undone; the run is audited. Continue?', okText: 'Erase', danger: true }).then(function (yes) { if (!yes) return; Api.call('maintenance.applyRetention', {}, { busy: true }).then(function (x) { UI.html('set-rt-out', '<div class="alert alert-success py-2 small">' + x.erased + ' customer' + (x.erased === 1 ? '' : 's') + ' erased' + (x.remaining ? ', ' + x.remaining + ' more due (run again)' : '') + (x.rows && Object.keys(x.rows).length ? ' · rows: ' + Object.keys(x.rows).map(function (t) { return t + ' ' + x.rows[t]; }).join(', ') : '') + (x.archives && x.archives.rows ? ' · ' + x.archives.rows + ' archived row' + (x.archives.rows === 1 ? '' : 's') : '') + '</div>'); rtStatus(); }).catch(fail); }); };
+      UI.el('set-pf-run').onclick = function () { M.Modal.confirm({ title: 'Remove expired proofs', body: 'The proof-of-delivery photos and signatures older than ProofKeepDays go to the Drive trash (emptied by Drive after 30 days); each job keeps a line saying its proof was removed. The run is audited. Continue?', okText: 'Remove', danger: true }).then(function (yes) { if (!yes) return; Api.call('maintenance.pruneProofs', {}, { busy: true }).then(function (x) { UI.html('set-rt-out', '<div class="alert alert-success py-2 small">' + x.removed + ' proof file' + (x.removed === 1 ? '' : 's') + ' removed' + (x.remaining ? ', ' + x.remaining + ' more due (run again)' : '') + '</div>'); rtStatus(); }).catch(fail); }); };
       UI.el('set-mt-validate').onclick = function () { Api.call('maintenance.validate', {}, { busy: true }).then(function (v) { out('<div class="alert ' + (v.ok ? 'alert-success' : 'alert-danger') + ' py-2 small">' + (v.ok ? 'No errors' : v.errors + ' error' + (v.errors === 1 ? '' : 's')) + ', ' + v.warnings + ' warning' + (v.warnings === 1 ? '' : 's') + ' · ' + v.tables + ' tables checked ' + F.datetime(v.checkedAt) + '</div>' + (v.problems.length ? '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Level</th><th>Table</th><th>Code</th><th>Message</th></tr></thead><tbody>' + v.problems.slice(0, 200).map(function (p) { return '<tr><td>' + UI.badge(p.level === 'ERROR' ? 'REJECTED' : 'PENDING', p.level) + '</td><td>' + UI.esc(p.table) + '</td><td>' + UI.esc(p.code) + '</td><td>' + UI.esc(p.message) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '')); }).catch(fail); };
       UI.el('set-mt-repair').onclick = function () { M.Modal.confirm({ title: 'Repair the database', body: 'Initialize runs again, stock levels are rebuilt from the ledger, order totals recomputed and sequences fixed. Every change is audited; nothing is deleted. Continue?', okText: 'Repair', danger: true }).then(function (yes) { if (!yes) return; Api.call('maintenance.repair', {}, { busy: true }).then(function (x) { out('<div class="alert ' + (x.ok ? 'alert-success' : 'alert-warning') + ' py-2 small">Repair finished: ' + x.repaired.stockLevels + ' stock level' + (x.repaired.stockLevels === 1 ? '' : 's') + ', ' + x.repaired.orderTotals + ' order total' + (x.repaired.orderTotals === 1 ? '' : 's') + ', ' + x.repaired.sequences + ' sequence' + (x.repaired.sequences === 1 ? '' : 's') + ' fixed; ' + x.created.length + ' sheet' + (x.created.length === 1 ? '' : 's') + ' created' + (x.repaired.monthlySummaries ? '; monthly summaries rebuilt from ' + x.repaired.monthlySummaries.files + ' archive file' + (x.repaired.monthlySummaries.files === 1 ? '' : 's') + ' (' + x.repaired.monthlySummaries.months.length + ' month' + (x.repaired.monthlySummaries.months.length === 1 ? '' : 's') + ')' : '') + ' · validation ' + (x.validation.ok ? 'OK' : x.validation.errors + ' errors') + '</div>'); }).catch(fail); }); };
       UI.el('set-mt-triggers').onclick = function () { Api.call('maintenance.installTriggers', {}, { busy: true }).then(function (x) { out('<div class="alert alert-success py-2 small">' + (x.installed.length ? 'Installed ' + x.installed.join(', ') : 'Already installed: ' + x.alreadyInstalled.join(', ')) + '</div>'); }).catch(fail); };
