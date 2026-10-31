@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '8de9398a22', version: '1.19.0' };</script>
+  <script>window.MLS_PWA = { build: 'f76e6ae756', version: '1.20.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -660,7 +660,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.19.0';
+  var VERSION = '1.20.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -2116,11 +2116,12 @@ window.MLS = (function () {
         return prep.then(function (m) {
           var light = !!opts.light && !lensChanged && !opts.force && !!m.lastFull;  // a copy that never had its screens is pulled whole
           var body = { dataVersion: lensChanged || opts.force ? undefined : m.dataVersion, installId: installId, force: !!opts.force, orders: { since: m.ordersSince || null }, customers: { since: m.customersSince || null } };
+          if (!lensChanged) body.removed = { since: m.removedSince || null };  // 1.20.0: the records a cleanup deleted since this copy last heard (a copy pulled whole needs none)
           if (light) body.snapshots = false;
           // 1.17.0 (audit R19): a full pull also asks for the first-visit lists — all of them on the device's first full pull of the day (so a list
           // nobody opens here is at most a day old), else only those this device does not hold
           var day = deviceDay(), askedAll = false, asked = light ? Promise.resolve(null) : (m.prefetchDay !== day ? Promise.resolve(true) : wantedLists(m.prefetchKeys));
-          var first = null, orderRows = 0, customerRows = 0, snapshots = 0;
+          var first = null, orderRows = 0, customerRows = 0, snapshots = 0, dropped = 0;
           var step = function () {
             return Api.call('sync.pull', body, { noRedirect: true, timeoutMs: 120000, noOffline: true }).then(function (r) {
               if (r.unchanged) return { unchanged: true, dataVersion: r.dataVersion, installId: r.installId };
@@ -2132,7 +2133,13 @@ window.MLS = (function () {
               if (!first) {
                 first = r;
                 var entries = (r.snapshots || []).map(function (s) { return [s.key, { action: s.action, payload: s.payload, data: s.data, asOf: new Date(r.serverTime).toISOString() }]; }); snapshots = entries.length;
-                return Promise.all([entries.length ? Store.putMany('snapshots', entries) : null, Store.put('meta', 'enums', r.enums || {}), r.snapshots && r.snapshots.some(function (s) { return s.action === 'auth.me'; }) ? Store.put('meta', 'me', { token: AppState.token, me: r.snapshots.filter(function (s) { return s.action === 'auth.me'; })[0].data, at: new Date().toISOString() }) : null]).then(function () { return r; });
+                // 1.20.0: orders and customers a demo and test data cleanup deleted leave the copy — only those, never a record made here
+                // offline (its id is temporary) nor the queue (work queued for one of them is refused by the server and stays on the Sync
+                // page); the saved screens may show them, so they go too, before this pull's fresh ones are kept
+                var gone = r.removed || {}, orderIds = (gone.orders || []).filter(function (id) { return !isTemp(id); }), customerIds = (gone.customers || []).filter(function (id) { return !isTemp(id); });
+                dropped = orderIds.length + customerIds.length;
+                var purge = dropped ? Promise.all([Store.removeMany('orders', orderIds), Store.removeMany('customers', customerIds), Store.clear('snapshots')]) : Promise.resolve();
+                return purge.then(function () { return Promise.all([entries.length ? Store.putMany('snapshots', entries) : null, Store.put('meta', 'enums', r.enums || {}), r.snapshots && r.snapshots.some(function (s) { return s.action === 'auth.me'; }) ? Store.put('meta', 'me', { token: AppState.token, me: r.snapshots.filter(function (s) { return s.action === 'auth.me'; })[0].data, at: new Date().toISOString() }) : null]); }).then(function () { return r; });
               }
               return r;
             }).then(function (r) {
@@ -2157,7 +2164,9 @@ window.MLS = (function () {
             var stale = Array.isArray(first.prefetchKeys) && Array.isArray(m.prefetchKeys) ? m.prefetchKeys.filter(function (k) { return first.prefetchKeys.indexOf(k) < 0; }) : [];
             return pruneP.then(function (pruned) { return (stale.length ? Store.removeMany('snapshots', stale).catch(function () { return 0; }) : Promise.resolve(0)).then(function () { return pruned; }); }).then(function (pruned) {
               pulledVersion = first.dataVersion; pullMinutes = first.pullMinutes || pullMinutes; readActions = first.readActions || readActions; lastPull = now; if (!light) lastFull = now; lastError = null;
-              return Store.put('meta', 'sync', { userId: me.user.Id, branch: me.activeBranch, installId: first.installId || null, dataVersion: first.dataVersion, ordersSince: since, customersSince: since, lastPull: now, lastFull: lastFull, pullMinutes: pullMinutes, readActions: readActions, prefetchKeys: Array.isArray(first.prefetchKeys) ? first.prefetchKeys : (m.prefetchKeys || null), prefetchDay: askedAll && Array.isArray(first.prefetchKeys) ? day : (m.prefetchDay || null), queueable: first.queueable || QUEUEABLE, window: first.window || null, serverTime: first.serverTime }).then(function () { return { unchanged: false, orders: orderRows, customers: customerRows, snapshots: snapshots, pruned: pruned }; });
+              if (dropped && light) lastFull = null;  // 1.20.0: the saved screens went with the deleted records: the next tick pulls them whole
+              var removedSince = first.removed && first.removed.at ? new Date(first.removed.at).toISOString() : (lensChanged ? new Date(serverTime).toISOString() : (m.removedSince || null));
+              return Store.put('meta', 'sync', { userId: me.user.Id, branch: me.activeBranch, installId: first.installId || null, dataVersion: first.dataVersion, ordersSince: since, customersSince: since, removedSince: removedSince, lastPull: now, lastFull: lastFull, pullMinutes: pullMinutes, readActions: readActions, prefetchKeys: Array.isArray(first.prefetchKeys) ? first.prefetchKeys : (m.prefetchKeys || null), prefetchDay: askedAll && Array.isArray(first.prefetchKeys) ? day : (m.prefetchDay || null), queueable: first.queueable || QUEUEABLE, window: first.window || null, serverTime: first.serverTime }).then(function () { return { unchanged: false, orders: orderRows, customers: customerRows, snapshots: snapshots, pruned: pruned, dropped: dropped }; });
             });
           });
         });
@@ -7155,7 +7164,7 @@ window.MLS = (function () {
         card('Database', '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-mt-validate"><i class="fa-solid fa-check-double me-1"></i>Validate database</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-mt-repair"><i class="fa-solid fa-screwdriver-wrench me-1"></i>Repair database</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-triggers"><i class="fa-solid fa-clock me-1"></i>Install triggers</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-purge"><i class="fa-solid fa-broom me-1"></i>Purge sessions</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-cache"><i class="fa-solid fa-eraser me-1"></i>Clear cache</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-verify"><i class="fa-solid fa-fingerprint me-1"></i>Verify installation</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-endpoints"><i class="fa-solid fa-list me-1"></i>Endpoints</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-browser"><i class="fa-solid fa-bug me-1"></i>Browser error details</button></div><p class="small text-soft mt-2 mb-0">Validate reads only. Repair runs Initialize again (missing sheets, columns and seeds), then rebuilds stock levels from the ledger, recomputes order totals and fixes sequences; every fix is audited and nothing is deleted. Verify installation compares every installed file with the release it came from.</p><div id="set-mt-out" class="mt-3"></div>') +
         card('Archive', '<p class="small text-soft mb-2">Closed history older than the <b>ArchiveKeepMonths</b> setting (orders completed, cancelled or refunded with nothing open attached — with their lines, timeline, payments, production log, delivery items, messages and incidents — plus finished jobs, approved end-of-day reports, expenses and audit rows) moves to a separate archive spreadsheet so the live sheets stay fast. Customers, the catalog, stock and its ledger, purchases, staff, time logs and payroll are never archived.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-ar-plan"><i class="fa-solid fa-magnifying-glass me-1"></i>What would be archived</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-ar-run" disabled><i class="fa-solid fa-box-archive me-1"></i>Archive now</button></div><div id="set-ar-out" class="mt-3"></div>') +
         card('Privacy', '<p class="small text-soft mb-2">A customer\'s personal data is erased on request from the customer page (<b>CUSTOMER_ERASE</b>): name, number, e-mail, address, location and notes go from the customer, the orders, the deliveries, the messages, the audit copies and the archives; the orders and their amounts stay under a pseudonym. The nightly job does the same for customers with no order for <b>CustomerRetentionDays</b> (0 keeps everyone); the receipt and the tracking page carry the <b>PrivacyNotice</b> line. Proof-of-delivery photos and signatures (<b>ProofOfDelivery</b>) and the bags\' before-processing photos (<b>BagPhotos</b>) are personal data too: they stay in private Drive folders, an erasure removes the customer\'s, and the nightly job removes those older than <b>ProofKeepDays</b> and <b>BagPhotoKeepDays</b>.</p><div class="small mb-2" id="set-rt-status">Loading…</div><div class="small mb-2" id="set-pf-status"></div><div class="small mb-2" id="set-bp-status"></div><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-danger btn-sm" id="set-rt-run" disabled><i class="fa-solid fa-user-slash me-1"></i>Apply retention now</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-pf-run" disabled><i class="fa-solid fa-image me-1"></i>Remove expired photos</button></div><div class="mt-2" id="set-rt-out"></div>') +
-        (can('SYSTEM_DATA_CLEANUP') ? card('Data management', '<p class="small text-soft mb-2">Demo and test data: review the business records, tag the ones made while testing or for a demonstration, and see what a cleanup would remove and what it keeps. Settings, the catalogue, branches, accounts and the audit log are never removed. This release tags and counts; it deletes nothing. Super administrator only.</p><button type="button" class="btn btn-outline-primary btn-sm" id="set-dm-open"><i class="fa-solid fa-broom me-1"></i>Open data management</button>') : '') +  // 1.19.0
+        (can('SYSTEM_DATA_CLEANUP') ? card('Data management', '<p class="small text-soft mb-2">Demo and test data: review the business records, tag the ones made while testing or for a demonstration, see what a cleanup would remove and what it keeps, and run the cleanup — a verified backup first, then your typed confirmation. Settings, the catalogue, branches, accounts and the audit log are never removed. Super administrator only.</p><button type="button" class="btn btn-outline-primary btn-sm" id="set-dm-open"><i class="fa-solid fa-broom me-1"></i>Open data management</button>') : '') +  // 1.19.0
         card('Rows per table', '<div id="set-mt-rows">' + rowsHtml(r) + '</div>');  // 1.18.0: on screen again (since 1.12.0 the statement ended at the Privacy card and this card was dropped)
       var out = function (html) { UI.html('set-mt-out', html); };
       UI.el('set-mt-refresh').onclick = tabMaintenance;
@@ -7262,7 +7271,7 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — DataPage.html: Data management (release 1.19.0, Super administrator only, SYSTEM_DATA_CLEANUP), opened from Settings → Maintenance. Three tabs: the demo and test data cleanup (what a cleanup would remove and keep, counted from the sheets — this release deletes nothing), the data preview (the review: list the business records, tag them as test, demo or sample data, or mark them real), and the cleanup history. Online only: nothing here is kept on the device. -->
+        <!-- Mrs Laundry Sys — DataPage.html: Data management (Super administrator only, SYSTEM_DATA_CLEANUP), opened from Settings → Maintenance. Three tabs: the demo and test data cleanup (release 1.19.0: what a cleanup would remove and keep, counted from the sheets; release 1.20.0: the cleanup itself — start, back up and verify, confirm, delete with Continue, the report), the data preview (the review: list the business records, tag them as test, demo or sample data, or mark them real), and the cleanup history with each run's report. Online only: nothing here is kept on the device. -->
 <section id="view-data" class="view" hidden>
   <div class="view-head">
     <h2>Data management</h2>
@@ -7274,8 +7283,9 @@ window.MLS = (function () {
   <div class="small text-soft mb-2 text-break" id="dm-db"></div>
   <div class="tabs" id="dm-tabs"><button type="button" data-tab="cleanup" class="active">Demo &amp; test data cleanup</button><button type="button" data-tab="preview">Data preview</button><button type="button" data-tab="history">Cleanup history</button></div>
   <div id="dm-tab-cleanup">
-    <div class="alert alert-info py-2 small" id="dm-notice">This release deletes nothing. Tag the test records under <b>Data preview</b>; the counts below show what a cleanup would remove and keep. The backup, the confirmation and the removal come with the next release.</div>
+    <div class="alert alert-info py-2 small" id="dm-notice">Nothing is deleted until a verified backup exists and you confirm. Tag the test records under <b>Data preview</b>; the counts below show what a cleanup would remove and keep. Settings, the catalogue, branches, accounts and the audit log are never deleted.</div>
     <div class="sum-grid mb-3" id="dm-tiles"></div>
+    <div class="card mb-3 border-danger-subtle" id="dm-run-card"><div class="card-header d-flex align-items-center flex-wrap gap-2"><span>The cleanup</span><span id="dm-run-status"></span><span class="spacer"></span><button type="button" class="btn btn-outline-secondary btn-sm" id="dm-cancel" hidden><i class="fa-solid fa-ban me-1"></i>Cancel this cleanup</button></div><div class="card-body" id="dm-run"></div></div>
     <div class="card mb-3"><div class="card-header">What a cleanup would remove and keep</div><div class="card-body p-0" id="dm-sheets"></div></div>
     <div class="card mb-3"><div class="card-header">Never deleted</div><div class="card-body p-0" id="dm-preserved"></div></div>
     <div class="card mb-3"><div class="card-header">Blocked records<span class="count ms-1" id="dm-blocked-count"></span></div><div class="card-body p-0" id="dm-blocked"></div></div>
@@ -7324,6 +7334,7 @@ window.MLS = (function () {
   </div>
   <div id="dm-tab-history" hidden>
     <div class="card"><div class="card-body p-0" id="dm-history"></div></div>
+    <div id="dm-history-report"></div>
   </div>
 </section>
 
@@ -7355,7 +7366,85 @@ window.MLS = (function () {
       UI.el('dm-blocked-count').textContent = r.blocked.length ? String(r.totals.blocked) : '';
       UI.html('dm-blocked', table([['Kind'], ['Record'], ['Why it stays']], r.blocked.map(function (b) { return '<tr><td>' + UI.esc(b.label) + '</td><td><span class="fw-bold">' + UI.esc(b.name) + '</span> <span class="text-soft small">' + UI.esc(b.id) + '</span></td><td class="small">' + UI.esc(b.reason) + '</td></tr>'; }), 'No tagged record is blocked.'));
       UI.el('dm-scope').textContent = n(t.eligible) + ' to remove · ' + n(t.unreviewed) + ' not yet reviewed';
+      state.preview = r; paintRun(r.openRun);
     }).catch(fail);
+  }
+
+  // ---------------------------------------------------------------- the cleanup itself (release 1.20.0): start, back up and verify, confirm, delete, report
+  var STATUS_TEXT = { PLANNED: 'Planned — back up next', BACKED_UP: 'Backed up — confirm to delete', RUNNING: 'Deleting', PARTIAL: 'Part done — continue', COMPLETED: 'Completed', STOPPED: 'Stopped', FAILED: 'Failed', CANCELLED: 'Cancelled' };
+  function sheetsTable(run) {
+    return table([['Sheet'], ['Planned', 1], ['Deleted', 1], ['Not found', 1], ['Left', 1], ['Rows now', 1]], (run.sheets || []).map(function (x) { return '<tr data-run-sheet="' + UI.esc(x.table) + '"><td>' + UI.esc(x.label || x.table) + ' <span class="text-soft small">' + UI.esc(x.table) + '</span></td><td class="text-end">' + n(x.planned) + '</td><td class="text-end' + (x.deleted ? ' text-danger fw-bold' : '') + '">' + n(x.deleted) + '</td><td class="text-end">' + n(x.missing) + '</td><td class="text-end">' + n(x.remaining) + '</td><td class="text-end">' + (x.kept === null || x.kept === undefined ? '—' : n(x.kept)) + '</td></tr>'; }), 'Nothing planned.');
+  }
+  /** One run as a report (brief §11): who, when, which database, the backup, the counts per sheet, what was rebuilt, the outcome. at: the id prefix (dm on the run card, dm-h under the history), so the two never share an id. */
+  function reportHtml(run, at) {
+    var p = at || 'dm';
+    var facts = [['Cleanup', run.Id], ['Status', STATUS_TEXT[run.Status] || run.Status], ['Database', (run.SpreadsheetName || '') + ' · ' + (run.SpreadsheetId || '')], ['Environment', run.Environment === 'STAGING' ? 'Staging copy' : 'Production'], ['Started by', (run.By || '') + ' · planned ' + F.datetime(run.CreatedAt)],
+      ['Backup', run.BackupId ? run.BackupId + ' · ' + F.datetime(run.BackupAt) + ' · copy ' + (run.BackupFileId || '') : 'none yet'], ['Deleting began', run.StartedAt ? F.datetime(run.StartedAt) + (run.confirmed ? ' · confirmed by ' + run.confirmed.by : '') : '—'], ['Finished', run.FinishedAt ? F.datetime(run.FinishedAt) : '—'],
+      ['Rows', n(run.deleted) + ' deleted of ' + n(run.planned) + ' planned' + (run.missing ? ' · ' + n(run.missing) + ' no longer in their sheet' : '') + (run.remaining ? ' · ' + n(run.remaining) + ' left' : '')], ['Records in the database', run.Status === 'COMPLETED' ? n(run.Preserved) + ' rows kept' : n(run.Preserved) + ' rows kept (as planned)']];
+    return '<dl class="row small mb-2" id="' + p + '-report">' + facts.map(function (f) { return '<dt class="col-sm-3">' + f[0] + '</dt><dd class="col-sm-9 text-break">' + UI.esc(f[1]) + '</dd>'; }).join('') + '</dl>' +
+      (run.Notes ? '<div class="small mb-2" id="' + p + '-rebuilt">' + UI.esc(run.Notes) + '</div>' : '') + (run.Error ? '<div class="alert alert-danger py-2 small" id="' + p + '-run-error">' + UI.esc(run.Error) + '</div>' : '') + sheetsTable(run);
+  }
+  function paintRun(run) {
+    state.run = run || null; var cancel = UI.el('dm-cancel'); cancel.hidden = !(run && (run.Status === 'PLANNED' || run.Status === 'BACKED_UP'));
+    UI.html('dm-run-status', run ? UI.badge(run.Status, STATUS_TEXT[run.Status] || run.Status) : '');
+    if (!run) {
+      var p = state.preview, eligible = p ? p.totals.eligible : 0;
+      UI.html('dm-run', '<p class="small mb-2">A cleanup deletes the ' + n(eligible) + ' row' + (eligible === 1 ? '' : 's') + ' counted above as eligible — the tagged records and what goes with them — and nothing else. It is planned first; then a fresh backup of the database and every archive file is made and verified; then you confirm, and only then is anything deleted. Sales wait while rows are deleted: do it after closing.</p>' +
+        '<button type="button" class="btn btn-outline-danger btn-sm" id="dm-start"' + (eligible ? '' : ' disabled') + '><i class="fa-solid fa-list-check me-1"></i>Plan a cleanup</button>' + (eligible ? '' : ' <span class="small text-soft">Nothing is eligible: tag the demo and test records under Data preview first.</span>'));
+      UI.el('dm-start').onclick = startRun; return;
+    }
+    var steps = '', staging = run.Environment === 'STAGING';
+    if (run.Status === 'PLANNED' || run.Status === 'BACKED_UP') {
+      var fresh = run.Status === 'BACKED_UP' && run.BackupAgeMinutes !== null && run.BackupAgeMinutes <= run.BackupMaxMinutes;
+      steps += '<h6 class="mt-1">1 · Back up and verify</h6><p class="small mb-2" id="dm-backup-line">' + (run.BackupId ? 'Backup <b>' + UI.esc(run.BackupId) + '</b> made ' + UI.esc(F.datetime(run.BackupAt)) + ' (' + run.BackupAgeMinutes + ' min ago; a cleanup needs one at most ' + run.BackupMaxMinutes + ' min old) and verified sheet by sheet.' : 'No backup yet. A copy of the database and of every archive spreadsheet is made in the backup folder, then each copy is opened and checked sheet by sheet.') + '</p>' +
+        '<button type="button" class="btn btn-outline-primary btn-sm mb-3" id="dm-backup"><i class="fa-solid fa-cloud-arrow-up me-1"></i>' + (run.BackupId ? 'Back up again' : 'Back up and verify') + '</button><div id="dm-backup-out"></div>';
+      if (run.Status === 'BACKED_UP') {
+        steps += '<h6>2 · Confirm</h6><p class="small mb-2">You are about to delete <b>' + n(run.planned) + ' rows</b> from <b>' + UI.esc(run.SpreadsheetName) + '</b> <span class="font-monospace text-break">' + UI.esc(run.SpreadsheetId) + '</span>. Backup reference: <b>' + UI.esc(run.BackupId) + '</b>. ' + (staging ? 'This is a staging copy.' : 'This is the <b>production</b> database: type its name and your password too.') + '</p>' +
+          '<label class="form-label small" for="dm-phrase">Type <b class="font-monospace">' + UI.esc(run.phrase) + '</b></label><input class="form-control mb-2" id="dm-phrase" autocomplete="off" spellcheck="false">' +
+          (staging ? '' : '<label class="form-label small" for="dm-dbname">The database name, as shown above</label><input class="form-control mb-2" id="dm-dbname" autocomplete="off" spellcheck="false"><label class="form-label small" for="dm-password">Your password</label><input class="form-control mb-2" id="dm-password" type="password" autocomplete="current-password">') +
+          '<label class="form-check small mb-3"><input class="form-check-input" type="checkbox" id="dm-devices"> <span class="form-check-label">Every device shows nothing waiting on its Sync page (a test sale typed offline and not yet sent would come back as a real one)</span></label>' +
+          '<button type="button" class="btn btn-danger btn-sm" id="dm-execute"' + (fresh ? '' : ' disabled') + '><i class="fa-solid fa-trash-can me-1"></i>Delete demo and test data</button>' + (fresh ? '' : ' <span class="small text-danger">The backup is too old: back up again.</span>');
+      }
+    } else if (run.Status === 'RUNNING' || run.Status === 'PARTIAL') {
+      steps += '<p class="small mb-2" id="dm-progress">' + n(run.deleted) + ' of ' + n(run.planned) + ' rows deleted' + (run.missing ? ', ' + n(run.missing) + ' no longer in their sheet' : '') + '; ' + n(run.remaining) + ' left. ' + (run.Status === 'PARTIAL' ? 'A request stops after about four minutes; Continue goes on from where it stopped.' : '') + '</p>' +
+        '<button type="button" class="btn btn-danger btn-sm" id="dm-continue"><i class="fa-solid fa-forward me-1"></i>Continue</button>';
+    }
+    UI.html('dm-run', steps + '<hr class="my-3">' + reportHtml(run));
+    if (UI.el('dm-backup')) UI.el('dm-backup').onclick = backupRun;
+    if (UI.el('dm-execute')) UI.el('dm-execute').onclick = executeRun;
+    if (UI.el('dm-continue')) UI.el('dm-continue').onclick = function () { runSteps(run.Id, null); };
+  }
+  function startRun() {
+    Modal.confirm({ title: 'Plan a cleanup', body: 'The rows to delete are listed now, each with the state it must still be in when it is deleted. Nothing is deleted yet: the backup and your confirmation come next.', okText: 'Plan' }).then(function (yes) {
+      if (!yes) return; Api.call('cleanup.start', {}, { busy: true, timeoutMs: 300000 }).then(function (run) { if (run.joined) Toast.info('A cleanup was already open: here it is'); paintRun(run); }).catch(fail);
+    });
+  }
+  function backupRun() {
+    var run = state.run; if (!run) return;
+    UI.html('dm-backup-out', '<div class="small text-soft">Copying and checking the backup… this can take a few minutes; sales wait while the copy is taken.</div>');
+    Api.call('cleanup.backup', { runId: run.Id }, { busy: true, timeoutMs: 400000 }).then(function (r) {
+      paintRun(r.run);
+      UI.html('dm-backup-out', '<div class="alert ' + (r.ok ? 'alert-success' : 'alert-danger') + ' py-2 small" id="dm-backup-result">' + (r.ok ? 'Backup ' + UI.esc(r.backup.id) + ' made and verified: ' : 'The backup could not be verified, so nothing will be deleted: ') + r.checks.map(function (c) { return UI.esc(c.name) + ' — ' + (c.ok ? c.tables + ' sheets OK' : c.problems + ' problem' + (c.problems === 1 ? '' : 's')); }).join('; ') + '</div>');
+    }).catch(function (e) { UI.html('dm-backup-out', '<div class="alert alert-danger py-2 small" id="dm-backup-result">' + UI.esc(UI.error(e)) + '</div>'); fail(e); loadCleanup(); });
+  }
+  function executeRun() {
+    var run = state.run; if (!run) return;
+    var body = { runId: run.Id, phrase: UI.el('dm-phrase').value, devicesClear: UI.el('dm-devices').checked };
+    if (UI.el('dm-dbname')) { body.databaseName = UI.el('dm-dbname').value; body.password = UI.el('dm-password').value; }
+    if (String(body.phrase).trim() !== run.phrase) { Toast.danger('Type the words exactly: ' + run.phrase); return; }
+    if (!body.devicesClear) { Toast.danger('Check every device first, then tick the box'); return; }
+    Modal.confirm({ title: 'Delete ' + n(run.planned) + ' rows', html: '<p class="mb-2">The demo and test data planned in <b>' + UI.esc(run.Id) + '</b> will be deleted from <b>' + UI.esc(run.SpreadsheetName) + '</b>. This cannot be undone from the app: the way back is the backup <b>' + UI.esc(run.BackupId) + '</b>.</p><p class="small text-soft mb-0">Keep this page open until it says Completed; if it stops, press Continue.</p>', okText: 'Delete now', danger: true }).then(function (yes) { if (yes) runSteps(run.Id, body); });
+  }
+  /** One request after another until the run is done: each deletes for about four minutes at most. */
+  function runSteps(id, first) {
+    UI.html('dm-run-status', UI.badge('RUNNING', 'Deleting'));
+    return Api.call('cleanup.execute', first || { runId: id }, { busy: true, timeoutMs: 400000 }).then(function (run) {
+      paintRun(run);
+      if (run.joined) { Toast.info('Another request is deleting this cleanup now; press Continue in a few minutes'); return; }
+      if (run.Status === 'PARTIAL' && run.more) return runSteps(id, null);
+      if (run.Status === 'COMPLETED') { Toast.success('Cleanup ' + run.Id + ' completed: ' + n(run.deleted) + ' rows deleted'); state.lastReport = run; loadCleanup().then(function () { if (!state.run) UI.html('dm-run', '<div class="alert alert-success py-2 small" id="dm-done">Completed: ' + n(run.deleted) + ' rows deleted. The report is under Cleanup history.</div>' + reportHtml(run)); }); }
+      if (run.Status === 'STOPPED') Toast.danger('The cleanup stopped: ' + (run.Error || 'see the report'), 12000);
+    }).catch(function (e) { fail(e); loadCleanup(); });
   }
 
   // ---------------------------------------------------------------- the data preview: list and tag
@@ -7417,9 +7506,10 @@ window.MLS = (function () {
 
   // ---------------------------------------------------------------- history
   function loadHistory() {
-    UI.html('dm-history', '<div class="p-3 text-soft">Loading…</div>');
+    UI.html('dm-history', '<div class="p-3 text-soft">Loading…</div>'); UI.html('dm-history-report', '');
     return Api.call('cleanup.history', {}).then(function (r) {
-      UI.html('dm-history', table([['Cleanup'], ['Status'], ['Database'], ['Backup'], ['Deleted', 1], ['Preserved', 1], ['Error']], r.rows.map(function (x) { return '<tr><td><span class="fw-bold">' + UI.esc(x.Id) + '</span><div class="small text-soft">' + UI.esc(F.datetime(x.StartedAt)) + ' · ' + UI.esc(x.By || '') + '</div></td><td>' + UI.badge(x.Status) + '</td><td class="small">' + UI.esc(x.SpreadsheetName || '') + '</td><td class="small">' + UI.esc(x.BackupId || '') + '</td><td class="text-end">' + n(x.Deleted) + '</td><td class="text-end">' + n(x.Preserved) + '</td><td class="small text-danger">' + UI.esc(x.Error || '') + '</td></tr>'; }), 'No cleanup has run. The cleanup itself — backup, confirmation and removal — is not part of this release.'));
+      UI.html('dm-history', table([['Cleanup'], ['Status'], ['Database'], ['Backup'], ['Deleted', 1], ['Kept', 1], ['Error']], r.rows.map(function (x) { return '<tr data-run="' + UI.esc(x.Id) + '"><td><button type="button" class="btn btn-link btn-sm p-0 fw-bold" data-report="' + UI.esc(x.Id) + '">' + UI.esc(x.Id) + '</button><div class="small text-soft">' + UI.esc(F.datetime(x.StartedAt || x.CreatedAt)) + ' · ' + UI.esc(x.By || '') + '</div></td><td>' + UI.badge(x.Status, STATUS_TEXT[x.Status] || x.Status) + '</td><td class="small">' + UI.esc(x.SpreadsheetName || '') + '</td><td class="small">' + UI.esc(x.BackupId || '') + '</td><td class="text-end">' + n(x.deleted) + '</td><td class="text-end">' + n(x.Preserved) + '</td><td class="small text-danger">' + UI.esc(x.Error || '') + '</td></tr>'; }), 'No cleanup has run.'));
+      UI.el('dm-history').querySelectorAll('[data-report]').forEach(function (b) { b.onclick = function () { Api.call('cleanup.report', { runId: b.getAttribute('data-report') }).then(function (run) { UI.html('dm-history-report', '<div class="card mt-3"><div class="card-header">Report ' + UI.esc(run.Id) + '</div><div class="card-body">' + reportHtml(run, 'dm-h') + '</div></div>'); }).catch(fail); }; });
     }).catch(fail);
   }
 
@@ -7446,6 +7536,7 @@ window.MLS = (function () {
     UI.el('dm-go').onclick = function () { state.page = 1; loadList(); };
     UI.el('dm-tag-ticked').onclick = tagTicked; UI.el('dm-real-ticked').onclick = realTicked; UI.el('dm-untag-ticked').onclick = untagTicked; UI.el('dm-tag-all').onclick = tagAll;
     UI.el('dm-every-count').onclick = countEvery; UI.el('dm-every-tag').onclick = tagEvery;
+    UI.el('dm-cancel').onclick = function () { var run = state.run; if (!run) return; Modal.confirm({ title: 'Cancel ' + run.Id, body: 'Nothing has been deleted. The plan stays in the history as cancelled.', okText: 'Cancel the cleanup' }).then(function (yes) { if (!yes) return; Api.call('cleanup.cancel', { runId: run.Id }, { busy: true }).then(function () { Toast.info('Cleanup cancelled'); loadCleanup(); }).catch(fail); }); };
     if (!UI.el('dm-every-to').value) UI.el('dm-every-to').value = today();
     var me = M.AppState.me || {}, keep = UI.el('dm-branch').value; UI.html('dm-branch', '<option value="">Every branch</option>' + (me.branches || []).map(function (b) { return '<option value="' + UI.esc(b.Id) + '">' + UI.esc(b.Name) + '</option>'; }).join('')); UI.el('dm-branch').value = keep;
   }
