@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'ed07fa2c0b', version: '1.18.0' };</script>
+  <script>window.MLS_PWA = { build: '8de9398a22', version: '1.19.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -183,6 +183,11 @@
   .status-badge.s-soon { background: #fef3c7; color: #92400e; }
   .status-badge.s-attached { background: #dcfce7; color: #166534; }
   .status-badge.s-retired, .status-badge.s-removed { background: #e2e8f0; color: #475569; }
+  /* release 1.19.0: demo and test data — the kind of record and a cleanup's states */
+  .status-badge.s-test, .status-badge.s-demo, .status-badge.s-deleted { background: #fee2e2; color: #991b1b; }
+  .status-badge.s-sample, .status-badge.s-planned, .status-badge.s-backed_up { background: #dbeafe; color: #1e40af; }
+  .status-badge.s-production { background: #dcfce7; color: #166534; }
+  .status-badge.s-stopped, .status-badge.s-skipped { background: #fef3c7; color: #92400e; }
   .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 12px; }
   .toolbar .form-control, .toolbar .form-select { width: auto; min-width: 150px; flex: 0 0 auto; max-width: 100%; }
   .toolbar .search { min-width: 200px; flex: 1 1 220px; }
@@ -655,7 +660,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.18.0';
+  var VERSION = '1.19.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -685,7 +690,8 @@ window.MLS = (function () {
     { route: 'eod', title: 'End of Day', icon: 'fa-vault', section: 'Money', permission: 'EOD_VIEW', phase: 6 },
     { route: 'reports', title: 'Reports & Audit', icon: 'fa-chart-line', section: 'Money', permission: 'REPORT_VIEW', phase: 6 },
     { route: 'settings', title: 'Settings & Profile', icon: 'fa-gear', section: 'System', phase: 7 },
-    { route: 'sync', title: 'Sync', icon: 'fa-rotate', section: 'System', phase: 11 }
+    { route: 'sync', title: 'Sync', icon: 'fa-rotate', section: 'System', phase: 11 },
+    { route: 'data', title: 'Data management', icon: 'fa-broom', section: 'System', permission: 'SYSTEM_DATA_CLEANUP', phase: 11, nav: false, parent: 'settings' }  // 1.19.0: opened from Settings → Maintenance, never listed in the sidebar
   ];
 
   // ------------------------------------------------------------------ state
@@ -1233,13 +1239,13 @@ window.MLS = (function () {
     function register(route, mod) { if (registry[route]) throw new Error('Module ' + route + ' registered twice'); if (typeof mod.render !== 'function') throw new Error('Module ' + route + ' has no render()'); registry[route] = mod; }
     function entry(route) { for (var i = 0; i < MODULES.length; i++) if (MODULES[i].route === route) return MODULES[i]; return null; }
     function allowed(route) { var m = entry(route); if (!m || !registry[route]) return false; if (m.permission) return Auth.can(m.permission); if (registry[route].allowed) return registry[route].allowed(); return true; }
-    function firstAllowed() { for (var i = 0; i < MODULES.length; i++) if (allowed(MODULES[i].route)) return MODULES[i].route; return null; }
+    function firstAllowed() { for (var i = 0; i < MODULES.length; i++) if (MODULES[i].nav !== false && allowed(MODULES[i].route)) return MODULES[i].route; return null; }
     /** Paints the sidebar: allowed modules as links, modules of later phases disabled with the phase shown, the rest hidden. */
     function paintNav() {
       var ul = UI.el('main-nav'); if (!ul) return; var html = '', section = null;
       MODULES.forEach(function (m) {
         var reg = registry[m.route]; var permitted = reg ? allowed(m.route) : (!m.permission || Auth.can(m.permission));
-        if (!permitted) return;
+        if (!permitted || m.nav === false) return;  // nav: false — a screen reached from another one, not from the sidebar
         if (m.section !== section) { section = m.section; html += '<li class="nav-section">' + UI.esc(section) + '</li>'; }
         if (reg) html += '<li><a class="nav-link" id="nav-' + m.route + '" href="#/' + m.route + '" data-route="' + m.route + '" title="' + UI.esc(m.title) + '"><i class="fa-solid ' + m.icon + '" aria-hidden="true"></i><span>' + UI.esc(m.title) + '</span></a></li>';
         else html += '<li><a class="nav-link disabled" id="nav-' + m.route + '" href="#" tabindex="-1" aria-disabled="true" title="Arrives in Phase ' + m.phase + '"><i class="fa-solid ' + m.icon + '"></i><span>' + UI.esc(m.title) + '</span><span class="phase-badge">Phase ' + m.phase + '</span></a></li>';
@@ -1248,7 +1254,7 @@ window.MLS = (function () {
       ul.querySelectorAll('a[data-route]').forEach(function (a) { a.addEventListener('click', function () { document.body.classList.remove('sidebar-open'); if (a.getAttribute('data-route') === current) go(current); }); });  // a tap on the open module refreshes it
       markActive();
     }
-    function markActive() { document.querySelectorAll('#main-nav .nav-link').forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-route') === current); }); }
+    function markActive() { var on = (entry(current) || {}).parent || current; document.querySelectorAll('#main-nav .nav-link').forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-route') === on); }); }
     function go(route, params) {
       if (!route || !allowed(route)) { route = firstAllowed(); if (!route) { Toast.danger('Your role has no module to open; ask an administrator.'); return; } }
       if (location.hash !== '#/' + route) { history.replaceState(null, '', '#/' + route); }
@@ -7071,7 +7077,7 @@ window.MLS = (function () {
     var head = '<div class="d-flex align-items-start flex-wrap gap-2"><div><div class="fs-5 fw-bold">' + UI.esc(role.Name) + ' <span class="small text-soft fw-normal">' + UI.esc(role.Code) + '</span>' + (role.IsSystem ? ' <span class="badge text-bg-light border">system</span>' : '') + ' ' + (role.Status === 'INACTIVE' ? UI.badge('INACTIVE') : '') + '</div><div class="small text-soft">' + UI.esc(role.Description || '') + ' · ' + role.Users + ' active user' + (role.Users === 1 ? '' : 's') + '</div></div>' + (canEdit ? '<button type="button" class="btn btn-sm btn-outline-secondary ms-auto" id="set-role-edit"><i class="fa-solid fa-pen me-1"></i>Rename</button>' : '') + '</div>';
     var note = fixed ? '<div class="alert alert-info py-2 small mt-3">The super administrator role always holds every permission.</div>' : (locked ? '<div class="alert alert-warning py-2 small mt-3">This role holds permissions you do not (' + beyond.join(', ') + '), so you cannot edit its grants.</div>' : (!d.canEdit ? '<div class="alert alert-light border py-2 small mt-3">Read only: editing grants needs the USER_MANAGE permission.</div>' : ''));
     var editable = canEdit && !fixed && !locked;
-    var grid = d.permissions.map(function (m) { return '<div class="perm-module"><div class="d-flex align-items-center mb-1"><strong class="small text-uppercase">' + UI.esc(m.Module) + '</strong>' + (editable ? '<span class="ms-auto small"><a href="#" data-all="' + UI.esc(m.Module) + '">all</a> · <a href="#" data-none="' + UI.esc(m.Module) + '">none</a></span>' : '') + '</div>' + m.Permissions.map(function (p) { var held = d.actorPermissions.indexOf(p.Code) >= 0, on = role.Grants.indexOf(p.Code) >= 0; return '<label class="form-check perm" title="' + UI.esc(p.Description) + '"><input class="form-check-input" type="checkbox" data-code="' + p.Code + '" data-module="' + UI.esc(m.Module) + '"' + (on ? ' checked' : '') + (!editable || !held ? ' disabled' : '') + '> <span class="form-check-label">' + UI.esc(p.Code) + (held ? '' : ' <i class="fa-solid fa-lock text-faint" title="you do not hold this"></i>') + '</span></label>'; }).join('') + '</div>'; }).join('');
+    var grid = d.permissions.map(function (m) { return '<div class="perm-module"><div class="d-flex align-items-center mb-1"><strong class="small text-uppercase">' + UI.esc(m.Module) + '</strong>' + (editable ? '<span class="ms-auto small"><a href="#" data-all="' + UI.esc(m.Module) + '">all</a> · <a href="#" data-none="' + UI.esc(m.Module) + '">none</a></span>' : '') + '</div>' + m.Permissions.map(function (p) { var held = d.actorPermissions.indexOf(p.Code) >= 0, on = role.Grants.indexOf(p.Code) >= 0, superOnly = !fixed && (d.superOnly || []).indexOf(p.Code) >= 0; return '<label class="form-check perm" title="' + UI.esc(p.Description) + '"><input class="form-check-input" type="checkbox" data-code="' + p.Code + '" data-module="' + UI.esc(m.Module) + '"' + (on && !superOnly ? ' checked' : '') + (!editable || !held || superOnly ? ' disabled' : '') + '> <span class="form-check-label">' + UI.esc(p.Code) + (superOnly ? ' <span class="small text-soft">Super administrator only</span>' : held ? '' : ' <i class="fa-solid fa-lock text-faint" title="you do not hold this"></i>') + '</span></label>'; }).join('') + '</div>'; }).join('');
     UI.html('set-role-detail', '<div class="card"><div class="card-body">' + head + note + '<form id="set-grants-form" class="mt-3"><div class="perm-grid">' + grid + '</div>' + (editable ? '<div class="d-flex align-items-center gap-2 mt-3"><button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-floppy-disk me-1"></i>Save permissions</button><span class="small text-soft" id="set-grant-count"></span></div>' : '') + '</form></div></div>');
     var form = UI.el('set-grants-form'), count = function () { var c = UI.el('set-grant-count'); if (c) c.textContent = form.querySelectorAll('[data-code]:checked').length + ' of ' + form.querySelectorAll('[data-code]').length + ' granted'; }; count();
     form.querySelectorAll('[data-code]').forEach(function (c) { c.onchange = count; });
@@ -7149,9 +7155,11 @@ window.MLS = (function () {
         card('Database', '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-mt-validate"><i class="fa-solid fa-check-double me-1"></i>Validate database</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-mt-repair"><i class="fa-solid fa-screwdriver-wrench me-1"></i>Repair database</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-triggers"><i class="fa-solid fa-clock me-1"></i>Install triggers</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-purge"><i class="fa-solid fa-broom me-1"></i>Purge sessions</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-cache"><i class="fa-solid fa-eraser me-1"></i>Clear cache</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-verify"><i class="fa-solid fa-fingerprint me-1"></i>Verify installation</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-endpoints"><i class="fa-solid fa-list me-1"></i>Endpoints</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-mt-browser"><i class="fa-solid fa-bug me-1"></i>Browser error details</button></div><p class="small text-soft mt-2 mb-0">Validate reads only. Repair runs Initialize again (missing sheets, columns and seeds), then rebuilds stock levels from the ledger, recomputes order totals and fixes sequences; every fix is audited and nothing is deleted. Verify installation compares every installed file with the release it came from.</p><div id="set-mt-out" class="mt-3"></div>') +
         card('Archive', '<p class="small text-soft mb-2">Closed history older than the <b>ArchiveKeepMonths</b> setting (orders completed, cancelled or refunded with nothing open attached — with their lines, timeline, payments, production log, delivery items, messages and incidents — plus finished jobs, approved end-of-day reports, expenses and audit rows) moves to a separate archive spreadsheet so the live sheets stay fast. Customers, the catalog, stock and its ledger, purchases, staff, time logs and payroll are never archived.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary btn-sm" id="set-ar-plan"><i class="fa-solid fa-magnifying-glass me-1"></i>What would be archived</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-ar-run" disabled><i class="fa-solid fa-box-archive me-1"></i>Archive now</button></div><div id="set-ar-out" class="mt-3"></div>') +
         card('Privacy', '<p class="small text-soft mb-2">A customer\'s personal data is erased on request from the customer page (<b>CUSTOMER_ERASE</b>): name, number, e-mail, address, location and notes go from the customer, the orders, the deliveries, the messages, the audit copies and the archives; the orders and their amounts stay under a pseudonym. The nightly job does the same for customers with no order for <b>CustomerRetentionDays</b> (0 keeps everyone); the receipt and the tracking page carry the <b>PrivacyNotice</b> line. Proof-of-delivery photos and signatures (<b>ProofOfDelivery</b>) and the bags\' before-processing photos (<b>BagPhotos</b>) are personal data too: they stay in private Drive folders, an erasure removes the customer\'s, and the nightly job removes those older than <b>ProofKeepDays</b> and <b>BagPhotoKeepDays</b>.</p><div class="small mb-2" id="set-rt-status">Loading…</div><div class="small mb-2" id="set-pf-status"></div><div class="small mb-2" id="set-bp-status"></div><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-danger btn-sm" id="set-rt-run" disabled><i class="fa-solid fa-user-slash me-1"></i>Apply retention now</button><button type="button" class="btn btn-outline-danger btn-sm" id="set-pf-run" disabled><i class="fa-solid fa-image me-1"></i>Remove expired photos</button></div><div class="mt-2" id="set-rt-out"></div>') +
+        (can('SYSTEM_DATA_CLEANUP') ? card('Data management', '<p class="small text-soft mb-2">Demo and test data: review the business records, tag the ones made while testing or for a demonstration, and see what a cleanup would remove and what it keeps. Settings, the catalogue, branches, accounts and the audit log are never removed. This release tags and counts; it deletes nothing. Super administrator only.</p><button type="button" class="btn btn-outline-primary btn-sm" id="set-dm-open"><i class="fa-solid fa-broom me-1"></i>Open data management</button>') : '') +  // 1.19.0
         card('Rows per table', '<div id="set-mt-rows">' + rowsHtml(r) + '</div>');  // 1.18.0: on screen again (since 1.12.0 the statement ended at the Privacy card and this card was dropped)
       var out = function (html) { UI.html('set-mt-out', html); };
       UI.el('set-mt-refresh').onclick = tabMaintenance;
+      if (UI.el('set-dm-open')) UI.el('set-dm-open').onclick = function () { M.Router.go('data'); };  // 1.19.0: Data management (SYSTEM_DATA_CLEANUP)
       // 1.18.0: Count now — every sheet counted live (a longer wait than the screen's other calls: two calls a sheet)
       var bindCount = function () { var b = UI.el('set-mt-count'); if (!b) return; b.onclick = function () { b.disabled = true; Api.call('maintenance.counts', {}, { busy: true, timeoutMs: 180000 }).then(function (c) { if (state.tab !== 'maintenance') return; UI.html('set-mt-rows', rowsHtml(c)); var tile = document.querySelector('[data-tile="business-rows"] .v'); if (tile) tile.textContent = F.number(c.businessRows, 0); bindCount(); }).catch(function (e) { b.disabled = false; fail(e); }); }; };
       bindCount();
@@ -7251,6 +7259,201 @@ window.MLS = (function () {
     refresh: function (el, params) { start(params); }
   });
   M.SettingsUI = { open: function (tab) { M.Router.go('settings', { tab: tab }); } };
+})();
+</script>
+
+        <!-- Mrs Laundry Sys — DataPage.html: Data management (release 1.19.0, Super administrator only, SYSTEM_DATA_CLEANUP), opened from Settings → Maintenance. Three tabs: the demo and test data cleanup (what a cleanup would remove and keep, counted from the sheets — this release deletes nothing), the data preview (the review: list the business records, tag them as test, demo or sample data, or mark them real), and the cleanup history. Online only: nothing here is kept on the device. -->
+<section id="view-data" class="view" hidden>
+  <div class="view-head">
+    <h2>Data management</h2>
+    <span class="text-soft small" id="dm-scope"></span>
+    <span class="spacer"></span>
+    <button type="button" class="btn btn-outline-secondary btn-sm" id="dm-back"><i class="fa-solid fa-arrow-left me-1"></i>Maintenance</button>
+    <button type="button" class="btn btn-outline-primary btn-sm" id="dm-refresh"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
+  </div>
+  <div class="small text-soft mb-2 text-break" id="dm-db"></div>
+  <div class="tabs" id="dm-tabs"><button type="button" data-tab="cleanup" class="active">Demo &amp; test data cleanup</button><button type="button" data-tab="preview">Data preview</button><button type="button" data-tab="history">Cleanup history</button></div>
+  <div id="dm-tab-cleanup">
+    <div class="alert alert-info py-2 small" id="dm-notice">This release deletes nothing. Tag the test records under <b>Data preview</b>; the counts below show what a cleanup would remove and keep. The backup, the confirmation and the removal come with the next release.</div>
+    <div class="sum-grid mb-3" id="dm-tiles"></div>
+    <div class="card mb-3"><div class="card-header">What a cleanup would remove and keep</div><div class="card-body p-0" id="dm-sheets"></div></div>
+    <div class="card mb-3"><div class="card-header">Never deleted</div><div class="card-body p-0" id="dm-preserved"></div></div>
+    <div class="card mb-3"><div class="card-header">Blocked records<span class="count ms-1" id="dm-blocked-count"></span></div><div class="card-body p-0" id="dm-blocked"></div></div>
+  </div>
+  <div id="dm-tab-preview" hidden>
+    <div class="card mb-3">
+      <div class="card-header">Everything at once</div>
+      <div class="card-body">
+        <p class="small text-soft mb-2">Every business record not yet tagged and created up to a date, of every kind: count them, check the numbers, then tag them all as test data. Settings, the catalogue, branches and accounts are never listed.</p>
+        <div class="toolbar">
+          <label class="small text-soft" for="dm-every-to">Created up to</label>
+          <input class="form-control" id="dm-every-to" type="date">
+          <button type="button" class="btn btn-outline-primary btn-sm" id="dm-every-count"><i class="fa-solid fa-calculator me-1"></i>Count</button>
+          <button type="button" class="btn btn-danger btn-sm" id="dm-every-tag" disabled><i class="fa-solid fa-tags me-1"></i>Tag all as test data</button>
+        </div>
+        <div id="dm-every-out"></div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <select class="form-select" id="dm-kind" aria-label="Kind of record"></select>
+      <select class="form-select" id="dm-state" aria-label="Which records">
+        <option value="unreviewed">Not yet reviewed</option>
+        <option value="untagged">Not tagged</option>
+        <option value="tagged">Tagged as test, demo or sample</option>
+        <option value="real">Marked real</option>
+        <option value="all">All</option>
+      </select>
+      <input class="form-control" id="dm-from" type="date" aria-label="Created from">
+      <input class="form-control" id="dm-to" type="date" aria-label="Created up to">
+      <input class="form-control" id="dm-by" placeholder="Created by (username)" autocomplete="off" aria-label="Created by">
+      <select class="form-select" id="dm-branch" aria-label="Branch"><option value="">Every branch</option></select>
+      <input class="form-control search" id="dm-text" placeholder="Search" autocomplete="off" aria-label="Search">
+      <button type="button" class="btn btn-outline-primary btn-sm" id="dm-go"><i class="fa-solid fa-magnifying-glass me-1"></i>Show</button>
+    </div>
+    <div class="card">
+      <div class="card-header d-flex align-items-center flex-wrap gap-2">
+        <span id="dm-list-title">Records</span>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-outline-danger btn-sm" id="dm-tag-ticked" disabled><i class="fa-solid fa-tag me-1"></i>Tag ticked…</button>
+        <button type="button" class="btn btn-outline-success btn-sm" id="dm-real-ticked" disabled><i class="fa-solid fa-circle-check me-1"></i>Mark ticked real</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="dm-untag-ticked" disabled><i class="fa-solid fa-eraser me-1"></i>Untag ticked</button>
+        <button type="button" class="btn btn-outline-danger btn-sm" id="dm-tag-all" disabled><i class="fa-solid fa-tags me-1"></i>Tag every record in this list…</button>
+      </div>
+      <div class="card-body p-0" id="dm-list"></div>
+    </div>
+  </div>
+  <div id="dm-tab-history" hidden>
+    <div class="card"><div class="card-body p-0" id="dm-history"></div></div>
+  </div>
+</section>
+
+<script>
+(function () {
+  'use strict';
+  var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Modal = M.Modal;
+  var state = { tab: 'cleanup', kinds: [], kind: 'LaundryOrders', page: 1, list: null, every: null, ticked: {} };
+  var TYPES = [['TEST', 'Test data'], ['DEMO', 'Demo data'], ['SAMPLE', 'Sample data']];
+  function fail(e) { Toast.danger(UI.error(e)); }
+  function n(v) { return F.number(v || 0, 0); }
+  function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function table(head, rows, empty) { return '<div class="table-wrap"><table class="table table-sm mb-0"><thead><tr>' + head.map(function (h) { return '<th' + (h[1] ? ' class="text-end"' : '') + '>' + h[0] + '</th>'; }).join('') + '</tr></thead><tbody>' + (rows.length ? rows.join('') : '<tr><td colspan="' + head.length + '" class="text-soft p-3">' + UI.esc(empty || 'Nothing here') + '</td></tr>') + '</tbody></table></div>'; }
+
+  // ---------------------------------------------------------------- the cleanup preview (deletes nothing)
+  function paintDb(r) {
+    var env = r.environment === 'STAGING' ? UI.badge('PLANNED', 'Staging copy') : UI.badge('PRODUCTION', 'Production safeguards');
+    UI.html('dm-db', 'Database: <b>' + UI.esc(r.database.name) + '</b> <span class="font-monospace">' + UI.esc(r.database.id) + '</span> · ' + env + ' · review started ' + UI.esc(F.datetime(r.reviewFrom)));
+  }
+  function loadCleanup() {
+    UI.html('dm-sheets', '<div class="p-3 text-soft">Counting…</div>');
+    return Api.call('cleanup.preview', {}, { timeoutMs: 180000 }).then(function (r) {
+      paintDb(r);
+      var t = r.totals, tiles = [['Eligible for deletion', n(t.eligible), t.eligible ? 'danger' : ''], ['To be preserved', n(t.preserved), ''], ['Not yet reviewed', n(t.unreviewed), t.unreviewed ? 'warn' : ''], ['Related records affected', n(t.related), ''], ['Blocked', n(t.blocked), t.blocked ? 'warn' : '']];
+      UI.html('dm-tiles', tiles.map(function (x) { return '<div class="tile' + (x[2] === 'danger' ? ' border-danger' : x[2] === 'warn' ? ' border-warning' : '') + '" data-tile="dm-' + x[0].toLowerCase().replace(/ /g, '-') + '"><div class="k">' + x[0] + '</div><div class="v">' + x[1] + '</div></div>'; }).join(''));
+      var rows = r.sheets.map(function (s) { return '<tr data-sheet="' + UI.esc(s.table) + '"><td>' + UI.esc(s.label) + ' <span class="text-soft small">' + UI.esc(s.table) + (s.kind === 'dependent' ? ' · only with its parent' : '') + '</span></td><td class="text-end">' + n(s.total) + '</td><td class="text-end' + (s.test ? ' text-danger fw-bold' : '') + '">' + n(s.test) + '</td><td class="text-end">' + n(s.protected) + '</td><td class="text-end">' + (s.kind === 'dependent' ? '—' : n(s.unreviewed)) + '</td><td class="text-end">' + (s.blocked ? '<span class="text-warning fw-bold">' + n(s.blocked) + '</span>' : '0') + '</td></tr>'; });
+      UI.html('dm-sheets', table([['Database sheet'], ['Total records', 1], ['Confirmed test records', 1], ['Protected records', 1], ['Not yet reviewed', 1], ['Blocked', 1]], rows));
+      UI.html('dm-preserved', table([['Group'], ['Sheets'], ['Records', 1]], r.preserved.map(function (g) { return '<tr><td>' + UI.esc(g.group) + '</td><td class="small text-soft">' + UI.esc(g.tables.join(', ')) + '</td><td class="text-end">' + n(g.rows) + '</td></tr>'; })));
+      UI.el('dm-blocked-count').textContent = r.blocked.length ? String(r.totals.blocked) : '';
+      UI.html('dm-blocked', table([['Kind'], ['Record'], ['Why it stays']], r.blocked.map(function (b) { return '<tr><td>' + UI.esc(b.label) + '</td><td><span class="fw-bold">' + UI.esc(b.name) + '</span> <span class="text-soft small">' + UI.esc(b.id) + '</span></td><td class="small">' + UI.esc(b.reason) + '</td></tr>'; }), 'No tagged record is blocked.'));
+      UI.el('dm-scope').textContent = n(t.eligible) + ' to remove · ' + n(t.unreviewed) + ' not yet reviewed';
+    }).catch(fail);
+  }
+
+  // ---------------------------------------------------------------- the data preview: list and tag
+  function filter() { return { state: UI.el('dm-state').value, from: UI.el('dm-from').value, to: UI.el('dm-to').value, createdBy: UI.el('dm-by').value.trim(), branchId: UI.el('dm-branch').value, text: UI.el('dm-text').value.trim() }; }
+  function tickedIds() { return Object.keys(state.ticked).filter(function (id) { return state.ticked[id]; }); }
+  function paintButtons() {
+    var k = tickedIds().length, total = state.list ? state.list.total : 0;
+    UI.el('dm-tag-ticked').disabled = !k; UI.el('dm-real-ticked').disabled = !k; UI.el('dm-untag-ticked').disabled = !k;
+    UI.el('dm-tag-all').disabled = !total; UI.el('dm-tag-all').innerHTML = '<i class="fa-solid fa-tags me-1"></i>Tag every record in this list' + (total ? ' (' + n(total) + ')' : '') + '…';
+    UI.el('dm-list-title').textContent = (state.list ? state.list.label + ': ' + n(total) + ' record' + (total === 1 ? '' : 's') : 'Records') + (k ? ' · ' + k + ' ticked' : '');
+  }
+  function loadList() {
+    UI.html('dm-list', '<div class="p-3 text-soft">Loading…</div>');
+    return Api.call('cleanup.candidates', { table: state.kind, filter: filter(), page: state.page, size: 50 }).then(function (r) {
+      state.list = r; state.ticked = {};
+      var rows = r.rows.map(function (x) { return '<tr><td><input type="checkbox" class="form-check-input" data-tick="' + UI.esc(x.Id) + '" aria-label="Tick ' + UI.esc(x.Id) + '"></td><td><span class="fw-bold">' + UI.esc(x.Title || x.Id) + '</span> <span class="text-soft small">' + UI.esc(x.Id) + '</span><div class="small text-soft">' + UI.esc(x.Detail || '') + '</div></td><td class="small text-nowrap">' + UI.esc(F.datetime(x.CreatedAt)) + '<div class="text-soft">' + UI.esc(x.CreatedBy || '') + '</div></td><td class="small">' + UI.esc(x.Branch || '') + '</td><td>' + (x.Tag ? UI.badge(x.Tag, x.Tag === 'PRODUCTION' ? 'Real' : x.Tag.charAt(0) + x.Tag.slice(1).toLowerCase()) : (x.Unreviewed ? UI.badge('PENDING', 'Not reviewed') : '<span class="text-soft small">—</span>')) + '</td></tr>'; });
+      var pager = r.pages > 1 ? '<div class="d-flex align-items-center gap-2 p-2"><button type="button" class="btn btn-outline-secondary btn-sm" id="dm-prev"' + (r.page <= 1 ? ' disabled' : '') + '>Previous</button><span class="small text-soft">Page ' + r.page + ' of ' + r.pages + '</span><button type="button" class="btn btn-outline-secondary btn-sm" id="dm-next"' + (r.page >= r.pages ? ' disabled' : '') + '>Next</button></div>' : '';
+      UI.html('dm-list', table([['<input type="checkbox" class="form-check-input" id="dm-tick-page" aria-label="Tick this page">'], ['Record'], ['Created'], ['Branch'], ['Tag']], rows, 'No record matches.') + pager);
+      UI.el('dm-list').querySelectorAll('[data-tick]').forEach(function (c) { c.onchange = function () { state.ticked[c.getAttribute('data-tick')] = c.checked; paintButtons(); }; });
+      var all = UI.el('dm-tick-page'); if (all) all.onchange = function () { UI.el('dm-list').querySelectorAll('[data-tick]').forEach(function (c) { c.checked = all.checked; state.ticked[c.getAttribute('data-tick')] = all.checked; }); paintButtons(); };
+      if (UI.el('dm-prev')) UI.el('dm-prev').onclick = function () { state.page--; loadList(); };
+      if (UI.el('dm-next')) UI.el('dm-next').onclick = function () { state.page++; loadList(); };
+      paintButtons();
+    }).catch(fail);
+  }
+  /** The tag dialog: what kind of data, and why (required for test, demo and sample). Resolves to { recordType, reason } or null. */
+  function askTag(what) {
+    var html = '<p class="mb-2">' + UI.esc(what) + '</p><p class="small text-soft mb-2">A tag deletes nothing. It marks the records so a later cleanup can remove them, after a verified backup and your confirmation.</p>' +
+      '<label class="form-label small" for="dm-ask-type">Kind of data</label><select class="form-select mb-2" id="dm-ask-type">' + TYPES.map(function (t) { return '<option value="' + t[0] + '">' + t[1] + '</option>'; }).join('') + '</select>' +
+      '<label class="form-label small" for="dm-ask-reason">Why (kept with every tag)</label><input class="form-control" id="dm-ask-reason" maxlength="200" placeholder="e.g. made while testing before going live">';
+    return Modal.confirm({ title: 'Tag records', html: html, okText: 'Tag', danger: true }).then(function (yes) {
+      if (!yes) return null;
+      var reason = UI.el('dm-ask-reason').value.trim(); if (!reason) { Toast.danger('Say why these records are test data; nothing was tagged.'); return null; }
+      return { recordType: UI.el('dm-ask-type').value, reason: reason };
+    });
+  }
+  function done(r, verb) { var c = r.records || {}, total = Object.keys(c).reduce(function (s, k) { return s + c[k]; }, 0); Toast.success(verb + ' ' + n(total) + ' record' + (total === 1 ? '' : 's') + (r.unchanged ? ' (' + n(r.unchanged) + ' already so)' : '')); loadList(); state.every = null; UI.html('dm-every-out', ''); UI.el('dm-every-tag').disabled = true; }
+  function tagTicked() { var ids = tickedIds(); askTag(ids.length + ' ticked record' + (ids.length === 1 ? '' : 's') + ' of ' + state.list.label.toLowerCase() + '.').then(function (a) { if (!a) return; Api.call('cleanup.tag', { table: state.kind, ids: ids, recordType: a.recordType, reason: a.reason }, { busy: true }).then(function (r) { done(r, 'Tagged'); }).catch(fail); }); }
+  function realTicked() { var ids = tickedIds(); Modal.confirm({ title: 'Mark records real', body: ids.length + ' ticked record' + (ids.length === 1 ? '' : 's') + ' will be marked as reviewed and real: never listed for cleanup.', okText: 'Mark real' }).then(function (yes) { if (!yes) return; Api.call('cleanup.tag', { table: state.kind, ids: ids, recordType: 'PRODUCTION', reason: 'Reviewed: real' }, { busy: true }).then(function (r) { done(r, 'Marked real'); }).catch(fail); }); }
+  function untagTicked() { var ids = tickedIds(); Api.call('cleanup.untag', { table: state.kind, ids: ids }, { busy: true }).then(function (r) { Toast.success('Untagged ' + n(r.removed) + ' record' + (r.removed === 1 ? '' : 's')); loadList(); }).catch(fail); }
+  function tagAll() { var total = state.list.total; askTag('Every record in this list: ' + n(total) + ' ' + state.list.label.toLowerCase() + '.').then(function (a) { if (!a) return; Api.call('cleanup.tag', { table: state.kind, all: true, filter: filter(), expectCount: total, recordType: a.recordType, reason: a.reason }, { busy: true, timeoutMs: 180000 }).then(function (r) { done(r, 'Tagged'); }).catch(fail); }); }
+  function countEvery() {
+    var to = UI.el('dm-every-to').value; if (!to) { Toast.danger('Choose the date'); return; }
+    UI.html('dm-every-out', '<div class="text-soft small">Counting…</div>');
+    Api.call('cleanup.candidates', { summary: true, filter: { state: 'untagged', to: to } }, { timeoutMs: 180000 }).then(function (r) {
+      var total = r.kinds.reduce(function (s, k) { return s + k.count; }, 0);
+      state.every = { to: to, counts: {}, total: total }; r.kinds.forEach(function (k) { state.every.counts[k.table] = k.count; });
+      UI.html('dm-every-out', table([['Kind'], ['Not tagged, created up to ' + UI.esc(to), 1]], r.kinds.filter(function (k) { return k.count; }).map(function (k) { return '<tr><td>' + UI.esc(k.label) + '</td><td class="text-end">' + n(k.count) + '</td></tr>'; }).concat(['<tr><td class="fw-bold">Total</td><td class="text-end fw-bold" id="dm-every-total">' + n(total) + '</td></tr>']), 'Nothing to tag.'));
+      UI.el('dm-every-tag').disabled = !total; UI.el('dm-every-tag').innerHTML = '<i class="fa-solid fa-tags me-1"></i>Tag all ' + n(total) + ' as test data';
+    }).catch(fail);
+  }
+  function tagEvery() {
+    var e = state.every; if (!e || !e.total) return;
+    Modal.confirm({ title: 'Tag ' + n(e.total) + ' records as test data', html: '<p class="mb-2">Every business record not yet tagged and created up to <b>' + UI.esc(e.to) + '</b> will be tagged as <b>test data</b>.</p><p class="small text-soft mb-2">This deletes nothing, and each tag can be taken off again. Settings, the catalogue, branches and accounts are never tagged.</p><label class="form-label small" for="dm-every-reason">Why</label><input class="form-control" id="dm-every-reason" maxlength="200" value="Made while testing before going live">', okText: 'Tag all', danger: true }).then(function (yes) {
+      if (!yes) return; var reason = UI.el('dm-every-reason').value.trim(); if (!reason) { Toast.danger('Say why; nothing was tagged.'); return; }
+      Api.call('cleanup.tag', { everything: true, filter: { state: 'untagged', to: e.to }, expectCounts: e.counts, recordType: 'TEST', reason: reason }, { busy: true, timeoutMs: 180000 }).then(function (r) { done(r, 'Tagged'); }).catch(fail);
+    });
+  }
+
+  // ---------------------------------------------------------------- history
+  function loadHistory() {
+    UI.html('dm-history', '<div class="p-3 text-soft">Loading…</div>');
+    return Api.call('cleanup.history', {}).then(function (r) {
+      UI.html('dm-history', table([['Cleanup'], ['Status'], ['Database'], ['Backup'], ['Deleted', 1], ['Preserved', 1], ['Error']], r.rows.map(function (x) { return '<tr><td><span class="fw-bold">' + UI.esc(x.Id) + '</span><div class="small text-soft">' + UI.esc(F.datetime(x.StartedAt)) + ' · ' + UI.esc(x.By || '') + '</div></td><td>' + UI.badge(x.Status) + '</td><td class="small">' + UI.esc(x.SpreadsheetName || '') + '</td><td class="small">' + UI.esc(x.BackupId || '') + '</td><td class="text-end">' + n(x.Deleted) + '</td><td class="text-end">' + n(x.Preserved) + '</td><td class="small text-danger">' + UI.esc(x.Error || '') + '</td></tr>'; }), 'No cleanup has run. The cleanup itself — backup, confirmation and removal — is not part of this release.'));
+    }).catch(fail);
+  }
+
+  // ---------------------------------------------------------------- wiring
+  function show(tab) {
+    state.tab = tab;
+    UI.el('dm-tabs').querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === tab); });
+    ['cleanup', 'preview', 'history'].forEach(function (t) { UI.el('dm-tab-' + t).hidden = t !== tab; });
+    if (tab === 'cleanup') return loadCleanup();
+    if (tab === 'history') return loadHistory();
+    return kinds().then(loadList);
+  }
+  function kinds() {
+    if (state.kinds.length) return Promise.resolve();
+    return Api.call('cleanup.candidates', { summary: true, filter: { state: 'all' } }).then(function (r) {
+      state.kinds = r.kinds; UI.html('dm-kind', r.kinds.map(function (k) { return '<option value="' + UI.esc(k.table) + '"' + (k.table === state.kind ? ' selected' : '') + '>' + UI.esc(k.label) + ' (' + n(k.count) + ')</option>'; }).join(''));
+    });
+  }
+  function wire() {
+    UI.el('dm-back').onclick = function () { M.SettingsUI.open('maintenance'); };
+    UI.el('dm-refresh').onclick = function () { state.kinds = []; show(state.tab); };
+    UI.el('dm-tabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { show(b.getAttribute('data-tab')); }; });
+    UI.el('dm-kind').onchange = function () { state.kind = this.value; state.page = 1; loadList(); };
+    UI.el('dm-go').onclick = function () { state.page = 1; loadList(); };
+    UI.el('dm-tag-ticked').onclick = tagTicked; UI.el('dm-real-ticked').onclick = realTicked; UI.el('dm-untag-ticked').onclick = untagTicked; UI.el('dm-tag-all').onclick = tagAll;
+    UI.el('dm-every-count').onclick = countEvery; UI.el('dm-every-tag').onclick = tagEvery;
+    if (!UI.el('dm-every-to').value) UI.el('dm-every-to').value = today();
+    var me = M.AppState.me || {}, keep = UI.el('dm-branch').value; UI.html('dm-branch', '<option value="">Every branch</option>' + (me.branches || []).map(function (b) { return '<option value="' + UI.esc(b.Id) + '">' + UI.esc(b.Name) + '</option>'; }).join('')); UI.el('dm-branch').value = keep;
+  }
+  M.Router.register('data', {
+    title: 'Data management',
+    render: function () { wire(); show(state.tab); },
+    refresh: function () { state.kinds = []; show(state.tab); }
+  });
 })();
 </script>
 
