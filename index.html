@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'd693cef969', version: '1.21.0' };</script>
+  <script>window.MLS_PWA = { build: '0cc93c9cd5', version: '1.22.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -476,6 +476,7 @@
   .queue-badge:hover { filter: brightness(.97); color: inherit; }
   .pending-tag { display: inline-block; font-size: .68rem; font-weight: 700; letter-spacing: .02em; padding: .1rem .4rem; border-radius: 6px; background: #fffbeb; color: #92400e; border: 1px solid #fde68a; vertical-align: middle; }
   .pending-tag.refused { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+  .pending-tag.sending { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }  /* 1.22.0: a stage move on its way to the server */
   .sync-list { list-style: none; margin: 0; padding: 0; }
   .sync-list li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .6rem .9rem; align-items: start; padding: .6rem 0; border-bottom: 1px solid var(--mls-line); }
   .sync-list li:last-child { border-bottom: 0; }
@@ -660,7 +661,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.21.0';
+  var VERSION = '1.22.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -1871,19 +1872,19 @@ window.MLS = (function () {
         return Promise.all(writes).then(function () { return o; });
       });
     }
-    function productionAdvance(p, at) {
+    function productionAdvance(p, at, online) {
       var NEXT = { WASHING: 'DRYING', DRYING: 'FOLDING', FOLDING: 'QC' };
       return Store.get('orders', String(p.orderId || '')).then(function (o) {
         if (!o) throw fail('NOT_FOUND', 'Record not found');
         var stage = p.stage ? String(p.stage).toUpperCase() : (['NEW', 'RECEIVED', 'PROCESSING'].indexOf(o.Status) >= 0 ? 'WASHING' : NEXT[o.Status]);
         if (!stage) throw fail('VALIDATION', o.Status === 'QC' ? 'Finish the quality check with pass or fail' : 'Order ' + o.OrderNo + ' is ' + lower(o.StatusLabel) + ' and has no next production stage', { stage: 'enum' });
         var machine = String(p.machineNo || '').trim().slice(0, 20), notes = String(p.notes || '').trim().slice(0, 300);
-        return moveOrder(o.Id, stage, labelOf(stage) + (machine ? ' · machine ' + machine : '') + (notes ? ' · ' + notes : '') + ' · offline', at, { _machineNo: machine, _machineId: String(p.machineId || '') }).then(function (updated) {
+        return moveOrder(o.Id, stage, labelOf(stage) + (machine ? ' · machine ' + machine : '') + (notes ? ' · ' + notes : '') + (online ? ' · sending' : ' · offline'), at, { _machineNo: machine, _machineId: String(p.machineId || '') }).then(function (updated) {
           return { result: { order: updated, log: { Id: tempId(), OrderId: o.Id, Stage: stage, MachineNo: machine, StartedAt: at, Notes: notes, _pending: true } }, label: o.OrderNo + ' → ' + labelOf(stage) + (machine ? ' (' + machine + ')' : '') };
         });
       });
     }
-    function productionQc(p, at) {
+    function productionQc(p, at, online) {
       var result = String(p.result || '').toUpperCase(), notes = String(p.notes || '').trim().slice(0, 300);
       if (['PASS', 'FAIL'].indexOf(result) < 0) throw fail('VALIDATION', 'Quality check result must be one of PASS, FAIL', { result: 'enum' });
       if (result === 'FAIL' && notes.length < 3) throw fail('VALIDATION', 'Say what failed the check', { notes: 'required' });
@@ -1891,7 +1892,7 @@ window.MLS = (function () {
         if (!o) throw fail('NOT_FOUND', 'Record not found');
         if (o.Status !== 'QC') throw fail('VALIDATION', 'Order ' + o.OrderNo + ' is not in quality check (it is ' + lower(o.StatusLabel) + ')', { orderId: 'status' });
         var next = result === 'PASS' ? 'READY' : 'WASHING';
-        return moveOrder(o.Id, next, (result === 'PASS' ? 'Quality check passed' + (notes ? ' · ' + notes : '') : 'Quality check failed: ' + notes + ' · back to washing') + ' · offline', at).then(function (updated) { return { result: { order: updated, result: result }, label: o.OrderNo + ' QC ' + result.toLowerCase() }; });
+        return moveOrder(o.Id, next, (result === 'PASS' ? 'Quality check passed' + (notes ? ' · ' + notes : '') : 'Quality check failed: ' + notes + ' · back to washing') + (online ? ' · sending' : ' · offline'), at).then(function (updated) { return { result: { order: updated, result: result }, label: o.OrderNo + ' QC ' + result.toLowerCase() }; });
       });
     }
     /** timeclock.punch: the status snapshot the page shows, flipped, with the punch marked provisional. */
@@ -1950,16 +1951,16 @@ window.MLS = (function () {
       });
     }
     /** Applies an operation to the copy; resolves with { result, tempId?, provisionalRef?, quote?, label, skip? }. Rejects with a validation error as the server would. */
-    function apply(action, payload, at) {
-      payload = payload || {};
+    function apply(action, payload, at, opts) {
+      payload = payload || {}; var online = !!(opts && opts.online);
       try {
         switch (action) {
           case 'orders.create': return ordersCreate(payload, at);
           case 'customers.quickAdd': return customersCreate(payload, at, true);
           case 'customers.save': return customersCreate(payload, at, false);
           case 'payments.create': return paymentsCreate(payload, at);
-          case 'production.advance': return productionAdvance(payload, at);
-          case 'production.qc': return productionQc(payload, at);
+          case 'production.advance': return productionAdvance(payload, at, online);
+          case 'production.qc': return productionQc(payload, at, online);
           case 'timeclock.punch': return timeclockPunch(payload, at);
           case 'deliveries.accept': case 'deliveries.start': case 'deliveries.complete': case 'deliveries.fail': return deliveryStep(action, payload, at);
           default: return Promise.reject(fail('NETWORK', 'No connection to the server — this needs a connection.'));
@@ -1998,23 +1999,28 @@ window.MLS = (function () {
     function recount() { return Store.all('queue').then(function (q) { counts = { pending: q.filter(function (o) { return o.state === 'PENDING' || o.state === 'SENDING'; }).length, rejected: q.filter(function (o) { return o.state === 'REJECTED'; }).length, flagged: q.filter(function (o) { return o.state === 'APPLIED' && o.result && o.result.flags && o.result.flags.length; }).length }; emit(); return counts; }).catch(function () { return counts; }); }
     function nextSeq() { if (seqLoaded) return Promise.resolve(++seq); return Store.get('meta', 'queueSeq').then(function (n) { seq = Number(n) || 0; seqLoaded = true; return ++seq; }); }
     function queueMax() { return Answers.ordersMeta().then(function (om) { return om.offline && om.offline.queueMax ? Number(om.offline.queueMax) : 500; }); }
-    /** Applies the write to the copy and files it for the server; resolves with the local result the page shows. */
-    function enqueue(action, payload) {
+    /**
+     * Applies the write to the copy and files it for the server; resolves with the local result the page shows. 1.22.0: opts.online — the
+     * production board's stage moves and quality checks while connected (StageMovesInBackground): sent at once, never reported as made
+     * offline, dropped from the queue once applied; a refusal is told at once and waits on the Sync page like any other.
+     */
+    function enqueue(action, payload, opts) {
+      var online = !!(opts && opts.online);
       var me = AppState.me; if (!me) return Promise.reject(fail('AUTH_REQUIRED', 'Please sign in'));
       if (!Store.available()) return Promise.reject(fail('NETWORK', 'No connection to the server — this needs a connection (this browser cannot keep a queue).'));
       var at = new Date().toISOString();
       return Promise.all([queueMax(), Store.all('queue')]).then(function (r) {
         var pendingCount = r[1].filter(function (o) { return o.state === 'PENDING' || o.state === 'SENDING'; }).length;
         if (pendingCount >= r[0]) throw fail('VALIDATION', 'This device holds ' + pendingCount + ' operations waiting for the server (the limit, OfflineQueueMax); connect before taking more.');
-        return Local.apply(action, payload, at);
+        return Local.apply(action, payload, at, { online: online });
       }).then(function (local) {
         if (local.skip) return local.result;
         return nextSeq().then(function (n) {
-          var op = { opId: UI.uuid(), seq: n, userId: me.user.Id, username: me.user.Username, displayName: me.user.DisplayName, branchId: me.activeBranch, action: action, payload: clone(payload || {}), clientAt: at, tempId: local.tempId || '', provisionalRef: local.provisionalRef || '', label: local.label || action, state: 'PENDING', attempts: 0, createdAt: at, appVersion: M.version };
+          var op = { opId: UI.uuid(), seq: n, userId: me.user.Id, username: me.user.Username, displayName: me.user.DisplayName, branchId: me.activeBranch, action: action, payload: clone(payload || {}), clientAt: at, tempId: local.tempId || '', provisionalRef: local.provisionalRef || '', label: local.label || action, state: 'PENDING', attempts: 0, createdAt: at, appVersion: M.version, online: online };
           if (local.quote) op.payload.quote = clone(local.quote);
           if (local.provisionalRef) op.payload.provisionalRef = local.provisionalRef;
           if (local.stockSeen) op.payload.stockSeen = clone(local.stockSeen);
-          return Store.put('meta', 'queueSeq', n).then(function () { return Store.put('queue', op.opId, op); }).then(function () { recount(); schedule(1500); return local.result; });
+          return Store.put('meta', 'queueSeq', n).then(function () { return Store.put('queue', op.opId, op); }).then(function () { recount(); schedule(online ? 150 : 1500); return local.result; });
         });
       });
     }
@@ -2039,14 +2045,14 @@ window.MLS = (function () {
       var me = AppState.me; if (!me || !AppState.token || !Store.available()) return Promise.resolve(null);
       if (!opts.manual && holding()) return Promise.resolve(null);
       var usedToken = AppState.token;
-      var summary = { sent: 0, applied: 0, rejected: 0, duplicate: 0, flagged: 0, error: null, labels: [] };
+      var summary = { sent: 0, applied: 0, rejected: 0, duplicate: 0, flagged: 0, error: null, labels: [], offlineDone: 0, online: { applied: 0, refused: [] } };
       var round = function () {
         return Store.all('queue').then(function (q) {
           var batch = batchFor(q, me); if (!batch.length) return summary;
           var now = new Date().toISOString();
           batch.forEach(function (o) { o.state = 'SENDING'; o.attempts = (o.attempts || 0) + 1; o.lastTriedAt = now; });
           return Store.putMany('queue', batch.map(function (o) { return [o.opId, o]; })).then(function () { recount();
-            var body = { installId: null, deviceId: deviceId(), deviceLabel: AppState.device() || '', batchId: UI.uuid().slice(0, 13), appVersion: M.version, ops: batch.map(function (o) { return { opId: o.opId, seq: o.seq, action: o.action, payload: o.payload, clientAt: o.clientAt, userId: o.userId, branchId: o.branchId, tempId: o.tempId || undefined, provisionalRef: o.provisionalRef || undefined, appVersion: o.appVersion }; }) };
+            var body = { installId: null, deviceId: deviceId(), deviceLabel: AppState.device() || '', batchId: UI.uuid().slice(0, 13), appVersion: M.version, sentAt: new Date().toISOString(), ops: batch.map(function (o) { return { opId: o.opId, seq: o.seq, action: o.action, payload: o.payload, clientAt: o.clientAt, userId: o.userId, branchId: o.branchId, tempId: o.tempId || undefined, provisionalRef: o.provisionalRef || undefined, appVersion: o.appVersion, online: o.online === true ? true : undefined }; }) };
             return Store.get('meta', 'sync').then(function (m) { body.installId = m && m.installId ? m.installId : null; return Api.call('sync.push', body, { noRedirect: true, timeoutMs: 180000, noOffline: true }); }).then(function (r) {
               var map = {}, verdicts = {}; (r.results || []).forEach(function (x) { verdicts[x.opId] = x; });
               var confirms = [];
@@ -2055,12 +2061,18 @@ window.MLS = (function () {
                 if (!v) { o.state = 'PENDING'; return; }  // not reached within the server's budget: it goes again
                 summary.sent++;
                 o.result = { status: v.status, resultId: v.resultId || '', resultRef: v.resultRef || '', flags: v.flags || [], conflicts: v.conflicts || [], error: v.error || null, at: new Date().toISOString() };
+                if (o.online) { if (v.status === 'APPLIED' || v.status === 'DUPLICATE') summary.online.applied++; else summary.online.refused.push({ label: o.label, message: v.error ? v.error.message : 'refused', orderId: o.payload && o.payload.orderId }); }
+                else if (v.status === 'APPLIED' || v.status === 'DUPLICATE') summary.offlineDone++;
                 if (v.status === 'APPLIED' || v.status === 'DUPLICATE') { o.state = 'APPLIED'; if (o.payload && o.payload.proof && typeof o.payload.proof === 'object') o.payload.proof = { photo: o.payload.proof.photo ? '[sent]' : '', signature: o.payload.proof.signature ? '[sent]' : '', receivedBy: o.payload.proof.receivedBy || '' }; /* 1.15.0: the server keeps the images now; this phone does not */ if (v.status === 'APPLIED') summary.applied++; else summary.duplicate++; if (v.flags && v.flags.length) summary.flagged++; if (o.tempId && v.resultId) map[o.tempId] = v.resultId; if (v.data || (o.tempId && v.resultId)) confirms.push(Local.confirm(o, v)); summary.labels.push(o.label + (v.resultRef ? ' → ' + v.resultRef : '')); }
                 else { o.state = 'REJECTED'; summary.rejected++; summary.labels.push(o.label + ' ✗ ' + (v.error ? v.error.message : 'refused')); }
               });
-              return Promise.all(confirms).then(function () { return Store.putMany('queue', batch.map(function (o) { return [o.opId, o]; })); }).then(function () { return remapPending(q, map); }).then(function () { lastPush = new Date().toISOString(); lastError = null; backoffReset(); return recount(); }).then(function () { return round(); });
+              // 1.22.0: a move made online that the server applied as it was leaves the queue (the Sync page lists what was made offline, what was refused and what was flagged)
+              var done = batch.filter(function (o) { return o.online && o.state === 'APPLIED' && !(o.result.flags && o.result.flags.length); }), kept = batch.filter(function (o) { return done.indexOf(o) < 0; });
+              return Promise.all(confirms).then(function () { return Promise.all([kept.length ? Store.putMany('queue', kept.map(function (o) { return [o.opId, o]; })) : 0, done.length ? Store.removeMany('queue', done.map(function (o) { return o.opId; })) : 0]); }).then(function () { return restoreRefused(batch); }).then(function () { return remapPending(q, map); }).then(function () { lastPush = new Date().toISOString(); lastError = null; backoffReset(); return recount(); }).then(function () { return round(); });
             }, function (e) {
-              batch.forEach(function (o) { o.state = 'PENDING'; });
+              // 1.22.0: a move the board made online that did not reach the server at once is from now on kept on this device like any
+              // operation made offline (marked and checked as such: a machine problem flagged for review rather than refused)
+              batch.forEach(function (o) { o.state = 'PENDING'; if (o.online) o.online = false; });
               var dead = !!(e && e.code === 'AUTH_REQUIRED');
               if (!dead) backoffAfterFailure();
               return Store.putMany('queue', batch.map(function (o) { return [o.opId, o]; })).then(function () {
@@ -2075,17 +2087,33 @@ window.MLS = (function () {
           });
         });
       };
-      pushing = round().catch(function (e) { summary.error = (e && e.message) || String(e); lastError = summary.error; return summary; }).then(function (s) { pushing = null; emit(); if (!opts.quiet) report(s); if (s && (s.applied || s.duplicate)) { try { document.dispatchEvent(new CustomEvent('mls:synced', { detail: s })); } catch (e) { /* ignore */ } } return s; });
+      pushing = round().catch(function (e) { summary.error = (e && e.message) || String(e); lastError = summary.error; return summary; }).then(function (s) { pushing = null; emit(); if (!opts.quiet) report(s); else reportOnline(s); if (s && s.offlineDone) { try { document.dispatchEvent(new CustomEvent('mls:synced', { detail: s })); } catch (e) { /* ignore */ } } return s; });
       emit();
       return pushing;
     }
+    /**
+     * 1.22.0: a stage move made online that the server refused is told at once, with its reason. One that was applied needs no word: the
+     * card's "sending" goes. The order of any refused stage move (made online or offline) is read again from the server (restoreRefused),
+     * so the copy and the board show it where the server has it.
+     */
+    function reportOnline(s) {
+      if (!s || !s.online || !s.online.refused.length) return;
+      var r = s.online.refused;
+      M.Toast.danger(r.length === 1 ? 'Refused by the server: ' + r[0].label + ' — ' + r[0].message + '. It waits on the Sync page until you discard it.' : r.length + ' stage moves were refused by the server — open Sync to read why.', 10000);
+      if (M.Notify) M.Notify.attention('Mrs Laundry Sys — a stage move was refused', r.length === 1 ? r[0].label + ': ' + r[0].message : r.length + ' stage moves refused — open Sync');
+    }
+    function restoreRefused(batch) {
+      var ids = batch.filter(function (o) { return (o.action === 'production.advance' || o.action === 'production.qc') && o.state === 'REJECTED' && o.payload && o.payload.orderId; }).map(function (o) { return String(o.payload.orderId); }).filter(function (id, i, a) { return a.indexOf(id) === i; });
+      return Promise.all(ids.map(function (id) { return Api.call('orders.get', { id: id }, { noOffline: true, noRedirect: true }).then(function (o) { return o && o.Id ? Store.put('orders', o.Id, o) : null; }).catch(function () { return null; }); }));
+    }
     function report(s) {
       if (!s || !s.sent) return;
-      var T = M.Toast;
-      if (s.applied || s.duplicate) T.success((s.applied + s.duplicate) + ' offline operation' + (s.applied + s.duplicate === 1 ? '' : 's') + ' reached the server' + (s.flagged ? ' · ' + s.flagged + ' flagged for review' : '') + ' — see Sync for the details.', 6000);
-      if (s.rejected) T.danger(s.rejected + ' offline operation' + (s.rejected === 1 ? ' was' : 's were') + ' refused by the server — open Sync to read why.', 10000);
+      var T = M.Toast, offlineSent = s.sent - s.online.applied - s.online.refused.length, offlineRefused = s.rejected - s.online.refused.length;
+      reportOnline(s); if (offlineSent <= 0) return;
+      if (s.offlineDone) T.success(s.offlineDone + ' offline operation' + (s.offlineDone === 1 ? '' : 's') + ' reached the server' + (s.flagged ? ' · ' + s.flagged + ' flagged for review' : '') + ' — see Sync for the details.', 6000);
+      if (offlineRefused) T.danger(offlineRefused + ' offline operation' + (offlineRefused === 1 ? ' was' : 's were') + ' refused by the server — open Sync to read why.', 10000);
       // a browser notification only when the user opted in, the app is in the background and something needs attention — never for a success
-      if ((s.rejected || s.flagged) && M.Notify) M.Notify.attention('Mrs Laundry Sys — sync needs attention', (s.rejected ? s.rejected + ' refused by the server' : '') + (s.rejected && s.flagged ? ' · ' : '') + (s.flagged ? s.flagged + ' flagged for review' : '') + ' — open Sync');
+      if ((offlineRefused || s.flagged) && M.Notify) M.Notify.attention('Mrs Laundry Sys — sync needs attention', (offlineRefused ? offlineRefused + ' refused by the server' : '') + (offlineRefused && s.flagged ? ' · ' : '') + (s.flagged ? s.flagged + ' flagged for review' : '') + ' — open Sync');
     }
     var debounce = null;
     function schedule(ms) { clearTimeout(debounce); debounce = setTimeout(function () { if (AppState.me && Net.state() === 'online') push(); }, ms); }
@@ -4209,8 +4237,41 @@ window.MLS = (function () {
   var COLS = [['QUEUE', 'Queue', 'fa-inbox'], ['WASHING', 'Washing', 'fa-soap'], ['DRYING', 'Drying', 'fa-wind'], ['FOLDING', 'Folding', 'fa-shirt'], ['QC', 'Quality check', 'fa-magnifying-glass'], ['READY', 'Ready today', 'fa-bag-shopping']];
   var NEXT = { QUEUE: ['WASHING', 'Start washing', 'fa-play'], WASHING: ['DRYING', 'To drying', 'fa-arrow-right'], DRYING: ['FOLDING', 'To folding', 'fa-arrow-right'], FOLDING: ['QC', 'To QC', 'fa-arrow-right'] };
   var STAGE_TITLE = { WASHING: 'Start washing', DRYING: 'To drying', FOLDING: 'To folding' };
-  var board = null, timer = null, pending = null, listened = false;
+  var board = null, timer = null, pending = null, listened = false, sending = [], queueWired = false;
   function canUpdate() { return M.Auth.can('PRODUCTION_UPDATE'); }
+  /**
+   * 1.22.0 (StageMovesInBackground, on by default): a stage move or a quality check goes through this device's queue — the card moves at
+   * once and says "sending" until the server has applied the move; a move the server refuses is told at once, its card returns to where the
+   * server has it and the move waits on the Sync page until discarded. Off, or where this browser keeps no queue, the board waits for the
+   * server's answer, as before. Sales, payments and punches always wait for the server.
+   */
+  function inBackground() { var st = (M.AppState.me && M.AppState.me.settings) || {}; return st.StageMovesInBackground !== false && !!(M.Queue && M.Queue.enqueue && M.Store && M.Store.available && M.Store.available()); }
+  /** The stage moves this device is still sending (made online or offline), in the order they were made: { orderId, to, at, machine }. */
+  function refreshSending() {
+    if (!M.Queue || !M.Queue.list) { sending = []; return Promise.resolve(sending); }
+    return M.Queue.list().then(function (q) {
+      sending = q.filter(function (o) { return (o.state === 'PENDING' || o.state === 'SENDING') && (o.action === 'production.advance' || o.action === 'production.qc') && o.payload && o.payload.orderId; })
+        .sort(function (a, b) { return a.seq - b.seq; })
+        .map(function (o) { return { orderId: String(o.payload.orderId), to: o.action === 'production.qc' ? (String(o.payload.result || '').toUpperCase() === 'PASS' ? 'READY' : 'WASHING') : String(o.payload.stage || '').toUpperCase(), at: o.clientAt, machine: o.payload.machineNo || '' }; });
+      return sending;
+    }).catch(function () { sending = []; return sending; });
+  }
+  /**
+   * The board to show: the one the server or the copy gave, with each card still being sent standing where its move put it, marked as
+   * such. A copy: the board as given stays as it was, so a move answered meanwhile shows its card where the server has it.
+   */
+  function overlay(b) {
+    if (!b || !b.columns || !sending.length) return b;
+    var cols = {}; Object.keys(b.columns).forEach(function (k) { cols[k] = b.columns[k].slice(); });
+    sending.forEach(function (s) {
+      var from = null, card = null; Object.keys(cols).forEach(function (k) { cols[k].forEach(function (c) { if (c.Id === s.orderId) { from = k; card = c; } }); });
+      var to = cols[s.to] ? s.to : null;
+      if (!card || !to) return;  // not on this board (another branch, or no longer open), or a stage it does not show
+      cols[from] = cols[from].filter(function (c) { return c.Id !== s.orderId; });
+      cols[to].push(Object.assign({}, card, { Status: s.to, StageSince: from === to ? card.StageSince : (s.at || card.StageSince), MachineNo: from === to ? card.MachineNo : s.machine, _pending: true }));
+    });
+    return Object.assign({}, b, { columns: cols, counts: Object.keys(cols).reduce(function (m, k) { m[k] = cols[k].length; return m; }, {}) });
+  }
   /** The registered machines of the order's branch that serve a stage (out-of-service ones included, shown disabled). */
   function machinesFor(c, stage) { return ((board && board.machines) || []).filter(function (m) { return m.BranchId === c.BranchId && (m.Stages || []).indexOf(stage) >= 0; }); }
 
@@ -4229,7 +4290,7 @@ window.MLS = (function () {
     // the clock is this device's: minutes in stage and overdue are counted from the timestamps, not from the moment the server answered
     var now = Date.now(), overdue = c.DueAt ? new Date(c.DueAt).getTime() < now : !!c.Overdue, minutes = c.StageSince ? Math.max(0, Math.round((now - new Date(c.StageSince).getTime()) / 60000)) : c.MinutesInStage;
     return '<div class="kcard' + (c.IsExpress ? ' express' : '') + (overdue && col !== 'READY' ? ' overdue' : '') + '" data-open="' + UI.esc(c.Id) + '">' +
-      '<div class="d-flex align-items-center gap-2"><span class="no">' + UI.esc(c.OrderNo) + '</span>' + (c.IsExpress ? '<span class="badge text-bg-warning">Express</span>' : '') + (c.ServiceType === 'DELIVERY' ? '<i class="fa-solid fa-motorcycle text-soft" title="For delivery"></i>' : '') + bagChip(c, col) + '</div>' +
+      '<div class="d-flex align-items-center gap-2"><span class="no">' + UI.esc(c.OrderNo) + '</span>' + (c._pending ? (M.Net && M.Net.state && M.Net.state() !== 'online' ? '<span class="pending-tag" title="Kept on this device; sent when the connection returns">not synced</span>' : '<span class="pending-tag sending" title="Sent to the server; the move stands here until the server has applied it"><i class="fa-solid fa-rotate fa-spin me-1" aria-hidden="true"></i>sending</span>') : '') + (c.IsExpress ? '<span class="badge text-bg-warning">Express</span>' : '') + (c.ServiceType === 'DELIVERY' ? '<i class="fa-solid fa-motorcycle text-soft" title="For delivery"></i>' : '') + bagChip(c, col) + '</div>' +
       '<div class="small">' + UI.esc(c.CustomerName) + '</div>' +
       '<div class="meta">' + UI.esc((c.Lines && c.Lines.length ? c.Lines.join(' · ') : F.qty(c.TotalWeightKg, 'kg'))) + (c.BagCount ? ' · ' + c.BagCount + ' bag' + (c.BagCount === 1 ? '' : 's') : '') + (c.MachineNo ? ' · machine ' + UI.esc(c.MachineNo) : '') + '</div>' +
       '<div class="meta"><span class="due">' + (c.DueAt ? (overdue && col !== 'READY' ? 'Overdue · due ' : 'Due ') + F.datetime(c.DueAt) : 'No due time') + '</span></div>' +
@@ -4239,7 +4300,8 @@ window.MLS = (function () {
   }
   function paint() {
     if (!board) return;
-    UI.html('prod-board', COLS.map(function (col) { var rows = board.columns[col[0]] || []; return '<div class="kcol" data-col="' + col[0] + '"><h6><i class="fa-solid ' + col[2] + ' me-2"></i>' + col[1] + '<span class="count">' + rows.length + '</span></h6>' + (rows.length ? rows.map(function (c) { return card(c, col[0]); }).join('') : '<div class="text-faint small px-1 py-2 text-center">Nothing here</div>') + '</div>'; }).join(''));
+    var shown = overlay(board);
+    UI.html('prod-board', COLS.map(function (col) { var rows = shown.columns[col[0]] || []; return '<div class="kcol" data-col="' + col[0] + '"><h6><i class="fa-solid ' + col[2] + ' me-2"></i>' + col[1] + '<span class="count">' + rows.length + '</span></h6>' + (rows.length ? rows.map(function (c) { return card(c, col[0]); }).join('') : '<div class="text-faint small px-1 py-2 text-center">Nothing here</div>') + '</div>'; }).join(''));
     var el = UI.el('prod-board');
     el.querySelectorAll('[data-open]').forEach(function (k) { k.onclick = function (ev) { if (ev.target.closest('button')) return; M.OrdersUI.openOrder(k.getAttribute('data-open'), load); }; });
     el.querySelectorAll('[data-adv]').forEach(function (b) { b.onclick = function () { var id = b.getAttribute('data-adv'), stage = b.getAttribute('data-stage'); if (STAGE_TITLE[stage]) openStart(id, stage); else advance(id, stage, {}); }; });
@@ -4251,14 +4313,43 @@ window.MLS = (function () {
     UI.el('prod-updated').textContent = 'Updated ' + F.time(new Date());
   }
   var boardSeq = Api.sequence();
-  function load() { return Api.read('production.board', {}, { seq: boardSeq, paint: function (b) { board = b; paint(); } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Production: ' + UI.error(e)); }); }
+  /** The board from the copy at once, then from the server; each painted once this device's moves still being sent are known (overlay). */
+  function load() {
+    var known = refreshSending();
+    return Api.read('production.board', {}, { seq: boardSeq, paint: function (b) { board = b; known.then(function () { if (board === b) paint(); }); } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Production: ' + UI.error(e)); });
+  }
+  /**
+   * 1.22.0: the move through the queue (see inBackground). A move this device cannot apply to its copy (the order not in it yet, a copy
+   * older than the board, the queue full) is not queued and waits for the server instead, as before. Resolves with the local result.
+   */
+  function queued(action, payload, direct) {
+    return M.Queue.enqueue(action, payload, { online: !!(M.Net && M.Net.state && M.Net.state() === 'online') })
+      .then(function (r) { refreshSending().then(function () { paint(); }); return r; }, function () { return direct(); });
+  }
   function advance(id, stage, extra) {
-    return Api.call('production.advance', Object.assign({ orderId: id, stage: stage }, extra || {}), { busy: true }).then(function (r) { Toast.success(r.order.OrderNo + ' → ' + r.order.StatusLabel.toLowerCase()); load(); }).catch(function (e) { Toast.danger(UI.error(e)); load(); });
+    var payload = Object.assign({ orderId: id, stage: stage }, extra || {});
+    var direct = function () { return Api.call('production.advance', payload, { busy: true }).then(function (r) { Toast.success(r.order.OrderNo + ' → ' + r.order.StatusLabel.toLowerCase()); load(); }).catch(function (e) { Toast.danger(UI.error(e)); load(); }); };
+    return inBackground() ? queued('production.advance', payload, direct) : direct();
   }
   function qc(id, result) {
     var c = findCard(id);
-    if (result === 'PASS') return Api.call('production.qc', { orderId: id, result: 'PASS' }, { busy: true }).then(function (r) { Toast.success(r.order.OrderNo + ' passed quality check · ready'); load(); }).catch(function (e) { Toast.danger(UI.error(e)); load(); });
-    return M.OrdersUI.openReason({ title: 'Quality check failed' + (c ? ' · ' + c.OrderNo : ''), hint: 'The order goes back to washing with this reason on its timeline.', label: 'What failed', confirmText: 'Send back to washing', danger: true, onSubmit: function (d) { return Api.call('production.qc', { orderId: id, result: 'FAIL', notes: d.reason }).then(function (r) { Toast.warning(r.order.OrderNo + ' back to washing'); load(); return r; }); } });
+    if (result === 'PASS') {
+      var payload = { orderId: id, result: 'PASS' }, direct = function () { return Api.call('production.qc', payload, { busy: true }).then(function (r) { Toast.success(r.order.OrderNo + ' passed quality check · ready'); load(); }).catch(function (e) { Toast.danger(UI.error(e)); load(); }); };
+      return inBackground() ? queued('production.qc', payload, direct) : direct();
+    }
+    return M.OrdersUI.openReason({ title: 'Quality check failed' + (c ? ' · ' + c.OrderNo : ''), hint: 'The order goes back to washing with this reason on its timeline.', label: 'What failed', confirmText: 'Send back to washing', danger: true, onSubmit: function (d) {
+      var payload = { orderId: id, result: 'FAIL', notes: d.reason }, direct = function () { return Api.call('production.qc', payload).then(function (r) { Toast.warning(r.order.OrderNo + ' back to washing'); load(); return r; }); };
+      return inBackground() ? queued('production.qc', payload, direct) : direct();
+    } });
+  }
+  /** Once: whenever the queue moves, the cards being sent are looked at again; when one was answered (applied or refused) the board is read from the server. */
+  function wireQueue() {
+    if (queueWired || !M.Queue || !M.Queue.onChange) return; queueWired = true;
+    M.Queue.onChange(function () {
+      if (M.Router.current() !== 'production') return;
+      var before = sending.length;
+      refreshSending().then(function () { if (sending.length < before) load(); else if (board) paint(); });
+    });
   }
   /**
    * Starting a stage: the machine it runs on. With registered machines for the stage at the order's branch, one is picked from them (an
@@ -4283,6 +4374,7 @@ window.MLS = (function () {
   }
   function findCard(id) { var out = null; if (!board) return null; Object.keys(board.columns).forEach(function (k) { board.columns[k].forEach(function (c) { if (c.Id === id) out = c; }); }); return out; }
   function wire() {
+    wireQueue();
     UI.el('prod-refresh').onclick = load;
     UI.el('prod-start-form').onsubmit = function (ev) {
       ev.preventDefault(); var d = M.Form.read(UI.el('prod-start-form')), p = pending; if (!p) return;
@@ -7618,7 +7710,7 @@ window.MLS = (function () {
   </div>
   <div class="card mb-3"><div class="card-body">
     <div class="sync-stat" id="sync-stat"></div>
-    <p class="small text-soft mb-0 mt-2" id="sync-note">While the server cannot be reached, orders, new customers, payments (cash and e-wallet with a reference), production stages, punches and delivery steps are kept on this device and sent, in order, as soon as it answers. Each one is confirmed only when the server says so; a refused one stays here with the reason until you discard it.</p>
+    <p class="small text-soft mb-0 mt-2" id="sync-note">While the server cannot be reached, orders, new customers, payments (cash and e-wallet with a reference), production stages, punches and delivery steps are kept on this device and sent, in order, as soon as it answers. Each one is confirmed only when the server says so; a refused one stays here with the reason until you discard it. Since 1.22.0 the production board's stage moves and quality checks go this way while connected too, so the board never waits: they leave this list once the server has applied them, and one it refuses stays here, marked <i>board</i>.</p>
   </div></div>
   <div class="card mb-3" id="sync-review-card" hidden>
     <div class="card-header d-flex align-items-center flex-wrap gap-2"><i class="fa-solid fa-flag me-2 text-soft"></i>Needs review <span class="small text-soft" id="sync-review-scope"></span>
@@ -7637,6 +7729,7 @@ window.MLS = (function () {
   <div class="card">
     <div class="card-header d-flex align-items-center flex-wrap gap-2"><i class="fa-solid fa-server me-2 text-soft"></i>On the server <span class="small text-soft" id="sync-ledger-scope"></span>
       <select class="form-select form-select-sm ms-auto w-auto" id="sync-ledger-who" aria-label="Whose operations" hidden><option value="">Mine</option><option value="ALL">Everyone</option></select>
+      <select class="form-select form-select-sm w-auto" id="sync-ledger-kind" aria-label="Which operations"><option value="">Everything</option><option value="OFFLINE">Made offline</option><option value="BOARD">From the board</option></select>
       <select class="form-select form-select-sm w-auto" id="sync-ledger-days" aria-label="Days"><option value="1">Today</option><option value="7" selected>7 days</option><option value="30">30 days</option></select>
     </div>
     <div class="card-body"><ul class="sync-list" id="sync-ledger"><li class="text-soft small">Loading…</li></ul></div>
@@ -7659,7 +7752,7 @@ window.MLS = (function () {
   function queueItem(o, mine) {
     var r = o.result || {};
     return '<li data-op="' + UI.esc(o.opId) + '"><div class="when">' + UI.esc(when(o.clientAt)) + (mine ? '' : '<div>' + UI.esc(o.displayName || o.username || '') + '</div>') + '</div>' +
-      '<div class="what"><span class="fw-bold">' + UI.esc(actionLabel(o.action)) + '</span> · ' + UI.esc(o.label || '') +
+      '<div class="what"><span class="fw-bold">' + UI.esc(actionLabel(o.action)) + '</span>' + (o.online ? ' <span class="badge text-bg-light border" title="Made on the production board while connected (1.22.0)">board</span>' : '') + ' · ' + UI.esc(o.label || '') +
       (o.state === 'APPLIED' && r.resultRef ? '<div class="ref">Server: ' + UI.esc(r.resultRef) + (r.resultId ? ' (' + UI.esc(r.resultId) + ')' : '') + ' · ' + UI.esc(when(r.at)) + '</div>' : '') +
       (o.state === 'REJECTED' && r.error ? '<div class="why"><i class="fa-solid fa-circle-xmark me-1"></i>' + UI.esc(r.error.message || r.error.code) + ' <span class="text-soft">(' + UI.esc(r.error.code) + ')</span></div>' : '') +
       (o.state === 'PENDING' && o.attempts ? '<div class="ref">Tried ' + o.attempts + ' time' + (o.attempts === 1 ? '' : 's') + ', last ' + UI.esc(when(o.lastTriedAt)) + '</div>' : '') + flagsHtml(r.flags) + (r.conflicts && r.conflicts.length ? '<div class="flag"><i class="fa-solid fa-clipboard-check me-1"></i>' + r.conflicts.length + ' review item' + (r.conflicts.length === 1 ? '' : 's') + ' opened for a manager to settle</div>' : '') + '</div>' +
@@ -7687,17 +7780,17 @@ window.MLS = (function () {
   function ledgerItem(r) {
     var ok = r.Status === 'APPLIED';
     return '<li><div class="when">' + UI.esc(when(r.ClientAt || r.ReceivedAt)) + '<div>' + UI.esc(r.User || '') + (r.SubmittedBy && r.SubmittedBy !== r.User ? ' <span class="text-soft">via ' + UI.esc(r.SubmittedBy) + '</span>' : '') + '</div></div>' +
-      '<div class="what"><span class="fw-bold">' + UI.esc(actionLabel(r.Action)) + '</span>' + (r.ResultRef ? ' · ' + UI.esc(r.ResultRef) : '') + (r.ProvisionalRef ? ' <span class="text-soft">(' + UI.esc(r.ProvisionalRef) + ')</span>' : '') +
+      '<div class="what"><span class="fw-bold">' + UI.esc(actionLabel(r.Action)) + '</span>' + (r.MadeOnline ? ' <span class="badge text-bg-light border" title="Made on the production board while connected (1.22.0)">board</span>' : '') + (r.ResultRef ? ' · ' + UI.esc(r.ResultRef) : '') + (r.ProvisionalRef ? ' <span class="text-soft">(' + UI.esc(r.ProvisionalRef) + ')</span>' : '') +
       (r.DeviceLabel ? '<div class="ref">' + UI.esc(r.DeviceLabel) + ' · received ' + UI.esc(when(r.ReceivedAt)) + '</div>' : '') +
       (!ok && r.ErrorMessage ? '<div class="why">' + UI.esc(r.ErrorMessage) + ' <span class="text-soft">(' + UI.esc(r.ErrorCode) + ')</span></div>' : '') + flagsHtml(r.Flags) + '</div>' +
       '<div class="text-end">' + UI.badge(r.Status, r.Status === 'APPLIED' ? 'Applied' : r.Status === 'REJECTED' ? 'Refused' : 'Pending') + '</div></li>';
   }
   function paintLedger() {
-    var who = UI.el('sync-ledger-who').value, days = Number(UI.el('sync-ledger-days').value) || 7;
-    return Api.call('sync.status', { userId: who || undefined, days: days }, { noOffline: true }).then(function (r) {
+    var who = UI.el('sync-ledger-who').value, days = Number(UI.el('sync-ledger-days').value) || 7, kind = UI.el('sync-ledger-kind').value;
+    return Api.call('sync.status', { userId: who || undefined, days: days, kind: kind || undefined }, { noOffline: true }).then(function (r) {
       UI.el('sync-ledger-who').hidden = !r.canSeeOthers;
-      UI.el('sync-ledger-scope').textContent = r.total + ' operation' + (r.total === 1 ? '' : 's') + ' · ' + (r.counts.APPLIED || 0) + ' applied, ' + (r.counts.REJECTED || 0) + ' refused, ' + (r.counts.flagged || 0) + ' flagged';
-      UI.html('sync-ledger', r.rows.length ? r.rows.map(ledgerItem).join('') : '<li class="text-soft small">The server has received nothing made offline ' + (who === 'ALL' ? 'by anyone' : 'by you') + ' in the last ' + days + ' day' + (days === 1 ? '' : 's') + '.</li>');
+      UI.el('sync-ledger-scope').textContent = r.total + ' operation' + (r.total === 1 ? '' : 's') + ' · ' + (r.counts.APPLIED || 0) + ' applied, ' + (r.counts.REJECTED || 0) + ' refused, ' + (r.counts.flagged || 0) + ' flagged' + (r.counts.board ? ' · ' + r.counts.board + ' from the production board' : '');
+      UI.html('sync-ledger', r.rows.length ? r.rows.map(ledgerItem).join('') : '<li class="text-soft small">The server has received ' + (kind === 'BOARD' ? 'no stage move from the production board' : (kind === 'OFFLINE' ? 'nothing made offline' : 'nothing made offline, and no stage move from the production board,')) + ' ' + (who === 'ALL' ? 'from anyone' : 'from you') + ' in the last ' + days + ' day' + (days === 1 ? '' : 's') + '.</li>');
     }).catch(function (e) { UI.html('sync-ledger', '<li class="text-soft small">' + (e && (e.offline || e.code === 'NETWORK' || e.code === 'TIMEOUT') ? 'The server\'s ledger needs a connection.' : UI.esc(UI.error(e))) + '</li>'); UI.el('sync-ledger-scope').textContent = ''; });
   }
   // ---------------------------------------------------------------- the review (1.5.0)
@@ -7756,7 +7849,7 @@ window.MLS = (function () {
     if (wired) return; wired = true;
     UI.el('sync-refresh').onclick = load;
     UI.el('sync-push').onclick = function () { if (!M.Queue) return; UI.el('sync-push').disabled = true; M.Queue.push({ manual: true }).then(function () { load(); }); };
-    UI.el('sync-ledger-who').onchange = paintLedger; UI.el('sync-ledger-days').onchange = paintLedger; UI.el('sync-review-status').onchange = paintReview;
+    UI.el('sync-ledger-who').onchange = paintLedger; UI.el('sync-ledger-days').onchange = paintLedger; UI.el('sync-ledger-kind').onchange = paintLedger; UI.el('sync-review-status').onchange = paintReview;
     if (M.Queue) M.Queue.onChange(function () { if (M.Router.current() === 'sync') paintQueue(); });
     M.Net.onChange(function () { if (M.Router.current() === 'sync') load(); });
   }
