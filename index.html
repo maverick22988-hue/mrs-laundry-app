@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '0cc93c9cd5', version: '1.22.0' };</script>
+  <script>window.MLS_PWA = { build: '0cc93c9cd5.u1', version: '1.22.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -901,19 +901,36 @@ window.MLS = (function () {
   // ------------------------------------------------------------------ installed app (service worker, updates)
   /** On its own origin the page registers sw.js (the cached shell); on the Apps Script page there is nothing to register. */
   var Pwa = (function () {
-    var waiting = null, reloading = false, listeners = [];
-    function offer(w) { waiting = w; listeners.forEach(function (fn) { fn(); }); Toast.info('An update is ready. Open This device and press Update now, or reload the page.', 12000); }
+    var waiting = null, reloading = false, listeners = [], reg = null, CHECK_MS = 30 * 60 * 1000;
+    /** A worker that finished installing while this page is controlled is an update: offer it once. */
+    function offer(w) { if (!w || waiting === w) return; waiting = w; listeners.forEach(function (fn) { fn(); }); Toast.info('An update is ready. Open This device and press Update now.', 12000); }
+    /** Follows a worker through installing; also catches one that was already installing or installed before we looked. */
+    function track(nw) {
+      if (!nw) return;
+      if (nw.state === 'installed') { if (navigator.serviceWorker.controller) offer(nw); return; }
+      nw.addEventListener('statechange', function () { if (nw.state === 'installed' && navigator.serviceWorker.controller) offer(nw); });
+    }
+    /** Asks the site for a newer sw.js. The browser does this by itself only on a navigation; an installed app resumed
+     *  from the background never navigates, so it is asked on start, on every return to the foreground, on reconnect and every 30 minutes. */
+    function check() { if (!reg || !navigator.onLine) return; try { reg.update().catch(function () { /* offline or the site did not answer: next check */ }); } catch (e) { /* ignore */ } }
     function init() {
       if (HOST !== 'pwa' || !('serviceWorker' in navigator)) return;
       navigator.serviceWorker.register('sw.js').then(function (r) {
+        reg = r;
         if (r.waiting && navigator.serviceWorker.controller) offer(r.waiting);
-        r.addEventListener('updatefound', function () { var nw = r.installing; if (!nw) return; nw.addEventListener('statechange', function () { if (nw.state === 'installed' && navigator.serviceWorker.controller) offer(nw); }); });
+        track(r.installing);                                                   // an update the registration started before this callback ran
+        r.addEventListener('updatefound', function () { track(r.installing); });
+        check();
       }).catch(function (e) { console.warn('service worker not registered', e); });
+      document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') check(); });
+      window.addEventListener('online', check);
+      setInterval(check, CHECK_MS);
       // the first worker claims the page it was registered from (no reload needed); a later change of controller is an update the user accepted
       var hadController = !!navigator.serviceWorker.controller;
       navigator.serviceWorker.addEventListener('controllerchange', function () { if (!hadController) { hadController = true; return; } if (reloading) return; reloading = true; location.reload(); });
     }
-    function update() { if (!waiting) return false; waiting.postMessage({ type: 'SKIP_WAITING' }); return true; }
+    /** Applies the waiting update; with none waiting, checks the site now (the offer toast follows when one is found). */
+    function update() { if (!waiting) { check(); return false; } waiting.postMessage({ type: 'SKIP_WAITING' }); return true; }
     function standalone() { try { return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } }
     function info() {
       var b = (typeof window.MLS_PWA === 'object' && window.MLS_PWA) || {};
@@ -1402,7 +1419,7 @@ window.MLS = (function () {
         if (token) Api.call('auth.logout', {}, { noRedirect: true }).then(done, done); else done();
       }); });
     });
-    UI.el('device-update').addEventListener('click', function () { if (!Pwa.update()) Toast.info('No update is waiting.'); });
+    UI.el('device-update').addEventListener('click', function () { if (!Pwa.update()) Toast.info('No update was waiting. Checking the site now — a notice appears in a few seconds if a newer release is out.'); });
     UI.el('device-install').addEventListener('click', function () { var b = this; b.disabled = true; Pwa.install().then(function (r) { b.disabled = false; if (r === 'accepted') Toast.success('Installing… the app gets its own icon and window.'); else if (r === 'dismissed') Toast.info('Not installed. The offer stays under This device.'); else Toast.info('The browser offers no install prompt here; use its menu.'); paintInstall(); }); });
     UI.el('device-check').addEventListener('click', function () { runDeviceCheck(); });
     UI.el('device-timings-clear').addEventListener('click', function () {
