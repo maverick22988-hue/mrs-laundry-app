@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'f76e6ae756', version: '1.20.0' };</script>
+  <script>window.MLS_PWA = { build: 'd693cef969', version: '1.21.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -660,7 +660,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.20.0';
+  var VERSION = '1.21.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -763,7 +763,7 @@ window.MLS = (function () {
         return rawCall(action, payload, opts.device, { timeoutMs: opts.timeoutMs || (Net.state() === 'unreachable' && Api.offline ? 12000 : undefined), url: opts.url }).then(function (res) {
           if (!res || typeof res !== 'object') throw { code: 'NETWORK', message: 'Empty reply from the server' };
           Net.noteSuccess();
-          if (!opts.url) { try { Timing.note(action, Date.now() - startedAt, res.meta ? res.meta.ms : undefined); } catch (e) { /* ignore */ } }
+          if (!opts.url) { try { Timing.note(action, Date.now() - startedAt, res.meta ? res.meta.ms : undefined, res.meta ? res.meta.io : null); } catch (e) { /* ignore */ } }
           if (res.success) { if (res.meta && res.meta.dataVersion) AppState.dataVersion = res.meta.dataVersion; if (Api.offline && Api.offline.record) { try { Api.offline.record(action, payload, res.data, res.meta); } catch (e) { /* the copy is best effort */ } } return res.data; }
           var err = res.error || { code: 'INTERNAL', message: 'Unknown error' };
           if (err.code === 'BUSY' && n < 1) return new Promise(function (r) { setTimeout(r, 1500); }).then(function () { return attempt(n + 1); });
@@ -951,20 +951,30 @@ window.MLS = (function () {
   })();
 
   // ------------------------------------------------------------------ timings (bundle 1.7.0): what this device measured of every call — the round trip and the server's own time (meta.ms) — so the field trial reads real numbers, never estimates
+  // 1.21.0: kept per release (a new release starts them afresh, so a copy holds one release's figures alone), with the server's own calls to
+  // Google's services for each request (meta.io: how many, their ms, the ms waiting for the lock) and Clear timings in the Device dialog
   var Timing = (function () {
-    var KEY = 'mls.timings', SAMPLES = 200, data = null;
-    function load() { if (data) return data; try { data = JSON.parse(localStorage.getItem(KEY) || 'null') || {}; } catch (e) { data = {}; } return data; }
-    function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { /* best effort */ } }
+    // under a key of its own: 1.20.0 and earlier read 'mls.timings' as a map of actions, which this format would break after a rollback
+    var KEY = 'mls.timings.v2', OLD_KEY = 'mls.timings', SAMPLES = 200, data = null, meta = null;
+    function fresh() { meta = { release: VERSION, since: new Date().toISOString() }; data = {}; }
+    function load() {
+      if (data) return data;
+      var stored = null; try { stored = JSON.parse(localStorage.getItem(KEY) || 'null'); localStorage.removeItem(OLD_KEY); } catch (e) { stored = null; }
+      if (stored && stored.release === VERSION && stored.actions && typeof stored.actions === 'object') { meta = { release: stored.release, since: stored.since || null }; data = stored.actions; } else fresh();  // another release's figures (or none): start afresh
+      return data;
+    }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify({ release: meta.release, since: meta.since, actions: data })); } catch (e) { /* best effort */ } }
     function entry(d, key) { var t = d[key] || (d[key] = { count: 0, totalMs: 0, maxMs: 0, totalServerMs: 0, maxServerMs: 0, samples: [], serverSamples: [] }); if (!t.samples) t.samples = []; if (!t.serverSamples) t.serverSamples = []; return t; }
     function push(list, v) { list.push(Math.round(v)); if (list.length > SAMPLES) list.splice(0, list.length - SAMPLES); }
     /** The value below which p percent of the samples fall (nearest rank), over the last SAMPLES measurements. */
     function percentile(list, p) { if (!list || !list.length) return null; var a = list.slice().sort(function (x, y) { return x - y; }); return a[Math.min(a.length - 1, Math.max(0, Math.ceil(p / 100 * a.length) - 1))]; }
     /** A call that failed for lack of an answer (release 1.10.0): counted per action with the last code, so the health panel can show failed requests from this device. */
     function fail(action, code) { var d = load(), t = entry(d, action); t.errors = (t.errors || 0) + 1; t.lastError = { at: new Date().toISOString(), code: String(code || 'ERROR') }; save(); }
-    function note(action, roundMs, serverMs) {
+    function note(action, roundMs, serverMs, io) {
       var d = load(), t = entry(d, action);
       t.count++; t.totalMs += roundMs; t.maxMs = Math.max(t.maxMs, roundMs); push(t.samples, roundMs);
       if (serverMs !== undefined && serverMs !== null) { t.totalServerMs += serverMs; t.maxServerMs = Math.max(t.maxServerMs, serverMs); push(t.serverSamples, serverMs); }
+      if (io && typeof io.calls === 'number') { t.callSamples = t.callSamples || []; t.callMsSamples = t.callMsSamples || []; push(t.callSamples, io.calls); push(t.callMsSamples, io.ms || 0); t.lockMs = (t.lockMs || 0) + (io.lockMs || 0); t.ioCount = (t.ioCount || 0) + 1; }
       t.last = new Date().toISOString();
       if (t.count % 5 === 0) save();
     }
@@ -973,7 +983,8 @@ window.MLS = (function () {
     /** One line per action and per screen, most frequent first: count, average, max and the p50 / p95 / p99 of the last SAMPLES round trips and server times. */
     function summary() {
       var d = load(); if (data) save();
-      return Object.keys(d).map(function (a) { var t = entry(d, a); return { action: a, count: t.count, avgMs: Math.round(t.totalMs / t.count), maxMs: t.maxMs, errors: t.errors || 0, lastError: t.lastError || null, p50Ms: percentile(t.samples, 50), p95Ms: percentile(t.samples, 95), p99Ms: percentile(t.samples, 99), avgServerMs: Math.round(t.totalServerMs / t.count), maxServerMs: t.maxServerMs, p50ServerMs: percentile(t.serverSamples, 50), p95ServerMs: percentile(t.serverSamples, 95), sampled: t.samples.length, sources: t.sources || null, last: t.last }; }).sort(function (x, y) { return y.count - x.count; });
+      return Object.keys(d).map(function (a) { var t = entry(d, a); return { action: a, count: t.count, avgMs: Math.round(t.totalMs / t.count), maxMs: t.maxMs, errors: t.errors || 0, lastError: t.lastError || null, p50Ms: percentile(t.samples, 50), p95Ms: percentile(t.samples, 95), p99Ms: percentile(t.samples, 99), avgServerMs: Math.round(t.totalServerMs / t.count), maxServerMs: t.maxServerMs, p50ServerMs: percentile(t.serverSamples, 50), p95ServerMs: percentile(t.serverSamples, 95), sampled: t.samples.length, sources: t.sources || null, last: t.last,
+        p50Calls: percentile(t.callSamples, 50), p95Calls: percentile(t.callSamples, 95), p50CallsMs: percentile(t.callMsSamples, 50), p95CallsMs: percentile(t.callMsSamples, 95), avgLockMs: t.ioCount ? Math.round(t.lockMs / t.ioCount) : null, release: meta ? meta.release : VERSION }; }).sort(function (x, y) { return y.count - x.count; });
     }
     /** A screen painted: how long after the navigation its content stood, and from where ('saved' = the device's copy, 'live' = the server, 'saved-then-live' = both). */
     function view(name, ms, source) {
@@ -983,13 +994,16 @@ window.MLS = (function () {
     }
     /** The summary as CSV (one header line), for a spreadsheet or a support message. */
     function csv() {
-      var cols = ['action', 'count', 'sampled', 'p50Ms', 'p95Ms', 'p99Ms', 'avgMs', 'maxMs', 'p50ServerMs', 'p95ServerMs', 'avgServerMs', 'maxServerMs', 'sources', 'last'];
+      // 1.21.0: after the columns of earlier releases, the server's calls to Google's services per request (p50 / p95), their ms, the average wait for the lock, and the release
+      var cols = ['action', 'count', 'sampled', 'p50Ms', 'p95Ms', 'p99Ms', 'avgMs', 'maxMs', 'p50ServerMs', 'p95ServerMs', 'avgServerMs', 'maxServerMs', 'sources', 'last', 'p50Calls', 'p95Calls', 'p50CallsMs', 'p95CallsMs', 'avgLockMs', 'release'];
       var q = function (v) { if (v === null || v === undefined) return ''; var s = typeof v === 'object' ? JSON.stringify(v) : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
       return cols.join(',') + '\n' + summary().map(function (r) { return cols.map(function (c) { return q(r[c]); }).join(','); }).join('\n') + '\n';
     }
-    function clear() { data = {}; save(); }
+    function clear() { fresh(); save(); }
+    /** The release these timings belong to and since when they were taken. */
+    function about() { load(); return { release: meta.release, since: meta.since }; }
     function failures() { var d = load(); return Object.keys(d).reduce(function (n, a) { return n + (d[a].errors || 0); }, 0); }
-    return { note: note, fail: fail, failures: failures, view: view, summary: summary, csv: csv, percentile: percentile, clear: clear };
+    return { note: note, fail: fail, failures: failures, view: view, summary: summary, csv: csv, percentile: percentile, clear: clear, about: about };
   })();
 
   // ------------------------------------------------------------------ ui helpers
@@ -1390,6 +1404,11 @@ window.MLS = (function () {
     UI.el('device-update').addEventListener('click', function () { if (!Pwa.update()) Toast.info('No update is waiting.'); });
     UI.el('device-install').addEventListener('click', function () { var b = this; b.disabled = true; Pwa.install().then(function (r) { b.disabled = false; if (r === 'accepted') Toast.success('Installing… the app gets its own icon and window.'); else if (r === 'dismissed') Toast.info('Not installed. The offer stays under This device.'); else Toast.info('The browser offers no install prompt here; use its menu.'); paintInstall(); }); });
     UI.el('device-check').addEventListener('click', function () { runDeviceCheck(); });
+    UI.el('device-timings-clear').addEventListener('click', function () {
+      var a = Timing.about(), rows = Timing.summary().length;
+      if (!rows) { Toast.info('Nothing measured on this device yet.'); return; }
+      Modal.closeThen('device-modal', function () { Modal.confirm({ title: 'Clear timings', body: 'Remove the ' + rows + ' timing line' + (rows === 1 ? '' : 's') + ' this device measured (release ' + a.release + (a.since ? ', since ' + Formatter.datetime(a.since) : '') + ')? The next Copy timings holds only what is measured from now. Nothing on the server changes.', okText: 'Clear timings', danger: true }).then(function (yes) { if (!yes) return; Timing.clear(); Toast.success('Timings cleared; measuring afresh.'); }); });
+    });
     UI.el('device-timings').addEventListener('click', function () {
       var text = Timing.csv(), rows = Timing.summary().length;
       if (!rows) { Toast.info('Nothing measured on this device yet.'); return; }
@@ -3162,9 +3181,48 @@ window.MLS = (function () {
   function voidPayment(paymentId) {
     openReason({ title: 'Void payment', hint: 'The row stays in the ledger marked void; the balance is recomputed.', confirmText: 'Void', danger: true, onSubmit: function (d) { return Api.call('payments.void', { paymentId: paymentId, reason: d.reason }).then(function (r) { Toast.warning('Payment voided'); changed(r.order); return r; }); } });
   }
+  /**
+   * Opens an order. Release 1.21.0: when this device holds a copy of it (the open orders and those of the last OfflineOrderDays), the copy
+   * is on screen at once, marked "saved … · updating…" with every button and field of the dialog held, and the server's answer replaces
+   * it a moment later — only then can anything be done, so nothing is ever done on an old copy. Without a copy, or offline (where the
+   * call itself answers from the copy), it opens as before, once the answer is in. A late answer never reopens a dialog closed meanwhile.
+   */
+  var openSeq = 0, openWired = false;
+  function holdOrder(asOf) {
+    var m = UI.el('order-modal'), when = asOf ? new Date(asOf) : null; m.setAttribute('data-copy', 'saved');
+    m.querySelectorAll('#order-modal-body button, #order-modal-body input, #order-modal-body select, #order-modal-body textarea, #order-modal-body a.btn, #order-modal-actions button, #order-modal-actions a').forEach(function (b) { b.disabled = true; b.setAttribute('aria-disabled', 'true'); if (b.tagName === 'A') { b.classList.add('disabled'); b.setAttribute('tabindex', '-1'); } });
+    var chip = document.createElement('span'); chip.className = 'refresh-state ms-2 align-middle'; chip.setAttribute('role', 'status');
+    chip.innerHTML = '<i class="fa-solid fa-rotate fa-spin" aria-hidden="true"></i>saved' + (when && !isNaN(when) ? ' ' + UI.esc(F.time(when)) : '') + ' · updating…';
+    UI.el('order-modal-title').appendChild(chip);
+  }
   function openOrder(id, afterChange) {
     onChange = afterChange || null;
-    return Api.call('orders.get', { id: id }, { busy: true }).then(function (o) { renderOrder(o); Modal.open('order-modal'); return o; }).catch(function (e) { Toast.danger(UI.error(e)); });
+    if (!openWired) { openWired = true; UI.el('order-modal').addEventListener('hidden.bs.modal', function () { openSeq++; UI.el('order-modal').removeAttribute('data-copy'); }); }
+    var mine = ++openSeq, startedAt = Date.now(), fromCopy = false, settled = false, busy = false;
+    var net = M.Net && M.Net.state ? M.Net.state() : 'online', peek = !!(Api.offline && Api.offline.answer) && net !== 'offline' && net !== 'unreachable';
+    var wait = function () { if (!busy && !settled) { busy = true; UI.busy(true); } }, done = function () { settled = true; if (busy) { busy = false; UI.busy(false); } };
+    var live = Api.call('orders.get', { id: id }).then(function (o) {
+      done(); if (mine !== openSeq) return o;  // the dialog was closed, or another order opened, meanwhile
+      renderOrder(o); UI.el('order-modal').removeAttribute('data-copy');
+      if (!fromCopy) Modal.open('order-modal');
+      try { M.Timing.view('order', Date.now() - startedAt, fromCopy ? 'saved-then-live' : 'live'); } catch (e) { /* ignore */ }
+      return o;
+    }, function (e) {
+      done();
+      if (fromCopy && mine === openSeq) { UI.el('order-modal').removeAttribute('data-copy'); var inst = Modal.get('order-modal'); if (inst) inst.hide(); }  // the server did not confirm the copy: it does not stay on screen
+      Toast.danger(UI.error(e));
+    });
+    if (!peek) { wait(); return live; }
+    new Promise(function (resolve) {
+      var timer = setTimeout(function () { resolve(null); }, 150);
+      try { Api.offline.answer('orders.get', { id: id }).then(function (hit) { clearTimeout(timer); resolve(hit); }, function () { clearTimeout(timer); resolve(null); }); } catch (e) { clearTimeout(timer); resolve(null); }
+    }).then(function (hit) {
+      if (settled || mine !== openSeq) return;
+      if (!hit || !hit.data || hit.data.Id !== id) { wait(); return; }  // no copy of this order here: wait for the server, as before
+      fromCopy = true; renderOrder(hit.data); holdOrder(hit.asOf); Modal.open('order-modal');
+      try { M.Timing.view('order', Date.now() - startedAt, 'saved'); } catch (e) { /* ignore */ }
+    });
+    return live;
   }
 
   // ------------------------------------------------------------ list
@@ -4748,7 +4806,8 @@ window.MLS = (function () {
   // ---------------------------------------------------------------- job page
   function paintJob(j) {
     UI.el('dsp-view-title').innerHTML = (j.JobType === 'PICKUP' ? 'Pickup ' : 'Delivery ') + UI.esc(j.Id) + ' ' + UI.badge(j.Status);
-    var when = j.Window ? (j.Window.Name ? UI.esc(j.Window.Name) + ' · ' : '') + F.date(j.Window.Start) + ' ' + F.time(j.Window.Start) + '–' + F.time(j.Window.End) + (j.Window.Late ? ' <span class="window-tag late">done late</span>' : (j.Window.Overdue ? ' <span class="window-tag late">window over</span>' : '')) : (j.ScheduledAt ? F.datetime(j.ScheduledAt) : 'any time');
+    // 1.21.0: whether an open stop's window is over is decided on this device's clock, as the production board does: the list may come from the server's saved answer (kept for hours since 1.21.0)
+    var when = j.Window ? (j.Window.Name ? UI.esc(j.Window.Name) + ' · ' : '') + F.date(j.Window.Start) + ' ' + F.time(j.Window.Start) + '–' + F.time(j.Window.End) + (j.Window.Late ? ' <span class="window-tag late">done late</span>' : (j.Window.Overdue || (j.IsOpen && j.Window.End && new Date(j.Window.End).getTime() < Date.now()) ? ' <span class="window-tag late">window over</span>' : '')) : (j.ScheduledAt ? F.datetime(j.ScheduledAt) : 'any time');
     var grid = [['Rider', j.Rider ? UI.esc(j.Rider) : '<span class="text-danger">unassigned</span>'], ['Zone', UI.esc(j.Zone || '—')], ['Fee', F.peso(j.Fee)], [j.Window ? 'Window' : 'Scheduled', when], ['Created', F.datetime(j.CreatedAt) + ' · ' + UI.esc(j.CreatedBy || '')], ['Finished', j.CompletedAt ? F.datetime(j.CompletedAt) : '—'], ['Branch', UI.esc(j.Branch)]];
     UI.html('dsp-view-body', '<div class="detail-grid mb-3">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' + M.DeliveriesUI.jobCard(j, { readOnly: !canAssign() }) +
       (j.Items.length ? '<div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>Order</th><th>Status</th><th>Customer</th><th class="text-end">To collect</th><th class="text-end">Collected</th></tr></thead><tbody>' + j.Items.map(function (i) { return '<tr class="pointer" data-order="' + UI.esc(i.OrderId) + '"><td data-label="Order"><span class="fw-bold">' + UI.esc(i.OrderNo) + '</span> <span class="small text-soft">' + UI.esc(i.CustomerName) + '</span></td><td data-label="Status">' + UI.badge(i.OrderStatus, i.OrderStatusLabel) + '</td><td data-label="Customer">' + receiptCell(i) + '</td><td data-label="To collect" class="text-end money">' + F.peso(i.AmountToCollect) + '</td><td data-label="Collected" class="text-end money">' + F.peso(i.CollectedAmount) + '</td></tr>'; }).join('') + '</tbody></table></div>' : ''));
@@ -8383,7 +8442,8 @@ window.MLS = (function () {
           <button type="button" class="btn btn-primary btn-sm" id="device-install" hidden><i class="fa-solid fa-download me-1"></i>Install the app</button>
           <button type="button" class="btn btn-outline-primary btn-sm" id="device-update" hidden><i class="fa-solid fa-arrow-rotate-right me-1"></i>Update now</button>
           <button type="button" class="btn btn-outline-secondary btn-sm" id="device-check"><i class="fa-solid fa-stethoscope me-1"></i>Device check</button>
-          <button type="button" class="btn btn-outline-secondary btn-sm" id="device-timings" title="The round trips this device measured, per action and per screen, with p50 / p95 / p99 — copied as CSV"><i class="fa-solid fa-stopwatch me-1"></i>Copy timings (CSV)</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="device-timings" title="The round trips this device measured in this release, per action and per screen, with p50 / p95 / p99 and the server's own calls — copied as CSV"><i class="fa-solid fa-stopwatch me-1"></i>Copy timings (CSV)</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="device-timings-clear" title="Start measuring afresh: the timings this device kept are removed"><i class="fa-solid fa-eraser me-1"></i>Clear timings</button>
           <button type="button" class="btn btn-outline-secondary btn-sm" id="device-refresh"><i class="fa-solid fa-cloud-arrow-down me-1"></i>Refresh saved data</button>
           <button type="button" class="btn btn-outline-secondary btn-sm" id="device-clear"><i class="fa-solid fa-broom me-1"></i>Clear saved data</button>
           <button type="button" class="btn btn-outline-danger btn-sm" id="device-forget"><i class="fa-solid fa-eraser me-1"></i>Forget this device</button>
