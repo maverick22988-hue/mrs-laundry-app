@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '0cc93c9cd5.u1', version: '1.22.0' };</script>
+  <script>window.MLS_PWA = { build: 'f45c022327', version: '1.23.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -661,7 +661,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.22.0';
+  var VERSION = '1.23.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -7195,7 +7195,7 @@ window.MLS = (function () {
         { key: 'DisplayName', label: 'User', format: function (v, u) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(u.Username) + (u.Email ? ' · ' + UI.esc(u.Email) : '') + (u.StaffName ? ' · staff ' + UI.esc(u.StaffName) : '') + '</div>'; } },
         { key: 'RoleName', label: 'Role', format: function (v, u) { return UI.esc(v) + '<div class="small text-soft">' + UI.esc(u.RoleCode) + '</div>'; } },
         { key: 'HomeBranch', label: 'Branches', format: function (v, u) { return UI.esc(v) + (u.AllowedBranches === 'ALL' ? '<div class="small text-soft">all branches</div>' : (u.AllowedBranchNames.length > 1 ? '<div class="small text-soft">' + UI.esc(u.AllowedBranchNames.join(', ')) + '</div>' : '')); } },
-        { key: 'Status', label: 'Status', format: function (v, u) { return UI.badge(v) + (u.Locked ? ' <span class="status-badge s-rejected">locked</span>' : '') + (u.MustChangePassword ? ' <span class="status-badge s-pending">temp password</span>' : ''); } },
+        { key: 'Status', label: 'Status', format: function (v, u) { return UI.badge(v) + (u.Locked ? ' <span class="status-badge s-rejected">locked</span>' : '') + (u.MustChangePassword ? ' <span class="status-badge s-pending">temp password</span>' : '') + (u.TestUser ? ' <span class="badge text-bg-light border" title="Everything this account makes is listed for tagging as test data (Data management)">test user</span>' : ''); } },
         { key: 'LastLoginAt', label: 'Last sign-in', format: function (v, u) { return (v ? F.relative(v) : '<span class="text-soft">never</span>') + (u.Sessions ? '<div class="small text-soft">' + u.Sessions + ' live session' + (u.Sessions === 1 ? '' : 's') + '</div>' : ''); } }
       ], rows: d.rows, empty: { icon: 'fa-users', title: 'No users match', hint: 'Try another name or username, or include disabled accounts.' }, onRow: function (u) { openUserView(u.Id); } });
     }).catch(fail);
@@ -7216,6 +7216,15 @@ window.MLS = (function () {
     var d = Form.read(f), all = f.querySelector('[name=allBranches]'); d.AllowedBranches = all && all.checked ? 'ALL' : Array.prototype.map.call(UI.el('set-user-branches').querySelectorAll('[data-branch]:checked'), function (c) { return c.getAttribute('data-branch'); }); delete d.allBranches; if (!d.Id) delete d.Status;
     Api.call('users.save', d, { busy: true }).then(function (u) { Toast.success((d.Id ? 'Updated ' : 'Created ') + u.DisplayName); M.Modal.closeThen('set-user-modal', function () { loadUsers(); if (u.temporaryPassword) showTemp(u, u.temporaryPassword); else openUserView(u.Id); }); }).catch(function (e) { if (e.fields) Form.errors(f, e.fields, e.message); box.textContent = UI.error(e); box.hidden = false; });
   }
+  /** 1.23.0: what marking does, said before it is done; the server checks again (the Super administrator only, never one's own or a super administrator's account). */
+  function markTestUser(u) {
+    var on = !u.TestUser;
+    M.Modal.confirm(on ? { title: 'Mark ' + u.DisplayName + ' as a test user', html: '<p class="mb-2">Everything <b>' + UI.esc(u.Username) + '</b> makes from now on — and has made already — is listed under Settings → Maintenance → Data management → <i>Data preview</i>, ready to tag as test data in one step.</p><p class="small text-soft mb-0">The account works as before. Nothing is tagged or deleted by this mark, and it can be taken off again. Its username cannot change while it is marked.</p>', okText: 'Mark as test user' }
+      : { title: u.DisplayName + ' is not a test user', body: 'What ' + u.Username + ' made stops being listed as a test user\'s. Tags already set stay as they are.', okText: 'Take the mark off' }).then(function (yes) {
+      if (!yes) return;
+      Api.call('users.setTestUser', { id: u.Id, on: on }, { busy: true }).then(function (r) { Toast.success(r.DisplayName + (on ? ' is a test user' : ' is no longer a test user')); loadUsers(); M.Modal.closeThen('set-user-view', function () { openUserView(u.Id); }); }).catch(fail);
+    });
+  }
   function showTemp(u, pw) {
     UI.el('set-temp-note').textContent = 'Hand this to ' + u.DisplayName + ' (' + u.Username + ').'; UI.el('set-temp-value').textContent = pw;
     UI.el('set-temp-copy').onclick = function () { try { navigator.clipboard.writeText(pw).then(function () { Toast.success('Copied'); }, function () { Toast.info('Select the password and copy it.'); }); } catch (e) { Toast.info('Select the password and copy it.'); } };
@@ -7223,11 +7232,14 @@ window.MLS = (function () {
   }
   function openUserView(id) {
     Api.call('users.get', { id: id }, { busy: true }).then(function (u) {
-      UI.el('set-user-view-title').innerHTML = UI.esc(u.DisplayName) + ' ' + UI.badge(u.Status) + (u.Locked ? ' <span class="status-badge s-rejected">locked</span>' : '');
+      UI.el('set-user-view-title').innerHTML = UI.esc(u.DisplayName) + ' ' + UI.badge(u.Status) + (u.Locked ? ' <span class="status-badge s-rejected">locked</span>' : '') + (u.TestUser ? ' <span class="badge text-bg-light border">test user</span>' : '');
       var grid = [['Username', UI.esc(u.Username)], ['E-mail', UI.esc(u.Email || '—')], ['Role', UI.esc(u.RoleName)], ['Home branch', UI.esc(u.HomeBranch)], ['Branch access', UI.esc(u.AllowedBranchNames.join(', '))], ['Staff record', UI.esc(u.StaffName || '—')], ['Last sign-in', u.LastLoginAt ? F.datetime(u.LastLoginAt) : 'never'], ['Password', u.MustChangePassword ? 'temporary — must be changed' : 'set by the user']];
       UI.html('set-user-view-body', '<div class="detail-grid mb-3">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' + (u.ActiveSessions.length ? '<h6 class="small text-uppercase text-soft">Live sessions</h6><ul class="small mb-0">' + u.ActiveSessions.map(function (s) { return '<li>' + UI.esc(s.Device || 'Unlabelled device') + ' · last seen ' + F.relative(s.LastSeenAt) + '</li>'; }).join('') + '</ul>' : '<p class="small text-soft mb-0">No live sessions.</p>'));
       UI.html('set-user-view-actions', '<button type="button" class="btn btn-sm btn-outline-primary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button><button type="button" class="btn btn-sm btn-outline-secondary" data-act="reset"><i class="fa-solid fa-key me-1"></i>Reset password</button>' + (u.Locked ? '<button type="button" class="btn btn-sm btn-outline-warning" data-act="unlock"><i class="fa-solid fa-lock-open me-1"></i>Unlock</button>' : '') + (u.ActiveSessions.length ? '<button type="button" class="btn btn-sm btn-outline-danger" data-act="revoke"><i class="fa-solid fa-right-from-bracket me-1"></i>Sign out everywhere</button>' : '') + '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>');
+      // 1.23.0: the Super administrator marks an account as a test user (stage 3 of the demo and test data cleanup), or takes the mark off
+      if (u.CanMarkTestUser) UI.el('set-user-view-actions').insertAdjacentHTML('beforeend', '<button type="button" class="btn btn-sm ' + (u.TestUser ? 'btn-outline-secondary' : 'btn-outline-warning') + '" data-act="testuser"><i class="fa-solid fa-user-graduate me-1"></i>' + (u.TestUser ? 'Not a test user' : 'Mark as test user') + '</button>');
       var acts = UI.el('set-user-view-actions');
+      var tb = acts.querySelector('[data-act=testuser]'); if (tb) tb.onclick = function () { markTestUser(u); };
       acts.querySelector('[data-act=edit]').onclick = function () { M.Modal.closeThen('set-user-view', function () { openUser(u); }); };
       acts.querySelector('[data-act=reset]').onclick = function () { M.Modal.confirm({ title: 'Reset password for ' + u.DisplayName, body: 'A temporary password is generated and shown once; every session of the user is signed out and the password must be changed at the next sign-in.', okText: 'Reset password', danger: true }).then(function (yes) { if (!yes) return; Api.call('users.resetPassword', { id: u.Id }, { busy: true }).then(function (r) { M.Modal.closeThen('set-user-view', function () { loadUsers(); showTemp(r, r.temporaryPassword); }); }).catch(fail); }); };
       var ub = acts.querySelector('[data-act=unlock]'); if (ub) ub.onclick = function () { Api.call('users.unlock', { id: u.Id }, { busy: true }).then(function () { Toast.success(u.DisplayName + ' unlocked'); loadUsers(); openUserView(u.Id); }).catch(fail); };
@@ -7459,6 +7471,19 @@ window.MLS = (function () {
     <div class="card mb-3"><div class="card-header">Blocked records<span class="count ms-1" id="dm-blocked-count"></span></div><div class="card-body p-0" id="dm-blocked"></div></div>
   </div>
   <div id="dm-tab-preview" hidden>
+    <div class="card mb-3" id="dm-tu-card">
+      <div class="card-header d-flex align-items-center gap-2"><i class="fa-solid fa-user-graduate text-soft"></i>Test users<span class="count ms-1" id="dm-tu-count"></span></div>
+      <div class="card-body">
+        <p class="small text-soft mb-2">Accounts you marked as test users (Settings → Users → open the account → <i>Mark as test user</i>), for example to train a new cashier on the live system. Everything they make is listed here: count it, check the numbers, then tag it all as test data in one step. A payment a test user took on a real order is not listed: void it in the POS.</p>
+        <div id="dm-tu-who" class="small mb-2"></div>
+        <div class="toolbar">
+          <button type="button" class="btn btn-outline-primary btn-sm" id="dm-tu-countbtn"><i class="fa-solid fa-calculator me-1"></i>Count what they made</button>
+          <button type="button" class="btn btn-danger btn-sm" id="dm-tu-tag" disabled><i class="fa-solid fa-tags me-1"></i>Tag all as test data</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="dm-tu-list"><i class="fa-solid fa-list me-1"></i>List them below</button>
+        </div>
+        <div id="dm-tu-out"></div>
+      </div>
+    </div>
     <div class="card mb-3">
       <div class="card-header">Everything at once</div>
       <div class="card-body">
@@ -7484,6 +7509,7 @@ window.MLS = (function () {
       <input class="form-control" id="dm-from" type="date" aria-label="Created from">
       <input class="form-control" id="dm-to" type="date" aria-label="Created up to">
       <input class="form-control" id="dm-by" placeholder="Created by (username)" autocomplete="off" aria-label="Created by">
+      <label class="form-check small text-nowrap mb-0"><input class="form-check-input" type="checkbox" id="dm-tu-only"> <span class="form-check-label">Made by a test user</span></label>
       <select class="form-select" id="dm-branch" aria-label="Branch"><option value="">Every branch</option></select>
       <input class="form-control search" id="dm-text" placeholder="Search" autocomplete="off" aria-label="Search">
       <button type="button" class="btn btn-outline-primary btn-sm" id="dm-go"><i class="fa-solid fa-magnifying-glass me-1"></i>Show</button>
@@ -7510,7 +7536,7 @@ window.MLS = (function () {
 (function () {
   'use strict';
   var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Modal = M.Modal;
-  var state = { tab: 'cleanup', kinds: [], kind: 'LaundryOrders', page: 1, list: null, every: null, ticked: {} };
+  var state = { tab: 'cleanup', kinds: [], kind: 'LaundryOrders', page: 1, list: null, every: null, ticked: {}, tu: null, testUsers: [] };
   var TYPES = [['TEST', 'Test data'], ['DEMO', 'Demo data'], ['SAMPLE', 'Sample data']];
   function fail(e) { Toast.danger(UI.error(e)); }
   function n(v) { return F.number(v || 0, 0); }
@@ -7616,7 +7642,7 @@ window.MLS = (function () {
   }
 
   // ---------------------------------------------------------------- the data preview: list and tag
-  function filter() { return { state: UI.el('dm-state').value, from: UI.el('dm-from').value, to: UI.el('dm-to').value, createdBy: UI.el('dm-by').value.trim(), branchId: UI.el('dm-branch').value, text: UI.el('dm-text').value.trim() }; }
+  function filter() { return { state: UI.el('dm-state').value, from: UI.el('dm-from').value, to: UI.el('dm-to').value, createdBy: UI.el('dm-by').value.trim(), branchId: UI.el('dm-branch').value, text: UI.el('dm-text').value.trim(), testUsers: UI.el('dm-tu-only').checked }; }
   function tickedIds() { return Object.keys(state.ticked).filter(function (id) { return state.ticked[id]; }); }
   function paintButtons() {
     var k = tickedIds().length, total = state.list ? state.list.total : 0;
@@ -7627,8 +7653,8 @@ window.MLS = (function () {
   function loadList() {
     UI.html('dm-list', '<div class="p-3 text-soft">Loading…</div>');
     return Api.call('cleanup.candidates', { table: state.kind, filter: filter(), page: state.page, size: 50 }).then(function (r) {
-      state.list = r; state.ticked = {};
-      var rows = r.rows.map(function (x) { return '<tr><td><input type="checkbox" class="form-check-input" data-tick="' + UI.esc(x.Id) + '" aria-label="Tick ' + UI.esc(x.Id) + '"></td><td><span class="fw-bold">' + UI.esc(x.Title || x.Id) + '</span> <span class="text-soft small">' + UI.esc(x.Id) + '</span><div class="small text-soft">' + UI.esc(x.Detail || '') + '</div></td><td class="small text-nowrap">' + UI.esc(F.datetime(x.CreatedAt)) + '<div class="text-soft">' + UI.esc(x.CreatedBy || '') + '</div></td><td class="small">' + UI.esc(x.Branch || '') + '</td><td>' + (x.Tag ? UI.badge(x.Tag, x.Tag === 'PRODUCTION' ? 'Real' : x.Tag.charAt(0) + x.Tag.slice(1).toLowerCase()) : (x.Unreviewed ? UI.badge('PENDING', 'Not reviewed') : '<span class="text-soft small">—</span>')) + '</td></tr>'; });
+      state.list = r; state.ticked = {}; paintTestUsers(r.testUsers);
+      var rows = r.rows.map(function (x) { return '<tr><td><input type="checkbox" class="form-check-input" data-tick="' + UI.esc(x.Id) + '" aria-label="Tick ' + UI.esc(x.Id) + '"></td><td><span class="fw-bold">' + UI.esc(x.Title || x.Id) + '</span> <span class="text-soft small">' + UI.esc(x.Id) + '</span><div class="small text-soft">' + UI.esc(x.Detail || '') + '</div></td><td class="small text-nowrap">' + UI.esc(F.datetime(x.CreatedAt)) + '<div class="text-soft">' + UI.esc(x.CreatedBy || '') + (madeByTestUser(x.CreatedBy) ? ' <span class="badge text-bg-light border">test user</span>' : '') + '</div></td><td class="small">' + UI.esc(x.Branch || '') + '</td><td>' + (x.Tag ? UI.badge(x.Tag, x.Tag === 'PRODUCTION' ? 'Real' : x.Tag.charAt(0) + x.Tag.slice(1).toLowerCase()) : (x.Unreviewed ? UI.badge('PENDING', 'Not reviewed') : '<span class="text-soft small">—</span>')) + '</td></tr>'; });
       var pager = r.pages > 1 ? '<div class="d-flex align-items-center gap-2 p-2"><button type="button" class="btn btn-outline-secondary btn-sm" id="dm-prev"' + (r.page <= 1 ? ' disabled' : '') + '>Previous</button><span class="small text-soft">Page ' + r.page + ' of ' + r.pages + '</span><button type="button" class="btn btn-outline-secondary btn-sm" id="dm-next"' + (r.page >= r.pages ? ' disabled' : '') + '>Next</button></div>' : '';
       UI.html('dm-list', table([['<input type="checkbox" class="form-check-input" id="dm-tick-page" aria-label="Tick this page">'], ['Record'], ['Created'], ['Branch'], ['Tag']], rows, 'No record matches.') + pager);
       UI.el('dm-list').querySelectorAll('[data-tick]').forEach(function (c) { c.onchange = function () { state.ticked[c.getAttribute('data-tick')] = c.checked; paintButtons(); }; });
@@ -7672,6 +7698,37 @@ window.MLS = (function () {
     });
   }
 
+  // ---------------------------------------------------------------- 1.23.0: test users — what they made, counted and tagged in one step
+  /** A test user's working time and pay: real hours when the test user is a real employee in training, so the count and the confirmation name them. */
+  var TIME_AND_PAY = { TimeLogs: true, Schedules: true, LeaveRequests: true, Overtime: true, PayrollPeriods: true };
+  function madeByTestUser(by) { var b = String(by || '').toLowerCase(); return !!b && state.testUsers.some(function (u) { return String(u.Username).toLowerCase() === b; }); }
+  function paintTestUsers(list) {
+    state.testUsers = list || [];
+    UI.el('dm-tu-count').textContent = state.testUsers.length ? String(state.testUsers.length) : '';
+    UI.html('dm-tu-who', state.testUsers.length ? state.testUsers.map(function (u) { return '<span class="badge text-bg-light border me-1 mb-1" title="' + UI.esc(u.DisplayName || '') + '">' + UI.esc(u.Username) + (u.Status === 'DISABLED' ? ' · disabled' : (u.Status === 'MISSING' ? ' · no such account' : '')) + '</span>'; }).join('') : '<span class="text-soft">No account is marked as a test user.</span>');
+    UI.el('dm-tu-countbtn').disabled = !state.testUsers.length; UI.el('dm-tu-list').disabled = !state.testUsers.length;
+  }
+  function countTestUsers() {
+    UI.html('dm-tu-out', '<div class="text-soft small">Counting…</div>');
+    Api.call('cleanup.candidates', { summary: true, filter: { state: 'untagged', testUsers: true } }, { timeoutMs: 180000 }).then(function (r) {
+      paintTestUsers(r.testUsers);
+      var total = r.kinds.reduce(function (s, k) { return s + k.count; }, 0);
+      var hours = r.kinds.filter(function (k) { return TIME_AND_PAY[k.table] && k.count; }), hoursN = hours.reduce(function (s, k) { return s + k.count; }, 0);
+      state.tu = { counts: {}, total: total, hours: hoursN }; r.kinds.forEach(function (k) { state.tu.counts[k.table] = k.count; });
+      UI.html('dm-tu-out', table([['Kind'], ['Made by a test user, not tagged', 1]], r.kinds.filter(function (k) { return k.count; }).map(function (k) { return '<tr><td>' + UI.esc(k.label) + '</td><td class="text-end">' + n(k.count) + '</td></tr>'; }).concat(['<tr><td class="fw-bold">Total</td><td class="text-end fw-bold" id="dm-tu-total">' + n(total) + '</td></tr>']), 'Nothing to tag.')
+        + (hoursN ? '<div class="alert alert-warning small mt-2 mb-0" id="dm-tu-hours"><i class="fa-solid fa-triangle-exclamation me-1"></i>' + n(hoursN) + ' of them ' + (hoursN === 1 ? 'is' : 'are') + ' working time or pay (' + UI.esc(hours.map(function (k) { return k.label.toLowerCase(); }).join(', ')) + '). If a test user is a real employee in training, these are real hours: list them first (<i>List them below</i>, then choose the kind), tick them and press <i>Mark ticked real</i>, then count again.</div>' : ''));
+      UI.el('dm-tu-tag').disabled = !total; UI.el('dm-tu-tag').innerHTML = '<i class="fa-solid fa-tags me-1"></i>Tag all ' + n(total) + ' as test data';
+    }).catch(fail);
+  }
+  function tagTestUsers() {
+    var e = state.tu; if (!e || !e.total) return;
+    Modal.confirm({ title: 'Tag ' + n(e.total) + ' records as test data', html: '<p class="mb-2">Every business record the test users made and not yet tagged (<b>' + UI.esc(state.testUsers.map(function (u) { return u.Username; }).join(', ')) + '</b>) will be tagged as <b>test data</b>.</p>' + (e.hours ? '<p class="mb-2 text-danger" id="dm-tu-hours-warn"><b>' + n(e.hours) + '</b> of them ' + (e.hours === 1 ? 'is' : 'are') + ' working time or pay. If a test user is a real employee, cancel and mark those real first.</p>' : '') + '<p class="small text-soft mb-2">This deletes nothing, and each tag can be taken off again. A later cleanup removes tagged records only after a verified backup and your confirmation.</p><label class="form-label small" for="dm-tu-reason">Why</label><input class="form-control" id="dm-tu-reason" maxlength="200" value="Made by a test user">', okText: 'Tag all', danger: true }).then(function (yes) {
+      if (!yes) return; var reason = UI.el('dm-tu-reason').value.trim(); if (!reason) { Toast.danger('Say why; nothing was tagged.'); return; }
+      Api.call('cleanup.tag', { everything: true, filter: { state: 'untagged', testUsers: true }, expectCounts: e.counts, recordType: 'TEST', reason: reason }, { busy: true, timeoutMs: 180000 }).then(function (r) { done(r, 'Tagged'); state.tu = null; UI.html('dm-tu-out', ''); UI.el('dm-tu-tag').disabled = true; UI.el('dm-tu-tag').innerHTML = '<i class="fa-solid fa-tags me-1"></i>Tag all as test data'; }).catch(fail);
+    });
+  }
+  function listTestUsers() { UI.el('dm-tu-only').checked = true; UI.el('dm-state').value = 'untagged'; UI.el('dm-by').value = ''; state.page = 1; loadList(); var host = UI.el('dm-list'); if (host && host.scrollIntoView) host.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+
   // ---------------------------------------------------------------- history
   function loadHistory() {
     UI.html('dm-history', '<div class="p-3 text-soft">Loading…</div>'); UI.html('dm-history-report', '');
@@ -7693,7 +7750,7 @@ window.MLS = (function () {
   function kinds() {
     if (state.kinds.length) return Promise.resolve();
     return Api.call('cleanup.candidates', { summary: true, filter: { state: 'all' } }).then(function (r) {
-      state.kinds = r.kinds; UI.html('dm-kind', r.kinds.map(function (k) { return '<option value="' + UI.esc(k.table) + '"' + (k.table === state.kind ? ' selected' : '') + '>' + UI.esc(k.label) + ' (' + n(k.count) + ')</option>'; }).join(''));
+      state.kinds = r.kinds; paintTestUsers(r.testUsers); UI.html('dm-kind', r.kinds.map(function (k) { return '<option value="' + UI.esc(k.table) + '"' + (k.table === state.kind ? ' selected' : '') + '>' + UI.esc(k.label) + ' (' + n(k.count) + ')</option>'; }).join(''));
     });
   }
   function wire() {
@@ -7704,6 +7761,7 @@ window.MLS = (function () {
     UI.el('dm-go').onclick = function () { state.page = 1; loadList(); };
     UI.el('dm-tag-ticked').onclick = tagTicked; UI.el('dm-real-ticked').onclick = realTicked; UI.el('dm-untag-ticked').onclick = untagTicked; UI.el('dm-tag-all').onclick = tagAll;
     UI.el('dm-every-count').onclick = countEvery; UI.el('dm-every-tag').onclick = tagEvery;
+    UI.el('dm-tu-countbtn').onclick = countTestUsers; UI.el('dm-tu-tag').onclick = tagTestUsers; UI.el('dm-tu-list').onclick = listTestUsers; UI.el('dm-tu-only').onchange = function () { state.page = 1; loadList(); };
     UI.el('dm-cancel').onclick = function () { var run = state.run; if (!run) return; Modal.confirm({ title: 'Cancel ' + run.Id, body: 'Nothing has been deleted. The plan stays in the history as cancelled.', okText: 'Cancel the cleanup' }).then(function (yes) { if (!yes) return; Api.call('cleanup.cancel', { runId: run.Id }, { busy: true }).then(function () { Toast.info('Cleanup cancelled'); loadCleanup(); }).catch(fail); }); };
     if (!UI.el('dm-every-to').value) UI.el('dm-every-to').value = today();
     var me = M.AppState.me || {}, keep = UI.el('dm-branch').value; UI.html('dm-branch', '<option value="">Every branch</option>' + (me.branches || []).map(function (b) { return '<option value="' + UI.esc(b.Id) + '">' + UI.esc(b.Name) + '</option>'; }).join('')); UI.el('dm-branch').value = keep;
