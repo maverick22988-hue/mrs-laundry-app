@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0f766e">
+  <meta name="theme-color" content="#6D2322">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'f45c022327', version: '1.23.0' };</script>
+  <script>window.MLS_PWA = { build: 'c7960953cb', version: '1.24.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -27,7 +27,7 @@
       window.addEventListener('unhandledrejection', function (e) { var r = e && e.reason; if (!window.__mlsFirstError && r && r.stack) window.__mlsFirstError = { message: 'Unhandled rejection: ' + (r.message || r), line: 0, col: 0, source: '', at: new Date().toISOString() }; });
     })();
   </script>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='11' fill='%230f766e'/><circle cx='20' cy='20' r='10' fill='none' stroke='white' stroke-width='3'/><path d='M13 21c2.5-2.5 5-2.5 7 0s4.5 2.5 7 0' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='11' fill='%236D2322'/><path d='M12 27V13l8 9 8-9v14' fill='none' stroke='%23FFF9E3' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/></svg>">
   <link href="vendor/bootstrap.min.css" rel="stylesheet">
   <link href="vendor/fa/css/all.min.css" rel="stylesheet">
   <link href="vendor/fonts/fonts.css" rel="stylesheet">
@@ -39,14 +39,41 @@
   /* Mrs Laundry Sys — the one stylesheet. Order: tokens, base, shell, shared components, modules, then one block per
      breakpoint (compact desktop, tablet, phone), accessibility and print. Every colour, radius and size is a token. */
   :root {
-    --mls-primary: #0f766e; --mls-primary-strong: #115e59; --mls-primary-soft: #ccfbf1; --mls-primary-ink: #042f2e;
-    --mls-accent: #f59e0b; --mls-danger: #dc2626; --mls-success: #16a34a; --mls-warning: #d97706; --mls-info: #0284c7;
-    --mls-ink: #0f172a; --mls-ink-soft: #475569; --mls-ink-faint: #94a3b8; --mls-line: #e2e8f0; --mls-bg: #f1f5f9; --mls-card: #ffffff; --mls-well: #f8fafc;
-    --mls-sidebar: #0b1f2a; --mls-sidebar-ink: #cbd5e1;
-    --mls-radius: 12px; --mls-radius-sm: 8px; --mls-shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 4px 16px rgba(15, 23, 42, .06);
+    /* release 1.24.0 (Stage 3 of the redesign): the approved palette — burgundy, rich red, warm beige, soft ivory, charcoal, muted grey.
+       The names are the ones every page already uses; only the values changed, plus the tokens the design system added:
+       --mls-action (the one primary button per screen, applied by Stage 4), --mls-line-soft, --mls-sidebar-active, --mls-focus and the
+       four state triplets (ink, soft fill, line). BrandPrimary and BrandAction (Settings → Branding) replace the burgundy and the red
+       at start-up (App.html → Brand.applyColours) after a contrast check; everything else stays fixed so text is always readable.
+       --mls-ink-faint is the muted grey too: the palette has no lighter grey that small text can be read in (4.0:1 on ivory, 4.2:1 on white). */
+    --mls-primary: #6D2322; --mls-primary-strong: #521A19; --mls-primary-soft: #F3E4E4; --mls-primary-ink: #521A19;
+    --mls-action: #A41C1E; --mls-action-strong: #8C1719; --mls-accent: #E6D0AB;
+    --mls-danger: #8E1B1B; --mls-success: #1E6A3C; --mls-warning: #8A5A00; --mls-info: #2F5E8E;
+    --mls-danger-soft: #F8E3E3; --mls-success-soft: #E4F2E7; --mls-warning-soft: #FBEFD2; --mls-info-soft: #E4EDF7;
+    --mls-danger-line: #E8BABA; --mls-success-line: #B9DBC3; --mls-warning-line: #EDD39A; --mls-info-line: #BBD0E6;
+    --mls-ink: #302A28; --mls-ink-soft: #817A73; --mls-ink-faint: #817A73; --mls-line: #E6D0AB; --mls-line-soft: #F1E3C8; --mls-bg: #FFF9E3; --mls-card: #FFFFFF; --mls-well: #FAF3E0;
+    --mls-sidebar: #6D2322; --mls-sidebar-active: #8A2D2C; --mls-sidebar-ink: #FFF9E3; --mls-sidebar-muted: rgba(230, 208, 171, .85); --mls-sidebar-line: rgba(255, 249, 227, .12);
+    --mls-focus: rgba(164, 28, 30, .28);
+    --mls-radius: 12px; --mls-radius-sm: 8px; --mls-shadow: 0 1px 2px rgba(48, 42, 40, .06), 0 4px 16px rgba(48, 42, 40, .06);
     --mls-sidebar-w: 256px; --mls-topbar-h: 60px; --mls-tap: 44px;
     --mls-font: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif; --mls-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    /* Bootstrap's palette mapped onto the tokens (1.24.0): its links, switches, alerts, badges and secondary buttons take the same colours */
+    --bs-primary: #6D2322; --bs-primary-rgb: 109, 35, 34; --bs-link-color: #6D2322; --bs-link-color-rgb: 109, 35, 34; --bs-link-hover-color: #521A19; --bs-link-hover-color-rgb: 82, 26, 25;
+    --bs-secondary: #817A73; --bs-secondary-rgb: 129, 122, 115; --bs-secondary-color: #817A73; --bs-body-color: #302A28; --bs-body-color-rgb: 48, 42, 40; --bs-border-color: #E6D0AB;  /* --bs-body-bg stays white: cards, inputs, modals and tables are white on the ivory page */
+    --bs-success: #1E6A3C; --bs-success-rgb: 30, 106, 60; --bs-danger: #8E1B1B; --bs-danger-rgb: 142, 27, 27; --bs-warning: #8A5A00; --bs-warning-rgb: 138, 90, 0; --bs-info: #2F5E8E; --bs-info-rgb: 47, 94, 142;
+    --bs-success-text-emphasis: #1E6A3C; --bs-success-bg-subtle: #E4F2E7; --bs-success-border-subtle: #B9DBC3; --bs-danger-text-emphasis: #8E1B1B; --bs-danger-bg-subtle: #F8E3E3; --bs-danger-border-subtle: #E8BABA;
+    --bs-warning-text-emphasis: #8A5A00; --bs-warning-bg-subtle: #FBEFD2; --bs-warning-border-subtle: #EDD39A; --bs-info-text-emphasis: #2F5E8E; --bs-info-bg-subtle: #E4EDF7; --bs-info-border-subtle: #BBD0E6;
+    --bs-light-rgb: 250, 243, 224; --bs-light-bg-subtle: #FAF3E0; --bs-secondary-bg-subtle: #F1E3C8; --bs-focus-ring-color: rgba(164, 28, 30, .28);
   }
+  .form-check-input:checked { background-color: var(--mls-primary); border-color: var(--mls-primary); }
+  .form-check-input:focus { border-color: var(--mls-primary); box-shadow: 0 0 0 .25rem var(--mls-focus); }
+  .form-check-input { border-color: var(--mls-ink-faint); }
+  .btn-outline-secondary { --bs-btn-color: var(--mls-ink); --bs-btn-border-color: var(--mls-line); --bs-btn-hover-bg: var(--mls-well); --bs-btn-hover-border-color: var(--mls-ink-faint); --bs-btn-hover-color: var(--mls-ink); --bs-btn-active-bg: var(--mls-line-soft); --bs-btn-active-border-color: var(--mls-ink-faint); --bs-btn-active-color: var(--mls-ink); }
+  .btn-outline-danger { --bs-btn-color: var(--mls-danger); --bs-btn-border-color: var(--mls-danger); --bs-btn-hover-bg: var(--mls-danger); --bs-btn-hover-border-color: var(--mls-danger); --bs-btn-active-bg: var(--mls-danger); --bs-btn-active-border-color: var(--mls-danger); }
+  .btn-danger { --bs-btn-bg: var(--mls-danger); --bs-btn-border-color: var(--mls-danger); --bs-btn-hover-bg: #731616; --bs-btn-hover-border-color: #731616; --bs-btn-active-bg: #731616; --bs-btn-active-border-color: #731616; }
+  .btn-success { --bs-btn-bg: var(--mls-success); --bs-btn-border-color: var(--mls-success); --bs-btn-hover-bg: #17542F; --bs-btn-hover-border-color: #17542F; --bs-btn-active-bg: #17542F; --bs-btn-active-border-color: #17542F; }
+  .btn-link { --bs-btn-color: var(--mls-primary); --bs-btn-hover-color: var(--mls-primary-strong); }
+  .dropdown-item.active, .dropdown-item:active { background: var(--mls-primary); }
+  .spinner-border.text-success { color: var(--mls-primary) !important; }
 
   /* ---- Base ---- */
   html, body { height: 100%; }
@@ -70,7 +97,7 @@
   .btn-primary { --bs-btn-bg: var(--mls-primary); --bs-btn-border-color: var(--mls-primary); --bs-btn-hover-bg: var(--mls-primary-strong); --bs-btn-hover-border-color: var(--mls-primary-strong); --bs-btn-active-bg: var(--mls-primary-strong); --bs-btn-active-border-color: var(--mls-primary-strong); --bs-btn-disabled-bg: var(--mls-primary); --bs-btn-disabled-border-color: var(--mls-primary); }
   .btn-outline-primary { --bs-btn-color: var(--mls-primary); --bs-btn-border-color: var(--mls-primary); --bs-btn-hover-bg: var(--mls-primary); --bs-btn-hover-border-color: var(--mls-primary); --bs-btn-active-bg: var(--mls-primary); }
   .form-control, .form-select { border-radius: var(--mls-radius-sm); border-color: var(--mls-line); padding: .55rem .75rem; }
-  .form-control:focus, .form-select:focus { border-color: var(--mls-primary); box-shadow: 0 0 0 .2rem rgba(15, 118, 110, .18); }
+  .form-control:focus, .form-select:focus { border-color: var(--mls-primary); box-shadow: 0 0 0 .2rem var(--mls-focus); }
   .form-label { font-weight: 600; font-size: .85rem; color: var(--mls-ink-soft); margin-bottom: .3rem; }
   .invalid-feedback { display: block; min-height: 0; }
   .card { border: 1px solid var(--mls-line); border-radius: var(--mls-radius); box-shadow: var(--mls-shadow); }
@@ -83,18 +110,32 @@
   .table-xs td, .table-xs th { font-size: .82rem; padding: .3rem .4rem; white-space: nowrap; }
   .modal-content { border-radius: var(--mls-radius); border: 1px solid var(--mls-line); }
   .modal-xl .modal-body { max-height: 75vh; overflow: auto; }
-  .kbd { display: inline-block; font-family: var(--mls-mono); font-size: .72rem; line-height: 1; padding: .2em .45em; border: 1px solid var(--mls-line); border-bottom-width: 2px; border-radius: 5px; background: #fff; color: var(--mls-ink-soft); }
+  .kbd { display: inline-block; font-family: var(--mls-mono); font-size: .72rem; line-height: 1; padding: .2em .45em; border: 1px solid var(--mls-line); border-bottom-width: 2px; border-radius: 5px; background: var(--mls-card); color: var(--mls-ink-soft); }
 
   /* Brand mark */
   .brand { display: flex; align-items: center; gap: .65rem; text-decoration: none; color: inherit; }
-  .brand-mark { width: 38px; height: 38px; border-radius: 11px; background: var(--mls-primary); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-  .brand-mark svg { width: 24px; height: 24px; }
+  .brand-mark { --mark-bg: var(--mls-primary); --mark-ink: var(--mls-bg); width: 38px; height: 38px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; overflow: hidden; }
+  .brand-mark svg { width: 38px; height: 38px; display: block; } .brand-mark svg circle { fill: var(--mark-bg); } .brand-mark svg path { stroke: var(--mark-ink); }
+  .brand-mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .brand-name { font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
-  .brand-sub { font-size: .72rem; color: var(--mls-ink-faint); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .brand-sub { font-size: .72rem; color: var(--mls-ink-soft); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  /* release 1.24.0: a logo or a product picture sits in a fixed-ratio frame — nothing stretches, nothing shifts, a missing picture shows the frame's fallback */
+  .img-frame { display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: var(--mls-card); border-radius: var(--mls-radius-sm); }
+  .img-frame img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; }
+  .brand-logo { display: none; max-width: 100%; }
+  .brand-logo img { display: block; max-height: 100%; }
+  .has-logo .brand-logo { display: inline-flex; } .has-logo .brand-mark { display: none; }
+  .auth-brand { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
+  .auth-brand .brand-mark { width: 56px; height: 56px; border-radius: 50%; } .auth-brand .brand-mark svg { width: 56px; height: 56px; }
+  .auth-brand .brand-logo { height: 72px; max-width: 240px; background: transparent; border-radius: 0; }
+  .auth-brand .brand-name { font-size: 1.15rem; }
+  .topbar-brand { display: none; width: auto; height: 30px; max-width: 96px; flex: 0 0 auto; border-radius: 8px; }
+  .topbar-brand img { height: 30px; }
+  .topbar-brand .brand-mark { width: 30px; height: 30px; border-radius: 8px; } .topbar-brand .brand-mark svg { width: 30px; height: 30px; }
 
   /* Boot and auth screens */
   #boot-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; background: var(--mls-bg); z-index: 50; }
-  #auth-screen { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: radial-gradient(1200px 600px at 10% -10%, #d1fae5 0%, transparent 60%), radial-gradient(900px 500px at 110% 110%, #cffafe 0%, transparent 60%), var(--mls-bg); }
+  #auth-screen { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: radial-gradient(1200px 600px at 10% -10%, var(--mls-line-soft) 0%, transparent 60%), radial-gradient(900px 500px at 110% 110%, var(--mls-primary-soft) 0%, transparent 60%), var(--mls-bg); }
   .auth-card { width: 100%; max-width: 420px; background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: 18px; box-shadow: var(--mls-shadow); padding: 28px 26px; }
   .auth-card h1 { font-size: 1.25rem; margin: 18px 0 2px; }
   .auth-card .lead-sm { color: var(--mls-ink-soft); font-size: .92rem; margin-bottom: 18px; }
@@ -105,26 +146,30 @@
   /* ---- App shell ---- */
   #app { display: flex; min-height: 100%; }
   #sidebar { width: var(--mls-sidebar-w); flex: 0 0 var(--mls-sidebar-w); background: var(--mls-sidebar); color: var(--mls-sidebar-ink); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-  #sidebar .brand { padding: 18px 18px 14px; color: #fff; border-bottom: 1px solid rgba(255, 255, 255, .08); }
-  #sidebar .brand-sub { color: rgba(203, 213, 225, .7); }
+  #sidebar .brand { padding: 18px 18px 14px; color: var(--mls-sidebar-ink); border-bottom: 1px solid var(--mls-sidebar-line); flex-wrap: wrap; }
+  #sidebar .brand-mark { --mark-bg: var(--mls-bg); --mark-ink: var(--mls-sidebar); }
+  #sidebar .brand-sub { color: var(--mls-sidebar-muted); }
+  /* the uploaded logo in the sidebar: on an ivory plate unless a version for dark backgrounds was uploaded (then on the burgundy itself) */
+  #sidebar .brand-logo { height: 56px; width: 100%; max-width: 220px; padding: 6px 10px; background: var(--mls-bg); flex-basis: 100%; }
+  #sidebar .brand-logo.dark { background: transparent; padding: 0; }
   #main-nav { list-style: none; margin: 0; padding: 10px 10px 16px; display: flex; flex-direction: column; gap: 2px; }
-  #main-nav .nav-section { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: rgba(203, 213, 225, .5); padding: 14px 10px 6px; font-weight: 700; }
+  #main-nav .nav-section { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--mls-sidebar-muted); padding: 14px 10px 6px; font-weight: 700; }
   #main-nav .nav-link { display: flex; align-items: center; gap: .7rem; color: var(--mls-sidebar-ink); padding: .6rem .75rem; border-radius: 10px; font-weight: 600; font-size: .92rem; text-decoration: none; min-height: var(--mls-tap); }
-  #main-nav .nav-link i { width: 20px; text-align: center; color: rgba(203, 213, 225, .75); }
+  #main-nav .nav-link i { width: 20px; text-align: center; color: rgba(255, 249, 227, .8); }
   #main-nav .nav-link > span:first-of-type { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #main-nav .nav-link:hover { background: rgba(255, 255, 255, .06); color: #fff; }
-  #main-nav .nav-link.active { background: var(--mls-primary); color: #fff; } #main-nav .nav-link.active i { color: #fff; }
+  #main-nav .nav-link:hover { background: rgba(255, 249, 227, .08); color: #fff; }
+  #main-nav .nav-link.active { background: var(--mls-sidebar-active); color: #fff; } #main-nav .nav-link.active i { color: #fff; }
   #main-nav .nav-link.disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
-  #main-nav .nav-link .phase-badge { margin-left: auto; flex: 0 0 auto; white-space: nowrap; font-size: .62rem; background: rgba(255, 255, 255, .1); color: #e2e8f0; padding: .2em .55em; border-radius: 999px; letter-spacing: .04em; }
-  #sidebar .sidebar-foot { margin-top: auto; padding: 12px 18px 16px; font-size: .72rem; color: rgba(203, 213, 225, .55); border-top: 1px solid rgba(255, 255, 255, .08); }
-  #sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, .5); z-index: 39; }
+  #main-nav .nav-link .phase-badge { margin-left: auto; flex: 0 0 auto; white-space: nowrap; font-size: .62rem; background: rgba(255, 249, 227, .14); color: var(--mls-sidebar-ink); padding: .2em .55em; border-radius: 999px; letter-spacing: .04em; }
+  #sidebar .sidebar-foot { margin-top: auto; padding: 12px 18px 16px; font-size: .72rem; color: var(--mls-sidebar-muted); border-top: 1px solid var(--mls-sidebar-line); }
+  #sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(48, 42, 40, .5); z-index: 39; }
   #app-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
   #topbar { height: var(--mls-topbar-h); background: var(--mls-card); border-bottom: 1px solid var(--mls-line); display: flex; align-items: center; gap: .75rem; padding: 0 16px; position: sticky; top: 0; z-index: 30; }
   #topbar .page-title { font-size: 1.05rem; font-weight: 800; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #topbar .topbar-right { margin-left: auto; display: flex; align-items: center; gap: .6rem; }
-  #branch-switch { max-width: 220px; font-weight: 600; } .lens-all #branch-switch { border-color: var(--mls-accent); background-color: #fffbeb; }
-  .user-chip { display: flex; align-items: center; gap: .55rem; border: 1px solid var(--mls-line); border-radius: 999px; padding: .25rem .7rem .25rem .3rem; background: #fff; color: inherit; text-decoration: none; min-height: 40px; }
-  .user-chip .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--mls-primary-soft); color: var(--mls-primary-ink); font-weight: 800; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; }
+  #branch-switch { max-width: 220px; font-weight: 600; } .lens-all #branch-switch { border-color: var(--mls-warning); background-color: var(--mls-warning-soft); }
+  .user-chip { display: flex; align-items: center; gap: .55rem; border: 1px solid var(--mls-line); border-radius: 999px; padding: .25rem .7rem .25rem .3rem; background: var(--mls-card); color: inherit; text-decoration: none; min-height: 40px; }
+  .user-chip .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--mls-accent); color: var(--mls-ink); font-weight: 800; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; }
   .user-chip .who { line-height: 1.05; } .user-chip .who small { display: block; color: var(--mls-ink-faint); font-size: .7rem; }
   #hamburger { display: none; min-width: var(--mls-tap); min-height: var(--mls-tap); align-items: center; justify-content: center; }
   #main-content { padding: 20px; max-width: 1400px; width: 100%; }
@@ -140,7 +185,7 @@
   a.kpi:hover { border-color: var(--mls-primary); color: inherit; }
   .kpi > div { min-width: 0; }
   .kpi .kpi-icon { width: 40px; height: 40px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: var(--mls-primary-soft); color: var(--mls-primary-ink); flex: 0 0 auto; }
-  .kpi.warn .kpi-icon { background: #fef3c7; color: #92400e; } .kpi.danger .kpi-icon { background: #fee2e2; color: #991b1b; } .kpi.info .kpi-icon { background: #e0f2fe; color: #075985; }
+  .kpi.warn .kpi-icon { background: var(--mls-warning-soft); color: var(--mls-warning); } .kpi.danger .kpi-icon { background: var(--mls-danger-soft); color: var(--mls-danger); } .kpi.info .kpi-icon { background: var(--mls-info-soft); color: var(--mls-info); }
   .kpi .kpi-label { font-size: .78rem; color: var(--mls-ink-soft); font-weight: 600; }
   .kpi .kpi-value { font-size: 1.45rem; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi .kpi-value.text { font-size: 1.05rem; padding-top: .2rem; white-space: normal; }
@@ -152,42 +197,24 @@
   .empty-state .empty-hint { font-size: .9rem; max-width: 460px; margin: 4px auto 0; }
   .empty-state .empty-actions { margin-top: 14px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
   .empty-state.compact { padding: 18px 12px; } .empty-state.compact .empty-icon { width: 40px; height: 40px; font-size: 1rem; margin-bottom: 8px; }
-  #busy-overlay { position: fixed; inset: 0; background: rgba(241, 245, 249, .55); z-index: 1080; display: flex; align-items: center; justify-content: center; }
+  #busy-overlay { position: fixed; inset: 0; background: rgba(255, 249, 227, .55); z-index: 1080; display: flex; align-items: center; justify-content: center; }
   #toast-host { position: fixed; right: 16px; bottom: 16px; z-index: 1090; display: flex; flex-direction: column; gap: 8px; max-width: min(420px, calc(100vw - 32px)); }
   .mls-toast { background: var(--mls-ink); color: #fff; border-radius: 10px; padding: 10px 14px; box-shadow: var(--mls-shadow); display: flex; gap: 10px; align-items: flex-start; font-size: .9rem; animation: toast-in .18s ease-out; }
-  .mls-toast.success { background: #166534; } .mls-toast.danger { background: #991b1b; } .mls-toast.warning { background: #92400e; } .mls-toast.info { background: #075985; }
+  .mls-toast.success { background: var(--mls-success); } .mls-toast.danger { background: var(--mls-danger); } .mls-toast.warning { background: var(--mls-warning); } .mls-toast.info { background: var(--mls-info); }
   .mls-toast button { background: transparent; border: 0; color: inherit; opacity: .8; margin-left: auto; padding: 0 2px; min-width: 32px; min-height: 32px; margin-top: -6px; margin-bottom: -6px; }
   @keyframes toast-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
-  .status-badge { display: inline-block; padding: .25em .7em; border-radius: 999px; font-size: .74rem; font-weight: 700; letter-spacing: .02em; background: #e2e8f0; color: #334155; white-space: nowrap; }
-  /* one colour family per meaning: blue = new/queued, amber = in progress/pending, green = done/good, teal = completed, red = problem/stopped, slate = inactive */
-  .status-badge.s-new, .status-badge.s-received, .status-badge.s-leave, .status-badge.s-holiday, .status-badge.s-unassigned, .status-badge.s-draft, .status-badge.s-not_started, .status-badge.s-scheduled { background: #dbeafe; color: #1e40af; }
-  .status-badge.s-processing, .status-badge.s-washing, .status-badge.s-drying, .status-badge.s-folding, .status-badge.s-qc, .status-badge.s-packed, .status-badge.s-partial, .status-badge.s-late, .status-badge.s-undertime, .status-badge.s-pending, .status-badge.s-reopened, .status-badge.s-assigned, .status-badge.s-accepted, .status-badge.s-submitted, .status-badge.s-open, .status-badge.s-in_progress, .status-badge.s-stale { background: #fef3c7; color: #92400e; }
-  .status-badge.s-ready, .status-badge.s-applied, .status-badge.s-active, .status-badge.s-paid, .status-badge.s-present, .status-badge.s-approved, .status-badge.s-finalized, .status-badge.s-delivered, .status-badge.s-picked_up, .status-badge.s-in, .status-badge.s-pass, .status-badge.s-ok, .status-badge.s-on_time { background: #dcfce7; color: #166534; }
-  .status-badge.s-out_for_delivery, .status-badge.s-for_pickup, .status-badge.s-computed { background: #e0f2fe; color: #075985; }
-  .status-badge.s-completed, .status-badge.s-released, .status-badge.s-closed { background: #ccfbf1; color: #115e59; }
-  .status-badge.s-cancelled, .status-badge.s-refunded, .status-badge.s-unpaid, .status-badge.s-absent, .status-badge.s-review, .status-badge.s-rejected, .status-badge.s-failed, .status-badge.s-fail, .status-badge.s-locked, .status-badge.s-disabled, .status-badge.s-error, .status-badge.s-overdue { background: #fee2e2; color: #991b1b; }
-  .status-badge.s-inactive, .status-badge.s-void, .status-badge.s-rest_day, .status-badge.s-unscheduled, .status-badge.s-upcoming, .status-badge.s-out, .status-badge.s-archived, .status-badge.s-warning { background: #e2e8f0; color: #475569; }
-  /* messaging and incidents (Phase 10): what is known, never more */
-  .status-badge.s-prepared, .status-badge.s-unknown { background: #e2e8f0; color: #475569; }
-  .status-badge.s-composer_open_requested, .status-badge.s-in_review { background: #fef3c7; color: #92400e; }
-  .status-badge.s-user_confirmed_sent, .status-badge.s-resolved { background: #dcfce7; color: #166534; }
-  .status-badge.s-not_sent, .status-badge.s-failed_to_open, .status-badge.s-gateway_failed { background: #fee2e2; color: #991b1b; }
-  .status-badge.s-gateway_queued { background: #e0f2fe; color: #075985; }
-  .status-badge.s-gateway_sent { background: #fef3c7; color: #92400e; }
-  .status-badge.s-gateway_delivered { background: #dcfce7; color: #166534; }
-  /* backups (release 1.9.0): a run in progress, a good copy, a failed attempt */
-  .status-badge.s-running { background: #fef3c7; color: #92400e; }
-  .status-badge.s-ok { background: #dcfce7; color: #166534; }
-  /* equipment and proof of delivery (release 1.15.0): a machine out of service, a service due, a proof missing are problems; retired and removed are history */
-  .status-badge.s-down, .status-badge.s-due, .status-badge.s-missing { background: #fee2e2; color: #991b1b; }
-  .status-badge.s-soon { background: #fef3c7; color: #92400e; }
-  .status-badge.s-attached { background: #dcfce7; color: #166534; }
-  .status-badge.s-retired, .status-badge.s-removed { background: #e2e8f0; color: #475569; }
-  /* release 1.19.0: demo and test data — the kind of record and a cleanup's states */
-  .status-badge.s-test, .status-badge.s-demo, .status-badge.s-deleted { background: #fee2e2; color: #991b1b; }
-  .status-badge.s-sample, .status-badge.s-planned, .status-badge.s-backed_up { background: #dbeafe; color: #1e40af; }
-  .status-badge.s-production { background: #dcfce7; color: #166534; }
-  .status-badge.s-stopped, .status-badge.s-skipped { background: #fef3c7; color: #92400e; }
+  .status-badge { display: inline-block; padding: .25em .7em; border-radius: 999px; font-size: .74rem; font-weight: 700; letter-spacing: .02em; background: var(--mls-well); color: var(--mls-ink); white-space: nowrap; border: 1px solid transparent; }
+  /* release 1.24.0: the 29 state classes on six families from the tokens, never a hex of their own —
+     neutral (new, queued, planned) on the well; info (in progress, on its way, computed); success (ready, paid, good);
+     warning (waiting on someone: unpaid, partial, late, pending, review); danger (cancelled, refused, missing, failed);
+     done (completed, released, closed) on the soft burgundy; history (inactive, void, archived, retired) as an outlined pill */
+  .status-badge.s-new, .status-badge.s-received, .status-badge.s-leave, .status-badge.s-holiday, .status-badge.s-unassigned, .status-badge.s-draft, .status-badge.s-not_started, .status-badge.s-scheduled, .status-badge.s-prepared, .status-badge.s-unknown, .status-badge.s-sample, .status-badge.s-planned, .status-badge.s-backed_up { background: var(--mls-well); color: var(--mls-ink); }
+  .status-badge.s-processing, .status-badge.s-washing, .status-badge.s-drying, .status-badge.s-folding, .status-badge.s-qc, .status-badge.s-packed, .status-badge.s-assigned, .status-badge.s-accepted, .status-badge.s-open, .status-badge.s-in_progress, .status-badge.s-out_for_delivery, .status-badge.s-for_pickup, .status-badge.s-computed, .status-badge.s-gateway_queued, .status-badge.s-running { background: var(--mls-info-soft); color: var(--mls-info); }
+  .status-badge.s-ready, .status-badge.s-applied, .status-badge.s-active, .status-badge.s-paid, .status-badge.s-present, .status-badge.s-approved, .status-badge.s-finalized, .status-badge.s-delivered, .status-badge.s-picked_up, .status-badge.s-in, .status-badge.s-pass, .status-badge.s-ok, .status-badge.s-on_time, .status-badge.s-user_confirmed_sent, .status-badge.s-resolved, .status-badge.s-gateway_delivered, .status-badge.s-attached, .status-badge.s-production { background: var(--mls-success-soft); color: var(--mls-success); }
+  .status-badge.s-partial, .status-badge.s-late, .status-badge.s-undertime, .status-badge.s-pending, .status-badge.s-reopened, .status-badge.s-submitted, .status-badge.s-stale, .status-badge.s-unpaid, .status-badge.s-warning, .status-badge.s-composer_open_requested, .status-badge.s-in_review, .status-badge.s-gateway_sent, .status-badge.s-soon, .status-badge.s-stopped, .status-badge.s-skipped { background: var(--mls-warning-soft); color: var(--mls-warning); }
+  .status-badge.s-cancelled, .status-badge.s-refunded, .status-badge.s-absent, .status-badge.s-review, .status-badge.s-rejected, .status-badge.s-failed, .status-badge.s-fail, .status-badge.s-locked, .status-badge.s-disabled, .status-badge.s-error, .status-badge.s-overdue, .status-badge.s-not_sent, .status-badge.s-failed_to_open, .status-badge.s-gateway_failed, .status-badge.s-down, .status-badge.s-due, .status-badge.s-missing, .status-badge.s-test, .status-badge.s-demo, .status-badge.s-deleted { background: var(--mls-danger-soft); color: var(--mls-danger); }
+  .status-badge.s-completed, .status-badge.s-released, .status-badge.s-closed { background: var(--mls-primary-soft); color: var(--mls-primary); }
+  .status-badge.s-inactive, .status-badge.s-void, .status-badge.s-rest_day, .status-badge.s-unscheduled, .status-badge.s-upcoming, .status-badge.s-out, .status-badge.s-archived, .status-badge.s-retired, .status-badge.s-removed { background: transparent; color: var(--mls-ink); border-color: var(--mls-line); }
   .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 12px; }
   .toolbar .form-control, .toolbar .form-select { width: auto; min-width: 150px; flex: 0 0 auto; max-width: 100%; }
   .toolbar .search { min-width: 200px; flex: 1 1 220px; }
@@ -195,17 +222,17 @@
   .tabs { display: flex; gap: .25rem; flex-wrap: wrap; border-bottom: 1px solid var(--mls-line); margin-bottom: 12px; }
   .tabs button { border: 0; background: none; padding: .55rem .9rem; border-radius: var(--mls-radius-sm) var(--mls-radius-sm) 0 0; color: var(--mls-ink-soft); font-weight: 600; font-size: .9rem; white-space: nowrap; }
   .tabs button.active { color: var(--mls-primary); box-shadow: inset 0 -2px 0 var(--mls-primary); }
-  .tabs button .count { margin-left: .35rem; font-size: .72rem; background: #e2e8f0; border-radius: 999px; padding: .1em .5em; color: #334155; }
+  .tabs button .count { margin-left: .35rem; font-size: .72rem; background: var(--mls-well); border-radius: 999px; padding: .1em .5em; color: var(--mls-ink); border: 1px solid var(--mls-line-soft); }
   .tabs button .count:empty { display: none; }  /* a tab's count shows only when there is one (1.15.0: no empty pill beside Machines, Open…) */
   .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 10px; }
-  .chips button { border: 1px solid var(--mls-line); background: #fff; border-radius: 999px; padding: .3rem .8rem; font-size: .82rem; font-weight: 600; color: var(--mls-ink-soft); }
+  .chips button { border: 1px solid var(--mls-line); background: var(--mls-card); border-radius: 999px; padding: .3rem .8rem; font-size: .82rem; font-weight: 600; color: var(--mls-ink-soft); }
   .chips button.active { background: var(--mls-primary); color: #fff; border-color: var(--mls-primary); }
   .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 16px; }
   .detail-grid .k { font-size: .74rem; color: var(--mls-ink-soft); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
   .detail-grid .v { font-weight: 600; overflow-wrap: anywhere; }
   .timeline { list-style: none; margin: 0; padding: 0; }
   .timeline li { position: relative; padding: .25rem 0 .55rem 1.5rem; border-left: 2px solid var(--mls-line); margin-left: .4rem; }
-  .timeline li::before { content: ''; position: absolute; left: -7px; top: .5rem; width: 12px; height: 12px; border-radius: 50%; background: var(--mls-primary); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--mls-line); }
+  .timeline li::before { content: ''; position: absolute; left: -7px; top: .5rem; width: 12px; height: 12px; border-radius: 50%; background: var(--mls-primary); border: 2px solid var(--mls-card); box-shadow: 0 0 0 1px var(--mls-line); }
   .timeline .when { font-size: .74rem; color: var(--mls-ink-soft); }
   .totals { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; }
   .totals .grand { font-size: 1.25rem; font-weight: 800; color: var(--mls-primary-ink); }
@@ -222,6 +249,7 @@
   .receipt-paper .c { text-align: center; } .receipt-paper .r { text-align: right; } .receipt-paper .row { display: flex; justify-content: space-between; gap: 8px; }
   .receipt-paper .big { font-weight: 800; font-size: 15px; } .receipt-paper .strong { font-weight: 800; } .receipt-paper .muted { color: #555; } .receipt-paper .foot { color: #777; font-size: 11px; margin-top: 6px; }
   .receipt-paper hr { border: 0; border-top: 1px dashed #999; margin: 6px 0; }
+  .receipt-paper .logo { margin-bottom: 4px; } .receipt-paper .logo img { max-height: 48px; max-width: 200px; width: auto; height: auto; }  /* 1.24.0: a full-page receipt carries the logo */
   .getting-started ol { margin: 0; padding-left: 1.2rem; } .getting-started li { padding: .35rem 0; border-bottom: 1px dashed var(--mls-line); }
   .getting-started li.done { color: var(--mls-ink-faint); text-decoration: line-through; } .getting-started li.done a { pointer-events: none; color: inherit; }
   .getting-started li:last-child { border-bottom: 0; }
@@ -232,9 +260,9 @@
   .pos-layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; }
   .pos-catalog .card { position: relative; }
   .pos-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; } .pos-tiles > .empty-state { grid-column: 1 / -1; }
-  .pos-tile { border: 1px solid var(--mls-line); background: #fff; border-radius: var(--mls-radius-sm); padding: 10px 12px; text-align: left; min-height: 72px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; transition: box-shadow .12s, border-color .12s; }
+  .pos-tile { border: 1px solid var(--mls-line); background: var(--mls-card); border-radius: var(--mls-radius-sm); padding: 10px 12px; text-align: left; min-height: 72px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; transition: box-shadow .12s, border-color .12s; }
   .pos-tile:hover, .pos-tile:focus-visible, .pos-tile.hot { border-color: var(--mls-primary); box-shadow: var(--mls-shadow); outline: none; }
-  .pos-tile.hot { background: #f0fdfa; }
+  .pos-tile.hot { background: var(--mls-primary-soft); }
   .pos-tile .name { font-weight: 700; line-height: 1.2; } .pos-tile .price { color: var(--mls-primary-ink); font-weight: 700; }
   .pos-tile .meta { font-size: .72rem; color: var(--mls-ink-soft); } .pos-tile.nopr { opacity: .5; }
   .pos-cart { position: sticky; top: calc(var(--mls-topbar-h) + 12px); }
@@ -244,13 +272,13 @@
   .cart-line input { padding: .25rem .4rem; font-size: .88rem; text-align: right; }
   .cart-line .amt { text-align: right; font-weight: 700; }
   .cart-line .rm { border: 0; background: none; color: var(--mls-ink-faint); padding: 0; min-width: 32px; min-height: 32px; } .cart-line .rm:hover { color: var(--mls-danger); }
-  .cust-results { position: absolute; z-index: 20; left: 0; right: 0; background: #fff; border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); box-shadow: var(--mls-shadow); max-height: 220px; overflow: auto; }
+  .cust-results { position: absolute; z-index: 20; left: 0; right: 0; background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); box-shadow: var(--mls-shadow); max-height: 220px; overflow: auto; }
   .cust-results button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: .5rem .75rem; border-bottom: 1px solid var(--mls-line); min-height: 40px; }
   .cust-results button:hover, .cust-results button:focus-visible { background: var(--mls-primary-soft); }
-  .cust-chip { display: flex; align-items: center; gap: .6rem; padding: .5rem .75rem; border: 1px solid var(--mls-primary-soft); background: #f0fdfa; border-radius: var(--mls-radius-sm); }
+  .cust-chip { display: flex; align-items: center; gap: .6rem; padding: .5rem .75rem; border: 1px solid var(--mls-line); background: var(--mls-primary-soft); border-radius: var(--mls-radius-sm); }
   .cust-chip .x { margin-left: auto; border: 0; background: none; color: var(--mls-ink-soft); min-width: 32px; min-height: 32px; }
   .pos-keys { display: none; font-size: .74rem; color: var(--mls-ink-faint); margin-top: 8px; text-align: center; }
-  .pos-cartbar { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; background: var(--mls-card); border-top: 1px solid var(--mls-line); box-shadow: 0 -6px 20px rgba(15, 23, 42, .12); padding: 10px 14px; align-items: center; gap: 10px; }
+  .pos-cartbar { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; background: var(--mls-card); border-top: 1px solid var(--mls-line); box-shadow: 0 -6px 20px rgba(48, 42, 40, .12); padding: 10px 14px; align-items: center; gap: 10px; }
   .pos-cartbar .sum { flex: 1 1 auto; min-width: 0; border: 0; background: none; text-align: left; padding: 0; }
   .pos-cartbar .sum .n { font-size: .76rem; color: var(--mls-ink-soft); } .pos-cartbar .sum .t { font-weight: 800; font-size: 1.15rem; }
   .line-editor { display: grid; grid-template-columns: 1fr 90px 110px 110px 32px; gap: 6px; align-items: center; margin-bottom: 6px; }
@@ -259,11 +287,11 @@
 
   /* ---- Production, dispatch, deliveries, time clock, staff ---- */
   .kanban { display: grid; grid-template-columns: repeat(6, minmax(176px, 1fr)); gap: 10px; align-items: start; overflow-x: auto; padding-bottom: 6px; }
-  .kcol { background: #eef2f7; border-radius: var(--mls-radius); padding: 8px; min-height: 120px; min-width: 0; }
+  .kcol { background: var(--mls-well); border-radius: var(--mls-radius); padding: 8px; min-height: 120px; min-width: 0; }
   .kcol h6 { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--mls-ink-soft); display: flex; align-items: center; margin: 2px 4px 8px; }
-  .kcol h6 .count { margin-left: auto; background: #fff; border-radius: 999px; padding: .05em .55em; font-size: .74rem; color: var(--mls-ink); }
-  .kcard { background: #fff; border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px 10px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); cursor: pointer; min-width: 0; }
-  .kcard.express { border-left: 4px solid #f59e0b; } .kcard.overdue .due { color: var(--mls-danger); font-weight: 700; }
+  .kcol h6 .count { margin-left: auto; background: var(--mls-card); border-radius: 999px; padding: .05em .55em; font-size: .74rem; color: var(--mls-ink); }
+  .kcard { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px 10px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(48, 42, 40, .05); cursor: pointer; min-width: 0; }
+  .kcard.express { border-left: 4px solid var(--mls-warning); } .kcard.overdue .due { color: var(--mls-danger); font-weight: 700; }
   .kcard .no { font-weight: 800; font-size: .82rem; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; } .kcard .meta { font-size: .76rem; color: var(--mls-ink-soft); } .kcard .acts { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .kcard .acts .btn { flex: 1 1 auto; }
   .job-card { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius); box-shadow: var(--mls-shadow); padding: 14px 16px; margin-bottom: 12px; }
@@ -280,43 +308,43 @@
   .machine-pick button { border: 1px solid var(--mls-line); background: var(--mls-card); border-radius: var(--mls-radius-sm); padding: 8px 10px; text-align: left; min-height: 58px; min-width: 0; }
   .machine-pick button .code { font-weight: 800; display: block; } .machine-pick button .sub { font-size: .74rem; color: var(--mls-ink-soft); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .machine-pick button.active { border-color: var(--mls-primary); background: var(--mls-primary-soft); box-shadow: 0 0 0 2px var(--mls-primary); }
-  .machine-pick button.busy .sub { color: #92400e; } .machine-pick button:disabled { opacity: .55; cursor: not-allowed; } .machine-pick button:disabled .sub { color: #991b1b; }
+  .machine-pick button.busy .sub { color: var(--mls-warning); } .machine-pick button:disabled { opacity: .55; cursor: not-allowed; } .machine-pick button:disabled .sub { color: var(--mls-danger); }
   .slot-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
   .slot-pick button { border: 1px solid var(--mls-line); background: var(--mls-card); border-radius: var(--mls-radius-sm); padding: 8px 10px; text-align: left; min-height: 52px; }
   .slot-pick button .nm { font-weight: 700; display: block; } .slot-pick button .sub { font-size: .74rem; color: var(--mls-ink-soft); display: block; }
   .slot-pick button.active { border-color: var(--mls-primary); background: var(--mls-primary-soft); box-shadow: 0 0 0 2px var(--mls-primary); }
-  .slot-pick button.full .sub { color: #991b1b; } .slot-pick button:disabled { opacity: .5; cursor: not-allowed; }
-  .window-tag { display: inline-flex; align-items: center; gap: 4px; font-size: .8rem; font-weight: 700; padding: .1rem .5rem; border-radius: 999px; background: #e0f2fe; color: #075985; }
-  .window-tag.late { background: #fee2e2; color: #991b1b; }
-  .sig-pad { display: block; width: 100%; height: 180px; border: 1px dashed var(--mls-ink-faint); border-radius: var(--mls-radius-sm); background: #fff; touch-action: none; cursor: crosshair; }
+  .slot-pick button.full .sub { color: var(--mls-danger); } .slot-pick button:disabled { opacity: .5; cursor: not-allowed; }
+  .window-tag { display: inline-flex; align-items: center; gap: 4px; font-size: .8rem; font-weight: 700; padding: .1rem .5rem; border-radius: 999px; background: var(--mls-info-soft); color: var(--mls-info); }
+  .window-tag.late { background: var(--mls-danger-soft); color: var(--mls-danger); }
+  .sig-pad { display: block; width: 100%; height: 180px; border: 1px dashed var(--mls-ink-faint); border-radius: var(--mls-radius-sm); background: var(--mls-card); touch-action: none; cursor: crosshair; }
   .proof-thumb { display: block; max-width: 100%; max-height: 160px; border-radius: var(--mls-radius-sm); border: 1px solid var(--mls-line); margin-top: 6px; }
   .proof-view { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; } .proof-view figure { margin: 0; min-width: 0; }
-  .proof-view img { display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; border-radius: var(--mls-radius-sm); border: 1px solid var(--mls-line); background: #fff; }
+  .proof-view img { display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; border-radius: var(--mls-radius-sm); border: 1px solid var(--mls-line); background: var(--mls-card); }
   .proof-view figcaption { font-size: .8rem; color: var(--mls-ink-soft); margin-top: 4px; }
   /* ---- Release 1.16.0 (R18): bag tracking — the scan station, the bag lists, the hand-over check ---- */
-  .bag-code { font-family: var(--mls-mono); font-weight: 800; letter-spacing: .08em; font-size: .9em; background: #f1f5f9; color: var(--mls-ink); border-radius: 6px; padding: .05rem .4rem; white-space: nowrap; }
+  .bag-code { font-family: var(--mls-mono); font-weight: 800; letter-spacing: .08em; font-size: .9em; background: var(--mls-well); color: var(--mls-ink); border-radius: 6px; padding: .05rem .4rem; white-space: nowrap; }
   .code-input { font-family: var(--mls-mono); letter-spacing: .06em; text-transform: uppercase; }
   .code-input::placeholder { text-transform: none; letter-spacing: normal; font-family: var(--mls-font); font-size: .95rem; }
   .scan-form { display: flex; gap: 8px; align-items: stretch; } .scan-form .form-control { min-width: 0; flex: 1 1 auto; } .scan-form .btn { flex: 0 0 auto; min-width: 52px; }
-  .scan-video { position: relative; border-radius: var(--mls-radius-sm); overflow: hidden; background: #0f172a; max-width: 560px; }
+  .scan-video { position: relative; border-radius: var(--mls-radius-sm); overflow: hidden; background: var(--mls-ink); max-width: 560px; }
   .scan-video video { display: block; width: 100%; max-height: 52vh; object-fit: cover; }
-  .scan-frame { position: absolute; inset: 16% 20%; border: 3px solid rgba(255, 255, 255, .9); border-radius: 14px; box-shadow: 0 0 0 999px rgba(15, 23, 42, .28); pointer-events: none; }
+  .scan-frame { position: absolute; inset: 16% 20%; border: 3px solid rgba(255, 255, 255, .9); border-radius: 14px; box-shadow: 0 0 0 999px rgba(48, 42, 40, .28); pointer-events: none; }
   .scan-stop { position: absolute; top: 8px; right: 8px; }
   .scan-card { background: var(--mls-card); border: 1px solid var(--mls-line); border-left: 6px solid var(--mls-ink-faint); border-radius: var(--mls-radius-sm); padding: 10px 12px; margin-bottom: 8px; min-width: 0; overflow-wrap: anywhere; }
-  .scan-card.ok { border-left-color: #16a34a; } .scan-card.found { border-left-color: #0284c7; background: #f0f9ff; } .scan-card.warn { border-left-color: #f59e0b; background: #fffbeb; } .scan-card.bad { border-left-color: #dc2626; background: #fef2f2; }
+  .scan-card.ok { border-left-color: var(--mls-success); } .scan-card.found { border-left-color: var(--mls-info); background: var(--mls-info-soft); } .scan-card.warn { border-left-color: var(--mls-warning); background: var(--mls-warning-soft); } .scan-card.bad { border-left-color: var(--mls-danger); background: var(--mls-danger-soft); }
   .scan-card .scan-result { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
-  .scan-card.ok .scan-result { color: #15803d; } .scan-card.found .scan-result { color: #0369a1; } .scan-card.warn .scan-result { color: #92400e; } .scan-card.bad .scan-result { color: #991b1b; }
+  .scan-card.ok .scan-result { color: var(--mls-success); } .scan-card.found .scan-result { color: var(--mls-info); } .scan-card.warn .scan-result { color: var(--mls-warning); } .scan-card.bad .scan-result { color: var(--mls-danger); }
   .scan-card .acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
   .bag-list { display: grid; gap: 6px; }
   .bag-row { display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; width: 100%; text-align: left; background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px 10px; min-height: 44px; color: var(--mls-ink); min-width: 0; }
   .bag-row:hover, .bag-row:focus-visible { border-color: var(--mls-primary); } .bag-row.void { opacity: .6; }
-  .bag-chip { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 700; padding: .05rem .45rem; border-radius: 999px; background: #dcfce7; color: #166534; white-space: nowrap; }
-  .bag-chip.short { background: #fef3c7; color: #92400e; } .bag-chip.missing { background: #fee2e2; color: #991b1b; }
+  .bag-chip { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 700; padding: .05rem .45rem; border-radius: 999px; background: var(--mls-success-soft); color: var(--mls-success); white-space: nowrap; }
+  .bag-chip.short { background: var(--mls-warning-soft); color: var(--mls-warning); } .bag-chip.missing { background: var(--mls-danger-soft); color: var(--mls-danger); }
   .bag-card { border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 10px 12px; margin-bottom: 10px; min-width: 0; overflow-wrap: anywhere; }
   .bag-card.focus { box-shadow: 0 0 0 2px var(--mls-primary); }
   .bag-check { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
-  .bag-check li { display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; padding: 6px 8px; border-radius: var(--mls-radius-sm); background: #f8fafc; min-width: 0; }
-  .bag-check li.done { background: #f0fdf4; } .bag-check li.miss { background: #fef2f2; } .bag-check .ico { width: 1.4rem; text-align: center; }
+  .bag-check li { display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; padding: 6px 8px; border-radius: var(--mls-radius-sm); background: var(--mls-well); min-width: 0; }
+  .bag-check li.done { background: var(--mls-success-soft); } .bag-check li.miss { background: var(--mls-danger-soft); } .bag-check .ico { width: 1.4rem; text-align: center; }
   .scan-history { list-style: none; padding: 0; margin: 6px 0 0; font-size: .8rem; color: var(--mls-ink-soft); }
   .scan-history li { padding: 3px 0; border-top: 1px dashed var(--mls-line); }
   .tc-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; align-items: start; }
@@ -326,8 +354,8 @@
   .staff-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; } .staff-layout > * { min-width: 0; }
   .staff-list { max-height: 70vh; overflow: auto; } .staff-list button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: .55rem .75rem; border-bottom: 1px solid var(--mls-line); min-height: var(--mls-tap); }
   .staff-list button.active { background: var(--mls-primary-soft); } .staff-list .nm { font-weight: 700; } .staff-list .sub { font-size: .76rem; color: var(--mls-ink-soft); }
-  .period-banner { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 14px; border-radius: var(--mls-radius-sm); background: #f0fdfa; border: 1px solid #99f6e4; margin-bottom: 10px; }
-  .period-banner.finalized { background: #ecfdf5; border-color: #6ee7b7; } .period-banner.reopened { background: #fffbeb; border-color: #fcd34d; } .period-banner.range { background: var(--mls-well); border-color: var(--mls-line); }
+  .period-banner { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 14px; border-radius: var(--mls-radius-sm); background: var(--mls-primary-soft); border: 1px solid var(--mls-line); margin-bottom: 10px; }
+  .period-banner.finalized { background: var(--mls-success-soft); border-color: var(--mls-success-line); } .period-banner.reopened { background: var(--mls-warning-soft); border-color: var(--mls-warning-line); } .period-banner.range { background: var(--mls-well); border-color: var(--mls-line); }
   .pattern-grid { display: grid; grid-template-columns: 70px 1fr 1fr 90px; gap: 6px; align-items: center; margin-bottom: 4px; font-size: .88rem; }
   .col-w-70 { width: 70px; } .col-w-90 { width: 90px; } .col-w-100 { width: 100px; } .col-w-110 { width: 110px; } .col-w-190 { width: 190px; } .max-w-110 { max-width: 110px; }
 
@@ -344,7 +372,7 @@
   /* ---- Settings and profile, users, roles, permission editor, maintenance ---- */
   .roles-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; } .roles-layout > * { min-width: 0; }
   .perm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px 18px; }
-  .perm-module { border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px 10px; background: #fff; }
+  .perm-module { border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px 10px; background: var(--mls-card); }
   .perm-module .perm { margin-bottom: 2px; min-height: 28px; display: flex; align-items: center; gap: .4rem; padding-left: 1.6em; } .perm-module .perm .form-check-input { margin-left: -1.6em; margin-top: 0; }
   .perm-module .perm .form-check-label { font-size: .82rem; font-family: var(--mls-mono); } .perm-module .perm input:disabled + .form-check-label { color: var(--mls-ink-soft); }
   .label-grid { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 4px 8px; align-items: center; }
@@ -353,19 +381,43 @@
   #set-tabs { margin-bottom: 12px; } #set-role-list { max-height: 60vh; }
   .mt-out pre { font-size: .8rem; }
 
+  /* ---- Settings → Branding (release 1.24.0): the pictures' frames and the preview of the sign-in card, the sidebar head and a printed header ---- */
+  .br-frame { width: 240px; height: 80px; } .br-frame.dark { background: var(--mls-sidebar); } .br-frame.dark .text { color: var(--mls-sidebar-muted); }
+  .br-frame.icon { width: 64px; height: 64px; border-radius: 14px; } .br-frame.icon-lg { width: 96px; height: 96px; border-radius: 20px; } .br-frame.icon-sm { width: 32px; height: 32px; border-radius: 7px; }
+  .br-frame .brand-mark { width: 100%; height: 100%; border-radius: inherit; } .br-frame .brand-mark svg { width: 100%; height: 100%; }
+  .br-hex { max-width: 140px; }
+  .br-preview { --br-p: #6D2322; --br-p-active: #8A2D2C; --br-a: #A41C1E; }
+  .br-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } @media (max-width: 991.98px) { .br-grid { grid-template-columns: minmax(0, 1fr); } }
+  .br-preview img { display: block; max-height: 56px; max-width: 100%; width: auto; height: auto; }
+  .br-login { background: var(--mls-bg); border: 1px solid var(--mls-line); border-radius: 10px; padding: 16px; min-height: 200px; display: flex; align-items: center; justify-content: center; }
+  .br-login .card-mock { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: 14px; padding: 16px; width: 100%; max-width: 260px; text-align: center; }
+  .br-login .logo { height: 56px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; } .br-login .mark-row { margin-bottom: 6px; } .br-login .brand-name { font-size: 1rem; }
+  .br-login .field { margin-top: 8px; height: 30px; border: 1px solid var(--mls-line); border-radius: 8px; background: var(--mls-well); } .br-login .field.first { margin-top: 12px; }
+  .br-login .go { margin-top: 10px; height: 34px; line-height: 34px; border-radius: 8px; background: var(--br-p); color: #fff; font-weight: 700; }
+  .br-preview .brand-mark.p { --mark-bg: var(--br-p); --mark-ink: var(--mls-bg); width: 44px; height: 44px; border-radius: 50%; } .br-preview .brand-mark.p svg { width: 44px; height: 44px; }
+  .br-side { background: var(--br-p); color: var(--mls-sidebar-ink); border-radius: 10px; padding: 14px 14px 10px; min-height: 200px; }
+  .br-side .logo { height: 56px; display: flex; align-items: center; margin-bottom: 8px; } .br-side .logo.plate { background: var(--mls-bg); border-radius: 8px; padding: 6px 10px; } .br-side .logo.plate img { max-height: 44px; }
+  .br-side .brand-mark { --mark-bg: var(--mls-bg); --mark-ink: var(--br-p); } .br-side .brand-name { font-size: .95rem; } .br-side .brand-sub { color: var(--mls-sidebar-muted); }
+  .br-side .sect { margin-top: 14px; font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--mls-sidebar-muted); }
+  .br-side .item { padding: 8px 10px; font-weight: 600; font-size: .9rem; opacity: .9; } .br-side .item.active { margin-top: 6px; border-radius: 10px; background: var(--br-p-active); color: #fff; opacity: 1; } .br-side .item i { margin-right: .5rem; opacity: .85; }
+  .br-print { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: 10px; padding: 16px; min-height: 200px; font-family: Arial, Helvetica, sans-serif; color: #111; }
+  .br-print .head { text-align: center; padding-bottom: 8px; border-bottom: 2px solid var(--br-p); } .br-print .logo { display: flex; justify-content: center; margin-bottom: 6px; } .br-print .logo img { max-height: 40px; }
+  .br-print .biz { font-size: 15px; font-weight: 800; letter-spacing: .04em; color: var(--br-p); } .br-print .sub { font-size: 10px; color: #444; } .br-print .title { font-size: 12px; font-weight: 800; margin-top: 6px; letter-spacing: .06em; text-transform: uppercase; }
+  .br-print .line { margin-top: 2px; font-size: 11px; color: #444; display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; } .br-print .line.first { margin-top: 10px; } .br-print .line.total { font-weight: 800; color: #111; border-top: 2px solid #333; margin-top: 4px; padding-top: 4px; }
+
   /* ---- Messaging, tracking, incidents, promo codes, follow-ups, archive (Phase 10) ---- */
   .sms-to { background: var(--mls-primary-soft); border-radius: var(--mls-radius-sm); padding: 8px 12px; margin-bottom: 10px; font-size: .9rem; } .sms-to .k { display: inline-block; min-width: 2.2em; color: var(--mls-ink-soft); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
   .sms-body { font-size: 1rem; line-height: 1.45; } .sms-count { font-size: .78rem; color: var(--mls-ink-soft); margin: 4px 0 8px; font-variant-numeric: tabular-nums; }
-  .sms-vars { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; } .sms-chip { border: 1px solid var(--mls-line); background: #fff; border-radius: 999px; padding: 2px 10px; font-size: .76rem; color: var(--mls-primary); font-family: var(--mls-mono); min-height: 28px; } .sms-chip:hover { background: var(--mls-primary-soft); }
+  .sms-vars { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; } .sms-chip { border: 1px solid var(--mls-line); background: var(--mls-card); border-radius: 999px; padding: 2px 10px; font-size: .76rem; color: var(--mls-primary); font-family: var(--mls-mono); min-height: 28px; } .sms-chip:hover { background: var(--mls-primary-soft); }
   .sms-note { font-size: .76rem; color: var(--mls-ink-soft); border-top: 1px dashed var(--mls-line); padding-top: 8px; margin-top: 10px; }
   .sms-offscreen { position: fixed; left: -9999px; top: 0; opacity: 0; }
   .sms-history li { border-bottom: 1px solid var(--mls-line); padding: 8px 0; } .sms-history li:last-child { border-bottom: 0; } .sms-history .when { font-size: .76rem; color: var(--mls-ink-soft); } .sms-history .body { white-space: pre-wrap; font-size: .86rem; }
-  .tpl-card { border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 10px 12px; background: #fff; display: flex; flex-direction: column; gap: 6px; min-width: 0; } .tpl-card.inactive { opacity: .62; } .tpl-card .body { white-space: pre-wrap; font-size: .86rem; color: var(--mls-ink); } .tpl-card .acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; }
+  .tpl-card { border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 10px 12px; background: var(--mls-card); display: flex; flex-direction: column; gap: 6px; min-width: 0; } .tpl-card.inactive { opacity: .62; } .tpl-card .body { white-space: pre-wrap; font-size: .86rem; color: var(--mls-ink); } .tpl-card .acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; }
   .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
-  .tpl-preview { background: #f1f5f9; border-radius: var(--mls-radius-sm); padding: 10px 12px; white-space: pre-wrap; font-size: .9rem; min-height: 60px; }
+  .tpl-preview { background: var(--mls-well); border-radius: var(--mls-radius-sm); padding: 10px 12px; white-space: pre-wrap; font-size: .9rem; min-height: 60px; }
   .followups .fu-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--mls-line); } .followups .fu-row:last-child { border-bottom: 0; } .followups .fu-meta { font-size: .78rem; color: var(--mls-ink-soft); }
-  .inc-desc { white-space: pre-wrap; } .inc-res { background: #f0fdf4; border-left: 3px solid var(--mls-success, #16a34a); padding: 8px 12px; border-radius: 0 var(--mls-radius-sm) var(--mls-radius-sm) 0; white-space: pre-wrap; }
-  .pos-promo { display: flex; gap: 6px; align-items: center; } .pos-promo input { text-transform: uppercase; max-width: 180px; } .pos-promo .applied { font-size: .8rem; color: var(--mls-success, #16a34a); font-weight: 700; }
+  .inc-desc { white-space: pre-wrap; } .inc-res { background: var(--mls-success-soft); border-left: 3px solid var(--mls-success); padding: 8px 12px; border-radius: 0 var(--mls-radius-sm) var(--mls-radius-sm) 0; white-space: pre-wrap; }
+  .pos-promo { display: flex; gap: 6px; align-items: center; } .pos-promo input { text-transform: uppercase; max-width: 180px; } .pos-promo .applied { font-size: .8rem; color: var(--mls-success); font-weight: 700; }
   .qr-box { display: flex; justify-content: center; margin: 8px 0 4px; } .qr-box svg { width: 26mm; height: 26mm; }
   .track-link { font-family: var(--mls-mono); font-size: .76rem; word-break: break-all; }
   .archive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; } .archive-grid .cell { border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 6px 10px; font-size: .8rem; } .archive-grid .cell b { display: block; font-size: 1.05rem; }
@@ -375,8 +427,9 @@
   @media (min-width: 992px) and (max-width: 1199.98px) {
     :root { --mls-sidebar-w: 76px; }
     #sidebar .brand { padding: 14px 0 12px; justify-content: center; } #sidebar .brand-text { display: none; }
+    #sidebar .brand-logo { display: none; } #sidebar.has-logo .brand-mark { display: inline-flex; }
     #main-nav { padding: 8px 8px 12px; }
-    #main-nav .nav-section { font-size: 0; height: 1px; padding: 0; margin: 8px 8px 6px; background: rgba(255, 255, 255, .08); }
+    #main-nav .nav-section { font-size: 0; height: 1px; padding: 0; margin: 8px 8px 6px; background: var(--mls-sidebar-line); }
     #main-nav .nav-section:first-child { display: none; }
     #main-nav .nav-link { justify-content: center; padding: .6rem 0; gap: 0; }
     #main-nav .nav-link > span, #main-nav .nav-link .phase-badge { display: none; }
@@ -389,7 +442,7 @@
   @media (max-width: 991.98px) {
     #sidebar { position: fixed; left: 0; top: 0; z-index: 40; transform: translateX(-100%); transition: transform .2s ease; height: 100vh; }
     body.sidebar-open #sidebar { transform: none; } body.sidebar-open #sidebar-backdrop { display: block; }
-    #hamburger { display: inline-flex; }
+    #hamburger { display: inline-flex; } .topbar-brand { display: inline-flex; }
     #main-content { padding: 14px; }
     .pos-layout { grid-template-columns: minmax(0, 1fr) 300px; } .cart-lines { max-height: 32vh; } .cart-line { grid-template-columns: 1fr 70px 76px 32px; }
     .eod-layout { grid-template-columns: minmax(0, 1fr); } .eod-count-card { position: static; }
@@ -413,7 +466,7 @@
     .sms-chip { min-height: 40px; padding: 6px 12px; } .sms-body { font-size: 16px; } .tpl-grid { grid-template-columns: 1fr; }
     .view > .view-head { gap: .5rem; }
     .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } .kpi { padding: 12px; } .kpi .kpi-icon { display: none; } .kpi .kpi-value { font-size: 1.15rem; }
-    .table-cards tbody tr { display: block; border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); margin-bottom: 10px; padding: 8px 10px; background: #fff; }
+    .table-cards tbody tr { display: block; border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); margin-bottom: 10px; padding: 8px 10px; background: var(--mls-card); }
     .table-cards thead { display: none; } .table-cards tbody td { display: flex; justify-content: space-between; gap: 10px; border: 0; padding: .25rem 0; }
     .table-cards tbody td::before { content: attr(data-label); color: var(--mls-ink-soft); font-size: .78rem; font-weight: 600; }
     .table-cards tbody td:empty, .table-cards tbody td.no-label::before { display: none; }
@@ -455,47 +508,47 @@
   }
 
   /* ---- offline bar (release 1.3.0): shown only while the server cannot be reached and the app is open */
-  #offline-bar { display: flex; align-items: center; gap: .6rem; padding: .5rem 1rem; background: #fffbeb; border-bottom: 1px solid #fde68a; color: #92400e; font-size: .85rem; }
-  #offline-bar i { color: #d97706; }
+  #offline-bar { display: flex; align-items: center; gap: .6rem; padding: .5rem 1rem; background: var(--mls-warning-soft); border-bottom: 1px solid var(--mls-warning-line); color: var(--mls-warning); font-size: .85rem; }
+  #offline-bar i { color: var(--mls-warning); }
   /* ---- connection badge (release 1.2.0): read from Net.state(), never set by hand */
   .net-badge { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 600; padding: .25rem .6rem; border-radius: 999px; border: 1px solid var(--mls-line); background: var(--mls-card); color: var(--mls-ink-soft); white-space: nowrap; }
   .net-badge i { font-size: .5rem; }
-  .net-badge.net-online i { color: #15803d; }
-  .net-badge.net-offline { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
-  .net-badge.net-offline i { color: #dc2626; }
-  .net-badge.net-unreachable { background: #fffbeb; border-color: #fde68a; color: #92400e; }
-  .net-badge.net-unreachable i { color: #d97706; }
-  .net-badge.net-checking i { color: #64748b; animation: net-pulse 1s ease-in-out infinite; }
+  .net-badge.net-online i { color: var(--mls-success); }
+  .net-badge.net-offline { background: var(--mls-danger-soft); border-color: var(--mls-danger-line); color: var(--mls-danger); }
+  .net-badge.net-offline i { color: var(--mls-danger); }
+  .net-badge.net-unreachable { background: var(--mls-warning-soft); border-color: var(--mls-warning-line); color: var(--mls-warning); }
+  .net-badge.net-unreachable i { color: var(--mls-warning); }
+  .net-badge.net-checking i { color: var(--mls-ink-soft); animation: net-pulse 1s ease-in-out infinite; }
   @keyframes net-pulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
-  @media (max-width: 575.98px) { .net-badge span { display: none; } .net-badge { padding: .25rem .45rem; } }
+  @media (max-width: 575.98px) { .net-badge span { display: none; } .net-badge { padding: .25rem .45rem; } .topbar-brand { display: none !important; } }  /* 1.24.0: on a phone the page title needs the room; the drawer and the sign-in card carry the brand */
   /* the offline queue (1.4.0): what waits for the server, what the server refused */
-  .queue-badge { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 600; padding: .25rem .6rem; border-radius: 999px; border: 1px solid #fde68a; background: #fffbeb; color: #92400e; white-space: nowrap; text-decoration: none; min-height: 28px; }
+  .queue-badge { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 600; padding: .25rem .6rem; border-radius: 999px; border: 1px solid var(--mls-warning-line); background: var(--mls-warning-soft); color: var(--mls-warning); white-space: nowrap; text-decoration: none; min-height: 28px; }
   .queue-badge i { font-size: .7rem; }
-  .queue-badge.q-rejected { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+  .queue-badge.q-rejected { background: var(--mls-danger-soft); border-color: var(--mls-danger-line); color: var(--mls-danger); }
   .queue-badge.q-sending { background: var(--mls-card); border-color: var(--mls-line); color: var(--mls-ink-soft); }
   .queue-badge:hover { filter: brightness(.97); color: inherit; }
-  .pending-tag { display: inline-block; font-size: .68rem; font-weight: 700; letter-spacing: .02em; padding: .1rem .4rem; border-radius: 6px; background: #fffbeb; color: #92400e; border: 1px solid #fde68a; vertical-align: middle; }
-  .pending-tag.refused { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-  .pending-tag.sending { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }  /* 1.22.0: a stage move on its way to the server */
+  .pending-tag { display: inline-block; font-size: .68rem; font-weight: 700; letter-spacing: .02em; padding: .1rem .4rem; border-radius: 6px; background: var(--mls-warning-soft); color: var(--mls-warning); border: 1px solid var(--mls-warning-line); vertical-align: middle; }
+  .pending-tag.refused { background: var(--mls-danger-soft); color: var(--mls-danger); border-color: var(--mls-danger-line); }
+  .pending-tag.sending { background: var(--mls-info-soft); color: var(--mls-info); border-color: var(--mls-info-line); }  /* 1.22.0: a stage move on its way to the server */
   .sync-list { list-style: none; margin: 0; padding: 0; }
   .sync-list li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .6rem .9rem; align-items: start; padding: .6rem 0; border-bottom: 1px solid var(--mls-line); }
   .sync-list li:last-child { border-bottom: 0; }
   .sync-list .when { font-size: .76rem; color: var(--mls-ink-soft); white-space: nowrap; }
   .sync-list .what { font-size: .92rem; min-width: 0; overflow-wrap: anywhere; }
-  .sync-list .why { font-size: .82rem; color: #991b1b; margin-top: .15rem; }
-  .sync-list .flag { font-size: .8rem; color: #92400e; margin-top: .15rem; }
+  .sync-list .why { font-size: .82rem; color: var(--mls-danger); margin-top: .15rem; }
+  .sync-list .flag { font-size: .8rem; color: var(--mls-warning); margin-top: .15rem; }
   .sync-list .ref { font-size: .8rem; color: var(--mls-ink-soft); margin-top: .1rem; }
   .sync-stat { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; font-size: .9rem; }
-  .review-list li { background: #fffdf5; border-radius: 10px; padding: .6rem .7rem; margin-bottom: .4rem; border: 1px solid #fde68a; }
+  .review-list li { background: var(--mls-warning-soft); border-radius: 10px; padding: .6rem .7rem; margin-bottom: .4rem; border: 1px solid var(--mls-warning-line); }
   .device-check { list-style: none; margin: 0; padding: 0; font-size: .85rem; }
   .device-check li { display: flex; gap: .5rem; align-items: flex-start; padding: .25rem 0; border-bottom: 1px solid var(--mls-line); }
   .device-check li:last-child { border-bottom: 0; }
-  .device-check li i { margin-top: .2rem; color: #166534; }
-  .device-check li.bad i { color: #991b1b; }
-  .review-list li:last-child { border-bottom: 1px solid #fde68a; }
+  .device-check li i { margin-top: .2rem; color: var(--mls-success); }
+  .device-check li.bad i { color: var(--mls-danger); }
+  .review-list li:last-child { border-bottom: 1px solid var(--mls-warning-line); }
   .review-list .what a { font-weight: 600; }
   .sync-stat b { font-size: 1.2rem; }
-  .receipt-paper .provisional { border: 2px dashed #92400e; color: #92400e; padding: .35rem .5rem; margin: .4rem 0; text-align: center; font-weight: 700; letter-spacing: .04em; }
+  .receipt-paper .provisional { border: 2px dashed var(--mls-warning); color: var(--mls-warning); padding: .35rem .5rem; margin: .4rem 0; text-align: center; font-weight: 700; letter-spacing: .04em; }
   .receipt-paper .provisional small { display: block; font-weight: 400; letter-spacing: 0; margin-top: .15rem; }
   @media (max-width: 575.98px) { .queue-badge span { display: none; } .queue-badge { padding: .25rem .45rem; } .sync-list li { grid-template-columns: minmax(0, 1fr) auto; } .sync-list .when { grid-column: 1 / -1; } }
 </style>
@@ -556,6 +609,29 @@
     return rows[0] || null;
   }
   function unitLabel(type) { return { PER_KILO: 'kg', PER_PIECE: 'pc', PER_LOAD: 'load', FLAT: 'flat' }[type] || ''; }
+
+  /**
+   * Colour (release 1.24.0, the branding foundation): the WCAG 2 contrast ratio and the shades the brand colours need, run by
+   * the server when a brand colour is saved (Admin → RULES) and by the page when it applies one at start-up (App.html → Brand),
+   * so both sides refuse and accept exactly the same values. Hex colours only (#RRGGBB or #RGB), never a name.
+   */
+  var Colour = {
+    valid: function (hex) { return /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(trim(hex)); },
+    /** #RRGGBB in upper case, or '' for anything that is not a hex colour. */
+    normalize: function (hex) { var h = trim(hex); if (!Colour.valid(h)) return ''; h = h.slice(1); if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2]; return '#' + h.toUpperCase(); },
+    rgb: function (hex) { var h = Colour.normalize(hex); if (!h) return null; return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; },
+    hex: function (rgb) { return '#' + rgb.map(function (c) { var v = Math.max(0, Math.min(255, Math.round(c))).toString(16).toUpperCase(); return v.length === 1 ? '0' + v : v; }).join(''); },
+    /** Relative luminance (sRGB), 0 for black and 1 for white. */
+    luminance: function (hex) { var c = Colour.rgb(hex); if (!c) return NaN; var lin = c.map(function (v) { v = v / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]; },
+    /** The contrast ratio of two colours, 1 to 21, to two decimals; NaN when either is not a hex colour. 4.5 is WCAG's minimum for normal text, 3 for large text and icons. */
+    contrast: function (a, b) { var la = Colour.luminance(a), lb = Colour.luminance(b); if (isNaN(la) || isNaN(lb)) return NaN; var hi = Math.max(la, lb), lo = Math.min(la, lb); return Math.round((hi + 0.05) / (lo + 0.05) * 100) / 100; },
+    /** Towards black by a fraction (0.25 = a quarter of the way); shade(hex, 0) is the colour itself. */
+    shade: function (hex, f) { var c = Colour.rgb(hex); if (!c) return ''; return Colour.hex(c.map(function (v) { return v * (1 - f); })); },
+    /** Towards white by a fraction (0.88 = almost white). */
+    tint: function (hex, f) { var c = Colour.rgb(hex); if (!c) return ''; return Colour.hex(c.map(function (v) { return v + (255 - v) * f; })); },
+    /** rgba(r, g, b, a) for a ring or a veil. */
+    alpha: function (hex, a) { var c = Colour.rgb(hex); if (!c) return ''; return 'rgba(' + c[0] + ', ' + c[1] + ', ' + c[2] + ', ' + a + ')'; }
+  };
 
   /**
    * Prices one service line. line: { serviceId, qty, weightKg }; env: { branchId, customerType, dateIso, express, prices, services (map by id), settings }
@@ -649,7 +725,7 @@
     var now = env.now instanceof Date ? env.now : new Date();
     return { lines: priced, subtotal: Money.pesos(subtotal), discountAmount: Money.pesos(discount), discountReason: reason, promo: promo, promoDiscount: Money.pesos(promoDiscount), manualDiscount: Money.pesos(manual), deliveryFee: Money.pesos(delivery), otherCharges: Money.pesos(other), total: Money.pesos(total), isExpress: e.express, dueHours: hours, dueAt: new Date(now.getTime() + hours * 3600000), totalWeightKg: Math.round(weight * 100) / 100, customerType: e.customerType };
   }
-  return { Money: Money, resolvePrice: resolvePrice, priceService: priceService, priceProduct: priceProduct, priceCart: priceCart, checkPromo: checkPromo, unitLabel: unitLabel, isBlank: isBlank, trim: trim, slug: slug };
+  return { Money: Money, Colour: Colour, resolvePrice: resolvePrice, priceService: priceService, priceProduct: priceProduct, priceCart: priceCart, checkPromo: checkPromo, unitLabel: unitLabel, isBlank: isBlank, trim: trim, slug: slug };
 }
     window.MLS_SHARED = defineShared_({ currencySymbol: '₱' });
   </script>
@@ -661,7 +737,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.23.0';
+  var VERSION = '1.24.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -1171,7 +1247,7 @@ window.MLS = (function () {
     SIZES: { A4: 'A4', LETTER: 'Letter', LEGAL: 'Legal', '80MM': '80mm' },
     size: function (s) { return Print.SIZES[String(s || 'A4').toUpperCase()] || 'A4'; },
     css: function (size, margin, landscape) {
-      var roll = size === '80mm', page = roll ? '80mm auto' : size + (landscape ? ' landscape' : '');
+      var roll = size === '80mm', page = roll ? '80mm auto' : size + (landscape ? ' landscape' : ''), brand = roll ? '#111' : Brand.primary();  // 1.24.0: burgundy (or BrandPrimary) on a full page, black on a roll
       return '@page{size:' + page + ';margin:' + (margin || (roll ? '3mm' : '12mm')) + '}' +
         'html,body{margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:' + (roll ? '0' : '8px') + ';font-size:' + (roll ? '12px' : '12.5px') + ';line-height:1.35}' +
         'h1{font-size:16px;margin:0 0 4px}h2{font-size:13px;margin:14px 0 4px;page-break-after:avoid}p{margin:4px 0}' +
@@ -1179,24 +1255,26 @@ window.MLS = (function () {
         'thead{display:table-header-group}tr{page-break-inside:avoid}table.inline{width:auto}table.inline td{border:0;padding:3px 14px 3px 0}' +
         '.right,.r{text-align:right}.c{text-align:center}.num{font-variant-numeric:tabular-nums}.strong,b{font-weight:700}.muted{color:#666}.neg{color:#b91c1c}.small{font-size:11px}' +
         'tr.tot td{font-weight:800;font-size:13px;border-top:2px solid #333;border-bottom:0}' +
-        '.doc-head{text-align:center;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #111}.doc-biz{font-size:17px;font-weight:800;letter-spacing:.04em}.doc-biz-sub{font-size:11px;color:#444}.doc-title{font-size:14px;font-weight:800;margin-top:6px;letter-spacing:.06em;text-transform:uppercase}.doc-sub{font-size:11.5px;color:#444}' +
+        '.doc-head{text-align:center;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid ' + brand + '}.doc-logo{display:block;margin:0 auto 6px;max-height:48px;max-width:200px;width:auto;height:auto}.doc-biz{font-size:17px;font-weight:800;letter-spacing:.04em;color:' + brand + '}.doc-biz-sub{font-size:11px;color:#444}.doc-title{font-size:14px;font-weight:800;margin-top:6px;letter-spacing:.06em;text-transform:uppercase}.doc-sub{font-size:11.5px;color:#444}' +
         '.doc-foot{font-size:10px;color:#777;margin-top:16px;border-top:1px solid #ddd;padding-top:4px;display:flex;justify-content:space-between;gap:12px}' +
         '.blk{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;font-size:12px;margin:10px 0}.blk b{display:inline-block;min-width:110px;color:#555;font-weight:600}' +
         '.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:24px}.kpis{display:flex;flex-wrap:wrap;gap:6px 22px;margin:8px 0 10px}.kpis div{font-size:11.5px}.kpis b{display:block;font-size:13px}' +
         '.ack{font-size:11.5px;margin:14px 0 24px;color:#333}' +
         '.sig{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:30px;font-size:11.5px;page-break-inside:avoid}.sig.two{grid-template-columns:1fr 1fr}.sig.one{grid-template-columns:1fr;max-width:260px}.sig div{border-top:1px solid #333;padding-top:4px;text-align:center}' +
         '.draft{position:fixed;top:40%;left:10%;right:10%;text-align:center;font-size:64px;font-weight:900;color:rgba(185,28,28,.14);transform:rotate(-18deg);letter-spacing:.3em;pointer-events:none}' +
+        '.receipt-paper .logo{margin-bottom:4px}.receipt-paper .logo img{max-height:48px;max-width:200px;width:auto;height:auto}' +
         '.receipt-paper{border:0;margin:0 auto;font-family:"Courier New",monospace;font-size:12px;width:' + (roll ? '72mm' : '100%') + ';max-width:' + (roll ? 'none' : '420px') + '}.receipt-paper .c{text-align:center}.receipt-paper .r{text-align:right}.receipt-paper .row{display:flex;justify-content:space-between;gap:8px}.receipt-paper hr{border:0;border-top:1px dashed #999;margin:6px 0}.receipt-paper .big{font-weight:800;font-size:15px}.receipt-paper .strong{font-weight:800}.receipt-paper .muted{color:#555}.receipt-paper .foot{color:#777;font-size:11px;margin-top:6px}' +
         '.qr-box{display:flex;justify-content:center;margin:6px 0 2px}.qr-box svg{width:26mm;height:26mm}.track-link{font-size:9.5px;word-break:break-all;color:#333}' +
         '.labels{display:grid;grid-template-columns:' + (roll ? '1fr' : 'repeat(2,1fr)') + ';gap:' + (roll ? '0' : '6mm') + '}.label{border:' + (roll ? '0' : '1px dashed #999') + ';border-radius:4px;padding:' + (roll ? '2mm 0' : '4mm') + ';text-align:center;page-break-inside:avoid;' + (roll ? 'page-break-after:always;' : '') + '}.label .no{font-size:' + (roll ? '20px' : '22px') + ';font-weight:900;letter-spacing:.02em;font-family:"Courier New",monospace}.label .who{font-size:14px;font-weight:700;margin-top:2px}.label .meta{font-size:11px;color:#444}.label .qr-box svg{width:22mm;height:22mm}' +
         '.label .bag{font-size:14px;font-weight:800;margin-top:2px}.label .code{font-family:"Courier New",monospace;font-size:' + (roll ? '19px' : '20px') + ';font-weight:900;letter-spacing:.14em;margin-top:1px}.label .bag-qr svg{width:' + (roll ? '30mm' : '28mm') + ';height:' + (roll ? '30mm' : '28mm') + '}' +
         '@media print{.no-print{display:none}}';
     },
-    /** The business block every full-page document starts with: Print.header({ title, subtitle, business: { name, address, phone, taxId, branch } }) — the business defaults to the sign-in settings. */
+    /** The business block every full-page document starts with: Print.header({ title, subtitle, business: { name, address, phone, taxId, branch } }) — the business defaults to the sign-in settings; since 1.24.0 the logo this device keeps sits above the name when one is uploaded. */
     header: function (o) {
       o = o || {}; var st = (AppState.me && AppState.me.settings) || {}, b = o.business || {};
       var name = b.name || st.BusinessName || 'Mrs Laundry Sys', sub = [b.branch, b.address !== undefined ? b.address : st.BusinessAddress, b.phone !== undefined ? b.phone : st.BusinessPhone, (b.taxId !== undefined ? b.taxId : st.TaxId) ? 'TIN ' + (b.taxId !== undefined ? b.taxId : st.TaxId) : ''].filter(Boolean);
-      return '<header class="doc-head"><div class="doc-biz">' + UI.esc(name) + '</div>' + (sub.length ? '<div class="doc-biz-sub">' + sub.map(UI.esc).join(' · ') + '</div>' : '') + (o.title ? '<div class="doc-title">' + UI.esc(o.title) + '</div>' : '') + (o.subtitle ? '<div class="doc-sub">' + UI.esc(o.subtitle) + '</div>' : '') + '</header>';
+      var logo = Brand.pictures().logo;
+      return '<header class="doc-head">' + (logo ? '<img class="doc-logo" src="' + logo + '" alt="">' : '') + '<div class="doc-biz">' + UI.esc(name) + '</div>' + (sub.length ? '<div class="doc-biz-sub">' + sub.map(UI.esc).join(' · ') + '</div>' : '') + (o.title ? '<div class="doc-title">' + UI.esc(o.title) + '</div>' : '') + (o.subtitle ? '<div class="doc-sub">' + UI.esc(o.subtitle) + '</div>' : '') + '</header>';
     },
     /** Who printed the document and when; Print.footer({ by, at, note }) */
     footer: function (o) {
@@ -1239,7 +1317,48 @@ window.MLS = (function () {
         img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('The photo could not be read; take it again')); };
         img.src = url;
       });
-    }
+    },
+    /** Release 1.24.0: a chosen picture as a PNG inside a box (the logo: 480 × 160, under 30 KB), drawn on a canvas on this device — JPG, WebP and SVG are converted, transparency kept, nothing stretched. When the PNG is over the byte budget it is drawn smaller, down to half the size that fills the box and no further (a logo smaller than that would look blurred where it is shown): a photograph is refused rather than shrunk to a smudge. Resolves { data, w, h, bytes }. */
+    toPng: function (file, opts) {
+      opts = opts || {}; var maxW = opts.maxW || 480, maxH = opts.maxH || 160, maxBytes = opts.maxBytes || 30 * 1024;
+      return Photo.load(file).then(function (img) {
+        var w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height; if (!w0 || !h0) throw new Error('The picture could not be read');
+        var fit = Math.min(1, maxW / w0, maxH / h0), w = 0, h = 0, out = '', bytes = 0;
+        for (var scale = fit; scale >= fit * 0.5 - 1e-9; scale *= 0.85) {
+          w = Math.max(1, Math.round(w0 * scale)); h = Math.max(1, Math.round(h0 * scale));
+          var c = document.createElement('canvas'); c.width = w; c.height = h; var g = c.getContext('2d'); g.clearRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+          try { out = c.toDataURL('image/png'); } catch (e) { throw new Error('This picture could not be converted on this device (an SVG that loads other files cannot be); export it as PNG and choose that'); }
+          bytes = Photo.bytesOf(out); if (bytes <= maxBytes) return { data: out, w: w, h: h, bytes: bytes };
+        }
+        throw new Error('The picture is too detailed for the logo (' + Math.round(bytes / 1024) + ' KB even at ' + w + ' × ' + h + ' px; at most ' + Math.round(maxBytes / 1024) + ' KB): choose a flat PNG with few colours, not a photograph');
+      });
+    },
+    /** A square PNG of one size (the app icon 512, its favicon 64, the icon pack's sizes): the picture fits inside, centred, on a transparent ground or a colour (opts.background) with a margin (opts.pad, a fraction of the side — the maskable icon's safe zone). */
+    square: function (src, size, opts) {
+      opts = opts || {};
+      return Photo.load(src).then(function (img) {
+        var c = document.createElement('canvas'); c.width = size; c.height = size; var g = c.getContext('2d');
+        if (opts.background) { g.fillStyle = opts.background; g.fillRect(0, 0, size, size); } else g.clearRect(0, 0, size, size);
+        var inner = size * (1 - 2 * (opts.pad || 0)), w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height, k = Math.min(inner / w0, inner / h0), w = Math.round(w0 * k), h = Math.round(h0 * k);
+        g.drawImage(img, Math.round((size - w) / 2), Math.round((size - h) / 2), w, h);
+        var out = c.toDataURL('image/png'); return { data: out, w: size, h: size, bytes: Photo.bytesOf(out) };
+      });
+    },
+    /** An Image from a File, a Blob or a data URL. */
+    load: function (src) {
+      return new Promise(function (resolve, reject) {
+        var isFile = typeof Blob !== 'undefined' && src instanceof Blob, url = isFile ? URL.createObjectURL(src) : String(src || ''), img = new Image();
+        if (!url) { reject(new Error('Choose a picture')); return; }
+        if (isFile && src.type && !/^image\//.test(src.type)) { reject(new Error('Choose a picture (a PNG, JPG, WebP or SVG file)')); return; }
+        img.onload = function () { if (isFile) URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = function () { if (isFile) URL.revokeObjectURL(url); reject(new Error('The picture could not be read')); };
+        img.src = url;
+      });
+    },
+    /** The bytes a PNG data URL decodes to. */
+    bytesOf: function (dataUrl) { var m = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || '')); if (!m) return 0; var b = m[1]; return Math.floor(b.length * 3 / 4) - (b.endsWith('==') ? 2 : b.endsWith('=') ? 1 : 0); },
+    /** A data URL's bytes as a Uint8Array (the icon pack's files). */
+    toBytes: function (dataUrl) { var b64 = String(dataUrl || '').split(',')[1] || '', bin = atob(b64), out = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }
   };
 
   var Qr = {
@@ -1304,6 +1423,101 @@ window.MLS = (function () {
     return { register: register, go: go, current: function () { return current; }, paintNav: paintNav, refreshAll: refreshAll, fromHash: fromHash, check: check, registered: function () { return Object.keys(registry); }, allowed: allowed };
   })();
 
+  // ------------------------------------------------------------------ the brand (release 1.24.0, Stage 3 of the redesign)
+  /**
+   * The brand on every surface: the logo, the tagline, the favicon and the two brand colours. The texts and the colours come from the
+   * settings every device caches; the pictures do not travel in the settings (no picture is kept in a sheet): the settings name the
+   * version in use (BrandLogo.v, BrandLogoDark.v, BrandIconSet.favicon.v), and this device fetches a version it does not keep from
+   * branding.assets — once per change — and keeps the pictures in this browser's storage, so they show offline and on the sign-in
+   * card of the next visit (the monogram on a device that never signed in). A brand colour replaces the burgundy or the red only when
+   * white and ivory text on it read at 4.5:1 or better (the same check the server makes when it is saved); anything else leaves the
+   * stylesheet's own value.
+   */
+  var Brand = (function () {
+    var KEY = 'mls.brand', DEFAULTS = { primary: '#6D2322', action: '#A41C1E', tagline: 'Laundry management' }, PICTURES = ['logo', 'logoDark', 'favicon'];
+    var MARK_SVG = '<svg viewBox="0 0 40 40" focusable="false"><circle cx="20" cy="20" r="19"/><path d="M12 27V13l8 9 8-9v14" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    var FAVICON_SVG = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='11' fill='%236D2322'/><path d='M12 27V13l8 9 8-9v14' fill='none' stroke='%23FFF9E3' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/></svg>";
+    var PNG = /^data:image\/png;base64,[A-Za-z0-9+/=]+$/;
+    var kept = null, fetching = null;
+    function load() { try { var b = JSON.parse(localStorage.getItem(KEY) || 'null'); return b && typeof b === 'object' ? b : {}; } catch (e) { return {}; } }
+    function save(b) { try { localStorage.setItem(KEY, JSON.stringify(b)); } catch (e) { /* storage full or unavailable: the pictures are fetched again at the next sign-in */ } }
+    function state() { if (!kept) kept = Object.assign({ tagline: DEFAULTS.tagline }, load()); return kept; }
+    /** A kept picture's data URL: only a PNG data URL is ever shown. */
+    function data(p) { return p && typeof p === 'object' && typeof p.data === 'string' && PNG.test(p.data) ? p.data : ''; }
+    /** The versions the settings name: { logo, logoDark, favicon }, '' where none is set. */
+    function versions(st) {
+      st = st || {}; var v = function (x) { return x && typeof x === 'object' && x.v ? String(x.v) : ''; }, icon = st.BrandIconSet;
+      return { logo: v(st.BrandLogo), logoDark: v(st.BrandLogoDark), favicon: icon && typeof icon === 'object' ? v(icon.favicon) : '' };
+    }
+    /** Drops a picture the settings no longer name; true when a version is named that this device does not keep. A version the server had no file for is kept as asked (no picture), so it is not asked again on every repaint. */
+    function reconcile(b, want) {
+      var stale = false;
+      PICTURES.forEach(function (k) { if (!want[k]) b[k] = null; else if (!b[k] || b[k].v !== want[k]) stale = true; });
+      return stale;
+    }
+    var C = function () { return window.MLS_SHARED && window.MLS_SHARED.Colour; };
+    /** A colour the brand may use: a hex value white and ivory text read on at 4.5:1 or better; '' otherwise. */
+    function usable(hex) { var c = C(); if (!c || !hex) return ''; var h = c.normalize(hex); if (!h || c.contrast('#FFFFFF', h) < 4.5 || c.contrast('#FFF9E3', h) < 4.5) return ''; return h; }
+    /** Writes the two colours (and the shades the stylesheet derives from them) into the tokens, or removes the overrides so the stylesheet's own values apply. */
+    function applyColours(b) {
+      var root = document.documentElement.style, c = C(), p = usable(b && b.primary), a = usable(b && b.action);
+      var set = function (name, v) { if (v) root.setProperty(name, v); else root.removeProperty(name); };
+      set('--mls-primary', p); set('--mls-sidebar', p); set('--mls-primary-strong', p ? c.shade(p, .25) : ''); set('--mls-primary-ink', p ? c.shade(p, .35) : ''); set('--mls-primary-soft', p ? c.tint(p, .88) : ''); set('--mls-sidebar-active', p ? c.tint(p, .12) : '');
+      set('--bs-primary', p); set('--bs-link-color', p); set('--bs-link-hover-color', p ? c.shade(p, .25) : '');
+      set('--mls-action', a); set('--mls-action-strong', a ? c.shade(a, .15) : ''); set('--mls-focus', a ? c.alpha(a, .28) : ''); set('--bs-focus-ring-color', a ? c.alpha(a, .28) : '');
+      return { primary: p, action: a };
+    }
+    /** The colour printed documents use for the business name and the rules: BrandPrimary when it is in force, else burgundy. */
+    function primary() { var v = ''; try { v = getComputedStyle(document.documentElement).getPropertyValue('--mls-primary').trim(); } catch (e) { v = ''; } return /^#[0-9a-fA-F]{6}$/.test(v) ? v : DEFAULTS.primary; }
+    function img(src, alt) { var i = document.createElement('img'); i.src = src; i.alt = alt || ''; i.decoding = 'async'; return i; }
+    function fill(id, src, alt) { var el = UI.el(id); if (!el) return; el.textContent = ''; if (src) el.appendChild(img(src, alt)); }
+    /** Paints the brand blocks from what this device keeps: the frame shows the logo and the monogram hides; without a logo the monogram stays. The sidebar prefers the version for dark backgrounds and otherwise puts the logo on an ivory plate. */
+    function paint() {
+      var b = state(), name = b.name || 'Mrs Laundry Sys', logo = data(b.logo), dark = data(b.logoDark), fav = data(b.favicon), auth = UI.el('auth-brand'), side = UI.el('sidebar');
+      if (auth) { auth.classList.toggle('has-logo', !!logo); fill('auth-logo', logo, name); }
+      if (side) { side.classList.toggle('has-logo', !!(dark || logo)); fill('sidebar-logo', dark || logo, name); var f = UI.el('sidebar-logo'); if (f) f.classList.toggle('dark', !!dark); }
+      var tb = UI.el('topbar-brand'); if (tb) { var small = fav || logo; if (small) { tb.textContent = ''; tb.appendChild(img(small, '')); } else tb.innerHTML = '<span class="brand-mark">' + MARK_SVG + '</span>'; }
+      ['auth-tagline', 'sidebar-tagline'].forEach(function (id) { var el = UI.el(id); if (el) { el.textContent = b.tagline || ''; el.hidden = !b.tagline; } });
+      var link = document.querySelector('link[rel="icon"]'); if (link) link.href = fav || FAVICON_SVG;
+      applyColours(b);
+    }
+    /** The pictures this device does not keep yet, from branding.assets (any signed-in user; once per change). Resolves when they are kept and painted, or when the request failed (the old copy stays). */
+    function fetchAssets() {
+      if (fetching) return fetching;
+      fetching = Api.call('branding.assets', {}, { noRedirect: true }).then(function (r) {
+        var b = state();
+        PICTURES.forEach(function (k) { var x = r && r[k]; b[k] = x && x.v ? { v: String(x.v), data: PNG.test(String(x.data || '')) ? x.data : '' } : null; });  // a version without a file (gone from Drive): kept as asked, shown as no picture
+        save(b); paint();
+      }).catch(function () { /* offline or refused: the copy this device keeps stays until the next sign-in or settings refresh */ }).then(function () { fetching = null; });
+      return fetching;
+    }
+    /** From the sign-in context (every repaint): the texts and colours from the settings, the pictures kept or fetched once. Returns a promise that resolves when the brand is current. */
+    function fromMe(me) {
+      if (!me || !me.settings) return Promise.resolve();
+      var st = me.settings, b = state();
+      b.name = st.BusinessName || ''; b.tagline = st.BrandTagline === undefined || st.BrandTagline === null ? DEFAULTS.tagline : String(st.BrandTagline); b.primary = st.BrandPrimary || ''; b.action = st.BrandAction || '';
+      var stale = reconcile(b, versions(st)); save(b); paint();
+      return stale ? fetchAssets() : Promise.resolve();
+    }
+    /** The sign-in card: the copy this device kept, then the server's name, tagline and colours when setupStatus answers (its `brand`); a picture it says was removed is dropped, a newer one is fetched after the sign-in. */
+    function paintAuth(status) {
+      var b = state();
+      if (status) {
+        if (status.businessName) b.name = status.businessName; var br = status.brand || {};
+        if (br.tagline !== undefined) b.tagline = String(br.tagline || ''); if (br.primary !== undefined) b.primary = br.primary || ''; if (br.action !== undefined) b.action = br.action || '';
+        PICTURES.forEach(function (k) { if (br[k] !== undefined && !br[k]) b[k] = null; });
+        save(b);
+      }
+      paint(); return b;
+    }
+    /** After an upload on this device: the picture it just converted is kept as the version the server gave it, so nothing is fetched back. */
+    function keep(k, v, url) { if (PICTURES.indexOf(k) < 0) return; var b = state(); b[k] = v && PNG.test(String(url || '')) ? { v: String(v), data: url } : null; save(b); paint(); }
+    /** What this device keeps now: { logo, logoDark, favicon } as data URLs ('' when none). */
+    function pictures() { var b = state(); return { logo: data(b.logo), logoDark: data(b.logoDark), favicon: data(b.favicon) }; }
+    function ready() { return fetching || Promise.resolve(); }
+    return { fromMe: fromMe, paintAuth: paintAuth, keep: keep, pictures: pictures, ready: ready, versions: versions, applyColours: applyColours, usable: usable, primary: primary, MARK_SVG: MARK_SVG, FAVICON_SVG: FAVICON_SVG, DEFAULTS: DEFAULTS };
+  })();
+
   // ------------------------------------------------------------------ auth flows
   var Auth = (function () {
     function can(code) { return !!(AppState.me && AppState.me.permissions && AppState.me.permissions.indexOf(code) >= 0); }
@@ -1313,8 +1527,9 @@ window.MLS = (function () {
       UI.hide('app'); UI.hide('boot-screen'); UI.show('auth-screen'); document.body.classList.remove('sidebar-open');
       if (message) { var n = UI.el('auth-note'); n.textContent = message; n.hidden = false; }
       try { document.dispatchEvent(new CustomEvent('mls:authscreen')); } catch (e) { /* older engines */ }
+      Brand.paintAuth();  // 1.24.0: the logo, tagline and colours this device kept, before the server answers
       Api.call('auth.setupStatus', {}, { noRedirect: true }).then(function (s) {
-        UI.el('auth-business').textContent = s.businessName || 'Mrs Laundry Sys';
+        UI.el('auth-business').textContent = s.businessName || 'Mrs Laundry Sys'; Brand.paintAuth(s);
         if (!s.initialized) onlyPanel('panel-uninitialized'); else if (!s.hasAdmin) onlyPanel('panel-setup'); else { onlyPanel('panel-login'); setTimeout(function () { var u = UI.el('login-username'); if (u && (!document.activeElement || document.activeElement === document.body)) u.focus(); }, 50); }
       }).catch(function (e) { if (e && (e.code === 'NETWORK' || e.code === 'TIMEOUT' || e.code === 'NO_SERVER')) showOffline(e); else { onlyPanel('panel-login'); Toast.danger(UI.error(e)); } });
     }
@@ -1350,6 +1565,7 @@ window.MLS = (function () {
       var me = AppState.me;
       UI.el('user-name').textContent = me.user.DisplayName; UI.el('user-role').textContent = me.user.RoleName; UI.el('user-avatar').textContent = UI.initials(me.user.DisplayName);
       UI.el('sidebar-business').textContent = me.settings.BusinessName || 'Mrs Laundry Sys'; UI.el('sidebar-version').textContent = 'v' + me.app.version;
+      Brand.fromMe(me);  // 1.24.0: the tagline and the brand colours from the cached settings; the logo, its sidebar version and the favicon kept on this device, fetched once when the settings name a newer version
       // the page in this browser and the server it talks to must come from the same release; after an update the open page is the older one
       if (me.app.version !== VERSION && !paintIdentity.warned && AppState.meFrom !== 'saved') { paintIdentity.warned = true; Toast.warning('This page is release ' + VERSION + ' but the server runs ' + me.app.version + '. Reload the page (F5) to pick up the update.', 12000); }
     }
@@ -1560,11 +1776,12 @@ window.MLS = (function () {
   function boot() {
     wireShell(); Pwa.init(); Net.init();
     var b = Pwa.info(); var v = UI.el('auth-build'); if (v) v.textContent = 'v' + VERSION + (b.build ? ' · build ' + b.build : '') + (HOST === 'pwa' ? ' · installed app' : '');
+    Brand.paintAuth();  // 1.24.0: the brand this device kept, so the colours and the favicon are right before the first answer
     start();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else setTimeout(boot, 0);
 
-  return { version: VERSION, phase: APP_PHASE, host: HOST, MODULES: MODULES, AppState: AppState, Api: Api, Net: Net, Pwa: Pwa, Notify: Notify, Timing: Timing, runDeviceCheck: runDeviceCheck, UI: UI, Toast: Toast, Modal: Modal, Form: Form, Validator: Validator, Formatter: Formatter, Table: Table, Print: Print, Photo: Photo, Qr: Qr, Keys: Keys, Router: Router, Auth: Auth, openDevice: openDevice, start: start };
+  return { version: VERSION, phase: APP_PHASE, host: HOST, MODULES: MODULES, AppState: AppState, Api: Api, Net: Net, Pwa: Pwa, Notify: Notify, Timing: Timing, runDeviceCheck: runDeviceCheck, UI: UI, Toast: Toast, Modal: Modal, Form: Form, Validator: Validator, Formatter: Formatter, Table: Table, Print: Print, Photo: Photo, Qr: Qr, Keys: Keys, Router: Router, Auth: Auth, Brand: Brand, openDevice: openDevice, start: start };
 })();
 </script>
 
@@ -2334,7 +2551,8 @@ window.MLS = (function () {
 
   <section id="auth-screen" hidden>
     <div class="auth-card">
-      <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="10" fill="none" stroke="white" stroke-width="3"/><path d="M13 21c2.5-2.5 5-2.5 7 0s4.5 2.5 7 0" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg></span><span><span class="brand-name d-block" id="auth-business">Mrs Laundry Sys</span><span class="brand-sub">Point of sale and laundry management</span></span></div>
+      <!-- release 1.24.0: the monogram until a logo is uploaded (Settings → Branding); the logo and the tagline come from the settings this device keeps (App.html → Brand) -->
+      <div class="brand auth-brand" id="auth-brand"><span class="brand-logo img-frame" id="auth-logo"></span><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" focusable="false"><circle cx="20" cy="20" r="19"/><path d="M12 27V13l8 9 8-9v14" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><span class="brand-name d-block" id="auth-business">Mrs Laundry Sys</span><span class="brand-sub" id="auth-tagline">Laundry management</span></span></div>
       <div class="alert alert-info py-2 small mt-3 mb-0" id="auth-note" hidden></div>
       <div class="alert alert-warning py-2 small mt-2 mb-0" id="auth-queue-note" hidden></div>
 
@@ -2387,7 +2605,7 @@ window.MLS = (function () {
   <div id="app" hidden>
     <a class="skip-link" href="#main-content">Skip to content</a>
     <aside id="sidebar" aria-label="Main navigation">
-      <a class="brand" href="#/dashboard"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="10" fill="none" stroke="white" stroke-width="3"/><path d="M13 21c2.5-2.5 5-2.5 7 0s4.5 2.5 7 0" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg></span><span class="brand-text"><span class="brand-name d-block" id="sidebar-business">Mrs Laundry Sys</span><span class="brand-sub">Laundry management</span></span></a>
+      <a class="brand" href="#/dashboard" id="sidebar-brand"><span class="brand-logo img-frame" id="sidebar-logo"></span><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" focusable="false"><circle cx="20" cy="20" r="19"/><path d="M12 27V13l8 9 8-9v14" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="brand-text"><span class="brand-name d-block" id="sidebar-business">Mrs Laundry Sys</span><span class="brand-sub" id="sidebar-tagline">Laundry management</span></span></a>
       <ul id="main-nav"></ul>
       <div class="sidebar-foot" id="sidebar-version"></div>
     </aside>
@@ -2395,6 +2613,7 @@ window.MLS = (function () {
     <div id="app-body">
       <header id="topbar">
         <button class="btn btn-outline-secondary btn-sm" id="hamburger" type="button" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button>
+        <span class="topbar-brand img-frame" id="topbar-brand" aria-hidden="true"><span class="brand-mark"><svg viewBox="0 0 40 40" focusable="false"><circle cx="20" cy="20" r="19"/><path d="M12 27V13l8 9 8-9v14" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
         <h1 class="page-title" id="page-title">Dashboard</h1>
         <div class="topbar-right">
           <span class="net-badge net-unknown" id="net-badge" role="status" aria-live="polite" hidden><i class="fa-solid fa-circle" aria-hidden="true"></i><span id="net-badge-text"></span></span>
@@ -3041,11 +3260,12 @@ window.MLS = (function () {
   // ------------------------------------------------------------ receipt
   function receiptHtml(d, forPrint) {
     var b = d.business, o = d.order, esc = UI.esc, sym = b.currencySymbol || '₱';
+    var logo = b.paperSize && b.paperSize !== '80mm' && M.Brand ? M.Brand.pictures().logo : '';  // 1.24.0: the logo on a full-page receipt; a thermal roll stays text only
     var money = function (n) { var v = Number(n) || 0; return (v < 0 ? '-' : '') + sym + Math.abs(v).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
     var lines = d.items.map(function (i) { var q = i.LineType === 'SERVICE' && i.WeightKg ? F.qty(i.WeightKg, 'kg') + (Number(i.Qty) !== Number(i.WeightKg) ? ' (billed ' + F.qty(i.Qty, i.Unit) + ')' : '') : F.qty(i.Qty, i.Unit); return '<div class="row"><span>' + esc(i.Description) + '</span><span>' + money(i.LineTotal) + '</span></div><div class="row muted"><span>' + esc(q) + ' × ' + money(i.UnitPrice) + '</span><span></span></div>'; }).join('');
     var pays = d.payments.map(function (p) { return '<div class="row"><span>' + (p.Type === 'REFUND' ? 'Refund ' : 'Paid ') + esc(methodLabel(p.Method)) + (p.ReferenceNo ? ' ' + esc(p.ReferenceNo) : '') + '</span><span>' + (p.Type === 'REFUND' ? '-' : '') + money(p.Amount) + '</span></div>'; }).join('');
     var html = '<div class="receipt-paper' + (forPrint ? '' : '') + '">' +
-      '<div class="c big">' + esc(b.name) + '</div>' + (d.branch.name ? '<div class="c">' + esc(d.branch.name) + '</div>' : '') + (b.header ? '<div class="c">' + esc(b.header) + '</div>' : '') +
+      (logo ? '<div class="c logo"><img src="' + logo + '" alt=""></div>' : '') + '<div class="c big">' + esc(b.name) + '</div>' + (d.branch.name ? '<div class="c">' + esc(d.branch.name) + '</div>' : '') + (b.header ? '<div class="c">' + esc(b.header) + '</div>' : '') +
       (b.address ? '<div class="c">' + esc(b.address) + '</div>' : '') + (b.phone ? '<div class="c">' + esc(b.phone) + '</div>' : '') + (b.taxId ? '<div class="c">TIN ' + esc(b.taxId) + '</div>' : '') +
       (d.provisional ? '<div class="provisional">PROVISIONAL RECEIPT<small>Reference ' + esc(o.ProvisionalRef || o.OrderNo) + ' · taken while the shop\'s system was offline. The order number follows once it is synced; keep this slip.</small></div>' : '') +
       '<hr><div class="row"><span>' + (d.provisional ? 'Reference' : 'Order') + '</span><span><b>' + esc(o.OrderNo) + '</b></span></div>' + (!d.provisional && o.ProvisionalRef ? '<div class="row muted"><span>Taken offline as</span><span>' + esc(o.ProvisionalRef) + '</span></div>' : '') + '<div class="row"><span>Date</span><span>' + esc(F.datetime(o.CreatedAt)) + '</span></div>' + (o.DueAt ? '<div class="row"><span>Due</span><span>' + esc(F.datetime(o.DueAt)) + '</span></div>' : '') +
@@ -6884,7 +7104,7 @@ window.MLS = (function () {
   function paintChart(c) {
     var card = UI.el('rp-chart-card'); if (chart) { try { chart.destroy(); } catch (e) { /* ignore */ } chart = null; }
     if (!c || !window.Chart || !c.labels.length) { card.hidden = true; return; }
-    card.hidden = false; var colors = ['#0f766e', '#f59e0b', '#dc2626', '#0284c7', '#7c3aed', '#16a34a'];
+    card.hidden = false; var colors = ['#6D2322', '#8A5A00', '#2F5E8E', '#1E6A3C', '#A41C1E', '#817A73'];  // 1.24.0: the palette's burgundy, amber, blue, green, red and grey — six series tell apart
     try {
       chart = new window.Chart(UI.el('rp-chart').getContext('2d'), { type: c.type, data: { labels: c.labels, datasets: c.datasets.map(function (ds, i) { return { label: ds.label, data: ds.data, backgroundColor: colors[i % colors.length] + (c.type === 'line' ? '33' : ''), borderColor: colors[i % colors.length], borderWidth: 2, tension: .3, fill: c.type === 'line' }; }) }, options: { responsive: true, maintainAspectRatio: true, animation: false, aspectRatio: window.innerWidth < 576 ? 1.4 : 3.2, plugins: { legend: { display: c.datasets.length > 1, position: 'bottom' } }, scales: { x: { stacked: !!c.stacked, ticks: { maxRotation: 0, autoSkip: true } }, y: { stacked: !!c.stacked, beginAtZero: true } } } });
     } catch (e) { card.hidden = true; }
@@ -6934,7 +7154,7 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — SettingsPage.html: Settings & Profile: the signed-in person's profile, sessions and password; business and receipt settings; branches; users; roles and the permission editor; every settings group; the maintenance panel. Admin tabs appear by permission; the server decides regardless. -->
+        <!-- Mrs Laundry Sys — SettingsPage.html: Settings & Profile: the signed-in person's profile, sessions and password; business and receipt settings; the brand (1.24.0: name, tagline, logo, icon, colours); branches; users; roles and the permission editor; every settings group; the maintenance panel. Admin tabs appear by permission; the server decides regardless. -->
 <section id="view-settings" class="view" hidden>
   <div class="view-head">
     <h2>Settings &amp; Profile</h2>
@@ -7063,7 +7283,7 @@ window.MLS = (function () {
   var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Form = M.Form;
   var can = function (c) { return M.Auth.can(c); };
   var state = { tab: 'profile', group: '', usersSearch: '', usersStatus: 'ALL', roleId: '' }, cache = { settings: null, roles: null, users: null, branches: null };
-  var TABS = [['profile', 'Profile', function () { return true; }], ['business', 'Business', function () { return can('SETTINGS_VIEW'); }], ['branches', 'Branches', function () { return can('SETTINGS_VIEW') || can('BRANCH_MANAGE'); }], ['users', 'Users', function () { return can('USER_MANAGE'); }], ['roles', 'Roles', function () { return can('USER_MANAGE') || can('SETTINGS_VIEW'); }], ['settings', 'Settings', function () { return can('SETTINGS_VIEW'); }], ['sms', 'SMS templates', function () { return can('SMS_VIEW_TEMPLATES'); }], ['maintenance', 'Maintenance', function () { return can('DATABASE_ADMIN'); }]];
+  var TABS = [['profile', 'Profile', function () { return true; }], ['business', 'Business', function () { return can('SETTINGS_VIEW'); }], ['branding', 'Branding', function () { return can('SETTINGS_VIEW'); }], ['branches', 'Branches', function () { return can('SETTINGS_VIEW') || can('BRANCH_MANAGE'); }], ['users', 'Users', function () { return can('USER_MANAGE'); }], ['roles', 'Roles', function () { return can('USER_MANAGE') || can('SETTINGS_VIEW'); }], ['settings', 'Settings', function () { return can('SETTINGS_VIEW'); }], ['sms', 'SMS templates', function () { return can('SMS_VIEW_TEMPLATES'); }], ['maintenance', 'Maintenance', function () { return can('DATABASE_ADMIN'); }]];
   var BUSINESS_GROUPS = ['Business', 'Receipts'];
   function me() { return M.AppState.me; }
   function body() { return UI.el('set-body'); }
@@ -7078,7 +7298,7 @@ window.MLS = (function () {
   function showTab() {
     var allowed = TABS.filter(function (t) { return t[2](); }).map(function (t) { return t[0]; }); if (allowed.indexOf(state.tab) < 0) state.tab = 'profile';
     UI.el('set-scope').textContent = TABS.filter(function (t) { return t[0] === state.tab; })[0][1];
-    ({ profile: tabProfile, business: tabBusiness, branches: tabBranches, users: tabUsers, roles: tabRoles, settings: tabSettings, sms: tabSms, maintenance: tabMaintenance }[state.tab] || tabProfile)();
+    ({ profile: tabProfile, business: tabBusiness, branding: tabBranding, branches: tabBranches, users: tabUsers, roles: tabRoles, settings: tabSettings, sms: tabSms, maintenance: tabMaintenance }[state.tab] || tabProfile)();
   }
 
   // ---------------------------------------------------------------- profile
@@ -7108,6 +7328,7 @@ window.MLS = (function () {
     if (s.ValueType === 'BOOLEAN') return '<div class="col-md-6 set-field" data-key="' + s.Key + '"><div class="form-check form-switch mt-1"><input class="form-check-input" type="checkbox" role="switch" id="' + name + '" data-key="' + s.Key + '"' + (s.Value ? ' checked' : '') + dis + '><label class="form-check-label fw-semibold" for="' + name + '">' + UI.esc(s.Key.replace(/([a-z])([A-Z])/g, '$1 $2')) + '</label></div>' + help + '</div>';
     if (s.ValueType === 'NUMBER') input = '<input class="form-control" type="number" inputmode="decimal" step="' + (r.integer ? '1' : 'any') + '"' + (r.min !== undefined ? ' min="' + r.min + '"' : '') + (r.max !== undefined ? ' max="' + r.max + '"' : '') + ' id="' + name + '" data-key="' + s.Key + '" value="' + UI.esc(s.Value) + '"' + dis + '>';
     else if (s.ValueType === 'SECRET') input = '<div class="input-group"><input class="form-control" type="password" autocomplete="new-password" id="' + name + '" data-key="' + s.Key + '" placeholder="' + (s.IsSet ? 'set — leave blank to keep' : 'not set') + '"' + dis + '><span class="input-group-text">' + (s.IsSet ? '<span class="status-badge s-paid">set</span>' : '<span class="status-badge">empty</span>') + '</span></div>' + (s.IsSet && canEdit ? '<div class="form-check mt-1"><input class="form-check-input" type="checkbox" id="' + name + '-clear" data-clear="' + s.Key + '"><label class="form-check-label small" for="' + name + '-clear">Clear the stored value</label></div>' : '');
+    else if (r.kind === 'managed') return '<div class="col-md-6 set-field" data-key="' + s.Key + '">' + label + '<div class="form-control-plaintext small">' + (s.IsSet ? '<span class="status-badge s-paid">set</span> ' + UI.esc((s.Value && s.Value.w ? s.Value.w + ' × ' + s.Value.h + ' px · ' : '') + (s.Value && s.Value.bytes ? Math.round(s.Value.bytes / 1024) + ' KB' : '')) : '<span class="status-badge">not set</span>') + ' · maintained under <a href="#/settings" data-go-tab="' + UI.esc(r.managedIn.toLowerCase()) + '">' + UI.esc(r.managedIn) + '</a></div>' + help + '</div>';  // 1.24.0
     else if (s.ValueType === 'JSON') {
       if (r.kind === 'codes' || r.kind === 'list' || r.kind === 'numbers') input = '<input class="form-control" id="' + name + '" data-key="' + s.Key + '" data-kind="list" value="' + UI.esc((Array.isArray(s.Value) ? s.Value : []).join(', ')) + '"' + dis + ' placeholder="comma-separated">';
       else if (r.kind === 'labels') input = '<div class="label-grid" data-key="' + s.Key + '" data-kind="labels">' + (r.keys || []).map(function (k) { return '<span class="small text-soft">' + UI.esc(F.status(k)) + '</span><input class="form-control form-control-sm" data-label="' + k + '" value="' + UI.esc((s.Value || {})[k] || '') + '"' + dis + '>'; }).join('') + '</div>';
@@ -7155,7 +7376,172 @@ window.MLS = (function () {
       var g = groups.filter(function (x) { return x.Group === state.group; })[0];
       body().innerHTML = '<div class="chips" id="set-groups">' + groups.map(function (x) { return '<button type="button" data-group="' + UI.esc(x.Group) + '"' + (x.Group === state.group ? ' class="active"' : '') + '>' + UI.esc(x.Group) + ' <span class="count">' + x.Settings.length + '</span></button>'; }).join('') + '</div>' + (g ? card(g.Group + ' settings', groupForm(g, d.canEdit)) : '');
       body().querySelectorAll('#set-groups button').forEach(function (b) { b.onclick = function () { state.group = b.getAttribute('data-group'); tabSettings(); }; }); wireGroupForms(body());
+      body().querySelectorAll('[data-go-tab]').forEach(function (b) { b.onclick = function (ev) { ev.preventDefault(); state.tab = b.getAttribute('data-go-tab'); paintTabs(); showTab(); }; });  // 1.24.0: a managed setting points at its own tab
     }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
+  }
+
+  // ---------------------------------------------------------------- branding (release 1.24.0, Stage 3 of the redesign)
+  /**
+   * Settings → Branding: the name and tagline, the logo (and its version for the burgundy sidebar), the app icon, the two brand
+   * colours and a live preview. Pictures are converted on this device (App.html → Photo.toPng / Photo.square): a PNG inside the
+   * box the server accepts, shown here before anything is sent; the server keeps the file in Drive and its compact copy in the
+   * settings every device caches. The icon pack (the four files the installed app's home screen needs) is made here too and goes
+   * into the next release by hand — browsers read those icons from the build, never from a setting.
+   */
+  var br = { data: null, logo: null, dark: null, icon: null };
+  var BR_LOGO_BOX = { maxW: 480, maxH: 160, maxBytes: 30 * 1024 }, BR_ICON = 512, BR_FAVICON = 64;
+  function brMark(cls) { return '<span class="brand-mark' + (cls ? ' ' + cls : '') + '" aria-hidden="true">' + M.Brand.MARK_SVG + '</span>'; }
+  function brInfo(m) { return m ? m.w + ' × ' + m.h + ' px · ' + Math.max(1, Math.round((m.bytes || 0) / 1024)) + ' KB' + (m.at ? ' · set ' + F.datetime(m.at) : '') + (m.by ? ' by ' + UI.esc(m.by) : '') : ''; }
+  function brFrame(id, src, cls, empty) { return '<div class="img-frame border br-frame' + (cls ? ' ' + cls : '') + '" id="' + id + '">' + (src ? '<img src="' + src + '" alt="">' : (empty || '')) + '</div>'; }
+  function brFileButton(id, label, dis) { return '<label class="btn btn-outline-primary btn-sm mb-0' + (dis ? ' disabled' : '') + '"><i class="fa-solid fa-image me-1"></i>' + label + '<input type="file" id="' + id + '" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" hidden' + (dis ? ' disabled' : '') + '></label>'; }
+  function brColourRow(key, label, value, dflt, hint, dis) {
+    var v = value || dflt;
+    return '<div class="col-md-6"><label class="form-label" for="br-' + key + '-hex">' + label + '</label><div class="d-flex align-items-center gap-2"><input type="color" class="form-control form-control-color" id="br-' + key + '" value="' + UI.esc(v) + '" aria-label="' + label + ' picker"' + dis + '><input class="form-control font-monospace br-hex" id="br-' + key + '-hex" maxlength="7" value="' + UI.esc(value || '') + '" placeholder="' + dflt + '"' + dis + '><button type="button" class="btn btn-outline-secondary btn-sm" data-br-standard="' + key + '"' + dis + '>Standard</button></div><div class="form-text">' + hint + '</div><div class="small mt-1" id="br-' + key + '-contrast"></div></div>';
+  }
+  function tabBranding() {
+    body().innerHTML = '<div class="text-soft small">Loading…</div>';
+    Api.call('branding.get').then(function (d) {
+      if (state.tab !== 'branding') return;
+      br = { data: d, logo: null, dark: null, icon: null };
+      var canEdit = !!d.canEdit, dis = canEdit ? '' : ' disabled';
+      var ro = canEdit ? '' : '<p class="small text-soft mt-2 mb-0">Read only: changing the brand needs the SETTINGS_EDIT permission.</p>';
+      var kept = M.Brand.pictures(), logo = kept.logo, dark = kept.logoDark, fav = kept.favicon;  // the pictures this device keeps (no picture travels in the settings)
+      var textCard = '<div class="row g-3"><div class="col-md-6"><label class="form-label" for="br-name">Business name</label><input class="form-control" id="br-name" maxlength="80" value="' + UI.esc(d.name) + '"' + dis + '><div class="form-text">On the sign-in card, in the sidebar, on receipts and reports.</div></div>' +
+        '<div class="col-md-6"><label class="form-label" for="br-tagline">Tagline</label><input class="form-control" id="br-tagline" maxlength="60" value="' + UI.esc(d.tagline) + '"' + dis + '><div class="form-text">Under the name on the sign-in card and in the sidebar; blank for none.</div></div></div>' +
+        (canEdit ? '<div class="d-flex align-items-center gap-2 mt-3"><button type="button" class="btn btn-primary btn-sm" id="br-save-text"><i class="fa-solid fa-floppy-disk me-1"></i>Save name and tagline</button><span class="small text-danger" id="br-text-error"></span></div>' : ro);
+      var prev = d.previous ? '<button type="button" class="btn btn-outline-secondary btn-sm" id="br-logo-restore"><i class="fa-solid fa-rotate-left me-1"></i>Restore the previous logo</button>' : '';
+      var logoCard = '<div class="row g-3"><div class="col-lg-6"><div class="small fw-semibold mb-1">In use</div>' + brFrame('br-logo-now', logo, '', '<span class="small text-soft px-2">None — the monogram shows</span>') + '<div class="small text-soft mt-1" id="br-logo-info">' + (d.logo ? brInfo(d.logo) : 'A PNG, JPG, WebP or SVG; it is resized here to at most 480 × 160 px and must stay under 30 KB (a flat logo does).') + '</div>' +
+        '<div class="d-flex flex-wrap gap-2 mt-2">' + brFileButton('br-logo-file', 'Choose a logo…', !canEdit) + (d.logo && canEdit ? '<button type="button" class="btn btn-outline-danger btn-sm" id="br-logo-remove"><i class="fa-solid fa-xmark me-1"></i>Remove</button>' : '') + (canEdit ? prev : '') + '</div>' +
+        (d.previous ? '<div class="small text-soft mt-1">The previous logo is kept ' + d.previous.keptDays + ' days from ' + UI.esc(F.datetime(d.previous.at)) + '.</div>' : '') + '</div>' +
+        (canEdit ? '<div class="col-lg-6" id="br-logo-new" hidden><div class="small fw-semibold mb-1">Ready to use</div><div id="br-logo-new-frame"></div><div class="small text-soft mt-1" id="br-logo-new-info"></div><div class="d-flex flex-wrap gap-2 mt-2"><button type="button" class="btn btn-primary btn-sm" id="br-logo-use"><i class="fa-solid fa-check me-1"></i>Use this logo</button><button type="button" class="btn btn-outline-secondary btn-sm" id="br-logo-cancel">Cancel</button></div></div>' : '') + '</div>' +
+        '<hr class="my-3"><div class="small fw-semibold mb-1">For the burgundy sidebar <span class="text-soft fw-normal">(optional)</span></div><p class="small text-soft mb-2">Without it the sidebar shows the logo above on an ivory plate. Upload a version with light artwork on a transparent background and it sits on the burgundy itself.</p>' +
+        '<div class="row g-3"><div class="col-lg-6">' + brFrame('br-dark-now', dark, 'dark', '<span class="small px-2 text">None</span>') + '<div class="small text-soft mt-1" id="br-dark-info">' + (d.logoDark ? brInfo(d.logoDark) : '') + '</div><div class="d-flex flex-wrap gap-2 mt-2">' + brFileButton('br-dark-file', 'Choose a version for dark backgrounds…', !canEdit) + (d.logoDark && canEdit ? '<button type="button" class="btn btn-outline-danger btn-sm" id="br-dark-remove"><i class="fa-solid fa-xmark me-1"></i>Remove</button>' : '') + '</div></div>' +
+        (canEdit ? '<div class="col-lg-6" id="br-dark-new" hidden><div class="small fw-semibold mb-1">Ready to use</div><div id="br-dark-new-frame"></div><div class="small text-soft mt-1" id="br-dark-new-info"></div><div class="d-flex flex-wrap gap-2 mt-2"><button type="button" class="btn btn-primary btn-sm" id="br-dark-use"><i class="fa-solid fa-check me-1"></i>Use this version</button><button type="button" class="btn btn-outline-secondary btn-sm" id="br-dark-cancel">Cancel</button></div></div>' : '') + '</div>' + ro;
+      var iconCard = '<div class="row g-3"><div class="col-lg-6"><div class="small fw-semibold mb-1">In use</div><div class="d-flex align-items-center gap-3">' + brFrame('br-icon-now', fav, 'icon', brMark()) + '<div class="small text-soft" id="br-icon-info">' + (d.icon ? brInfo(d.icon) : 'The browser-tab icon at once; the home-screen icon of the installed app at the next release. Square works best; it is fitted into 512 × 512 px here.') + '</div></div>' +
+        '<div class="d-flex flex-wrap gap-2 mt-2">' + brFileButton('br-icon-file', 'Choose an icon…', !canEdit) + (d.icon && canEdit ? '<button type="button" class="btn btn-outline-danger btn-sm" id="br-icon-remove"><i class="fa-solid fa-xmark me-1"></i>Remove</button>' : '') + (canEdit ? '<button type="button" class="btn btn-outline-secondary btn-sm" id="br-icon-pack"' + (d.icon ? '' : ' disabled') + '><i class="fa-solid fa-download me-1"></i>Download icon pack</button>' : '') + '</div>' +
+        '<div class="small text-soft mt-2">The icon pack is a zip with icon-192.png, icon-512.png, icon-maskable-512.png and apple-touch-icon.png, made on this device from the icon in use. Send it with the next release (or put the files in tests/pwa/icons/): phones show the new home-screen icon after <b>Update now</b>, on some Android versions only after a reinstall.</div></div>' +
+        (canEdit ? '<div class="col-lg-6" id="br-icon-new" hidden><div class="small fw-semibold mb-1">Ready to use</div><div class="d-flex align-items-center gap-3"><div id="br-icon-new-frame"></div><div id="br-icon-new-fav"></div></div><div class="small text-soft mt-1" id="br-icon-new-info"></div><div class="d-flex flex-wrap gap-2 mt-2"><button type="button" class="btn btn-primary btn-sm" id="br-icon-use"><i class="fa-solid fa-check me-1"></i>Use this icon</button><button type="button" class="btn btn-outline-secondary btn-sm" id="br-icon-cancel">Cancel</button></div></div>' : '') + '</div>' + ro;
+      var coloursCard = '<div class="row g-3">' + brColourRow('primary', 'Brand colour', d.primary, d.defaults.primary, 'The sidebar, links and outline buttons. Standard: burgundy ' + d.defaults.primary + '.', dis) + brColourRow('action', 'Action colour', d.action, d.defaults.action, 'The one primary button per screen (applied by the next stage of the redesign; the preview shows it). Standard: rich red ' + d.defaults.action + '.', dis) + '</div>' +
+        '<p class="small text-soft mt-2 mb-0">A colour is accepted only when white and ivory text read on it at 4.5:1 or better — the same check the server makes — so no choice can make a button unreadable. Everything else (text, surfaces, states) stays fixed.</p>' +
+        (canEdit ? '<div class="d-flex align-items-center gap-2 mt-3"><button type="button" class="btn btn-primary btn-sm" id="br-save-colours"><i class="fa-solid fa-floppy-disk me-1"></i>Save colours</button><span class="small text-danger" id="br-colours-error"></span></div>' : ro);
+      body().innerHTML = card('Name and tagline', textCard) + card('Logo', logoCard) + card('App icon', iconCard) + card('Brand colours', coloursCard) + card('Preview', '<div id="br-preview"></div><p class="small text-soft mt-2 mb-0">The sign-in card, the sidebar head and a printed header with what is on this screen now — saved or not. Every device takes a saved change at its next sign-in or settings refresh.</p>');
+      wireBranding(canEdit); brPreview();
+    }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
+  }
+  /** What the preview and the colour lines read: the fields as they stand, the pictures converted but not yet sent, else the ones in use. */
+  function brCurrent() {
+    var kept = M.Brand.pictures(), C = window.MLS_SHARED.Colour, d = br.data || { defaults: M.Brand.DEFAULTS };
+    var hex = function (key) { var el = UI.el('br-' + key + '-hex'); var v = el ? el.value.trim() : ''; return v ? (C.normalize(v) || v) : ''; };
+    return { name: (UI.el('br-name') ? UI.el('br-name').value : '') || d.name || 'Mrs Laundry Sys', tagline: UI.el('br-tagline') ? UI.el('br-tagline').value : (d.tagline || ''),
+      logo: br.logo ? br.logo.data : kept.logo, dark: br.dark ? br.dark.data : kept.logoDark, favicon: br.icon ? br.icon.favicon.data : kept.favicon,
+      primary: hex('primary'), action: hex('action'), defaults: d.defaults || M.Brand.DEFAULTS };
+  }
+  function brContrastLine(key, value, dflt) {
+    var el = UI.el('br-' + key + '-contrast'); if (!el) return true;
+    var C = window.MLS_SHARED.Colour, v = value || dflt, h = C.normalize(v);
+    if (!h) { el.innerHTML = '<span class="text-danger">Not a hex colour — write it as #RRGGBB.</span>'; return false; }
+    var cw = C.contrast('#FFFFFF', h), ci = C.contrast('#FFF9E3', h), ok = cw >= 4.5 && ci >= 4.5;
+    el.innerHTML = '<span class="' + (ok ? 'text-success' : 'text-danger') + '">' + (value ? '' : 'Standard · ') + 'white text ' + cw + ':1 · ivory text ' + ci + ':1 — ' + (ok ? 'readable' : 'too light: both need 4.5:1 or better') + '</span>';
+    return ok;
+  }
+  function brPreview() {
+    var host = UI.el('br-preview'); if (!host) return;
+    var b = brCurrent(), C = window.MLS_SHARED.Colour, p = M.Brand.usable(b.primary) || b.defaults.primary, a = M.Brand.usable(b.action) || b.defaults.action;
+    var logo = function (src) { return '<img src="' + src + '" alt="">'; };
+    var login = '<div class="br-login"><div class="card-mock">' + (b.logo ? '<div class="logo">' + logo(b.logo) + '</div>' : '<div class="mark-row">' + brMark('p') + '</div>') +
+      '<div class="brand-name">' + UI.esc(b.name) + '</div>' + (b.tagline ? '<div class="brand-sub">' + UI.esc(b.tagline) + '</div>' : '') + '<div class="field first"></div><div class="field"></div><div class="go">Sign in</div></div></div>';  // the button in the brand colour, as the app shows it today (the action colour reaches the buttons in Stage 4)
+    var side = '<div class="br-side">' + (b.dark ? '<div class="logo">' + logo(b.dark) + '</div>' : b.logo ? '<div class="logo plate">' + logo(b.logo) + '</div>' : '') +
+      '<div class="d-flex align-items-center gap-2">' + (b.logo || b.dark ? '' : brMark()) + '<span><span class="brand-name d-block">' + UI.esc(b.name) + '</span>' + (b.tagline ? '<span class="brand-sub">' + UI.esc(b.tagline) + '</span>' : '') + '</span></div>' +
+      '<div class="sect">Daily work</div><div class="item active"><i class="fa-solid fa-gauge"></i>Dashboard</div><div class="item"><i class="fa-solid fa-cash-register"></i>POS</div><div class="item"><i class="fa-solid fa-receipt"></i>Orders</div></div>';
+    var print = '<div class="br-print"><div class="head">' + (b.logo ? '<div class="logo">' + logo(b.logo) + '</div>' : '') + '<div class="biz">' + UI.esc(b.name) + '</div><div class="sub">Main branch · 0917 000 0000</div><div class="title">End of day</div></div>' +
+      '<div class="line first"><span>Sales</span><span>₱ 12,480.00</span></div><div class="line"><span>Expenses</span><span>₱ 1,120.00</span></div><div class="line total"><span>Cash to deposit</span><span>₱ 11,360.00</span></div></div>';
+    host.className = 'br-preview'; host.innerHTML = '<div class="br-grid"><div><div class="small fw-semibold mb-1">Sign-in card</div>' + login + '</div><div><div class="small fw-semibold mb-1">Sidebar</div>' + side + '</div><div><div class="small fw-semibold mb-1">Printed header</div>' + print + '</div></div>';
+    host.style.setProperty('--br-p', p); host.style.setProperty('--br-p-active', C.tint(p, .12)); host.style.setProperty('--br-a', a);
+  }
+  /** After any change the server confirmed: the public settings every device will see, this page's copy of them, the shell's brand, and the screen again. */
+  /** keep(settings): the picture this device just converted, kept as the version the server gave it, so nothing is fetched back; a restore fetches the restored picture once (Brand.ready) before the tab paints again. */
+  function brApplied(r, message, keep) {
+    if (M.AppState.me && r.publicSettings) M.AppState.me.settings = r.publicSettings;
+    if (keep && r.publicSettings) keep(r.publicSettings);
+    cache.settings = null; M.Auth.repaint(); if (message) Toast.success(message);
+    M.Brand.ready().then(function () { if (state.tab === 'branding') tabBranding(); });
+  }
+  function brError(e, where) { var el = where ? UI.el(where) : null; if (el) el.textContent = UI.error(e); else Toast.danger(UI.error(e)); }
+  /** A chosen file → the PNG the server accepts, shown in the "Ready to use" box with its real size, so what is sent is what was seen. */
+  function brConvert(input, what) {
+    var file = input.files && input.files[0]; input.value = ''; if (!file) return;
+    Toast.info('Converting the picture…', 2500);
+    var job = what === 'icon'
+      ? M.Photo.square(file, BR_ICON).then(function (big) { return M.Photo.square(big.data, BR_FAVICON).then(function (fav) { return { data: big.data, w: big.w, h: big.h, bytes: big.bytes, favicon: fav }; }); })
+      : M.Photo.toPng(file, BR_LOGO_BOX);
+    job.then(function (out) {
+      if (what === 'icon') { if (out.bytes > 150 * 1024) throw new Error('The icon is ' + Math.round(out.bytes / 1024) + ' KB after conversion; it must stay under 150 KB (a photograph is not an icon)'); br.icon = out; UI.el('br-icon-new-frame').innerHTML = brFrame('br-icon-new-img', out.data, 'icon-lg'); UI.el('br-icon-new-fav').innerHTML = brFrame('br-icon-new-favimg', out.favicon.data, 'icon-sm'); UI.el('br-icon-new-info').textContent = out.w + ' × ' + out.h + ' px · ' + Math.max(1, Math.round(out.bytes / 1024)) + ' KB · the tab icon ' + out.favicon.w + ' px · ' + Math.max(1, Math.round(out.favicon.bytes / 1024)) + ' KB'; UI.el('br-icon-new').hidden = false; }
+      else { br[what] = out; UI.el('br-' + what + '-new-frame').innerHTML = brFrame('br-' + what + '-new-img', out.data, what === 'dark' ? 'dark' : ''); UI.el('br-' + what + '-new-info').textContent = out.w + ' × ' + out.h + ' px · ' + Math.max(1, Math.round(out.bytes / 1024)) + ' KB — converted on this device, nothing sent yet'; UI.el('br-' + what + '-new').hidden = false; }
+      brPreview();
+    }).catch(function (e) { Toast.danger(e && e.message ? e.message : String(e), 9000); });
+  }
+  function brCancel(what) { br[what] = null; var box = UI.el('br-' + what + '-new'); if (box) box.hidden = true; brPreview(); }
+  /** The four files the installed app's manifest names, from the icon in use (fetched from Drive) or the one just converted. */
+  function brIconPack() {
+    var btn = UI.el('br-icon-pack'); if (btn) btn.disabled = true;
+    var src = br.icon ? Promise.resolve(br.icon.data) : Api.call('branding.file', { kind: 'APP_ICON' }, { busy: true }).then(function (r) { return r.data; });
+    src.then(function (data) {
+      return Promise.all([M.Photo.square(data, 192), M.Photo.square(data, 512), M.Photo.square(data, 512, { pad: 0.2, background: '#FFF9E3' }), M.Photo.square(data, 180, { pad: 0.1, background: '#FFF9E3' })]);
+    }).then(function (outs) {
+      var files = [['icon-192.png', outs[0]], ['icon-512.png', outs[1]], ['icon-maskable-512.png', outs[2]], ['apple-touch-icon.png', outs[3]]].map(function (f) { return { name: f[0], bytes: M.Photo.toBytes(f[1].data) }; });
+      var blob = brZip(files), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = 'mls-icons.zip'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      Toast.success('Icon pack downloaded: ' + files.length + ' files, ' + Math.round(blob.size / 1024) + ' KB. Send it with the next release.');
+    }).catch(fail).then(function () { if (btn) btn.disabled = false; });
+  }
+  /** A zip of stored (uncompressed) files, written here so no library is needed: PNGs do not compress anyway. */
+  function brCrc32(bytes) {
+    var t = brCrc32.table; if (!t) { t = brCrc32.table = []; for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } }
+    var crc = 0xFFFFFFFF; for (var i = 0; i < bytes.length; i++) crc = t[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8); return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+  function brZip(files) {
+    var parts = [], central = [], offset = 0, enc = new TextEncoder();
+    var u16 = function (v) { return [v & 255, (v >>> 8) & 255]; }, u32 = function (v) { return [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255]; };
+    var time = 0, date = (1 << 5) | 1;  // 1 January 1980, so the same icons give the same zip
+    files.forEach(function (f) {
+      var name = enc.encode(f.name), crc = brCrc32(f.bytes), n = f.bytes.length;
+      var local = new Uint8Array([].concat(u32(0x04034b50), u16(20), u16(0), u16(0), u16(time), u16(date), u32(crc), u32(n), u32(n), u16(name.length), u16(0)));
+      parts.push(local, name, f.bytes);
+      central.push(new Uint8Array([].concat(u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(time), u16(date), u32(crc), u32(n), u32(n), u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset))), name);
+      offset += local.length + name.length + n;
+    });
+    var size = 0; central.forEach(function (c) { size += c.length; });
+    var end = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length), u32(size), u32(offset), u16(0)));
+    return new Blob(parts.concat(central, [end]), { type: 'application/zip' });
+  }
+  function wireBranding(canEdit) {
+    var d = br.data, on = function (id, fn) { var el = UI.el(id); if (el) el.onclick = fn; };
+    ['br-name', 'br-tagline'].forEach(function (id) { var el = UI.el(id); if (el) el.oninput = brPreview; });
+    ['primary', 'action'].forEach(function (key) {
+      var hex = UI.el('br-' + key + '-hex'), pick = UI.el('br-' + key);
+      var sync = function () { var v = hex.value.trim(); brContrastLine(key, v, d.defaults[key]); var h = window.MLS_SHARED.Colour.normalize(v || d.defaults[key]); if (h && pick) pick.value = h; brPreview(); };
+      if (hex) hex.oninput = sync; if (pick) pick.oninput = function () { hex.value = pick.value.toUpperCase(); sync(); };
+      sync();
+      body().querySelectorAll('[data-br-standard="' + key + '"]').forEach(function (b) { b.onclick = function () { hex.value = ''; sync(); }; });
+    });
+    if (!canEdit) return;
+    on('br-save-text', function () { UI.el('br-text-error').textContent = ''; Api.call('branding.save', { BusinessName: UI.el('br-name').value, BrandTagline: UI.el('br-tagline').value }, { busy: true }).then(function (r) { brApplied(r, r.saved.length ? 'Name and tagline saved' : 'Nothing changed'); }).catch(function (e) { brError(e, 'br-text-error'); }); });
+    on('br-save-colours', function () {
+      var C = window.MLS_SHARED.Colour, vals = {}, err = UI.el('br-colours-error'); err.textContent = '';
+      ['primary', 'action'].forEach(function (key) { var v = UI.el('br-' + key + '-hex').value.trim(); var h = C.normalize(v); vals[key === 'primary' ? 'BrandPrimary' : 'BrandAction'] = v ? (h && h === d.defaults[key] ? '' : (h || v)) : ''; });
+      Api.call('branding.save', vals, { busy: true }).then(function (r) { brApplied(r, r.saved.length ? 'Colours saved' : 'Nothing changed'); }).catch(function (e) { brError(e, 'br-colours-error'); });
+    });
+    var fileInput = function (id, what) { var el = UI.el(id); if (el) el.onchange = function () { brConvert(el, what); }; };
+    fileInput('br-logo-file', 'logo'); fileInput('br-dark-file', 'dark'); fileInput('br-icon-file', 'icon');
+    on('br-logo-cancel', function () { brCancel('logo'); }); on('br-dark-cancel', function () { brCancel('dark'); }); on('br-icon-cancel', function () { brCancel('icon'); });
+    on('br-logo-use', function () { if (!br.logo) return; Api.call('branding.upload', { kind: 'LOGO', data: br.logo.data }, { busy: true }).then(function (r) { var c = br.logo; brApplied(r, 'Logo saved: every device shows it at its next sign-in or settings refresh', function (st) { M.Brand.keep('logo', st.BrandLogo && st.BrandLogo.v, c.data); }); }).catch(fail); });
+    on('br-dark-use', function () { if (!br.dark) return; Api.call('branding.upload', { kind: 'LOGO_DARK', data: br.dark.data }, { busy: true }).then(function (r) { var c = br.dark; brApplied(r, 'Sidebar logo saved', function (st) { M.Brand.keep('logoDark', st.BrandLogoDark && st.BrandLogoDark.v, c.data); }); }).catch(fail); });
+    on('br-icon-use', function () { if (!br.icon) return; Api.call('branding.upload', { kind: 'APP_ICON', data: br.icon.data, favicon: br.icon.favicon.data }, { busy: true }).then(function (r) { var c = br.icon; brApplied(r, 'Icon saved: the tab icon changes now; download the icon pack for the installed app', function (st) { M.Brand.keep('favicon', st.BrandIconSet && st.BrandIconSet.favicon && st.BrandIconSet.favicon.v, c.favicon.data); }); }).catch(fail); });
+    var removal = function (id, kind, title, body) { on(id, function () { M.Modal.confirm({ title: title, body: body, okText: 'Remove', danger: true }).then(function (yes) { if (!yes) return; Api.call('branding.remove', { kind: kind }, { busy: true }).then(function (r) { brApplied(r, title.replace('Remove the ', '') + ' removed'); }).catch(fail); }); }); };
+    removal('br-logo-remove', 'LOGO', 'Remove the logo', 'The monogram shows again everywhere. The logo file is kept ' + (d.previous ? d.previous.keptDays : 30) + ' days: Restore brings it back.');
+    removal('br-dark-remove', 'LOGO_DARK', 'Remove the sidebar logo', 'The sidebar shows the logo on an ivory plate again. The file goes to the Drive trash.');
+    removal('br-icon-remove', 'APP_ICON', 'Remove the app icon', 'The browser tab shows the monogram again. The installed app keeps the icon it was built with until the next release.');
+    on('br-logo-restore', function () { Api.call('branding.restore', {}, { busy: true }).then(function (r) { brApplied(r, 'The previous logo is back in use'); }).catch(fail); });
+    on('br-icon-pack', brIconPack);
   }
 
   // ---------------------------------------------------------------- branches
