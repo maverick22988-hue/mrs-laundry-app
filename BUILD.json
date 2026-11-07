@@ -1,8 +1,8 @@
 {
   "app": "Mrs Laundry Sys",
-  "version": "1.24.0",
-  "build": "c7960953cb",
-  "builtAt": "2026-11-06T13:06:23.024Z",
+  "version": "1.25.0",
+  "build": "5f0ec108f1",
+  "builtAt": "2026-11-06T18:15:13.762Z",
   "files": [
     ".nojekyll",
     "icons/apple-touch-icon.png",
@@ -25,7 +25,6 @@
     "vendor/fonts/plus-jakarta-sans-latin-400-normal.woff2",
     "vendor/fonts/plus-jakarta-sans-latin-600-normal.woff2",
     "vendor/fonts/plus-jakarta-sans-latin-700-normal.woff2",
-    "vendor/fonts/plus-jakarta-sans-latin-800-normal.woff2",
     "vendor/jsQR.js",
     "vendor/qrcode.js"
   ]

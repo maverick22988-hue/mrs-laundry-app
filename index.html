@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'c7960953cb', version: '1.24.0' };</script>
+  <script>window.MLS_PWA = { build: '5f0ec108f1', version: '1.25.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -44,7 +44,10 @@
        --mls-action (the one primary button per screen, applied by Stage 4), --mls-line-soft, --mls-sidebar-active, --mls-focus and the
        four state triplets (ink, soft fill, line). BrandPrimary and BrandAction (Settings → Branding) replace the burgundy and the red
        at start-up (App.html → Brand.applyColours) after a contrast check; everything else stays fixed so text is always readable.
-       --mls-ink-faint is the muted grey too: the palette has no lighter grey that small text can be read in (4.0:1 on ivory, 4.2:1 on white). */
+       --mls-ink-faint is the muted grey too: the palette has no lighter grey that small text can be read in (4.0:1 on ivory, 4.2:1 on white).
+       Release 1.25.0 (Stage 4, the core interface) adds the scales of the approved design system: type, weights (400/600/700 — the 800
+       file is no longer loaded), line heights, spacing, radius, the one shadow (only on what floats: dialogs, toasts, menus, the cart bar,
+       the drawer) and motion. prefers-reduced-motion switches every transition and animation off (Accessibility, below). */
     --mls-primary: #6D2322; --mls-primary-strong: #521A19; --mls-primary-soft: #F3E4E4; --mls-primary-ink: #521A19;
     --mls-action: #A41C1E; --mls-action-strong: #8C1719; --mls-accent: #E6D0AB;
     --mls-danger: #8E1B1B; --mls-success: #1E6A3C; --mls-warning: #8A5A00; --mls-info: #2F5E8E;
@@ -53,7 +56,14 @@
     --mls-ink: #302A28; --mls-ink-soft: #817A73; --mls-ink-faint: #817A73; --mls-line: #E6D0AB; --mls-line-soft: #F1E3C8; --mls-bg: #FFF9E3; --mls-card: #FFFFFF; --mls-well: #FAF3E0;
     --mls-sidebar: #6D2322; --mls-sidebar-active: #8A2D2C; --mls-sidebar-ink: #FFF9E3; --mls-sidebar-muted: rgba(230, 208, 171, .85); --mls-sidebar-line: rgba(255, 249, 227, .12);
     --mls-focus: rgba(164, 28, 30, .28);
-    --mls-radius: 12px; --mls-radius-sm: 8px; --mls-shadow: 0 1px 2px rgba(48, 42, 40, .06), 0 4px 16px rgba(48, 42, 40, .06);
+    --mls-radius: 10px; --mls-radius-sm: 8px; --mls-radius-xs: 6px; --mls-radius-pill: 999px;
+    --mls-shadow: 0 8px 24px rgba(48, 42, 40, .10); --mls-shadow-sm: 0 1px 2px rgba(48, 42, 40, .06), 0 4px 16px rgba(48, 42, 40, .06);
+    --mls-ink-70: rgba(48, 42, 40, .7); --mls-row-hover: rgba(243, 228, 228, .7);
+    --fs-xs: 12px; --fs-sm: 13px; --fs-base: 14.5px; --fs-md: 16px; --fs-lg: 18px; --fs-xl: 21.5px; --fs-kpi: 26px; --fs-title: 1.35rem;
+    --fw-regular: 400; --fw-semibold: 600; --fw-bold: 700; --lh-tight: 1.2; --lh-base: 1.45;
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-7: 32px;
+    --motion-fast: 120ms; --motion-normal: 180ms; --motion-smooth: 250ms; --motion-slow: 350ms;
+    --ease-out: cubic-bezier(.2, .7, .2, 1); --ease-in: ease-in; --ease-inout: ease-in-out;
     --mls-sidebar-w: 256px; --mls-topbar-h: 60px; --mls-tap: 44px;
     --mls-font: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif; --mls-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     /* Bootstrap's palette mapped onto the tokens (1.24.0): its links, switches, alerts, badges and secondary buttons take the same colours */
@@ -63,6 +73,7 @@
     --bs-success-text-emphasis: #1E6A3C; --bs-success-bg-subtle: #E4F2E7; --bs-success-border-subtle: #B9DBC3; --bs-danger-text-emphasis: #8E1B1B; --bs-danger-bg-subtle: #F8E3E3; --bs-danger-border-subtle: #E8BABA;
     --bs-warning-text-emphasis: #8A5A00; --bs-warning-bg-subtle: #FBEFD2; --bs-warning-border-subtle: #EDD39A; --bs-info-text-emphasis: #2F5E8E; --bs-info-bg-subtle: #E4EDF7; --bs-info-border-subtle: #BBD0E6;
     --bs-light-rgb: 250, 243, 224; --bs-light-bg-subtle: #FAF3E0; --bs-secondary-bg-subtle: #F1E3C8; --bs-focus-ring-color: rgba(164, 28, 30, .28);
+    --bs-form-invalid-color: #8E1B1B; --bs-form-invalid-border-color: #8E1B1B; --bs-form-valid-color: #1E6A3C; --bs-form-valid-border-color: #1E6A3C;
   }
   .form-check-input:checked { background-color: var(--mls-primary); border-color: var(--mls-primary); }
   .form-check-input:focus { border-color: var(--mls-primary); box-shadow: 0 0 0 .25rem var(--mls-focus); }
@@ -77,7 +88,7 @@
 
   /* ---- Base ---- */
   html, body { height: 100%; }
-  body { margin: 0; font-family: var(--mls-font); background: var(--mls-bg); color: var(--mls-ink); font-size: 14.5px; -webkit-font-smoothing: antialiased; }
+  body { margin: 0; font-family: var(--mls-font); background: var(--mls-bg); color: var(--mls-ink); font-size: var(--fs-base); line-height: var(--lh-base); -webkit-font-smoothing: antialiased; }
   [hidden] { display: none !important; }
   a { color: var(--mls-primary); }
   h1, h2, h3, h4 { font-weight: 700; letter-spacing: -.01em; }
@@ -92,24 +103,71 @@
   .skip-link { position: absolute; left: -999px; top: 8px; z-index: 2000; background: var(--mls-primary); color: #fff; padding: 8px 14px; border-radius: var(--mls-radius-sm); font-weight: 700; }
   .skip-link:focus { left: 8px; color: #fff; }
 
-  /* Buttons and forms on top of Bootstrap */
-  .btn { border-radius: var(--mls-radius-sm); font-weight: 600; }
-  .btn-primary { --bs-btn-bg: var(--mls-primary); --bs-btn-border-color: var(--mls-primary); --bs-btn-hover-bg: var(--mls-primary-strong); --bs-btn-hover-border-color: var(--mls-primary-strong); --bs-btn-active-bg: var(--mls-primary-strong); --bs-btn-active-border-color: var(--mls-primary-strong); --bs-btn-disabled-bg: var(--mls-primary); --bs-btn-disabled-border-color: var(--mls-primary); }
-  .btn-outline-primary { --bs-btn-color: var(--mls-primary); --bs-btn-border-color: var(--mls-primary); --bs-btn-hover-bg: var(--mls-primary); --bs-btn-hover-border-color: var(--mls-primary); --bs-btn-active-bg: var(--mls-primary); }
-  .form-control, .form-select { border-radius: var(--mls-radius-sm); border-color: var(--mls-line); padding: .55rem .75rem; }
+  /* Buttons and forms on top of Bootstrap — release 1.25.0 (Stage 4): four roles, each with one job. The primary is the rich red of the one
+     action that matters on a screen (Charge, Sign in, Save in a dialog); outline-primary is burgundy for secondary actions; btn-link is burgundy
+     text; outline-secondary is the quiet beige-bordered button for Refresh, Print and the like. Hover and press take 120 ms; a pressed button
+     waiting for the server shows .is-loading (App.html → Press): a 14 px spinner in place of its icon, the label kept, no second press. */
+  .btn { border-radius: var(--mls-radius-sm); font-weight: 600; transition: color var(--motion-fast) var(--ease-inout), background-color var(--motion-fast) var(--ease-inout), border-color var(--motion-fast) var(--ease-inout), box-shadow var(--motion-fast) var(--ease-inout), opacity var(--motion-fast) var(--ease-inout), transform var(--motion-fast) var(--ease-out); }
+  /* 36 px tall with 16 px sides on desktop, from the padding alone: no min-height here, so the touch (42 px) and phone (44 px) minimums below
+     always win; .btn-sm and .btn-lg keep Bootstrap's own padding (restated after the .btn rule, which would otherwise override them) */
+  .btn { --bs-btn-padding-y: .3125rem; --bs-btn-padding-x: 1rem; }
+  .btn-sm { --bs-btn-padding-y: .25rem; --bs-btn-padding-x: .5rem; } .btn-lg { --bs-btn-padding-y: .5rem; --bs-btn-padding-x: 1rem; }
+  .btn:active:not(:disabled):not(.disabled):not(.dropdown-toggle) { transform: scale(.98); }
+  .btn-primary { --bs-btn-bg: var(--mls-action); --bs-btn-border-color: var(--mls-action); --bs-btn-hover-bg: var(--mls-action-strong); --bs-btn-hover-border-color: var(--mls-action-strong); --bs-btn-active-bg: var(--mls-action-strong); --bs-btn-active-border-color: var(--mls-action-strong); --bs-btn-disabled-bg: var(--mls-action); --bs-btn-disabled-border-color: var(--mls-action); --bs-btn-focus-shadow-rgb: 164, 28, 30; }
+  /* the production board and the rider's job cards repeat their main action on every card: burgundy there, so a screen keeps one rich red
+     at most and the board none at all (the approved rule); each page's own markup is brought over in Stage 5 */
+  .kanban .btn-primary, .job-card .btn-primary { --bs-btn-bg: var(--mls-primary); --bs-btn-border-color: var(--mls-primary); --bs-btn-hover-bg: var(--mls-primary-strong); --bs-btn-hover-border-color: var(--mls-primary-strong); --bs-btn-active-bg: var(--mls-primary-strong); --bs-btn-active-border-color: var(--mls-primary-strong); --bs-btn-disabled-bg: var(--mls-primary); --bs-btn-disabled-border-color: var(--mls-primary); --bs-btn-focus-shadow-rgb: 109, 35, 34; }
+  .btn-outline-primary { --bs-btn-color: var(--mls-primary); --bs-btn-border-color: var(--mls-primary); --bs-btn-hover-color: #fff; --bs-btn-hover-bg: var(--mls-primary); --bs-btn-hover-border-color: var(--mls-primary); --bs-btn-active-bg: var(--mls-primary-strong); --bs-btn-active-border-color: var(--mls-primary-strong); --bs-btn-disabled-color: var(--mls-primary); --bs-btn-disabled-border-color: var(--mls-primary); }
+  .btn.is-loading { pointer-events: none; }
+  .btn.is-loading > i:first-child { display: none; }
+  .btn.is-loading::before { content: ''; display: inline-block; width: 14px; height: 14px; margin-right: .25rem; vertical-align: -2px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: mls-spin .7s linear infinite; }
+  @keyframes mls-spin { to { transform: rotate(360deg); } }
+  /* inputs: white on beige, burgundy with the ring when focused (120 ms), 40 px tall with 16 px text (44 px on phones, below) */
+  .form-control, .form-select { border-radius: var(--mls-radius-sm); border-color: var(--mls-line); padding: .4375rem .75rem; transition: border-color var(--motion-fast) var(--ease-inout), box-shadow var(--motion-fast) var(--ease-inout), background-color var(--motion-fast) var(--ease-inout); }
+  .form-select { padding-right: 2.25rem; }
   .form-control:focus, .form-select:focus { border-color: var(--mls-primary); box-shadow: 0 0 0 .2rem var(--mls-focus); }
-  .form-label { font-weight: 600; font-size: .85rem; color: var(--mls-ink-soft); margin-bottom: .3rem; }
-  .invalid-feedback { display: block; min-height: 0; }
-  .card { border: 1px solid var(--mls-line); border-radius: var(--mls-radius); box-shadow: var(--mls-shadow); }
-  .card-header { background: transparent; border-bottom: 1px solid var(--mls-line); font-weight: 700; }
+  .form-label { font-weight: 600; font-size: var(--fs-sm); color: var(--mls-ink-soft); margin-bottom: .3rem; }
+  .invalid-feedback { display: block; min-height: 0; font-size: var(--fs-xs); color: var(--mls-danger); animation: mls-fade var(--motion-fast) var(--ease-out); }
+  .form-control.is-invalid, .form-select.is-invalid { border-color: var(--mls-danger); }
+  /* cards: no shadow — a beige border on the ivory page; the header a 16 px semibold title over a hairline */
+  .card { border: 1px solid var(--mls-line); border-radius: var(--mls-radius); box-shadow: none; }
+  .card-header { background: transparent; border-bottom: 1px solid var(--mls-line-soft); font-weight: 600; font-size: var(--fs-md); padding: .75rem 1rem; }
+  .card-header .btn { white-space: nowrap; flex: 0 0 auto; }
   .badge { font-weight: 600; border-radius: 999px; padding: .35em .7em; }
+  /* tables: charcoal on white, hairlines between rows, a beige rule under a small header, amounts right-aligned in tabular figures (.num) */
   .table { --bs-table-striped-bg: var(--mls-well); }
-  .table thead th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--mls-ink-soft); border-bottom: 2px solid var(--mls-line); white-space: nowrap; }
+  .table > :not(caption) > * > * { border-bottom-color: var(--mls-line-soft); }
+  .table thead th { font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--mls-ink-70); border-bottom: 1px solid var(--mls-line); white-space: nowrap; }
   .table td { vertical-align: middle; }
+  .table td.num, .table th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; } .table td.text-end { font-variant-numeric: tabular-nums; }
+  @media (hover: hover) { .table > tbody > tr:hover > * { --bs-table-bg-state: var(--mls-row-hover); } }
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--mls-radius); }
   .table-xs td, .table-xs th { font-size: .82rem; padding: .3rem .4rem; white-space: nowrap; }
-  .modal-content { border-radius: var(--mls-radius); border: 1px solid var(--mls-line); }
-  .modal-xl .modal-body { max-height: 75vh; overflow: auto; }
+  /* dialogs: 10 px radius, the one shadow, a plain header and hairlines; the dialog fades and scales in (200 ms) and leaves in 120 ms —
+     its buttons answer from the first frame (Bootstrap's own overlay keeps its 150 ms fade) */
+  .modal-content { border-radius: var(--mls-radius); border: 1px solid var(--mls-line); box-shadow: var(--mls-shadow); }
+  .modal-header { border-bottom-color: var(--mls-line-soft); } .modal-footer { border-top-color: var(--mls-line-soft); }
+  .modal-title { font-size: var(--fs-lg); font-weight: 700; }
+  .modal.fade .modal-dialog { transform: scale(.98); opacity: 0; transition: transform 200ms var(--ease-out), opacity 200ms var(--ease-out); }
+  .modal.show .modal-dialog { transform: none; opacity: 1; }
+  .modal.fade:not(.show) .modal-dialog { transition-duration: var(--motion-fast); transition-timing-function: var(--ease-in); }
+  .modal-xl .modal-body { max-height: 75vh; overflow: auto; } .modal-footer .spacer { flex: 1 1 auto; } .modal-footer > .order-more { margin-right: auto; }
+  /* menus: the one shadow, beige border; they fade in (150 ms, opacity only — Popper owns their transform) */
+  .dropdown-menu { border-color: var(--mls-line); border-radius: var(--mls-radius-sm); box-shadow: var(--mls-shadow); }
+  .dropdown-menu.show { animation: mls-fade 150ms var(--ease-out); }
+  .dropdown-item { transition: background-color var(--motion-fast) var(--ease-inout); } .dropdown-item:hover, .dropdown-item:focus { background-color: var(--mls-primary-soft); color: var(--mls-ink); }
+  .dropdown-item.text-danger:hover, .dropdown-item.text-danger:focus { background-color: var(--mls-danger-soft); color: var(--mls-danger) !important; }
+  @keyframes mls-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes mls-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  /* section headings inside a page (release 1.25.0), replacing the mixed h2/h6 use as each page is brought over */
+  .section-title { font-size: var(--fs-md); font-weight: 600; line-height: var(--lh-tight); margin: 0 0 var(--sp-2); }
+  .group-label { font-size: var(--fs-xs); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--mls-ink-soft); }
+  /* skeletons: shown only where no saved copy exists (a first visit), replaced the moment the answer arrives; a slow 1.2 s shimmer */
+  .skeleton { display: block; height: 12px; border-radius: var(--mls-radius-xs); background: linear-gradient(90deg, var(--mls-well) 0%, #F5E9CF 50%, var(--mls-well) 100%); background-size: 200% 100%; animation: mls-shimmer 1.2s linear infinite; }
+  .skeleton + .skeleton { margin-top: 10px; } .skeleton.w-40 { width: 40%; } .skeleton.w-60 { width: 60%; } .skeleton.w-80 { width: 80%; } .skeleton.tall { height: 26px; }
+  .skeleton-box { border: 1px solid var(--mls-line); border-radius: var(--mls-radius); background: var(--mls-card); padding: 14px 16px; }
+  .skeleton-rows { padding: 12px 16px; } .skeleton-rows .skeleton { height: 14px; }
+  @keyframes mls-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
   .kbd { display: inline-block; font-family: var(--mls-mono); font-size: .72rem; line-height: 1; padding: .2em .45em; border: 1px solid var(--mls-line); border-bottom-width: 2px; border-radius: 5px; background: var(--mls-card); color: var(--mls-ink-soft); }
 
   /* Brand mark */
@@ -117,7 +175,7 @@
   .brand-mark { --mark-bg: var(--mls-primary); --mark-ink: var(--mls-bg); width: 38px; height: 38px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; overflow: hidden; }
   .brand-mark svg { width: 38px; height: 38px; display: block; } .brand-mark svg circle { fill: var(--mark-bg); } .brand-mark svg path { stroke: var(--mark-ink); }
   .brand-mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .brand-name { font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+  .brand-name { font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
   .brand-sub { font-size: .72rem; color: var(--mls-ink-soft); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
   /* release 1.24.0: a logo or a product picture sits in a fixed-ratio frame — nothing stretches, nothing shifts, a missing picture shows the frame's fallback */
   .img-frame { display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: var(--mls-card); border-radius: var(--mls-radius-sm); }
@@ -135,8 +193,12 @@
 
   /* Boot and auth screens */
   #boot-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; background: var(--mls-bg); z-index: 50; }
-  #auth-screen { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: radial-gradient(1200px 600px at 10% -10%, var(--mls-line-soft) 0%, transparent 60%), radial-gradient(900px 500px at 110% 110%, var(--mls-primary-soft) 0%, transparent 60%), var(--mls-bg); }
-  .auth-card { width: 100%; max-width: 420px; background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: 18px; box-shadow: var(--mls-shadow); padding: 28px 26px; }
+  /* the sign-in screen (1.25.0): ivory with a faint beige-to-ivory light from the top left; the white card lifts into place once (180 ms),
+     drawn at full opacity from its first frame — a fade measured 0.2 s later on the first screen's largest paint (Lighthouse), so it has none */
+  #auth-screen { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: radial-gradient(1200px 700px at 0% 0%, var(--mls-line-soft) 0%, transparent 65%), var(--mls-bg); }
+  .auth-card { width: 100%; max-width: 420px; background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius); box-shadow: var(--mls-shadow); padding: 28px 26px; }
+  #auth-screen:not([hidden]) .auth-card { animation: mls-lift var(--motion-normal) var(--ease-out); }
+  @keyframes mls-lift { from { transform: translateY(6px); } to { transform: none; } }
   .auth-card h1 { font-size: 1.25rem; margin: 18px 0 2px; }
   .auth-card .lead-sm { color: var(--mls-ink-soft); font-size: .92rem; margin-bottom: 18px; }
   .auth-footer { text-align: center; color: var(--mls-ink-faint); font-size: .78rem; margin-top: 18px; }
@@ -154,42 +216,55 @@
   #sidebar .brand-logo.dark { background: transparent; padding: 0; }
   #main-nav { list-style: none; margin: 0; padding: 10px 10px 16px; display: flex; flex-direction: column; gap: 2px; }
   #main-nav .nav-section { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--mls-sidebar-muted); padding: 14px 10px 6px; font-weight: 700; }
-  #main-nav .nav-link { display: flex; align-items: center; gap: .7rem; color: var(--mls-sidebar-ink); padding: .6rem .75rem; border-radius: 10px; font-weight: 600; font-size: .92rem; text-decoration: none; min-height: var(--mls-tap); }
+  #main-nav .nav-link { display: flex; align-items: center; gap: .7rem; color: var(--mls-sidebar-ink); padding: .6rem .75rem; border-radius: 10px; font-weight: 600; font-size: .92rem; text-decoration: none; min-height: var(--mls-tap); transition: background-color var(--motion-fast) var(--ease-inout), color var(--motion-fast) var(--ease-inout); }
   #main-nav .nav-link i { width: 20px; text-align: center; color: rgba(255, 249, 227, .8); }
   #main-nav .nav-link > span:first-of-type { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #main-nav .nav-link:hover { background: rgba(255, 249, 227, .08); color: #fff; }
   #main-nav .nav-link.active { background: var(--mls-sidebar-active); color: #fff; } #main-nav .nav-link.active i { color: #fff; }
   #main-nav .nav-link.disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+  /* release 1.25.0: the selected item's 3 px rich-red bar slides to it (200 ms) — one element, placed by Router.markActive (App.html) */
+  #sidebar .nav-indicator { position: absolute; left: 0; top: 0; width: 3px; height: 0; border-radius: 3px; background: var(--mls-action); opacity: 0; pointer-events: none; z-index: 1; transition: transform 200ms var(--ease-out), height 200ms var(--ease-out), opacity var(--motion-fast) var(--ease-inout); }
+  #sidebar .nav-indicator.on { opacity: 1; } #sidebar .nav-indicator.instant { transition: none; }
   #main-nav .nav-link .phase-badge { margin-left: auto; flex: 0 0 auto; white-space: nowrap; font-size: .62rem; background: rgba(255, 249, 227, .14); color: var(--mls-sidebar-ink); padding: .2em .55em; border-radius: 999px; letter-spacing: .04em; }
-  #sidebar .sidebar-foot { margin-top: auto; padding: 12px 18px 16px; font-size: .72rem; color: var(--mls-sidebar-muted); border-top: 1px solid var(--mls-sidebar-line); }
+  #sidebar .sidebar-foot { margin-top: auto; padding: 12px 18px 16px; font-size: .75rem; color: rgba(230, 208, 171, .7); border-top: 1px solid var(--mls-sidebar-line); }
   #sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(48, 42, 40, .5); z-index: 39; }
   #app-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
   #topbar { height: var(--mls-topbar-h); background: var(--mls-card); border-bottom: 1px solid var(--mls-line); display: flex; align-items: center; gap: .75rem; padding: 0 16px; position: sticky; top: 0; z-index: 30; }
-  #topbar .page-title { font-size: 1.05rem; font-weight: 800; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #topbar .page-title { font-size: var(--fs-title); font-weight: 700; letter-spacing: -.01em; line-height: var(--lh-tight); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   #topbar .topbar-right { margin-left: auto; display: flex; align-items: center; gap: .6rem; }
   #branch-switch { max-width: 220px; font-weight: 600; } .lens-all #branch-switch { border-color: var(--mls-warning); background-color: var(--mls-warning-soft); }
   .user-chip { display: flex; align-items: center; gap: .55rem; border: 1px solid var(--mls-line); border-radius: 999px; padding: .25rem .7rem .25rem .3rem; background: var(--mls-card); color: inherit; text-decoration: none; min-height: 40px; }
-  .user-chip .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--mls-accent); color: var(--mls-ink); font-weight: 800; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; }
+  .user-chip .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--mls-accent); color: var(--mls-ink); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; }
   .user-chip .who { line-height: 1.05; } .user-chip .who small { display: block; color: var(--mls-ink-faint); font-size: .7rem; }
   #hamburger { display: none; min-width: var(--mls-tap); min-height: var(--mls-tap); align-items: center; justify-content: center; }
   #main-content { padding: 20px; max-width: 1400px; width: 100%; }
   .view > .view-head { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: 16px; }
-  .view > .view-head h2 { font-size: 1.3rem; margin: 0; } .view > .view-head .spacer { flex: 1 1 auto; }
+  /* one page title (1.25.0): the topbar says which screen this is; the view head keeps the branch, the saved · updating… line and the actions.
+     The view's own h2 stays in the markup for printing (below) and is hidden on screen. A screen entered from the sidebar rises in once
+     (180 ms, 6 px; App.html → Router.go): never on a refresh, never on the POS, the production board or the bag station. */
+  .view > .view-head > h2 { display: none; } .view > .view-head .spacer { flex: 1 1 auto; }
+  .view.view-enter { animation: mls-rise var(--motion-normal) var(--ease-out); }
   /* the state of a read on its way: a saved answer on screen while the server is asked, then updated, or why it was not */
   .refresh-state { display: inline-flex; align-items: center; gap: .35rem; font-size: .78rem; color: var(--mls-ink-soft); white-space: nowrap; }
   .refresh-state.ok { color: var(--mls-success); } .refresh-state.bad { color: var(--mls-danger); white-space: normal; }
 
   /* ---- Shared components ---- */
+  /* KPI tiles (1.25.0): the label above the value, the icon in a soft well on the right (the state tint when the tile has a tone), the value
+     26 px bold in tabular figures with the tile's whole width; a tile that opens a screen lifts 1 px and turns its border burgundy on hover
+     (hover devices only). On the dashboard's first paint the tiles rise in 30 ms apart (DashboardPage.html), never on a refresh. */
   .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
-  .kpi { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius); box-shadow: var(--mls-shadow); padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; min-width: 0; color: inherit; text-decoration: none; }
-  a.kpi:hover { border-color: var(--mls-primary); color: inherit; }
-  .kpi > div { min-width: 0; }
-  .kpi .kpi-icon { width: 40px; height: 40px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: var(--mls-primary-soft); color: var(--mls-primary-ink); flex: 0 0 auto; }
+  .kpi { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; color: inherit; text-decoration: none; transition: border-color 150ms var(--ease-inout), transform 150ms var(--ease-out); }
+  a.kpi:hover, a.kpi:focus-visible { color: inherit; }
+  @media (hover: hover) { a.kpi:hover { border-color: var(--mls-primary); transform: translateY(-1px); } }
+  .kpi .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; min-width: 0; }
+  .kpi .kpi-icon { width: 36px; height: 36px; border-radius: var(--mls-radius-sm); display: inline-flex; align-items: center; justify-content: center; background: var(--mls-primary-soft); color: var(--mls-primary-ink); flex: 0 0 auto; }
   .kpi.warn .kpi-icon { background: var(--mls-warning-soft); color: var(--mls-warning); } .kpi.danger .kpi-icon { background: var(--mls-danger-soft); color: var(--mls-danger); } .kpi.info .kpi-icon { background: var(--mls-info-soft); color: var(--mls-info); }
-  .kpi .kpi-label { font-size: .78rem; color: var(--mls-ink-soft); font-weight: 600; }
-  .kpi .kpi-value { font-size: 1.45rem; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kpi .kpi-value.text { font-size: 1.05rem; padding-top: .2rem; white-space: normal; }
-  .kpi .kpi-sub { font-size: .76rem; color: var(--mls-ink-faint); }
+  .kpi .kpi-label { font-size: var(--fs-sm); color: var(--mls-ink-soft); font-weight: 600; line-height: var(--lh-tight); padding-top: 2px; min-width: 0; }
+  .kpi .kpi-value { font-size: var(--fs-kpi); font-weight: 700; letter-spacing: -.01em; line-height: var(--lh-tight); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: -6px; }
+  .kpi .kpi-value.text { font-size: var(--fs-md); padding-top: .2rem; white-space: normal; margin-top: 0; }
+  .kpi .kpi-sub { font-size: var(--fs-xs); color: var(--mls-ink-soft); }
+  .kpi.enter { animation: mls-rise var(--motion-normal) var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 30ms); }
+  .skeleton-box.kpi-skel { min-height: 104px; } .kpi-grid > .skeleton-wrap, .kpi-grid > .empty-state { grid-column: 1 / -1; }
   .empty-state { text-align: center; padding: 36px 16px; color: var(--mls-ink-soft); }
   .empty-state > i { font-size: 2rem; color: var(--mls-ink-faint); margin-bottom: 10px; display: block; }
   .empty-state .empty-icon { width: 56px; height: 56px; border-radius: 50%; background: var(--mls-well); border: 1px solid var(--mls-line); display: inline-flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--mls-ink-faint); margin-bottom: 12px; }
@@ -199,10 +274,13 @@
   .empty-state.compact { padding: 18px 12px; } .empty-state.compact .empty-icon { width: 40px; height: 40px; font-size: 1rem; margin-bottom: 8px; }
   #busy-overlay { position: fixed; inset: 0; background: rgba(255, 249, 227, .55); z-index: 1080; display: flex; align-items: center; justify-content: center; }
   #toast-host { position: fixed; right: 16px; bottom: 16px; z-index: 1090; display: flex; flex-direction: column; gap: 8px; max-width: min(420px, calc(100vw - 32px)); }
-  .mls-toast { background: var(--mls-ink); color: #fff; border-radius: 10px; padding: 10px 14px; box-shadow: var(--mls-shadow); display: flex; gap: 10px; align-items: flex-start; font-size: .9rem; animation: toast-in .18s ease-out; }
+  /* toasts (1.25.0): filled with the state's ink, white text, a thin ivory bar on the left; they slide up 8 px (160 ms) and fade out (200 ms) */
+  .mls-toast { background: var(--mls-info); color: #fff; border-radius: var(--mls-radius-sm); border-left: 3px solid rgba(255, 249, 227, .85); padding: 10px 12px 10px 13px; box-shadow: var(--mls-shadow); display: flex; gap: 10px; align-items: flex-start; font-size: .9rem; animation: toast-in 160ms var(--ease-out); }
+  .mls-toast.leaving { animation: toast-out 200ms var(--ease-in) forwards; pointer-events: none; }
   .mls-toast.success { background: var(--mls-success); } .mls-toast.danger { background: var(--mls-danger); } .mls-toast.warning { background: var(--mls-warning); } .mls-toast.info { background: var(--mls-info); }
   .mls-toast button { background: transparent; border: 0; color: inherit; opacity: .8; margin-left: auto; padding: 0 2px; min-width: 32px; min-height: 32px; margin-top: -6px; margin-bottom: -6px; }
   @keyframes toast-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes toast-out { from { opacity: 1; } to { opacity: 0; } }
   .status-badge { display: inline-block; padding: .25em .7em; border-radius: 999px; font-size: .74rem; font-weight: 700; letter-spacing: .02em; background: var(--mls-well); color: var(--mls-ink); white-space: nowrap; border: 1px solid transparent; }
   /* release 1.24.0: the 29 state classes on six families from the tokens, never a hex of their own —
      neutral (new, queued, planned) on the well; info (in progress, on its way, computed); success (ready, paid, good);
@@ -216,17 +294,22 @@
   .status-badge.s-completed, .status-badge.s-released, .status-badge.s-closed { background: var(--mls-primary-soft); color: var(--mls-primary); }
   .status-badge.s-inactive, .status-badge.s-void, .status-badge.s-rest_day, .status-badge.s-unscheduled, .status-badge.s-upcoming, .status-badge.s-out, .status-badge.s-archived, .status-badge.s-retired, .status-badge.s-removed { background: transparent; color: var(--mls-ink); border-color: var(--mls-line); }
   .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 12px; }
-  .toolbar .form-control, .toolbar .form-select { width: auto; min-width: 150px; flex: 0 0 auto; max-width: 100%; }
+  .toolbar .form-control, .toolbar .form-select { width: auto; min-width: 150px; flex: 0 0 auto; max-width: 100%; background-color: var(--mls-well); }
+  .toolbar .form-control:focus, .toolbar .form-select:focus { background-color: var(--mls-card); }
   .toolbar .search { min-width: 200px; flex: 1 1 220px; }
   .toolbar .form-check { display: flex; align-items: center; gap: .35rem; margin: 0; white-space: nowrap; }
   .tabs { display: flex; gap: .25rem; flex-wrap: wrap; border-bottom: 1px solid var(--mls-line); margin-bottom: 12px; }
-  .tabs button { border: 0; background: none; padding: .55rem .9rem; border-radius: var(--mls-radius-sm) var(--mls-radius-sm) 0 0; color: var(--mls-ink-soft); font-weight: 600; font-size: .9rem; white-space: nowrap; }
-  .tabs button.active { color: var(--mls-primary); box-shadow: inset 0 -2px 0 var(--mls-primary); }
+  /* tabs (1.25.0): the active tab's 2 px rich-red underline grows into place (150 ms); counts in a soft pill; on phones a fade at the edge says more tabs scroll in */
+  .tabs button { position: relative; border: 0; background: none; padding: .55rem .9rem; border-radius: var(--mls-radius-sm) var(--mls-radius-sm) 0 0; color: var(--mls-ink-soft); font-weight: 600; font-size: .9rem; white-space: nowrap; transition: color var(--motion-fast) var(--ease-inout), background-color var(--motion-fast) var(--ease-inout); }
+  .tabs button::after { content: ''; position: absolute; left: .6rem; right: .6rem; bottom: 0; height: 2px; border-radius: 2px; background: var(--mls-action); transform: scaleX(0); transition: transform 150ms var(--ease-out); }
+  .tabs button:hover { color: var(--mls-ink); }
+  .tabs button.active { color: var(--mls-primary); } .tabs button.active::after { transform: scaleX(1); }
   .tabs button .count { margin-left: .35rem; font-size: .72rem; background: var(--mls-well); border-radius: 999px; padding: .1em .5em; color: var(--mls-ink); border: 1px solid var(--mls-line-soft); }
   .tabs button .count:empty { display: none; }  /* a tab's count shows only when there is one (1.15.0: no empty pill beside Machines, Open…) */
   .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 10px; }
-  .chips button { border: 1px solid var(--mls-line); background: var(--mls-card); border-radius: 999px; padding: .3rem .8rem; font-size: .82rem; font-weight: 600; color: var(--mls-ink-soft); }
-  .chips button.active { background: var(--mls-primary); color: #fff; border-color: var(--mls-primary); }
+  .chips button { border: 1px solid var(--mls-line); background: var(--mls-card); border-radius: 999px; padding: .3rem .8rem; font-size: .82rem; font-weight: 600; color: var(--mls-ink-soft); transition: color var(--motion-fast) var(--ease-inout), background-color var(--motion-fast) var(--ease-inout), border-color var(--motion-fast) var(--ease-inout); }
+  .chips button:hover { border-color: var(--mls-primary); color: var(--mls-primary); }
+  .chips button.active { background: var(--mls-primary-soft); color: var(--mls-primary); border-color: var(--mls-primary); }
   .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 16px; }
   .detail-grid .k { font-size: .74rem; color: var(--mls-ink-soft); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
   .detail-grid .v { font-weight: 600; overflow-wrap: anywhere; }
@@ -235,11 +318,11 @@
   .timeline li::before { content: ''; position: absolute; left: -7px; top: .5rem; width: 12px; height: 12px; border-radius: 50%; background: var(--mls-primary); border: 2px solid var(--mls-card); box-shadow: 0 0 0 1px var(--mls-line); }
   .timeline .when { font-size: .74rem; color: var(--mls-ink-soft); }
   .totals { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; }
-  .totals .grand { font-size: 1.25rem; font-weight: 800; color: var(--mls-primary-ink); }
+  .totals .grand { font-size: 1.25rem; font-weight: 700; color: var(--mls-primary-ink); }
   .sum-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; margin: 10px 0; }
   .sum-grid .tile { background: var(--mls-well); border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px 10px; min-width: 0; }
   .sum-grid .tile .k { font-size: .72rem; color: var(--mls-ink-soft); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .sum-grid .tile .v { font-size: 1.15rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .sum-grid .tile .v { font-size: 1.15rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
   .sum-grid .tile .v.text { font-size: 1rem; }
   .side-list { max-height: 70vh; overflow: auto; } .side-list button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: .55rem .75rem; border-bottom: 1px solid var(--mls-line); min-height: var(--mls-tap); }
   .side-list button.active { background: var(--mls-primary-soft); } .side-list .nm { font-weight: 700; } .side-list .sub { font-size: .76rem; color: var(--mls-ink-soft); }
@@ -247,7 +330,7 @@
   .side-tools .form-select { width: auto; }
   .receipt-paper { font-family: 'Courier New', monospace; font-size: 12.5px; background: #fff; border: 1px solid var(--mls-line); padding: 12px; width: 300px; max-width: 100%; margin: 0 auto; }
   .receipt-paper .c { text-align: center; } .receipt-paper .r { text-align: right; } .receipt-paper .row { display: flex; justify-content: space-between; gap: 8px; }
-  .receipt-paper .big { font-weight: 800; font-size: 15px; } .receipt-paper .strong { font-weight: 800; } .receipt-paper .muted { color: #555; } .receipt-paper .foot { color: #777; font-size: 11px; margin-top: 6px; }
+  .receipt-paper .big { font-weight: 700; font-size: 15px; } .receipt-paper .strong { font-weight: 700; } .receipt-paper .muted { color: #555; } .receipt-paper .foot { color: #777; font-size: 11px; margin-top: 6px; }
   .receipt-paper hr { border: 0; border-top: 1px dashed #999; margin: 6px 0; }
   .receipt-paper .logo { margin-bottom: 4px; } .receipt-paper .logo img { max-height: 48px; max-width: 200px; width: auto; height: auto; }  /* 1.24.0: a full-page receipt carries the logo */
   .getting-started ol { margin: 0; padding-left: 1.2rem; } .getting-started li { padding: .35rem 0; border-bottom: 1px dashed var(--mls-line); }
@@ -261,7 +344,7 @@
   .pos-catalog .card { position: relative; }
   .pos-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; } .pos-tiles > .empty-state { grid-column: 1 / -1; }
   .pos-tile { border: 1px solid var(--mls-line); background: var(--mls-card); border-radius: var(--mls-radius-sm); padding: 10px 12px; text-align: left; min-height: 72px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; transition: box-shadow .12s, border-color .12s; }
-  .pos-tile:hover, .pos-tile:focus-visible, .pos-tile.hot { border-color: var(--mls-primary); box-shadow: var(--mls-shadow); outline: none; }
+  .pos-tile:hover, .pos-tile:focus-visible, .pos-tile.hot { border-color: var(--mls-primary); box-shadow: var(--mls-shadow-sm); outline: none; }
   .pos-tile.hot { background: var(--mls-primary-soft); }
   .pos-tile .name { font-weight: 700; line-height: 1.2; } .pos-tile .price { color: var(--mls-primary-ink); font-weight: 700; }
   .pos-tile .meta { font-size: .72rem; color: var(--mls-ink-soft); } .pos-tile.nopr { opacity: .5; }
@@ -280,7 +363,7 @@
   .pos-keys { display: none; font-size: .74rem; color: var(--mls-ink-faint); margin-top: 8px; text-align: center; }
   .pos-cartbar { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; background: var(--mls-card); border-top: 1px solid var(--mls-line); box-shadow: 0 -6px 20px rgba(48, 42, 40, .12); padding: 10px 14px; align-items: center; gap: 10px; }
   .pos-cartbar .sum { flex: 1 1 auto; min-width: 0; border: 0; background: none; text-align: left; padding: 0; }
-  .pos-cartbar .sum .n { font-size: .76rem; color: var(--mls-ink-soft); } .pos-cartbar .sum .t { font-weight: 800; font-size: 1.15rem; }
+  .pos-cartbar .sum .n { font-size: .76rem; color: var(--mls-ink-soft); } .pos-cartbar .sum .t { font-weight: 700; font-size: 1.15rem; }
   .line-editor { display: grid; grid-template-columns: 1fr 90px 110px 110px 32px; gap: 6px; align-items: center; margin-bottom: 6px; }
   .line-editor .lt { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; } .line-editor .lx { border: 0; background: none; color: var(--mls-ink-faint); padding: 0; min-width: 32px; min-height: 32px; } .line-editor .lx:hover { color: var(--mls-danger); }
   .line-editor-head { display: grid; grid-template-columns: 1fr 90px 110px 110px 32px; gap: 6px; font-size: .74rem; color: var(--mls-ink-soft); font-weight: 600; margin-bottom: 4px; }
@@ -292,21 +375,21 @@
   .kcol h6 .count { margin-left: auto; background: var(--mls-card); border-radius: 999px; padding: .05em .55em; font-size: .74rem; color: var(--mls-ink); }
   .kcard { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px 10px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(48, 42, 40, .05); cursor: pointer; min-width: 0; }
   .kcard.express { border-left: 4px solid var(--mls-warning); } .kcard.overdue .due { color: var(--mls-danger); font-weight: 700; }
-  .kcard .no { font-weight: 800; font-size: .82rem; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; } .kcard .meta { font-size: .76rem; color: var(--mls-ink-soft); } .kcard .acts { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .kcard .no { font-weight: 700; font-size: .82rem; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; } .kcard .meta { font-size: .76rem; color: var(--mls-ink-soft); } .kcard .acts { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .kcard .acts .btn { flex: 1 1 auto; }
-  .job-card { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius); box-shadow: var(--mls-shadow); padding: 14px 16px; margin-bottom: 12px; }
-  .job-card .who { font-size: 1.1rem; font-weight: 800; } .job-card .addr { color: var(--mls-ink-soft); } .job-card .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .job-card { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius); padding: 14px 16px; margin-bottom: 12px; }
+  .job-card .who { font-size: 1.1rem; font-weight: 700; } .job-card .addr { color: var(--mls-ink-soft); } .job-card .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
   .job-card .acts .btn { padding: .7rem .5rem; font-weight: 700; font-size: 1rem; } .job-card .orders li { display: flex; justify-content: space-between; gap: 8px; padding: .25rem 0; border-bottom: 1px dashed var(--mls-line); }
   .job-card.done { opacity: .75; }
   /* ---- Equipment, delivery windows and proof of delivery (release 1.15.0) ---- */
   .machine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
-  .machine-card { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius); box-shadow: var(--mls-shadow); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; min-width: 0; }
+  .machine-card { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; min-width: 0; }
   .machine-card:hover { border-color: var(--mls-primary); } .machine-card.down { border-left: 4px solid var(--mls-danger); } .machine-card.retired { opacity: .65; }
-  .machine-card .code { font-weight: 800; font-size: 1.05rem; letter-spacing: .02em; font-variant-numeric: tabular-nums; } .machine-card .meta { font-size: .8rem; color: var(--mls-ink-soft); overflow-wrap: anywhere; }
+  .machine-card .code { font-weight: 700; font-size: 1.05rem; letter-spacing: .02em; font-variant-numeric: tabular-nums; } .machine-card .meta { font-size: .8rem; color: var(--mls-ink-soft); overflow-wrap: anywhere; }
   .machine-card .acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
   .machine-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-bottom: 10px; }
   .machine-pick button { border: 1px solid var(--mls-line); background: var(--mls-card); border-radius: var(--mls-radius-sm); padding: 8px 10px; text-align: left; min-height: 58px; min-width: 0; }
-  .machine-pick button .code { font-weight: 800; display: block; } .machine-pick button .sub { font-size: .74rem; color: var(--mls-ink-soft); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .machine-pick button .code { font-weight: 700; display: block; } .machine-pick button .sub { font-size: .74rem; color: var(--mls-ink-soft); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .machine-pick button.active { border-color: var(--mls-primary); background: var(--mls-primary-soft); box-shadow: 0 0 0 2px var(--mls-primary); }
   .machine-pick button.busy .sub { color: var(--mls-warning); } .machine-pick button:disabled { opacity: .55; cursor: not-allowed; } .machine-pick button:disabled .sub { color: var(--mls-danger); }
   .slot-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
@@ -322,7 +405,7 @@
   .proof-view img { display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; border-radius: var(--mls-radius-sm); border: 1px solid var(--mls-line); background: var(--mls-card); }
   .proof-view figcaption { font-size: .8rem; color: var(--mls-ink-soft); margin-top: 4px; }
   /* ---- Release 1.16.0 (R18): bag tracking — the scan station, the bag lists, the hand-over check ---- */
-  .bag-code { font-family: var(--mls-mono); font-weight: 800; letter-spacing: .08em; font-size: .9em; background: var(--mls-well); color: var(--mls-ink); border-radius: 6px; padding: .05rem .4rem; white-space: nowrap; }
+  .bag-code { font-family: var(--mls-mono); font-weight: 700; letter-spacing: .08em; font-size: .9em; background: var(--mls-well); color: var(--mls-ink); border-radius: 6px; padding: .05rem .4rem; white-space: nowrap; }
   .code-input { font-family: var(--mls-mono); letter-spacing: .06em; text-transform: uppercase; }
   .code-input::placeholder { text-transform: none; letter-spacing: normal; font-family: var(--mls-font); font-size: .95rem; }
   .scan-form { display: flex; gap: 8px; align-items: stretch; } .scan-form .form-control { min-width: 0; flex: 1 1 auto; } .scan-form .btn { flex: 0 0 auto; min-width: 52px; }
@@ -332,7 +415,7 @@
   .scan-stop { position: absolute; top: 8px; right: 8px; }
   .scan-card { background: var(--mls-card); border: 1px solid var(--mls-line); border-left: 6px solid var(--mls-ink-faint); border-radius: var(--mls-radius-sm); padding: 10px 12px; margin-bottom: 8px; min-width: 0; overflow-wrap: anywhere; }
   .scan-card.ok { border-left-color: var(--mls-success); } .scan-card.found { border-left-color: var(--mls-info); background: var(--mls-info-soft); } .scan-card.warn { border-left-color: var(--mls-warning); background: var(--mls-warning-soft); } .scan-card.bad { border-left-color: var(--mls-danger); background: var(--mls-danger-soft); }
-  .scan-card .scan-result { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+  .scan-card .scan-result { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
   .scan-card.ok .scan-result { color: var(--mls-success); } .scan-card.found .scan-result { color: var(--mls-info); } .scan-card.warn .scan-result { color: var(--mls-warning); } .scan-card.bad .scan-result { color: var(--mls-danger); }
   .scan-card .acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
   .bag-list { display: grid; gap: 6px; }
@@ -348,8 +431,8 @@
   .scan-history { list-style: none; padding: 0; margin: 6px 0 0; font-size: .8rem; color: var(--mls-ink-soft); }
   .scan-history li { padding: 3px 0; border-top: 1px dashed var(--mls-line); }
   .tc-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; align-items: start; }
-  .clock-card { text-align: center; padding: 22px 16px; } .clock-time { font-size: 2.6rem; font-weight: 800; letter-spacing: .02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
-  .clock-date { color: var(--mls-ink-soft); margin-bottom: 10px; } .btn-punch { width: 100%; max-width: 360px; padding: 1rem; font-size: 1.25rem; font-weight: 800; border-radius: 14px; }
+  .clock-card { text-align: center; padding: 22px 16px; } .clock-time { font-size: 2.6rem; font-weight: 700; letter-spacing: .02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .clock-date { color: var(--mls-ink-soft); margin-bottom: 10px; } .btn-punch { width: 100%; max-width: 360px; padding: 1rem; font-size: 1.25rem; font-weight: 700; border-radius: 14px; }
   .punch-list { list-style: none; padding: 0; margin: 12px auto 0; max-width: 360px; text-align: left; } .punch-list li { display: flex; justify-content: space-between; padding: .3rem .2rem; border-bottom: 1px dashed var(--mls-line); font-size: .92rem; }
   .staff-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; } .staff-layout > * { min-width: 0; }
   .staff-list { max-height: 70vh; overflow: auto; } .staff-list button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: .55rem .75rem; border-bottom: 1px solid var(--mls-line); min-height: var(--mls-tap); }
@@ -393,7 +476,7 @@
   .br-login .card-mock { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: 14px; padding: 16px; width: 100%; max-width: 260px; text-align: center; }
   .br-login .logo { height: 56px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; } .br-login .mark-row { margin-bottom: 6px; } .br-login .brand-name { font-size: 1rem; }
   .br-login .field { margin-top: 8px; height: 30px; border: 1px solid var(--mls-line); border-radius: 8px; background: var(--mls-well); } .br-login .field.first { margin-top: 12px; }
-  .br-login .go { margin-top: 10px; height: 34px; line-height: 34px; border-radius: 8px; background: var(--br-p); color: #fff; font-weight: 700; }
+  .br-login .go { margin-top: 10px; height: 34px; line-height: 34px; border-radius: 8px; background: var(--br-a); color: #fff; font-weight: 700; }
   .br-preview .brand-mark.p { --mark-bg: var(--br-p); --mark-ink: var(--mls-bg); width: 44px; height: 44px; border-radius: 50%; } .br-preview .brand-mark.p svg { width: 44px; height: 44px; }
   .br-side { background: var(--br-p); color: var(--mls-sidebar-ink); border-radius: 10px; padding: 14px 14px 10px; min-height: 200px; }
   .br-side .logo { height: 56px; display: flex; align-items: center; margin-bottom: 8px; } .br-side .logo.plate { background: var(--mls-bg); border-radius: 8px; padding: 6px 10px; } .br-side .logo.plate img { max-height: 44px; }
@@ -402,8 +485,8 @@
   .br-side .item { padding: 8px 10px; font-weight: 600; font-size: .9rem; opacity: .9; } .br-side .item.active { margin-top: 6px; border-radius: 10px; background: var(--br-p-active); color: #fff; opacity: 1; } .br-side .item i { margin-right: .5rem; opacity: .85; }
   .br-print { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: 10px; padding: 16px; min-height: 200px; font-family: Arial, Helvetica, sans-serif; color: #111; }
   .br-print .head { text-align: center; padding-bottom: 8px; border-bottom: 2px solid var(--br-p); } .br-print .logo { display: flex; justify-content: center; margin-bottom: 6px; } .br-print .logo img { max-height: 40px; }
-  .br-print .biz { font-size: 15px; font-weight: 800; letter-spacing: .04em; color: var(--br-p); } .br-print .sub { font-size: 10px; color: #444; } .br-print .title { font-size: 12px; font-weight: 800; margin-top: 6px; letter-spacing: .06em; text-transform: uppercase; }
-  .br-print .line { margin-top: 2px; font-size: 11px; color: #444; display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; } .br-print .line.first { margin-top: 10px; } .br-print .line.total { font-weight: 800; color: #111; border-top: 2px solid #333; margin-top: 4px; padding-top: 4px; }
+  .br-print .biz { font-size: 15px; font-weight: 700; letter-spacing: .04em; color: var(--br-p); } .br-print .sub { font-size: 10px; color: #444; } .br-print .title { font-size: 12px; font-weight: 700; margin-top: 6px; letter-spacing: .06em; text-transform: uppercase; }
+  .br-print .line { margin-top: 2px; font-size: 11px; color: #444; display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; } .br-print .line.first { margin-top: 10px; } .br-print .line.total { font-weight: 700; color: #111; border-top: 2px solid #333; margin-top: 4px; padding-top: 4px; }
 
   /* ---- Messaging, tracking, incidents, promo codes, follow-ups, archive (Phase 10) ---- */
   .sms-to { background: var(--mls-primary-soft); border-radius: var(--mls-radius-sm); padding: 8px 12px; margin-bottom: 10px; font-size: .9rem; } .sms-to .k { display: inline-block; min-width: 2.2em; color: var(--mls-ink-soft); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
@@ -461,11 +544,15 @@
   }
   /* ---- Phone (under 576px): cards for tables, scrolling tabs, 44px targets, 16px inputs (no zoom on focus) ---- */
   @media (max-width: 575.98px) {
+    body { font-size: 15px; }
+    /* the one page title on a phone: smaller, and on two lines rather than cut when the branch, the badge and the chip leave it little room */
     #topbar { gap: .5rem; padding: 0 10px; } .user-chip .who { display: none; } #branch-switch { max-width: 150px; font-size: 16px; }
+    #topbar .page-title { font-size: 1.05rem; line-height: 1.15; white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-overflow: clip; flex: 1 1 auto; }
+    .tabs { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
     .mls-toast button { min-width: 40px; min-height: 40px; margin-top: -8px; margin-bottom: -8px; }
     .sms-chip { min-height: 40px; padding: 6px 12px; } .sms-body { font-size: 16px; } .tpl-grid { grid-template-columns: 1fr; }
     .view > .view-head { gap: .5rem; }
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } .kpi { padding: 12px; } .kpi .kpi-icon { display: none; } .kpi .kpi-value { font-size: 1.15rem; }
+    .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .kpi { padding: 12px; } .kpi .kpi-icon { display: none; } .kpi .kpi-value { font-size: 1.3rem; margin-top: 2px; }
     .table-cards tbody tr { display: block; border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); margin-bottom: 10px; padding: 8px 10px; background: var(--mls-card); }
     .table-cards thead { display: none; } .table-cards tbody td { display: flex; justify-content: space-between; gap: 10px; border: 0; padding: .25rem 0; }
     .table-cards tbody td::before { content: attr(data-label); color: var(--mls-ink-soft); font-size: .78rem; font-weight: 600; }
@@ -496,13 +583,17 @@
   :focus-visible { outline: 2px solid var(--mls-primary); outline-offset: 2px; }
   .form-control:focus-visible, .form-select:focus-visible { outline: none; }
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0s !important; scroll-behavior: auto !important; }
+    .skeleton { animation: none !important; } .btn:active:not(:disabled) { transform: none !important; } a.kpi:hover { transform: none !important; }
+    /* what rises or fades in stands at once: not even a first frame at opacity 0 */
+    .kpi.enter, .view.view-enter, #auth-screen .auth-card, .mls-toast, .dropdown-menu.show, .invalid-feedback { animation: none !important; }
   }
 
   /* ---- Printing the app page itself (Ctrl+P on a report): the chrome goes, the content stays ---- */
   @media print {
     body { background: #fff; font-size: 12px; } #sidebar, #topbar, #toast-host, #busy-overlay, .no-print, .toolbar, .tabs, .chips, .view-head .btn, .pos-cartbar { display: none !important; }
     #main-content { padding: 0; max-width: none; } .card { box-shadow: none; border-color: #ccc; break-inside: avoid; }
+    .view > .view-head > h2 { display: block !important; font-size: 1.2rem; margin: 0; } .view.view-enter, .kpi.enter { animation: none !important; }
     .table-wrap { overflow: visible; } .table-cards tbody tr { display: table-row; } .table-cards thead { display: table-header-group; }
     a { color: inherit; text-decoration: none; }
   }
@@ -737,7 +828,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.24.0';
+  var VERSION = '1.25.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -833,6 +924,7 @@ window.MLS = (function () {
      */
     function call(action, payload, opts) {
       opts = opts || {}; inflight++; if (opts.busy) UI.busy(true);
+      var pressed = Press.claim(); Press.start(pressed);  // 1.25.0: the button pressed for this call spins and takes no second press until the answer
       var offlineNow = !opts.noOffline && !!Api.offline && Net.state() === 'offline' && HOST === 'pwa' && !navigator.onLine;
       var attempt = function (n) {
         var usedToken = AppState.token, startedAt = Date.now();
@@ -850,8 +942,8 @@ window.MLS = (function () {
           throw err;
         });
       };
-      return attempt(0).then(function (d) { inflight--; if (opts.busy) UI.busy(false); return d; }, function (e) {
-        inflight--; if (opts.busy) UI.busy(false);
+      return attempt(0).then(function (d) { inflight--; if (opts.busy) UI.busy(false); Press.end(pressed); return d; }, function (e) {
+        inflight--; if (opts.busy) UI.busy(false); Press.end(pressed);
         if (!opts.url && e && (e.code === 'INTERNAL' || e.code === 'BUSY' || e.code === 'NETWORK' || e.code === 'TIMEOUT')) { try { Timing.fail(action, e.code); } catch (x) { /* ignore */ } }  // a failed request, counted on this device (1.10.0)
         if (!(e && (e.code === 'NETWORK' || e.code === 'TIMEOUT' || e.code === 'NO_SERVER'))) throw e;
         if (e.code !== 'NO_SERVER' && !e.skipped) Net.noteFailure(e);
@@ -1127,21 +1219,44 @@ window.MLS = (function () {
     empty: function (o) {
       if (typeof o === 'string') o = { title: o };
       o = o || {}; var a = o.action, act = '';
-      if (a) act = (a.href ? '<a class="btn btn-primary btn-sm" href="' + UI.esc(a.href) + '">' : '<button type="button" class="btn btn-primary btn-sm" data-empty-action>') + (a.icon ? '<i class="fa-solid ' + UI.esc(a.icon) + ' me-1"></i>' : '') + UI.esc(a.label) + (a.href ? '</a>' : '</button>');
+      if (a) act = (a.href ? '<a class="btn btn-outline-primary btn-sm" href="' + UI.esc(a.href) + '">' : '<button type="button" class="btn btn-outline-primary btn-sm" data-empty-action>') + (a.icon ? '<i class="fa-solid ' + UI.esc(a.icon) + ' me-1"></i>' : '') + UI.esc(a.label) + (a.href ? '</a>' : '</button>');
       return '<div class="empty-state' + (o.compact ? ' compact' : '') + '"><span class="empty-icon" aria-hidden="true"><i class="fa-solid ' + UI.esc(o.icon || 'fa-folder-open') + '"></i></span>' + (o.title ? '<div class="empty-title">' + UI.esc(o.title) + '</div>' : '') + (o.hint ? '<div class="empty-hint">' + UI.esc(o.hint) + '</div>' : '') + (act ? '<div class="empty-actions">' + act + '</div>' : '') + '</div>';
+    },
+    /**
+     * Release 1.25.0: the placeholder of a first visit, where no saved copy exists — bars on the ivory well with a slow shimmer (none under
+     * reduced motion), replaced by the answer the moment it arrives. UI.skeleton({ kind: 'rows' | 'tiles', count, label }).
+     */
+    skeleton: function (o) {
+      o = o || {}; var n = Math.max(1, Math.min(12, o.count || (o.kind === 'tiles' ? 4 : 5))), out = '', widths = ['w-80', '', 'w-60', 'w-80', 'w-40'];
+      if (o.kind === 'tiles') { for (var i = 0; i < n; i++) out += '<div class="skeleton-box kpi-skel"><span class="skeleton w-60"></span><span class="skeleton tall w-80"></span><span class="skeleton w-40"></span></div>'; }
+      else { out = '<div class="skeleton-rows">'; for (var j = 0; j < n; j++) out += '<span class="skeleton ' + widths[j % widths.length] + '"></span>'; out += '</div>'; }
+      return '<div class="skeleton-wrap' + (o.kind === 'tiles' ? ' kpi-grid' : '') + '" role="status" aria-busy="true"><span class="visually-hidden">' + UI.esc(o.label || 'Loading') + '</span>' + out + '</div>';
     }
   };
 
   var Toast = {
+    /** What happened, in plain words: success 4 s, an error 8 s — on a phone an error stays until it is dismissed (release 1.25.0), as a
+     *  glance at a small screen can miss it. A toast slides in (160 ms) and fades out (200 ms); under reduced motion it simply goes. */
     show: function (message, kind, ms) {
       var host = UI.el('toast-host'); if (!host) return;
       var t = document.createElement('div'); t.className = 'mls-toast ' + (kind || 'info'); t.setAttribute('role', kind === 'danger' ? 'alert' : 'status');
       var icon = { success: 'fa-circle-check', danger: 'fa-triangle-exclamation', warning: 'fa-circle-exclamation', info: 'fa-circle-info' }[kind] || 'fa-circle-info';
       t.innerHTML = '<i class="fa-solid ' + icon + ' mt-1"></i><div>' + UI.esc(message) + '</div><button type="button" aria-label="Dismiss"><i class="fa-solid fa-xmark"></i></button>';
-      t.querySelector('button').onclick = function () { t.remove(); };
-      host.appendChild(t); setTimeout(function () { t.remove(); }, ms || (kind === 'danger' ? 8000 : 4000));
+      t.querySelector('button').onclick = function () { Toast.dismiss(t); };
+      host.appendChild(t);
+      var stays = kind === 'danger' && !ms && Toast.phone();
+      if (!stays) setTimeout(function () { Toast.dismiss(t); }, ms || (kind === 'danger' ? 8000 : 4000));
+      // at most five on screen: an error that stays never piles up under newer ones
+      var all = host.querySelectorAll('.mls-toast:not(.leaving)'); for (var i = 0; i < all.length - 5; i++) Toast.dismiss(all[i]);
       return t;
     },
+    dismiss: function (t) {
+      if (!t || !t.isConnected || t.classList.contains('leaving')) return;
+      if (Toast.still()) { t.remove(); return; }
+      t.classList.add('leaving'); var gone = function () { if (t.isConnected) t.remove(); }; t.addEventListener('animationend', gone); setTimeout(gone, 400);
+    },
+    phone: function () { try { return window.matchMedia('(max-width: 575.98px)').matches; } catch (e) { return false; } },
+    still: function () { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } },
     success: function (m, ms) { return Toast.show(m, 'success', ms); }, danger: function (m, ms) { return Toast.show(m, 'danger', ms); }, warning: function (m, ms) { return Toast.show(m, 'warning', ms); }, info: function (m, ms) { return Toast.show(m, 'info', ms); }
   };
 
@@ -1179,6 +1294,43 @@ window.MLS = (function () {
       });
     }
   };
+
+  // ------------------------------------------------------------------ the pressed button (release 1.25.0)
+  /**
+   * A button pressed for a call says that the call is on its way: a 14 px spinner in place of its icon, its label and width kept, and no
+   * second press until the server has answered or the call has failed (the busy overlay stays for the writes that lock the whole screen).
+   * The button is the one pressed in the same turn of the event loop that started the call — a click, a tap, Enter in a form; a call
+   * started later (a timer, a page loading itself, a confirmation answered after its dialog closed) marks nothing. The disabled attribute is
+   * never touched, so a page keeps its own rules for that; a second press is stopped before any page code sees it.
+   */
+  var Press = (function () {
+    var pressed = null, timer = null;
+    function note(b) { if (!b || !b.classList || !b.classList.contains('btn')) return; pressed = b; clearTimeout(timer); timer = setTimeout(function () { pressed = null; }, 0); }
+    function busyBtn(b) { return !!(b && b.classList && b.classList.contains('is-loading')); }
+    function init() {
+      document.addEventListener('click', function (e) {
+        var b = e.target && e.target.closest ? e.target.closest('button.btn, a.btn') : null;
+        if (busyBtn(b)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+        note(b);
+      }, true);
+      document.addEventListener('submit', function (e) {
+        var f = e.target, b = e.submitter || (f && f.querySelector ? f.querySelector('button[type=submit]') : null);
+        if (busyBtn(b)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+        note(b);
+      }, true);
+    }
+    function claim() { var b = pressed; return b && b.isConnected ? b : null; }
+    function start(b) {
+      if (!b) return; b._mlsCalls = (b._mlsCalls || 0) + 1; if (b._mlsCalls > 1) return;
+      var w = b.getBoundingClientRect().width; if (w) b.style.minWidth = w + 'px';
+      b.classList.add('is-loading'); b.setAttribute('aria-busy', 'true');
+    }
+    function end(b) {
+      if (!b) return; b._mlsCalls = Math.max(0, (b._mlsCalls || 1) - 1); if (b._mlsCalls) return;
+      b.classList.remove('is-loading'); b.removeAttribute('aria-busy'); b.style.minWidth = '';
+    }
+    return { init: init, claim: claim, start: start, end: end };
+  })();
 
   // ------------------------------------------------------------------ forms, tables, formatting
   var Form = {
@@ -1405,14 +1557,42 @@ window.MLS = (function () {
       ul.querySelectorAll('a[data-route]').forEach(function (a) { a.addEventListener('click', function () { document.body.classList.remove('sidebar-open'); if (a.getAttribute('data-route') === current) go(current); }); });  // a tap on the open module refreshes it
       markActive();
     }
-    function markActive() { var on = (entry(current) || {}).parent || current; document.querySelectorAll('#main-nav .nav-link').forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-route') === on); }); }
+    function markActive() { var on = (entry(current) || {}).parent || current; document.querySelectorAll('#main-nav .nav-link').forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-route') === on); }); placeBarSoon(false); }
+    /** Release 1.25.0: the 3 px rich-red bar beside the selected item, one element that slides from item to item (200 ms; at once on the
+     *  first placement, after the sidebar changes shape, or under reduced motion). It is only a mark: the item's own pill says the same. */
+    var barPlaced = false, barFrame = 0;
+    /** Measured at the next frame, when the browser lays the page out anyway: a navigation never pays for a layout of its own here. */
+    function placeBarSoon(instant) { try { cancelAnimationFrame(barFrame); barFrame = requestAnimationFrame(function () { placeBar(instant); }); } catch (e) { placeBar(instant); } }
+    function placeBar(instant) {
+      var bar = UI.el('nav-indicator'), side = UI.el('sidebar'); if (!bar || !side) return;
+      var a = side.querySelector('#main-nav .nav-link.active');
+      if (!a || !a.offsetParent) { bar.classList.remove('on'); barPlaced = false; return; }
+      var sr = side.getBoundingClientRect(), ar = a.getBoundingClientRect(), inset = Math.min(10, Math.round(ar.height / 4));
+      var y = Math.round(ar.top - sr.top + side.scrollTop + inset), x = Math.round(ar.left - sr.left);
+      if (instant || !barPlaced) bar.classList.add('instant');
+      bar.style.height = Math.max(0, Math.round(ar.height) - 2 * inset) + 'px'; bar.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+      bar.classList.add('on'); barPlaced = true;
+      if (bar.classList.contains('instant')) { void bar.offsetWidth; bar.classList.remove('instant'); }
+    }
+    window.addEventListener('resize', UI.debounce(function () { placeBar(true); }, 120));
+    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { placeBar(true); }); } catch (e) { /* no font loading API: the next navigation places it */ }
+    /** The screens that never rise in: the counter while a sale may be open, the production board (its cards move on their own), the bag
+     *  station (nothing moves while a camera reads) and End of Day, whose rise measured 26 ms slower on a revisit (six runs, client only):
+     *  by the approved rule an effect that adds more than 20 ms to a navigation comes out. */
+    var STILL = { pos: true, production: true, bags: true, eod: true };
+    function enter(el, route, from) {
+      if (!el || STILL[route] || !from || from === route) return;
+      // a class added starts the rise without a layout of its own; only a screen left and re-entered within the rise waits a frame to restart it
+      if (el.classList.contains('view-enter')) { el.classList.remove('view-enter'); requestAnimationFrame(function () { el.classList.add('view-enter'); }); } else el.classList.add('view-enter');
+      var done = function () { el.classList.remove('view-enter'); el.removeEventListener('animationend', done); }; el.addEventListener('animationend', done); setTimeout(done, 600);
+    }
     function go(route, params) {
       if (!route || !allowed(route)) { route = firstAllowed(); if (!route) { Toast.danger('Your role has no module to open; ask an administrator.'); return; } }
       if (location.hash !== '#/' + route) { history.replaceState(null, '', '#/' + route); }
       var mod = registry[route], el = UI.el('view-' + route);
       document.querySelectorAll('#main-content .view').forEach(function (v) { v.hidden = true; });
       if (current && registry[current] && registry[current].onLeave) { try { registry[current].onLeave(); } catch (e) { console.error(e); } }
-      current = route; if (el) el.hidden = false; UI.setTitle(mod.title || entry(route).title); markActive(); window.scrollTo(0, 0);
+      var from = current; current = route; if (el) el.hidden = false; UI.setTitle(mod.title || entry(route).title); markActive(); window.scrollTo(0, 0); enter(el, route, from);
       try { if (!rendered[route]) { rendered[route] = true; mod.render(el, params || {}); } else if (mod.refresh) mod.refresh(el, params || {}); } catch (e) { console.error(e); Toast.danger('This module failed to open: ' + e.message); }
     }
     function refreshAll() { rendered = {}; paintNav(); go(allowed(current) ? current : null); }
@@ -1420,7 +1600,7 @@ window.MLS = (function () {
     /** Every module whose phase has shipped must be registered; anything missing is reported loudly, never silently. */
     function check() { var missing = MODULES.filter(function (m) { return m.phase <= APP_PHASE && !registry[m.route]; }).map(function (m) { return m.route; }); if (missing.length) { console.error('[Mrs Laundry Sys] modules missing for this phase: ' + missing.join(', ')); Toast.danger('Some modules did not load: ' + missing.join(', ') + '. Reload the page; if it persists open Settings → Maintenance → Browser error details.', 10000); } return missing; }
     window.addEventListener('hashchange', function () { if (AppState.me) { var r = fromHash(); if (r && r !== current) go(r); } });
-    return { register: register, go: go, current: function () { return current; }, paintNav: paintNav, refreshAll: refreshAll, fromHash: fromHash, check: check, registered: function () { return Object.keys(registry); }, allowed: allowed };
+    return { register: register, go: go, current: function () { return current; }, paintNav: paintNav, refreshAll: refreshAll, fromHash: fromHash, check: check, registered: function () { return Object.keys(registry); }, allowed: allowed, placeBar: placeBar };
   })();
 
   // ------------------------------------------------------------------ the brand (release 1.24.0, Stage 3 of the redesign)
@@ -1774,7 +1954,7 @@ window.MLS = (function () {
     Form.clearErrors(UI.el('device-form')); Modal.open('device-modal');
   }
   function boot() {
-    wireShell(); Pwa.init(); Net.init();
+    wireShell(); Press.init(); Pwa.init(); Net.init();
     var b = Pwa.info(); var v = UI.el('auth-build'); if (v) v.textContent = 'v' + VERSION + (b.build ? ' · build ' + b.build : '') + (HOST === 'pwa' ? ' · installed app' : '');
     Brand.paintAuth();  // 1.24.0: the brand this device kept, so the colours and the favicon are right before the first answer
     start();
@@ -2607,6 +2787,7 @@ window.MLS = (function () {
     <aside id="sidebar" aria-label="Main navigation">
       <a class="brand" href="#/dashboard" id="sidebar-brand"><span class="brand-logo img-frame" id="sidebar-logo"></span><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" focusable="false"><circle cx="20" cy="20" r="19"/><path d="M12 27V13l8 9 8-9v14" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="brand-text"><span class="brand-name d-block" id="sidebar-business">Mrs Laundry Sys</span><span class="brand-sub" id="sidebar-tagline">Laundry management</span></span></a>
       <ul id="main-nav"></ul>
+      <span class="nav-indicator" id="nav-indicator" aria-hidden="true"></span>
       <div class="sidebar-foot" id="sidebar-version"></div>
     </aside>
     <div id="sidebar-backdrop"></div>
@@ -2697,9 +2878,13 @@ window.MLS = (function () {
     if (d.followups) out.push({ key: 'followups', label: 'To follow up', icon: 'fa-comment-sms', tone: d.followups.unclaimed + d.followups.balances > 0 ? 'warn' : '', value: n(d.followups.unclaimed + d.followups.balances), sub: d.followups.unclaimed + ' unclaimed · ' + d.followups.balances + ' with a balance' });
     return out;
   }
+  /** Release 1.25.0: the label above the value and the icon in a soft well on the right; on the dashboard's first paint the tiles rise in
+   *  30 ms apart (five steps at most, so the last figure stands within a third of a second), never on a refresh or a later visit. */
+  var staggered = false;
   function paintTiles(d) {
-    var list = tiles(d).filter(function (t) { return !t.href || M.Router.allowed(t.href.replace('#/', '')); });
-    UI.html('dash-kpis', list.map(function (t) { var tag = t.href ? 'a' : 'div'; return '<' + tag + (t.href ? ' href="' + t.href + '"' : '') + ' class="kpi' + (t.tone ? ' ' + t.tone : '') + '"><div class="kpi-icon"><i class="fa-solid ' + t.icon + '"></i></div><div><div class="kpi-label">' + UI.esc(t.label) + '</div><div class="kpi-value' + (t.text ? ' text' : '') + '" data-kpi="' + t.key + '">' + UI.esc(t.value) + '</div><div class="kpi-sub">' + UI.esc(t.sub || '') + '</div></div></' + tag + '>'; }).join('') || UI.empty({ icon: 'fa-gauge-high', title: 'Nothing to show for your role yet', hint: 'Use the navigation on the left; the dashboard fills in as your permissions grow.', compact: true }));
+    var list = tiles(d).filter(function (t) { return !t.href || M.Router.allowed(t.href.replace('#/', '')); }), stagger = !staggered && list.length > 0;
+    UI.html('dash-kpis', list.map(function (t) { var tag = t.href ? 'a' : 'div'; return '<' + tag + (t.href ? ' href="' + t.href + '"' : '') + ' class="kpi' + (t.tone ? ' ' + t.tone : '') + (stagger ? ' enter' : '') + '"><div class="kpi-top"><div class="kpi-label">' + UI.esc(t.label) + '</div><span class="kpi-icon" aria-hidden="true"><i class="fa-solid ' + t.icon + '"></i></span></div><div class="kpi-value' + (t.text ? ' text' : '') + '" data-kpi="' + t.key + '">' + UI.esc(t.value) + '</div><div class="kpi-sub">' + UI.esc(t.sub || '') + '</div></' + tag + '>'; }).join('') || UI.empty({ icon: 'fa-gauge-high', title: 'Nothing to show for your role yet', hint: 'Use the navigation on the left; the dashboard fills in as your permissions grow.', compact: true }));
+    if (stagger) { staggered = true; UI.el('dash-kpis').querySelectorAll('.kpi.enter').forEach(function (el, i) { el.style.setProperty('--i', Math.min(i, 5)); el.addEventListener('animationend', function () { el.classList.remove('enter'); }, { once: true }); }); }
   }
   function paintMe(d) {
     var me = d.me, card = UI.el('dash-me-card'); if (!me || (!me.staff && me.deliveries === undefined)) { card.hidden = true; return; }
@@ -2788,10 +2973,13 @@ window.MLS = (function () {
     UI.el('dash-asof').textContent = 'as of ' + F.time(info && info.cached && info.asOf ? new Date(info.asOf) : new Date()) + (info && info.cached ? ' (saved on this device)' : '');
   }
   var seq = M.Api.sequence(), extraSeq = M.Api.sequence();
+  /** A first visit with nothing saved on this device: skeleton tiles until the first answer (a saved copy paints within 150 ms and is never covered). */
+  function skeleton() { var box = UI.el('dash-kpis'); if (box.children.length) return; setTimeout(function () { if (!box.children.length) box.innerHTML = UI.skeleton({ kind: 'tiles', count: 4, label: 'Loading the dashboard' }); }, 160); }
+  function unskeleton() { var box = UI.el('dash-kpis'), sk = box.querySelector('.skeleton-wrap'); if (sk) box.innerHTML = ''; }
   function load() {
-    var btn = UI.el('dash-refresh'); btn.disabled = true;
+    var btn = UI.el('dash-refresh'); btn.disabled = true; skeleton();
     var extra = M.Api.read('dashboard.extras', {}, { seq: extraSeq, paint: paintExtras, view: null }).catch(function (e) { if (!(e && e.superseded) && !(e && e.offline)) M.Toast.warning('Dashboard follow-ups: ' + UI.error(e)); });
-    return M.Api.read('dashboard.summary', {}, { seq: seq, paint: paint }).catch(function (e) { if (!(e && e.superseded)) M.Toast.danger('Dashboard: ' + UI.error(e)); }).then(function () { btn.disabled = false; return extra; });
+    return M.Api.read('dashboard.summary', {}, { seq: seq, paint: paint }).catch(function (e) { if (!(e && e.superseded)) { unskeleton(); M.Toast.danger('Dashboard: ' + UI.error(e)); } }).then(function () { btn.disabled = false; return extra; });
   }
   M.Router.register('dashboard', {
     title: 'Dashboard',
@@ -3407,18 +3595,26 @@ window.MLS = (function () {
       '<h6 class="fw-bold mt-3">Timeline</h6><ul class="timeline">' + tl + '</ul>');
     UI.el('order-modal-body').querySelectorAll('[data-void]').forEach(function (b) { b.onclick = function () { voidPayment(b.getAttribute('data-void')); }; });
     if (o.Bags && M.Bags) M.Bags.wireSection(UI.el('order-modal-body'), o, function () { Api.call('orders.get', { id: o.Id }).then(changed).catch(function () { /* keep the view */ }); });
-    var t = o.Transitions, can = M.Auth.can, acts = [];
-    if (can('ORDER_STATUS') && t.indexOf('PROCESSING') >= 0) acts.push(['status', 'PROCESSING', 'btn-outline-primary', 'fa-play', 'Start processing']);
-    if (can('ORDER_STATUS') && t.indexOf('READY') >= 0) acts.push(['status', 'READY', 'btn-outline-success', 'fa-bag-shopping', 'Mark ready']);
-    if (can('ORDER_STATUS') && t.indexOf('COMPLETED') >= 0) acts.push(['release', '', 'btn-success', 'fa-circle-check', 'Release to customer']);
-    if (can('PAYMENT_CREATE') && Number(o.BalanceAmount) > 0 && ['CANCELLED', 'REFUNDED'].indexOf(o.Status) < 0) acts.push(['pay', '', 'btn-primary', 'fa-hand-holding-dollar', 'Add payment']);
-    if (can('POS_REFUND') && Number(o.PaidAmount) > 0) acts.push(['refund', '', 'btn-outline-danger', 'fa-rotate-left', 'Refund']);
-    if (can('POS_EDIT') && o.Correctable && !o._pending && M.Router.allowed('pos')) acts.push(['correct', '', 'btn-outline-primary', 'fa-pen-to-square', 'Correct order']);  // 1.12.0: lines, weights, express, fees, discount — before production
-    if (can('ORDER_CANCEL') && t.indexOf('CANCELLED') >= 0) acts.push(['cancel', '', 'btn-outline-danger', 'fa-ban', 'Cancel order']);
-    acts.push(['note', '', 'btn-outline-secondary', 'fa-comment', 'Add note']); acts.push(['print', '', 'btn-outline-secondary', 'fa-print', 'Receipt']); acts.push(['labels', '', 'btn-outline-secondary', 'fa-tags', 'Labels']);
-    if (can('INCIDENT_CREATE')) acts.push(['incident', '', 'btn-outline-warning', 'fa-triangle-exclamation', 'Report incident']);
+    // 1.25.0 (Stage 4): one primary — Add payment while a balance is owed, else Release to customer — at the right; the everyday actions as
+    // outlines beside it; the rare and the destructive ones (correct, labels, incident, refund, cancel) one tap away under More, at the left.
+    // Nothing is removed: every action keeps its data-action and its permission.
+    var t = o.Transitions, can = M.Auth.can, main = [], more = [];
+    var canRelease = can('ORDER_STATUS') && t.indexOf('COMPLETED') >= 0, canPay = can('PAYMENT_CREATE') && Number(o.BalanceAmount) > 0 && ['CANCELLED', 'REFUNDED'].indexOf(o.Status) < 0;
+    main.push(['print', '', 'btn-outline-secondary', 'fa-print', 'Receipt']); main.push(['note', '', 'btn-outline-secondary', 'fa-comment', 'Add note']);
+    if (can('ORDER_STATUS') && t.indexOf('PROCESSING') >= 0) main.push(['status', 'PROCESSING', 'btn-outline-primary', 'fa-play', 'Start processing']);
+    if (can('ORDER_STATUS') && t.indexOf('READY') >= 0) main.push(['status', 'READY', 'btn-outline-primary', 'fa-bag-shopping', 'Mark ready']);
+    if (canRelease) main.push(['release', '', canPay ? 'btn-outline-primary' : 'btn-primary', 'fa-circle-check', 'Release to customer']);
+    if (canPay) main.push(['pay', '', 'btn-primary', 'fa-hand-holding-dollar', 'Add payment']);
+    if (can('POS_EDIT') && o.Correctable && !o._pending && M.Router.allowed('pos')) more.push(['correct', '', '', 'fa-pen-to-square', 'Correct order']);  // 1.12.0: lines, weights, express, fees, discount — before production
+    more.push(['labels', '', '', 'fa-tags', 'Labels']);
+    if (can('INCIDENT_CREATE')) more.push(['incident', '', '', 'fa-triangle-exclamation', 'Report incident']);
+    var danger = [];
+    if (can('POS_REFUND') && Number(o.PaidAmount) > 0) danger.push(['refund', '', 'text-danger', 'fa-rotate-left', 'Refund']);
+    if (can('ORDER_CANCEL') && t.indexOf('CANCELLED') >= 0) danger.push(['cancel', '', 'text-danger', 'fa-ban', 'Cancel order']);
+    var item = function (a) { return '<li><button type="button" class="dropdown-item ' + a[2] + '" data-action="' + a[0] + '" data-arg="' + a[1] + '"><i class="fa-solid ' + a[3] + ' me-2" aria-hidden="true"></i>' + a[4] + '</button></li>'; };
+    var moreMenu = '<div class="dropdown dropup order-more"><button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" id="order-more" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis me-1" aria-hidden="true"></i>More</button><ul class="dropdown-menu">' + more.map(item).join('') + (danger.length ? '<li><hr class="dropdown-divider"></li>' + danger.map(item).join('') : '') + '</ul></div>';
     var smsMenu = M.Sms && M.Sms.can(o.Mobile) ? M.Sms.menuHtml({ id: 'order-sms-menu', items: M.Sms.workflowsForOrder(o).map(function (w) { return Object.assign({}, w, { arg: w.code === 'PAYMENT_RECEIVED' && o.Payments.length ? o.Payments.filter(function (p) { return p.Type === 'PAYMENT' && p.Status !== 'VOID'; }).slice(-1).map(function (p) { return p.Id; })[0] || '' : '' }); }) }) : '';
-    UI.html('order-modal-actions', acts.map(function (a) { return '<button type="button" class="btn btn-sm ' + a[2] + '" data-action="' + a[0] + '" data-arg="' + a[1] + '"><i class="fa-solid ' + a[3] + ' me-1"></i>' + a[4] + '</button>'; }).join('') + smsMenu);
+    UI.html('order-modal-actions', moreMenu + '<span class="spacer"></span>' + smsMenu + main.map(function (a) { return '<button type="button" class="btn btn-sm ' + a[2] + '" data-action="' + a[0] + '" data-arg="' + a[1] + '"><i class="fa-solid ' + a[3] + ' me-1"></i>' + a[4] + '</button>'; }).join(''));
     UI.el('order-modal-actions').querySelectorAll('[data-action]').forEach(function (b) { b.onclick = function () { act(b.getAttribute('data-action'), b.getAttribute('data-arg')); }; });
     if (smsMenu) M.Sms.wireMenu(UI.el('order-modal-actions'), function (arg) { return { orderId: o.Id, paymentId: arg || '' }; }, function () { Api.call('orders.get', { id: o.Id }).then(changed).catch(function () { /* keep the view */ }); });
   }
@@ -7351,8 +7547,9 @@ window.MLS = (function () {
     form.querySelectorAll('[data-clear]').forEach(function (el) { if (el.checked) { clear[el.getAttribute('data-clear')] = true; values[el.getAttribute('data-clear')] = ''; } });
     return { values: values, clear: clear };
   }
-  function groupForm(g, canEdit) {
-    return '<form class="set-group" data-group="' + UI.esc(g.Group) + '" autocomplete="off"><div class="row g-3">' + g.Settings.map(function (s) { return fieldHtml(s, canEdit); }).join('') + '</div>' + (canEdit ? '<div class="d-flex align-items-center gap-2 mt-3"><button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-floppy-disk me-1"></i>Save ' + UI.esc(g.Group.toLowerCase()) + ' settings</button><span class="small text-danger" data-error></span></div>' : '<p class="small text-soft mt-3 mb-0">Read only: editing needs the SETTINGS_EDIT permission.</p>') + '</form>';
+  /** quiet (1.25.0): where several groups share a screen (Business: the business and the receipts), their saves are burgundy outlines — one rich red per screen at most */
+  function groupForm(g, canEdit, quiet) {
+    return '<form class="set-group" data-group="' + UI.esc(g.Group) + '" autocomplete="off"><div class="row g-3">' + g.Settings.map(function (s) { return fieldHtml(s, canEdit); }).join('') + '</div>' + (canEdit ? '<div class="d-flex align-items-center gap-2 mt-3"><button type="submit" class="btn ' + (quiet ? 'btn-outline-primary' : 'btn-primary') + ' btn-sm"><i class="fa-solid fa-floppy-disk me-1"></i>Save ' + UI.esc(g.Group.toLowerCase()) + ' settings</button><span class="small text-danger" data-error></span></div>' : '<p class="small text-soft mt-3 mb-0">Read only: editing needs the SETTINGS_EDIT permission.</p>') + '</form>';
   }
   function wireGroupForms(host) {
     host.querySelectorAll('form.set-group').forEach(function (form) {
@@ -7366,7 +7563,7 @@ window.MLS = (function () {
   }
   function tabBusiness() {
     body().innerHTML = '<div class="text-soft small">Loading…</div>';
-    loadSettings().then(function (d) { if (state.tab !== 'business') return; body().innerHTML = d.groups.filter(function (g) { return BUSINESS_GROUPS.indexOf(g.Group) >= 0; }).map(function (g) { return card(g.Group === 'Business' ? 'Business information' : 'Receipts', groupForm(g, d.canEdit)); }).join('') + card('Branches, services and pricing', '<p class="small text-soft mb-2">Branch addresses and receipt lines live under <strong>Branches</strong>; services, prices and recipes under <strong>Services</strong>.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-go-tab="branches"><i class="fa-solid fa-store me-1"></i>Branches</button><a class="btn btn-outline-secondary btn-sm" href="#/services"><i class="fa-solid fa-shirt me-1"></i>Services and pricing</a></div>'); wireGroupForms(body()); body().querySelectorAll('[data-go-tab]').forEach(function (b) { b.onclick = function () { state.tab = b.getAttribute('data-go-tab'); paintTabs(); showTab(); }; }); }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
+    loadSettings().then(function (d) { if (state.tab !== 'business') return; body().innerHTML = d.groups.filter(function (g) { return BUSINESS_GROUPS.indexOf(g.Group) >= 0; }).map(function (g, i, all) { return card(g.Group === 'Business' ? 'Business information' : 'Receipts', groupForm(g, d.canEdit, all.length > 1)); }).join('') + card('Branches, services and pricing', '<p class="small text-soft mb-2">Branch addresses and receipt lines live under <strong>Branches</strong>; services, prices and recipes under <strong>Services</strong>.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-go-tab="branches"><i class="fa-solid fa-store me-1"></i>Branches</button><a class="btn btn-outline-secondary btn-sm" href="#/services"><i class="fa-solid fa-shirt me-1"></i>Services and pricing</a></div>'); wireGroupForms(body()); body().querySelectorAll('[data-go-tab]').forEach(function (b) { b.onclick = function () { state.tab = b.getAttribute('data-go-tab'); paintTabs(); showTab(); }; }); }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
   }
   function tabSettings() {
     body().innerHTML = '<div class="text-soft small">Loading…</div>';
@@ -7408,7 +7605,7 @@ window.MLS = (function () {
       var kept = M.Brand.pictures(), logo = kept.logo, dark = kept.logoDark, fav = kept.favicon;  // the pictures this device keeps (no picture travels in the settings)
       var textCard = '<div class="row g-3"><div class="col-md-6"><label class="form-label" for="br-name">Business name</label><input class="form-control" id="br-name" maxlength="80" value="' + UI.esc(d.name) + '"' + dis + '><div class="form-text">On the sign-in card, in the sidebar, on receipts and reports.</div></div>' +
         '<div class="col-md-6"><label class="form-label" for="br-tagline">Tagline</label><input class="form-control" id="br-tagline" maxlength="60" value="' + UI.esc(d.tagline) + '"' + dis + '><div class="form-text">Under the name on the sign-in card and in the sidebar; blank for none.</div></div></div>' +
-        (canEdit ? '<div class="d-flex align-items-center gap-2 mt-3"><button type="button" class="btn btn-primary btn-sm" id="br-save-text"><i class="fa-solid fa-floppy-disk me-1"></i>Save name and tagline</button><span class="small text-danger" id="br-text-error"></span></div>' : ro);
+        (canEdit ? '<div class="d-flex align-items-center gap-2 mt-3"><button type="button" class="btn btn-outline-primary btn-sm" id="br-save-text"><i class="fa-solid fa-floppy-disk me-1"></i>Save name and tagline</button><span class="small text-danger" id="br-text-error"></span></div>' : ro);
       var prev = d.previous ? '<button type="button" class="btn btn-outline-secondary btn-sm" id="br-logo-restore"><i class="fa-solid fa-rotate-left me-1"></i>Restore the previous logo</button>' : '';
       var logoCard = '<div class="row g-3"><div class="col-lg-6"><div class="small fw-semibold mb-1">In use</div>' + brFrame('br-logo-now', logo, '', '<span class="small text-soft px-2">None — the monogram shows</span>') + '<div class="small text-soft mt-1" id="br-logo-info">' + (d.logo ? brInfo(d.logo) : 'A PNG, JPG, WebP or SVG; it is resized here to at most 480 × 160 px and must stay under 30 KB (a flat logo does).') + '</div>' +
         '<div class="d-flex flex-wrap gap-2 mt-2">' + brFileButton('br-logo-file', 'Choose a logo…', !canEdit) + (d.logo && canEdit ? '<button type="button" class="btn btn-outline-danger btn-sm" id="br-logo-remove"><i class="fa-solid fa-xmark me-1"></i>Remove</button>' : '') + (canEdit ? prev : '') + '</div>' +
@@ -7421,9 +7618,9 @@ window.MLS = (function () {
         '<div class="d-flex flex-wrap gap-2 mt-2">' + brFileButton('br-icon-file', 'Choose an icon…', !canEdit) + (d.icon && canEdit ? '<button type="button" class="btn btn-outline-danger btn-sm" id="br-icon-remove"><i class="fa-solid fa-xmark me-1"></i>Remove</button>' : '') + (canEdit ? '<button type="button" class="btn btn-outline-secondary btn-sm" id="br-icon-pack"' + (d.icon ? '' : ' disabled') + '><i class="fa-solid fa-download me-1"></i>Download icon pack</button>' : '') + '</div>' +
         '<div class="small text-soft mt-2">The icon pack is a zip with icon-192.png, icon-512.png, icon-maskable-512.png and apple-touch-icon.png, made on this device from the icon in use. Send it with the next release (or put the files in tests/pwa/icons/): phones show the new home-screen icon after <b>Update now</b>, on some Android versions only after a reinstall.</div></div>' +
         (canEdit ? '<div class="col-lg-6" id="br-icon-new" hidden><div class="small fw-semibold mb-1">Ready to use</div><div class="d-flex align-items-center gap-3"><div id="br-icon-new-frame"></div><div id="br-icon-new-fav"></div></div><div class="small text-soft mt-1" id="br-icon-new-info"></div><div class="d-flex flex-wrap gap-2 mt-2"><button type="button" class="btn btn-primary btn-sm" id="br-icon-use"><i class="fa-solid fa-check me-1"></i>Use this icon</button><button type="button" class="btn btn-outline-secondary btn-sm" id="br-icon-cancel">Cancel</button></div></div>' : '') + '</div>' + ro;
-      var coloursCard = '<div class="row g-3">' + brColourRow('primary', 'Brand colour', d.primary, d.defaults.primary, 'The sidebar, links and outline buttons. Standard: burgundy ' + d.defaults.primary + '.', dis) + brColourRow('action', 'Action colour', d.action, d.defaults.action, 'The one primary button per screen (applied by the next stage of the redesign; the preview shows it). Standard: rich red ' + d.defaults.action + '.', dis) + '</div>' +
+      var coloursCard = '<div class="row g-3">' + brColourRow('primary', 'Brand colour', d.primary, d.defaults.primary, 'The sidebar, links and outline buttons. Standard: burgundy ' + d.defaults.primary + '.', dis) + brColourRow('action', 'Action colour', d.action, d.defaults.action, 'The one primary button per screen: Sign in, Charge, the main button of a dialog (the preview shows it). Standard: rich red ' + d.defaults.action + '.', dis) + '</div>' +
         '<p class="small text-soft mt-2 mb-0">A colour is accepted only when white and ivory text read on it at 4.5:1 or better — the same check the server makes — so no choice can make a button unreadable. Everything else (text, surfaces, states) stays fixed.</p>' +
-        (canEdit ? '<div class="d-flex align-items-center gap-2 mt-3"><button type="button" class="btn btn-primary btn-sm" id="br-save-colours"><i class="fa-solid fa-floppy-disk me-1"></i>Save colours</button><span class="small text-danger" id="br-colours-error"></span></div>' : ro);
+        (canEdit ? '<div class="d-flex align-items-center gap-2 mt-3"><button type="button" class="btn btn-outline-primary btn-sm" id="br-save-colours"><i class="fa-solid fa-floppy-disk me-1"></i>Save colours</button><span class="small text-danger" id="br-colours-error"></span></div>' : ro);
       body().innerHTML = card('Name and tagline', textCard) + card('Logo', logoCard) + card('App icon', iconCard) + card('Brand colours', coloursCard) + card('Preview', '<div id="br-preview"></div><p class="small text-soft mt-2 mb-0">The sign-in card, the sidebar head and a printed header with what is on this screen now — saved or not. Every device takes a saved change at its next sign-in or settings refresh.</p>');
       wireBranding(canEdit); brPreview();
     }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
