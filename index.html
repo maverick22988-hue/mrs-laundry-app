@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'ee030c229a', version: '1.26.0' };</script>
+  <script>window.MLS_PWA = { build: '1400c04e09', version: '1.27.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -68,7 +68,7 @@
     --mls-font: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif; --mls-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     /* Bootstrap's palette mapped onto the tokens (1.24.0): its links, switches, alerts, badges and secondary buttons take the same colours */
     --bs-primary: #6D2322; --bs-primary-rgb: 109, 35, 34; --bs-link-color: #6D2322; --bs-link-color-rgb: 109, 35, 34; --bs-link-hover-color: #521A19; --bs-link-hover-color-rgb: 82, 26, 25;
-    --bs-secondary: #746E68; --bs-secondary-rgb: 116, 110, 104; --bs-secondary-color: #746E68; --bs-body-color: #302A28; --bs-body-color-rgb: 48, 42, 40; --bs-border-color: #E6D0AB;  /* --bs-body-bg stays white: cards, inputs, modals and tables are white on the ivory page */
+    --bs-secondary: #746E68; --bs-secondary-rgb: 116, 110, 104; --bs-secondary-color: #746E68; --bs-body-color: #302A28; --bs-body-color-rgb: 48, 42, 40; --bs-emphasis-color: #302A28; --bs-emphasis-color-rgb: 48, 42, 40; --bs-border-color: #E6D0AB;  /* --bs-body-bg stays white: cards, inputs, modals and tables are white on the ivory page; 1.27.0: Bootstrap's emphasis colour (the text of every table) is the charcoal ink, not black */
     --bs-success: #1E6A3C; --bs-success-rgb: 30, 106, 60; --bs-danger: #8E1B1B; --bs-danger-rgb: 142, 27, 27; --bs-warning: #8A5A00; --bs-warning-rgb: 138, 90, 0; --bs-info: #2F5E8E; --bs-info-rgb: 47, 94, 142;
     --bs-success-text-emphasis: #1E6A3C; --bs-success-bg-subtle: #E4F2E7; --bs-success-border-subtle: #B9DBC3; --bs-danger-text-emphasis: #8E1B1B; --bs-danger-bg-subtle: #F8E3E3; --bs-danger-border-subtle: #E8BABA;
     --bs-warning-text-emphasis: #8A5A00; --bs-warning-bg-subtle: #FBEFD2; --bs-warning-border-subtle: #EDD39A; --bs-info-text-emphasis: #2F5E8E; --bs-info-bg-subtle: #E4EDF7; --bs-info-border-subtle: #BBD0E6;
@@ -134,6 +134,7 @@
   .card-header { background: transparent; border-bottom: 1px solid var(--mls-line-soft); font-weight: 600; font-size: var(--fs-md); padding: .75rem 1rem; }
   .card-header .btn { white-space: nowrap; flex: 0 0 auto; }
   .badge { font-weight: 600; border-radius: 999px; padding: .35em .7em; }
+  .text-bg-warning, .text-bg-info { color: #fff !important; }  /* 1.27.0: the palette's warning and info are dark, so their solid badges take white text, not Bootstrap's black: Express 5.9:1 and Pickup 6.8:1, where they read 3.5 and 3.1 */
   /* tables: charcoal on white, hairlines between rows, a beige rule under a small header, amounts right-aligned in tabular figures (.num) */
   .table { --bs-table-striped-bg: var(--mls-well); }
   .table > :not(caption) > * > * { border-bottom-color: var(--mls-line-soft); }
@@ -367,7 +368,7 @@
   .pos-cart { position: sticky; top: calc(var(--mls-topbar-h) + 12px); }
   .pos-cart > .card { background: var(--mls-well); }
   .pos-cart .cart-foot { padding: 12px 16px 14px; border-top: 1px solid var(--mls-line); }
-  .pos-cart .money { font-variant-numeric: tabular-nums; } .pos-cart input.money, #pay-form input.money { text-align: right; }
+  .pos-cart .money { font-variant-numeric: tabular-nums; } .pos-cart input.money, #pay-form input.money, #dsp-job-form input.money, #dsp-zone-form input.money { text-align: right; }
   .cart-lines { max-height: 38vh; overflow: auto; }
   /* a line: its name over its rate, the amount on the right in the totals' column, the weight or quantity under the amount */
   .cart-line { display: grid; grid-template-columns: minmax(0, 1fr) 84px 32px; grid-template-areas: "name amt amt" "sub qty rm"; gap: 2px 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--mls-line); }
@@ -409,11 +410,31 @@
   .kanban { display: grid; grid-template-columns: repeat(6, minmax(176px, 1fr)); gap: 10px; align-items: start; overflow-x: auto; padding-bottom: 6px; }
   .kcol { background: var(--mls-well); border-radius: var(--mls-radius); padding: 8px; min-height: 120px; min-width: 0; }
   .kcol h6 { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--mls-ink-soft); display: flex; align-items: center; margin: 2px 4px 8px; }
-  .kcol h6 .count { margin-left: auto; background: var(--mls-card); border-radius: 999px; padding: .05em .55em; font-size: .74rem; color: var(--mls-ink); }
-  .kcard { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px 10px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(48, 42, 40, .05); cursor: pointer; min-width: 0; }
-  .kcard.express { border-left: 4px solid var(--mls-warning); } .kcard.overdue .due { color: var(--mls-danger); font-weight: 700; }
-  .kcard .no { font-weight: 700; font-size: .82rem; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; } .kcard .meta { font-size: .76rem; color: var(--mls-ink-soft); } .kcard .acts { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .kcol h6 .count { margin-left: auto; background: var(--mls-card); border-radius: 999px; padding: .05em .55em; font-size: var(--fs-xs); color: var(--mls-ink); }
+  .kcard { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(48, 42, 40, .05); cursor: pointer; min-width: 0; }
+  .kcard.express { border-left: 4px solid var(--mls-warning); padding-left: 5px; } .kcard.overdue .due { color: var(--mls-danger); font-weight: 700; }
+  .kcard .no { font-weight: 700; font-size: .82rem; letter-spacing: -.01em; min-width: 0; overflow-wrap: break-word; font-variant-numeric: tabular-nums; } .kcard .meta { font-size: .76rem; color: var(--mls-ink-soft); } .kcard .acts { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .kcard .acts .btn { flex: 1 1 auto; }
+  /* 1.27.0 (Stage 5): the board brought over. The order number whole on a card, breaking after a hyphen when the card is narrow, with
+     the tags beside it while they fit; the tags, the bag counts and the column counts at 12 px; an empty column in the empty-state
+     pattern, its icon on white; the skeleton board of a first visit (not .kcol, so nothing reads it as the board); the machines as
+     status pills in the state pairs, which wrap */
+  .kcard .khead { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 6px; } .kcard .no .pre { font-weight: 400; font-size: var(--fs-xs); }
+  .kanban .pending-tag, .kanban .bag-chip, .kanban .badge { font-size: var(--fs-xs); }
+  .kcol .empty-state { padding: 14px 6px 10px; } .kcol .empty-state .empty-icon { background: var(--mls-card); }
+  .kcol .empty-state .empty-title { font-size: var(--fs-sm); font-weight: 600; color: var(--mls-ink-soft); }
+  .kcol .empty-state .empty-actions { margin-top: 10px; }
+  .kanban > .empty-state { grid-column: 1 / -1; }
+  .kcol-skel { background: var(--mls-well); border-radius: var(--mls-radius); padding: 8px; min-height: 120px; min-width: 0; }
+  .kcol-skel h6 { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--mls-ink-soft); display: flex; align-items: center; margin: 2px 4px 8px; }
+  .kcol-skel .skeleton-box { min-height: 64px; padding: 10px; margin-bottom: 8px; border-radius: var(--mls-radius-sm); }
+  .machine-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; font-size: var(--fs-xs); color: var(--mls-ink-soft); }
+  .machine-chip { display: inline-block; max-width: 100%; padding: .15rem .6rem; border-radius: 999px; border: 1px solid var(--mls-success-line); background: var(--mls-success-soft); color: var(--mls-success); font-weight: 600; overflow-wrap: break-word; }
+  .machine-chip.busy { border-color: var(--mls-info-line); background: var(--mls-info-soft); color: var(--mls-info); }
+  .machine-chip.down { border-color: var(--mls-danger-line); background: var(--mls-danger-soft); color: var(--mls-danger); }
+  #prod-start-pick button .sub { font-size: var(--fs-xs); white-space: normal; overflow-wrap: break-word; }
+  /* 1.27.0 (Stage 5): Dispatch brought over — the job dialog's footer as the order dialog's; on a phone the rider's assignment takes the row */
+  @media (max-width: 575.98px) { #dsp-view-actions .dsp-assign { max-width: none; flex: 1 1 100%; } }
   .job-card { background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius); padding: 14px 16px; margin-bottom: 12px; }
   .job-card .who { font-size: 1.1rem; font-weight: 700; } .job-card .addr { color: var(--mls-ink-soft); } .job-card .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
   .job-card .acts .btn { padding: .7rem .5rem; font-weight: 700; font-size: 1rem; } .job-card .orders li { display: flex; justify-content: space-between; gap: 8px; padding: .25rem 0; border-bottom: 1px dashed var(--mls-line); }
@@ -880,7 +901,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.26.0';
+  var VERSION = '1.27.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -1421,6 +1442,20 @@ window.MLS = (function () {
     date: function (v) { if (!v) return ''; var d = v instanceof Date ? v : new Date(String(v).length === 10 ? v + 'T00:00:00' : v); return isNaN(d) ? String(v) : d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }); },
     time: function (v) { if (!v) return ''; var d = new Date(v); return isNaN(d) ? String(v) : d.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' }); },
     datetime: function (v) { return v ? Formatter.date(v) + ' ' + Formatter.time(v) : ''; },
+    /**
+     * 1.27.0 (Stage 5): a moment said short, for a board or a list — today 7:14 PM, tomorrow 7:14 PM, yesterday 7:14 PM, the weekday
+     * within six days either way (Sat 7:14 PM), else the date without the year when it is this year's (Nov 12, 7:14 PM). The day is
+     * this device's calendar day, as the board's clock is.
+     */
+    when: function (v) {
+      if (!v) return ''; var d = v instanceof Date ? v : new Date(v); if (isNaN(d)) return String(v);
+      var now = new Date(), day = function (x) { return new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(); }, diff = Math.round((day(d) - day(now)) / 86400000), t = Formatter.time(d);
+      if (diff === 0) return 'today ' + t; if (diff === 1) return 'tomorrow ' + t; if (diff === -1) return 'yesterday ' + t;
+      if (Math.abs(diff) <= 6) return d.toLocaleDateString('en-PH', { weekday: 'short' }) + ' ' + t;
+      return d.toLocaleDateString('en-PH', d.getFullYear() === now.getFullYear() ? { month: 'short', day: 'numeric' } : { year: 'numeric', month: 'short', day: 'numeric' }) + ', ' + t;
+    },
+    /** 1.27.0: a code that may break after its hyphens and nowhere else (MAIN-20261107-0001 on a narrow card), escaped. */
+    breakable: function (s) { return UI.esc(s).replace(/-/g, '-<wbr>'); },
     relative: function (v) { if (!v) return ''; var ms = Date.now() - new Date(v).getTime(); var m = Math.round(ms / 60000); if (Math.abs(m) < 1) return 'just now'; if (Math.abs(m) < 60) return m + ' min ago'; var h = Math.round(m / 60); if (Math.abs(h) < 24) return h + ' h ago'; return Math.round(h / 24) + ' d ago'; },
     status: function (s) { return String(s || '').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, function (c) { return c.toUpperCase(); }); },
     qty: function (n, unit) { var v = Number(n) || 0; return v.toLocaleString('en-PH', { maximumFractionDigits: 3 }) + (unit ? ' ' + unit : ''); },
@@ -4722,7 +4757,7 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — ProductionPage.html: the Production module: the board (queue → washing → drying → folding → QC → ready) with one-tap stage moves, the machine each stage runs on (picked from the branch's registered machines, release 1.15.0), the QC pass/fail decision and (1.16.0) how many of each order's bags were scanned at its stage. -->
+        <!-- Mrs Laundry Sys — ProductionPage.html: the Production module: the board (queue → washing → drying → folding → QC → ready) with one-tap stage moves, the machine each stage runs on (picked from the branch's registered machines, release 1.15.0), the QC pass/fail decision and (1.16.0) how many of each order's bags were scanned at its stage. Release 1.27.0 (Stage 5) brings it to the design system: a skeleton board on a first visit, empty columns that say what they wait for, whole order numbers, short due times and the machines as status pills. -->
 <section id="view-production" class="view" hidden>
   <div class="view-head">
     <h2>Production</h2>
@@ -4731,7 +4766,7 @@ window.MLS = (function () {
     <span class="small text-soft me-2" id="prod-updated"></span>
     <button type="button" class="btn btn-outline-primary btn-sm" id="prod-refresh"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
   </div>
-  <div class="small text-soft mb-2" id="prod-machines" hidden></div>
+  <div class="machine-strip" id="prod-machines" hidden></div>
   <div class="kanban" id="prod-board"></div>
 </section>
 
@@ -4801,6 +4836,11 @@ window.MLS = (function () {
     var where = col === 'QUEUE' ? 'scanned in' : (col === 'READY' ? 'at ready' : 'here'), cls = b.missing ? ' missing' : (b.here < b.n ? ' short' : '');
     return '<span class="bag-chip ms-auto' + cls + '" title="' + b.here + ' of ' + b.n + ' bags ' + where + (b.missing ? ' · ' + b.missing + ' missing' : '') + '"><i class="fa-solid fa-tags"></i>' + b.here + '/' + b.n + '</span>';
   }
+  /**
+   * 1.27.0: an order number on a card: the branch and the date that every card of the day shares in regular weight, the order's own
+   * number after the last hyphen in bold, breaking after a hyphen only (MAIN-20261107- / 0001 on a narrow card), never cut.
+   */
+  function orderNo(s) { s = String(s || ''); var i = s.lastIndexOf('-'); return i <= 0 || i === s.length - 1 ? F.breakable(s) : '<span class="pre">' + F.breakable(s.slice(0, i + 1)) + '</span>' + UI.esc(s.slice(i + 1)); }
   function card(c, col) {
     var acts = '';
     if (canUpdate()) {
@@ -4809,34 +4849,64 @@ window.MLS = (function () {
     }
     // the clock is this device's: minutes in stage and overdue are counted from the timestamps, not from the moment the server answered
     var now = Date.now(), overdue = c.DueAt ? new Date(c.DueAt).getTime() < now : !!c.Overdue, minutes = c.StageSince ? Math.max(0, Math.round((now - new Date(c.StageSince).getTime()) / 60000)) : c.MinutesInStage;
+    // 1.27.0 (Stage 5): the order number always whole (it breaks after a hyphen on a narrow card, never cut to MAIN-20261107-0…); the tags
+    // beside it while they fit, on the next line when they do not; the due time said short, on one line (Due tomorrow 7:14 PM)
+    var tags = (c._pending ? (M.Net && M.Net.state && M.Net.state() !== 'online' ? '<span class="pending-tag" title="Kept on this device; sent when the connection returns">not synced</span>' : '<span class="pending-tag sending" title="Sent to the server; the move stands here until the server has applied it"><i class="fa-solid fa-rotate fa-spin me-1" aria-hidden="true"></i>sending</span>') : '') + (c.IsExpress ? '<span class="badge text-bg-warning">Express</span>' : '') + (c.ServiceType === 'DELIVERY' ? '<i class="fa-solid fa-motorcycle text-soft" role="img" aria-label="For delivery" title="For delivery"></i>' : '') + bagChip(c, col);
     return '<div class="kcard' + (c.IsExpress ? ' express' : '') + (overdue && col !== 'READY' ? ' overdue' : '') + '" data-open="' + UI.esc(c.Id) + '">' +
-      '<div class="d-flex align-items-center gap-2"><span class="no">' + UI.esc(c.OrderNo) + '</span>' + (c._pending ? (M.Net && M.Net.state && M.Net.state() !== 'online' ? '<span class="pending-tag" title="Kept on this device; sent when the connection returns">not synced</span>' : '<span class="pending-tag sending" title="Sent to the server; the move stands here until the server has applied it"><i class="fa-solid fa-rotate fa-spin me-1" aria-hidden="true"></i>sending</span>') : '') + (c.IsExpress ? '<span class="badge text-bg-warning">Express</span>' : '') + (c.ServiceType === 'DELIVERY' ? '<i class="fa-solid fa-motorcycle text-soft" title="For delivery"></i>' : '') + bagChip(c, col) + '</div>' +
+      '<div class="khead"><span class="no">' + orderNo(c.OrderNo) + '</span>' + tags + '</div>' +
       '<div class="small">' + UI.esc(c.CustomerName) + '</div>' +
       '<div class="meta">' + UI.esc((c.Lines && c.Lines.length ? c.Lines.join(' · ') : F.qty(c.TotalWeightKg, 'kg'))) + (c.BagCount ? ' · ' + c.BagCount + ' bag' + (c.BagCount === 1 ? '' : 's') : '') + (c.MachineNo ? ' · machine ' + UI.esc(c.MachineNo) : '') + '</div>' +
-      '<div class="meta"><span class="due">' + (c.DueAt ? (overdue && col !== 'READY' ? 'Overdue · due ' : 'Due ') + F.datetime(c.DueAt) : 'No due time') + '</span></div>' +
+      '<div class="meta"><span class="due">' + (c.DueAt ? (overdue && col !== 'READY' ? 'Overdue · due ' : 'Due ') + F.when(c.DueAt) : 'No due time') + '</span></div>' +
       (col !== 'QUEUE' && col !== 'READY' ? '<div class="meta">' + F.minutes(minutes) + ' in stage' + (c.StageBy ? ' · ' + UI.esc(c.StageBy) : '') + '</div>' : '') +
       (c.Notes ? '<div class="meta"><i class="fa-regular fa-note-sticky me-1"></i>' + UI.esc(c.Notes) + '</div>' : '') +
       (acts ? '<div class="acts">' + acts + '</div>' : '') + '</div>';
   }
+  /** 1.27.0 (Stage 5): an empty column says what it is waiting for, in the empty-state pattern; the queue offers a new order to whoever may take one. */
+  var EMPTY = { QUEUE: 'No orders waiting', WASHING: 'Nothing washing', DRYING: 'Nothing drying', FOLDING: 'Nothing to fold', QC: 'Nothing to check', READY: 'Nothing ready today' };
+  function emptyCol(col) { return UI.empty({ icon: col[2], title: EMPTY[col[0]], compact: true, action: col[0] === 'QUEUE' && M.Router.allowed && M.Router.allowed('pos') ? { label: 'New order', icon: 'fa-plus', href: '#/pos' } : null }); }
+  /**
+   * 1.27.0: a first visit with no saved board on this device: the six columns with their titles and grey cards (after 160 ms, so a saved
+   * board that paints at once never flashes them), announced once to a screen reader. Not .kcol and not .kcard: nothing reads them as the board.
+   */
+  function paintSkeleton() {
+    var el = UI.el('prod-board'), box = '<div class="skeleton-box"><span class="skeleton w-60"></span><span class="skeleton w-80"></span><span class="skeleton w-40"></span></div>';
+    el.setAttribute('aria-busy', 'true');
+    el.innerHTML = COLS.map(function (col, i) { return '<div class="kcol-skel" aria-hidden="true"><h6><i class="fa-solid ' + col[2] + ' me-2"></i>' + col[1] + '</h6>' + box + (i < 2 ? box : '') + '</div>'; }).join('') + '<span class="visually-hidden" role="status">Loading the board</span>';
+  }
+  /** The machines of the board's branch as status pills that wrap (free, running an order, out of service); one long line used to push a phone's page sideways. */
+  function machineChips(ms, all) {
+    return '<i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i>' + ms.map(function (m) {
+      var st = m.Status === 'DOWN' ? 'down' : (m.InUse ? 'busy' : 'free');
+      return ' <span class="machine-chip ' + st + '"><b>' + UI.esc(m.Code) + '</b>' + (all ? ' · ' + UI.esc(UI.branchName(m.BranchId)) : '') + ' ' + (st === 'down' ? 'out of service' : (st === 'busy' ? 'running ' + F.breakable(m.InUse) : 'free')) + '</span>';
+    }).join('') + (M.Auth.can('EQUIPMENT_VIEW') ? ' <a href="#/equipment" class="small">Equipment</a>' : '');
+  }
   function paint() {
     if (!board) return;
     var shown = overlay(board);
-    UI.html('prod-board', COLS.map(function (col) { var rows = shown.columns[col[0]] || []; return '<div class="kcol" data-col="' + col[0] + '"><h6><i class="fa-solid ' + col[2] + ' me-2"></i>' + col[1] + '<span class="count">' + rows.length + '</span></h6>' + (rows.length ? rows.map(function (c) { return card(c, col[0]); }).join('') : '<div class="text-faint small px-1 py-2 text-center">Nothing here</div>') + '</div>'; }).join(''));
+    UI.el('prod-board').removeAttribute('aria-busy');
+    UI.html('prod-board', COLS.map(function (col) { var rows = shown.columns[col[0]] || []; return '<div class="kcol" data-col="' + col[0] + '"><h6><i class="fa-solid ' + col[2] + ' me-2" aria-hidden="true"></i>' + col[1] + '<span class="count">' + rows.length + '</span></h6>' + (rows.length ? rows.map(function (c) { return card(c, col[0]); }).join('') : emptyCol(col)) + '</div>'; }).join(''));
     var el = UI.el('prod-board');
     el.querySelectorAll('[data-open]').forEach(function (k) { k.onclick = function (ev) { if (ev.target.closest('button')) return; M.OrdersUI.openOrder(k.getAttribute('data-open'), load); }; });
     el.querySelectorAll('[data-adv]').forEach(function (b) { b.onclick = function () { var id = b.getAttribute('data-adv'), stage = b.getAttribute('data-stage'); if (STAGE_TITLE[stage]) openStart(id, stage); else advance(id, stage, {}); }; });
     el.querySelectorAll('[data-qc]').forEach(function (b) { b.onclick = function () { qc(b.getAttribute('data-id'), b.getAttribute('data-qc')); }; });
     var ms = board.machines || [], strip = UI.el('prod-machines'), all = M.AppState.me.activeBranch === 'ALL';
     strip.hidden = !ms.length;
-    if (ms.length) strip.innerHTML = '<i class="fa-solid fa-screwdriver-wrench me-1"></i>' + ms.map(function (m) { return '<span class="me-3 text-nowrap"><b>' + UI.esc(m.Code) + '</b>' + (all ? ' <span class="text-faint">' + UI.esc(UI.branchName(m.BranchId)) + '</span>' : '') + ' ' + (m.Status === 'DOWN' ? '<span class="text-danger">out of service</span>' : (m.InUse ? 'running ' + UI.esc(m.InUse) : 'free')) + '</span>'; }).join('') + (M.Auth.can('EQUIPMENT_VIEW') ? '<a href="#/equipment" class="small">Equipment</a>' : '');
+    if (ms.length) strip.innerHTML = machineChips(ms, all);
     UI.el('prod-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · materials consumed at ' + F.status(board.consumptionStage).toLowerCase();
     UI.el('prod-updated').textContent = 'Updated ' + F.time(new Date());
   }
   var boardSeq = Api.sequence();
-  /** The board from the copy at once, then from the server; each painted once this device's moves still being sent are known (overlay). */
+  /**
+   * The board from the copy at once, then from the server; each painted once this device's moves still being sent are known (overlay).
+   * 1.27.0: with nothing to show yet, the skeleton board (paintSkeleton); a failed first load shows the reason and Try again in its place.
+   */
   function load() {
-    var known = refreshSending();
-    return Api.read('production.board', {}, { seq: boardSeq, paint: function (b) { board = b; known.then(function () { if (board === b) paint(); }); } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Production: ' + UI.error(e)); });
+    var known = refreshSending(), el = UI.el('prod-board');
+    if (!board && !el.children.length) setTimeout(function () { if (!board && !el.children.length) paintSkeleton(); }, 160);
+    return Api.read('production.board', {}, { seq: boardSeq, paint: function (b) { board = b; known.then(function () { if (board === b) paint(); }); } }).catch(function (e) {
+      if (e && e.superseded) return; Toast.danger('Production: ' + UI.error(e));
+      if (!board) { el.removeAttribute('aria-busy'); el.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The board could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }); var again = el.querySelector('[data-empty-action]'); if (again) again.onclick = function () { el.innerHTML = ''; load(); }; }
+    });
   }
   /**
    * 1.22.0: the move through the queue (see inBackground). A move this device cannot apply to its copy (the order not in it yet, a copy
@@ -4888,7 +4958,7 @@ window.MLS = (function () {
     UI.el('prod-start-pick-label').textContent = 'Machine for ' + F.status(stage).toLowerCase() + (pending.required ? ' (required)' : '');
     var pick = UI.el('prod-start-pick');
     pick.innerHTML = (pending.required ? '' : '<button type="button" role="radio" data-pick="" class="active" aria-checked="true"><span class="code">No machine</span><span class="sub">not recorded</span></button>') +
-      ms.map(function (m) { var down = m.Status === 'DOWN'; return '<button type="button" role="radio" aria-checked="false" data-pick="' + UI.esc(m.Id) + '"' + (down ? ' disabled' : '') + (m.InUse && !down ? ' class="busy"' : '') + ' title="' + UI.esc(m.Name) + '"><span class="code">' + UI.esc(m.Code) + '</span><span class="sub">' + (down ? 'Out of service' : (m.InUse ? 'Running ' + UI.esc(m.InUse) : UI.esc(m.Name))) + '</span></button>'; }).join('');
+      ms.map(function (m) { var down = m.Status === 'DOWN'; return '<button type="button" role="radio" aria-checked="false" data-pick="' + UI.esc(m.Id) + '"' + (down ? ' disabled' : '') + (m.InUse && !down ? ' class="busy"' : '') + ' title="' + UI.esc(m.Name) + '"><span class="code">' + UI.esc(m.Code) + '</span><span class="sub">' + (down ? 'Out of service' : (m.InUse ? 'Running ' + F.breakable(m.InUse) : UI.esc(m.Name))) + '</span></button>'; }).join('');
     pick.querySelectorAll('[data-pick]').forEach(function (b) { b.onclick = function () { var mid = b.getAttribute('data-pick'); pending.machine = mid ? ms.filter(function (m) { return m.Id === mid; })[0] || null : null; pick.querySelectorAll('[data-pick]').forEach(function (x) { var on = x === b; x.classList.toggle('active', on); x.setAttribute('aria-checked', on ? 'true' : 'false'); }); UI.hide('prod-start-error'); }; });
     M.Modal.open('prod-start-modal');
   }
@@ -5255,7 +5325,7 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — DispatchPage.html: the Dispatch module: delivery and pickup jobs, rider assignment, zones, and since 1.15.0 the delivery windows (booked with their places left, rescheduled) with each stop's proof and the customer's confirmation; the job page reuses the rider card from My Deliveries. -->
+        <!-- Mrs Laundry Sys — DispatchPage.html: the Dispatch module: delivery and pickup jobs, rider assignment, zones, and since 1.15.0 the delivery windows (booked with their places left, rescheduled) with each stop's proof and the customer's confirmation; the job page reuses the rider card from My Deliveries. Release 1.27.0 (Stage 5) brings it to the design system: skeleton rows on a first visit, To collect as an amount column, phone cards with the job as the title, the job dialog and the new job in titled sections, and the job dialog's footer as the order dialog's. -->
 <section id="view-dispatch" class="view" hidden>
   <div class="view-head">
     <h2>Dispatch</h2>
@@ -5281,28 +5351,38 @@ window.MLS = (function () {
       <div class="modal-header"><h5 class="modal-title">New job</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
         <div class="chips" id="dsp-job-type"><button type="button" data-type="DELIVERY" class="active"><i class="fa-solid fa-truck me-1"></i>Delivery</button><button type="button" data-type="PICKUP"><i class="fa-solid fa-hand-holding me-1"></i>Pickup</button></div>
-        <div id="dsp-orders-wrap">
-          <label class="form-label">Ready orders to deliver</label>
-          <div class="border rounded p-2 mb-3 scroll-220" id="dsp-orders"></div>
-        </div>
-        <div class="row g-2">
-          <div class="col-md-4" id="dsp-branch-wrap"><label class="form-label">Branch</label><select class="form-select" name="branchId"></select></div>
-          <div class="col-md-8"><label class="form-label">Customer</label><input class="form-control" name="customerName" maxlength="80" placeholder="Name"></div>
-          <div class="col-md-4"><label class="form-label">Mobile</label><input class="form-control" name="phone" inputmode="tel" placeholder="09XXXXXXXXX"></div>
-          <div class="col-md-8"><label class="form-label">Address</label><input class="form-control" name="address" maxlength="200"></div>
-          <div class="col-md-3"><label class="form-label">Latitude</label><input class="form-control" name="latitude" type="number" inputmode="decimal" step="any"></div>
-          <div class="col-md-3"><label class="form-label">Longitude</label><input class="form-control" name="longitude" type="number" inputmode="decimal" step="any"></div>
-          <div class="col-md-3"><label class="form-label">Zone</label><select class="form-select" name="zoneId"><option value="">No zone</option></select></div>
-          <div class="col-md-3"><label class="form-label">Fee</label><input class="form-control money" name="fee" type="number" inputmode="decimal" step="0.01" min="0" placeholder="from zone"></div>
-          <div class="col-12" id="dsp-win-wrap" hidden>
-            <div class="d-flex align-items-end gap-3 flex-wrap mb-2"><div><label class="form-label" for="dsp-win-date">Day</label><input class="form-control" id="dsp-win-date" type="date"></div><div class="small text-soft pb-2" id="dsp-win-note"></div></div>
-            <div class="slot-pick" id="dsp-win-slots" role="radiogroup" aria-label="Delivery window"></div>
-            <div class="form-check mt-2" id="dsp-win-over-wrap" hidden><input class="form-check-input" type="checkbox" id="dsp-win-over"><label class="form-check-label" for="dsp-win-over">This window is full — book it anyway</label></div>
+        <!-- 1.27.0 (Stage 5): three titled sections, as the order dialog has them; every field and name as before, in the same order for the Tab key, each label tied to its field -->
+        <section class="od-section" id="dsp-orders-wrap">
+          <h6 class="section-title" id="dsp-orders-title">Ready orders to deliver</h6>
+          <div class="border rounded p-2 scroll-220" id="dsp-orders" role="group" aria-labelledby="dsp-orders-title"></div>
+        </section>
+        <section class="od-section">
+          <h6 class="section-title">Customer</h6>
+          <div class="row g-2">
+            <div class="col-md-4" id="dsp-branch-wrap"><label class="form-label" for="dsp-job-branch">Branch</label><select class="form-select" id="dsp-job-branch" name="branchId"></select></div>
+            <div class="w-100 m-0"></div>
+            <div class="col-md-8"><label class="form-label" for="dsp-job-name">Name</label><input class="form-control" id="dsp-job-name" name="customerName" maxlength="80"></div>
+            <div class="col-md-4"><label class="form-label" for="dsp-job-phone">Mobile</label><input class="form-control" id="dsp-job-phone" name="phone" inputmode="tel" placeholder="09XXXXXXXXX"></div>
+            <div class="col-md-6"><label class="form-label" for="dsp-job-address">Address</label><input class="form-control" id="dsp-job-address" name="address" maxlength="200"></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="dsp-job-lat">Latitude</label><input class="form-control" id="dsp-job-lat" name="latitude" type="number" inputmode="decimal" step="any"></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="dsp-job-lng">Longitude</label><input class="form-control" id="dsp-job-lng" name="longitude" type="number" inputmode="decimal" step="any"></div>
           </div>
-          <div class="col-md-4" id="dsp-win-exact-wrap"><label class="form-label">Scheduled</label><input class="form-control" name="scheduledAt" type="datetime-local"></div>
-          <div class="col-md-4"><label class="form-label">Rider</label><select class="form-select" name="riderUserId"><option value="">Assign later</option></select></div>
-          <div class="col-md-4"><label class="form-label">Notes</label><input class="form-control" name="notes" maxlength="300" placeholder="Gate code, landmarks"></div>
-        </div>
+        </section>
+        <section class="od-section">
+          <h6 class="section-title">Zone, time and rider</h6>
+          <div class="row g-2">
+            <div class="col-6 col-md-4"><label class="form-label" for="dsp-job-zone">Zone</label><select class="form-select" id="dsp-job-zone" name="zoneId"><option value="">No zone</option></select></div>
+            <div class="col-6 col-md-4"><label class="form-label" for="dsp-job-fee">Fee</label><input class="form-control money" id="dsp-job-fee" name="fee" type="number" inputmode="decimal" step="0.01" min="0" placeholder="from zone"></div>
+            <div class="col-12" id="dsp-win-wrap" hidden>
+              <div class="d-flex align-items-end gap-3 flex-wrap mb-2"><div><label class="form-label" for="dsp-win-date">Day</label><input class="form-control" id="dsp-win-date" type="date"></div><div class="small text-soft pb-2" id="dsp-win-note"></div></div>
+              <div class="slot-pick" id="dsp-win-slots" role="radiogroup" aria-label="Delivery window"></div>
+              <div class="form-check mt-2" id="dsp-win-over-wrap" hidden><input class="form-check-input" type="checkbox" id="dsp-win-over"><label class="form-check-label" for="dsp-win-over">This window is full — book it anyway</label></div>
+            </div>
+            <div class="col-md-4" id="dsp-win-exact-wrap"><label class="form-label" for="dsp-job-when">Scheduled</label><input class="form-control" id="dsp-job-when" name="scheduledAt" type="datetime-local"></div>
+            <div class="col-md-4"><label class="form-label" for="dsp-job-rider">Rider</label><select class="form-select" id="dsp-job-rider" name="riderUserId"><option value="">Assign later</option></select></div>
+            <div class="col-md-8"><label class="form-label" for="dsp-job-notes">Notes for the rider</label><input class="form-control" id="dsp-job-notes" name="notes" maxlength="300" placeholder="Gate code, landmarks"></div>
+          </div>
+        </section>
         <div class="alert alert-danger py-2 small mt-3" id="dsp-job-error" hidden></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" id="dsp-job-submit"><i class="fa-solid fa-paper-plane me-1"></i>Create job</button></div>
@@ -5344,7 +5424,7 @@ window.MLS = (function () {
       <div class="modal-header"><h5 class="modal-title">Delivery windows</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
         <p class="small text-soft">The windows a delivery or pickup is booked into: the customer's text message and tracking page show the window, and a full window refuses more jobs unless you book it anyway. Places 0 means no limit.</p>
-        <div class="table-wrap mb-3"><table class="table table-sm table-cards mb-0"><thead><tr><th>Window</th><th>Days</th><th>Zone</th><th>For</th><th class="text-end">Places</th><th>Status</th><th></th></tr></thead><tbody id="dsp-slot-rows"></tbody></table></div>
+        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Window</th><th>Days</th><th>Zone</th><th>For</th><th class="text-end num">Places</th><th>Status</th><th></th></tr></thead><tbody id="dsp-slot-rows"></tbody></table></div>
         <form class="row g-2 align-items-end" id="dsp-slot-form" autocomplete="off">
           <input type="hidden" name="Id">
           <div class="col-md-4"><label class="form-label small" for="dsp-slot-name">Name</label><input class="form-control form-control-sm" id="dsp-slot-name" name="Name" maxlength="40" placeholder="Morning" required></div>
@@ -5369,13 +5449,13 @@ window.MLS = (function () {
     <div class="modal-content">
       <div class="modal-header"><h5 class="modal-title">Delivery zones</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
-        <div class="table-wrap mb-3"><table class="table table-sm table-cards mb-0"><thead><tr><th>Zone</th><th class="text-end">Fee</th><th>Status</th><th></th></tr></thead><tbody id="dsp-zone-rows"></tbody></table></div>
+        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Zone</th><th class="text-end num">Fee</th><th>Status</th><th></th></tr></thead><tbody id="dsp-zone-rows"></tbody></table></div>
         <form class="row g-2 align-items-end" id="dsp-zone-form" autocomplete="off">
           <input type="hidden" name="Id">
-          <div class="col-5"><label class="form-label small">Name</label><input class="form-control form-control-sm" name="Name" maxlength="60" required></div>
-          <div class="col-3"><label class="form-label small">Fee</label><input class="form-control form-control-sm" name="Fee" type="number" inputmode="decimal" step="0.01" min="0"></div>
-          <div class="col-2"><label class="form-label small">Status</label><select class="form-select form-select-sm" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
-          <div class="col-2 d-grid"><button type="submit" class="btn btn-sm btn-primary">Save</button></div>
+          <div class="col-sm-5"><label class="form-label small" for="dsp-zone-name">Name</label><input class="form-control form-control-sm" id="dsp-zone-name" name="Name" maxlength="60" required></div>
+          <div class="col-6 col-sm-3"><label class="form-label small" for="dsp-zone-fee">Fee</label><input class="form-control form-control-sm money" id="dsp-zone-fee" name="Fee" type="number" inputmode="decimal" step="0.01" min="0"></div>
+          <div class="col-6 col-sm-4"><label class="form-label small" for="dsp-zone-status">Status</label><select class="form-select form-select-sm" id="dsp-zone-status" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
+          <div class="col-12 d-grid"><button type="submit" class="btn btn-sm btn-primary">Save zone</button></div>
         </form>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button></div>
@@ -5394,25 +5474,38 @@ window.MLS = (function () {
   function loadRiders() { return Api.call('dispatch.riders', {}).then(function (r) { riders = r; var sel = UI.el('dsp-rider'); sel.innerHTML = '<option value="">All riders</option>' + UI.options(r, state.rider, function (x) { return x.DisplayName; }); return r; }); }
 
   var listSeq = Api.sequence();
+  /** A job's type, as a badge. */
+  function typeBadge(j) { return '<span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>'; }
+  /** A job's status with what else needs looking at: the proof missing, a problem the customer reported. */
+  function statusBadges(j) { return UI.badge(j.Status) + (j.ProofStatus === 'MISSING' ? ' ' + UI.badge('MISSING', 'proof missing') : '') + (j.Items.some(function (i) { return i.ProblemReportedAt; }) ? ' ' + UI.badge('FAILED', 'problem reported') : ''); }
+  /**
+   * 1.27.0 (Stage 5): a first visit with nothing saved on this device shows skeleton rows (after 160 ms, so a saved list that paints at once
+   * never flashes them); a failed first load shows the reason and Try again in their place. To collect is an amount column, in the
+   * danger colour only while the job is open; the times are said short (tomorrow 9:00 AM). On a phone each job is a card with the job as
+   * its title and its status beside it, every value right-aligned as one block (the Orders list's cards, 1.26.0).
+   */
   function load() {
-    var box = UI.el('dsp-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    var box = UI.el('dsp-table'); if (!box.innerHTML) setTimeout(function () { if (!box.innerHTML) box.innerHTML = UI.skeleton({ kind: 'rows', count: 6, label: 'Loading the jobs' }); }, 160);
     return Api.read('dispatch.list', { status: state.status, search: state.search, riderUserId: state.rider, jobType: state.type, date: state.date, page: state.page, size: 50 }, { seq: listSeq, paint: function (r) {
-      M.Table.render(UI.el('dsp-table'), {
+      M.Table.render(box, {
         columns: [
-          { key: 'Id', label: 'Job', format: function (v, j) { return '<span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span><div class="small text-soft">' + UI.esc(v) + (M.AppState.me.activeBranch === 'ALL' ? ' · ' + UI.esc(j.Branch) : '') + '</div>'; } },
+          { key: 'Id', label: 'Job', cls: 'lead-cell', format: function (v, j) { return typeBadge(j) + '<span class="ph-only lead-status">' + statusBadges(j) + '</span><div class="small text-soft text-nowrap">' + UI.esc(v) + (M.AppState.me.activeBranch === 'ALL' ? ' · ' + UI.esc(j.Branch) : '') + '</div>'; } },
           { key: 'CustomerName', label: 'Customer', format: function (v, j) { return '<span class="fw-bold">' + UI.esc(v || '—') + '</span><div class="small text-soft">' + UI.esc(j.Address || '') + (j.Phone ? ' · ' + UI.esc(j.Phone) : '') + '</div>'; } },
-          { key: 'Items', label: 'Orders', format: function (v) { return v.length ? v.map(function (i) { return UI.esc(i.OrderNo); }).join('<br>') : '<span class="text-soft">—</span>'; } },
+          { key: 'Items', label: 'Orders', format: function (v) { return v.length ? v.map(function (i) { return '<span class="text-nowrap">' + UI.esc(i.OrderNo) + '</span>'; }).join('<br>') : '<span class="text-soft">—</span>'; } },
           { key: 'Rider', label: 'Rider', format: function (v) { return v ? UI.esc(v) : '<span class="text-danger small">unassigned</span>'; } },
-          { key: 'ScheduledAt', label: 'When', format: function (v, j) { return (j.Window ? M.DeliveriesUI.windowTag(j) : (v ? F.datetime(v) : '<span class="text-soft">any time</span>')) + (j.CompletedAt ? '<div class="small text-soft">done ' + F.datetime(j.CompletedAt) + '</div>' : ''); } },
-          { key: 'ToCollect', label: 'To collect', align: 'right', format: function (v, j) { return Number(v) > 0 ? '<span class="money text-danger fw-bold">' + F.peso(v) + '</span>' + (Number(j.Collected) > 0 ? '<div class="small text-success">got ' + F.peso(j.Collected) + '</div>' : '') : '<span class="text-soft">—</span>'; } },
-          { key: 'Status', label: 'Status', format: function (v, j) { return UI.badge(v) + (j.ProofStatus === 'MISSING' ? ' ' + UI.badge('MISSING', 'proof missing') : '') + (j.Items.some(function (i) { return i.ProblemReportedAt; }) ? ' ' + UI.badge('FAILED', 'problem reported') : ''); } }
+          { key: 'ScheduledAt', label: 'When', format: function (v, j) { return (j.Window ? M.DeliveriesUI.windowTag(j) : (v ? '<span class="text-nowrap">' + F.when(v) + '</span>' : '<span class="text-soft text-nowrap">any time</span>')) + (j.CompletedAt ? '<div class="small text-soft">done ' + F.when(j.CompletedAt) + '</div>' : ''); } },
+          { key: 'ToCollect', label: 'To collect', num: true, format: function (v, j) { return Number(v) > 0 ? '<span class="money fw-bold' + (j.IsOpen ? ' text-danger' : '') + '">' + F.peso(v) + '</span>' + (Number(j.Collected) > 0 ? '<div class="small text-success">got ' + F.peso(j.Collected) + '</div>' : '') : '<span class="text-soft">—</span>'; } },
+          { key: 'Status', label: 'Status', cls: 'ph-hide', format: function (v, j) { return statusBadges(j); } }
         ],
-        rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: state.status === 'OPEN' ? { icon: 'fa-map-location-dot', title: 'No open jobs', hint: 'Create a delivery or pickup job from the ready orders and assign a rider.', action: canAssign() ? { label: 'New job', icon: 'fa-plus', onClick: openNew } : null } : { icon: 'fa-map-location-dot', title: 'No finished jobs here', hint: 'Delivered, picked-up and cancelled jobs are listed once they are done.' },
+        cls: 'aligned', rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: state.status === 'OPEN' ? { icon: 'fa-map-location-dot', title: 'No open jobs', hint: 'Create a delivery or pickup job from the ready orders and assign a rider.', action: canAssign() ? { label: 'New job', icon: 'fa-plus', onClick: openNew } : null } : { icon: 'fa-map-location-dot', title: 'No finished jobs here', hint: 'Delivered, picked-up and cancelled jobs are listed once they are done.' },
         onPage: function (p) { state.page = p; load(); }, onRow: function (j) { open(j.Id); }
       });
       var openCount = ['UNASSIGNED', 'ASSIGNED', 'ACCEPTED', 'OUT_FOR_DELIVERY'].reduce(function (t, s) { return t + (r.counts[s] || 0); }, 0);
       UI.el('dsp-count-open').textContent = openCount || ''; UI.el('dsp-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + (r.counts.UNASSIGNED || 0) + ' unassigned' + (r.window && state.status === 'DONE' && !state.date ? ' · finished jobs of the last ' + r.window.days + ' days (set a date for older ones)' : '');
-    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Dispatch: ' + UI.error(e)); });
+    } }).catch(function (e) {
+      if (e && e.superseded) return; Toast.danger('Dispatch: ' + UI.error(e));
+      if (!box.querySelector('table')) { box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The jobs could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }); var again = box.querySelector('[data-empty-action]'); if (again) again.onclick = function () { box.innerHTML = ''; load(); }; }
+    });
   }
 
   // ---------------------------------------------------------------- job page
@@ -5421,16 +5514,25 @@ window.MLS = (function () {
     // 1.21.0: whether an open stop's window is over is decided on this device's clock, as the production board does: the list may come from the server's saved answer (kept for hours since 1.21.0)
     var when = j.Window ? (j.Window.Name ? UI.esc(j.Window.Name) + ' · ' : '') + F.date(j.Window.Start) + ' ' + F.time(j.Window.Start) + '–' + F.time(j.Window.End) + (j.Window.Late ? ' <span class="window-tag late">done late</span>' : (j.Window.Overdue || (j.IsOpen && j.Window.End && new Date(j.Window.End).getTime() < Date.now()) ? ' <span class="window-tag late">window over</span>' : '')) : (j.ScheduledAt ? F.datetime(j.ScheduledAt) : 'any time');
     var grid = [['Rider', j.Rider ? UI.esc(j.Rider) : '<span class="text-danger">unassigned</span>'], ['Zone', UI.esc(j.Zone || '—')], ['Fee', F.peso(j.Fee)], [j.Window ? 'Window' : 'Scheduled', when], ['Created', F.datetime(j.CreatedAt) + ' · ' + UI.esc(j.CreatedBy || '')], ['Finished', j.CompletedAt ? F.datetime(j.CompletedAt) : '—'], ['Branch', UI.esc(j.Branch)]];
-    UI.html('dsp-view-body', '<div class="detail-grid mb-3">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' + M.DeliveriesUI.jobCard(j, { readOnly: !canAssign() }) +
-      (j.Items.length ? '<div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>Order</th><th>Status</th><th>Customer</th><th class="text-end">To collect</th><th class="text-end">Collected</th></tr></thead><tbody>' + j.Items.map(function (i) { return '<tr class="pointer" data-order="' + UI.esc(i.OrderId) + '"><td data-label="Order"><span class="fw-bold">' + UI.esc(i.OrderNo) + '</span> <span class="small text-soft">' + UI.esc(i.CustomerName) + '</span></td><td data-label="Status">' + UI.badge(i.OrderStatus, i.OrderStatusLabel) + '</td><td data-label="Customer">' + receiptCell(i) + '</td><td data-label="To collect" class="text-end money">' + F.peso(i.AmountToCollect) + '</td><td data-label="Collected" class="text-end money">' + F.peso(i.CollectedAmount) + '</td></tr>'; }).join('') + '</tbody></table></div>' : ''));
+    // 1.27.0 (Stage 5): the facts, then two titled sections, as the order dialog has them: the stop (the rider's own card) and its orders.
+    // On a phone each order is one row: the number and the customer with its status and the customer's word under them, the amount to
+    // collect on the right with what was collected under it. Confirmation was headed Customer, which the order's own cell already names.
+    UI.html('dsp-view-body', '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
+      '<section class="od-section"><h6 class="section-title">Stop</h6>' + M.DeliveriesUI.jobCard(j, { readOnly: !canAssign() }) + '</section>' +
+      (j.Items.length ? '<section class="od-section"><h6 class="section-title">Orders</h6><div class="table-wrap"><table class="table table-sm table-cards compact mb-0"><thead><tr><th>Order</th><th>Status</th><th>Confirmation</th><th class="text-end num">To collect</th><th class="text-end num">Collected</th></tr></thead><tbody>' + j.Items.map(function (i) {
+        return '<tr class="pointer" data-order="' + UI.esc(i.OrderId) + '"><td data-label="Order" class="lead-cell"><span class="fw-bold">' + UI.esc(i.OrderNo) + '</span> <span class="small text-soft">' + UI.esc(i.CustomerName) + '</span><div class="ph-only sub">' + UI.badge(i.OrderStatus, i.OrderStatusLabel) + (i.ReceiptConfirmedAt || i.ProblemReportedAt ? receiptCell(i) : '') + '</div></td><td data-label="Status" class="ph-hide">' + UI.badge(i.OrderStatus, i.OrderStatusLabel) + '</td><td data-label="Confirmation" class="ph-hide">' + receiptCell(i) + '</td><td data-label="To collect" class="text-end num money fw-bold">' + F.peso(i.AmountToCollect) + (Number(i.CollectedAmount) > 0 ? '<span class="ph-only sub">collected ' + F.peso(i.CollectedAmount) + '</span>' : '') + '</td><td data-label="Collected" class="text-end num money ph-hide">' + F.peso(i.CollectedAmount) + '</td></tr>';
+      }).join('') + '</tbody></table></div></section>' : ''));
     var body = UI.el('dsp-view-body');
     M.DeliveriesUI.wireCard(body, function () { open(j.Id); load(); });
     body.querySelectorAll('[data-order]').forEach(function (tr) { tr.onclick = function () { M.Modal.closeThen('dsp-view-modal', function () { M.OrdersUI.openOrder(tr.getAttribute('data-order')); }); }; });
-    var acts = '';
-    if (canAssign() && j.IsOpen && j.Status !== 'OUT_FOR_DELIVERY') acts += '<div class="input-group input-group-sm max-w-320"><select class="form-select" id="dsp-assign-sel"><option value="">Unassigned</option>' + UI.options(riders, j.RiderUserId, function (x) { return x.DisplayName + (x.OpenJobs ? ' (' + x.OpenJobs + ' open)' : ''); }) + '</select><button type="button" class="btn btn-primary" id="dsp-assign-btn"><i class="fa-solid fa-user-check me-1"></i>Assign</button></div>';
-    if (canAssign() && (j.Actions || []).indexOf('reschedule') >= 0) acts += '<button type="button" class="btn btn-sm btn-outline-primary" id="dsp-resched-btn"><i class="fa-regular fa-calendar me-1"></i>Reschedule</button>';
-    if (canAssign() && j.IsOpen) acts += '<button type="button" class="btn btn-sm btn-outline-danger" id="dsp-cancel-btn"><i class="fa-solid fa-ban me-1"></i>Cancel job</button>';
-    UI.html('dsp-view-actions', acts + '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>');
+    // 1.27.0: the footer as the order dialog's: the destructive action at the left; Reschedule and Close, then the rider's assignment at
+    // the right — the one primary while the job has no rider, an outline once it has one (reassigning is the rare case)
+    var left = '', right = '';
+    if (canAssign() && j.IsOpen) left += '<button type="button" class="btn btn-sm btn-outline-danger" id="dsp-cancel-btn"><i class="fa-solid fa-ban me-1"></i>Cancel job</button>';
+    if (canAssign() && (j.Actions || []).indexOf('reschedule') >= 0) right += '<button type="button" class="btn btn-sm btn-outline-primary" id="dsp-resched-btn"><i class="fa-regular fa-calendar me-1"></i>Reschedule</button>';
+    right += '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>';
+    if (canAssign() && j.IsOpen && j.Status !== 'OUT_FOR_DELIVERY') right += '<div class="input-group input-group-sm max-w-320 dsp-assign"><select class="form-select" id="dsp-assign-sel" aria-label="Rider"><option value="">Unassigned</option>' + UI.options(riders, j.RiderUserId, function (x) { return x.DisplayName + (x.OpenJobs ? ' (' + x.OpenJobs + ' open)' : ''); }) + '</select><button type="button" class="btn ' + (j.RiderUserId ? 'btn-outline-primary' : 'btn-primary') + '" id="dsp-assign-btn"><i class="fa-solid fa-user-check me-1"></i>Assign</button></div>';
+    UI.html('dsp-view-actions', left + '<span class="spacer"></span>' + right);
     var ab = UI.el('dsp-assign-btn'); if (ab) ab.onclick = function () { Api.call('dispatch.assign', { id: j.Id, riderUserId: UI.el('dsp-assign-sel').value }, { busy: true }).then(function (u) { Toast.success(u.Rider ? 'Assigned to ' + u.Rider : 'Rider removed'); paintJob(u); load(); loadRiders(); }).catch(function (e) { Toast.danger(UI.error(e)); }); };
     var rb = UI.el('dsp-resched-btn'); if (rb) rb.onclick = function () { M.Modal.closeThen('dsp-view-modal', function () { openReschedule(j); }); };
     var cb = UI.el('dsp-cancel-btn'); if (cb) cb.onclick = function () { M.OrdersUI.openReason({ title: 'Cancel job ' + j.Id, hint: 'Orders out for delivery return to ready.', confirmText: 'Cancel job', danger: true, onSubmit: function (d) { return Api.call('dispatch.cancel', { id: j.Id, reason: d.reason }).then(function (u) { Toast.warning('Job cancelled'); paintJob(u); load(); return u; }); } }); };
@@ -5511,7 +5613,7 @@ window.MLS = (function () {
   }
   function paintSlots(list) {
     var all = M.AppState.me.activeBranch === 'ALL';
-    UI.html('dsp-slot-rows', list.length ? list.map(function (s) { return '<tr><td data-label="Window"><span class="fw-bold">' + UI.esc(s.Name) + '</span> ' + F.clock(s.StartTime) + '–' + F.clock(s.EndTime) + (all ? '<div class="small text-soft">' + UI.esc(UI.branchName(s.BranchId)) + '</div>' : '') + '</td><td data-label="Days">' + DAYS.filter(function (d) { return s.Weekdays.indexOf(d[0]) >= 0; }).map(function (d) { return d[1]; }).join(' ') + '</td><td data-label="Zone">' + UI.esc(s.Zone) + '</td><td data-label="For">' + (s.JobType === 'DELIVERY' ? 'Deliveries' : (s.JobType === 'PICKUP' ? 'Pickups' : 'Both')) + '</td><td data-label="Places" class="text-end">' + (s.Capacity || 'no limit') + '</td><td data-label="Status">' + UI.badge(s.Status) + '</td><td class="text-end"><button type="button" class="btn btn-sm btn-link px-2 py-0" data-slot-edit="' + UI.esc(s.Id) + '">Edit</button></td></tr>'; }).join('') : '<tr><td colspan="7" class="text-soft">No windows yet. Without windows a job takes an exact time, or any time.</td></tr>');
+    UI.html('dsp-slot-rows', list.length ? list.map(function (s) { return '<tr><td data-label="Window" class="lead-cell"><span class="fw-bold">' + UI.esc(s.Name) + '</span> ' + F.clock(s.StartTime) + '–' + F.clock(s.EndTime) + '<span class="ph-only lead-status">' + UI.badge(s.Status) + '</span>' + (all ? '<div class="small text-soft">' + UI.esc(UI.branchName(s.BranchId)) + '</div>' : '') + '</td><td data-label="Days">' + DAYS.filter(function (d) { return s.Weekdays.indexOf(d[0]) >= 0; }).map(function (d) { return d[1]; }).join(' ') + '</td><td data-label="Zone">' + UI.esc(s.Zone) + '</td><td data-label="For">' + (s.JobType === 'DELIVERY' ? 'Deliveries' : (s.JobType === 'PICKUP' ? 'Pickups' : 'Both')) + '</td><td data-label="Places" class="text-end num">' + (s.Capacity || 'no limit') + '</td><td data-label="Status" class="ph-hide">' + UI.badge(s.Status) + '</td><td class="text-end"><button type="button" class="btn btn-sm btn-link px-2 py-0" data-slot-edit="' + UI.esc(s.Id) + '">Edit</button></td></tr>'; }).join('') : '<tr><td colspan="7" class="text-soft">No windows yet. Without windows a job takes an exact time, or any time.</td></tr>');
     UI.el('dsp-slot-rows').querySelectorAll('[data-slot-edit]').forEach(function (b) { b.onclick = function () { var x = list.filter(function (y) { return y.Id === b.getAttribute('data-slot-edit'); })[0]; if (!x) return; var f = UI.el('dsp-slot-form'); Form.write(f, { Id: x.Id, Name: x.Name, StartTime: x.StartTime, EndTime: x.EndTime, ZoneId: x.ZoneId || '', JobType: x.JobType || '', Capacity: x.Capacity, Status: x.Status }); UI.el('dsp-slot-days').querySelectorAll('[data-day]').forEach(function (cb) { cb.checked = x.Weekdays.indexOf(cb.getAttribute('data-day')) >= 0; }); UI.el('dsp-slot-name').focus(); }; });
   }
   function resetSlotForm() { var f = UI.el('dsp-slot-form'); f.reset(); f.querySelector('[name=Id]').value = ''; UI.el('dsp-slot-error').hidden = true; UI.el('dsp-slot-days').querySelectorAll('[data-day]').forEach(function (cb) { cb.checked = true; }); }
@@ -5546,7 +5648,7 @@ window.MLS = (function () {
   function openNew() {
     ensurePickers(); var f = UI.el('dsp-job-form'), me = M.AppState.me; f.reset(); Form.clearErrors(f); UI.el('dsp-job-error').hidden = true; requestId = UI.uuid(); slotDefs = null; newPicker.reset(''); setType('DELIVERY');
     f.querySelector('[name=branchId]').innerHTML = (me.branches.length > 1 ? '<option value="">Choose a branch</option>' : '') + UI.options(me.branches, lensBranch()); UI.el('dsp-branch-wrap').hidden = me.branches.length === 1;
-    UI.html('dsp-orders', '<div class="text-soft small p-2">Loading ready orders…</div>');
+    UI.html('dsp-orders', UI.skeleton({ kind: 'rows', count: 3, label: 'Loading the ready orders' }));
     Promise.all([Api.call('dispatch.readyOrders', {}), Api.call('dispatch.zones', {}), loadRiders(), loadSlotDefs()]).then(function (res) {
       ready = res[0]; zones = res[1]; paintOrders(); refreshWindows();
       f.querySelector('[name=zoneId]').innerHTML = '<option value="">No zone</option>' + UI.options(zones, '', function (z) { return z.Name + ' · ' + F.peso(z.Fee); });
@@ -5570,7 +5672,7 @@ window.MLS = (function () {
 
   // ---------------------------------------------------------------- zones
   function paintZones(list) {
-    UI.html('dsp-zone-rows', list.length ? list.map(function (z) { return '<tr><td data-label="Zone">' + UI.esc(z.Name) + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(UI.branchName(z.BranchId)) + '</div>' : '') + '</td><td data-label="Fee" class="text-end money">' + F.peso(z.Fee) + '</td><td data-label="Status">' + UI.badge(z.Status) + '</td><td class="text-end"><button type="button" class="btn btn-sm btn-link px-2 py-0" data-zone="' + UI.esc(z.Id) + '">Edit</button></td></tr>'; }).join('') : '<tr><td colspan="4" class="text-soft">No zones yet. A zone sets the default delivery fee.</td></tr>');
+    UI.html('dsp-zone-rows', list.length ? list.map(function (z) { return '<tr><td data-label="Zone" class="lead-cell">' + UI.esc(z.Name) + '<span class="ph-only lead-status">' + UI.badge(z.Status) + '</span>' + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(UI.branchName(z.BranchId)) + '</div>' : '') + '</td><td data-label="Fee" class="text-end num money">' + F.peso(z.Fee) + '</td><td data-label="Status" class="ph-hide">' + UI.badge(z.Status) + '</td><td class="text-end"><button type="button" class="btn btn-sm btn-link px-2 py-0" data-zone="' + UI.esc(z.Id) + '">Edit</button></td></tr>'; }).join('') : '<tr><td colspan="4" class="text-soft">No zones yet. A zone sets the default delivery fee.</td></tr>');
     UI.el('dsp-zone-rows').querySelectorAll('[data-zone]').forEach(function (b) { b.onclick = function () { var z = list.filter(function (x) { return x.Id === b.getAttribute('data-zone'); })[0]; Form.write(UI.el('dsp-zone-form'), z); }; });
   }
   function openZones() { Api.call('dispatch.zones', { includeInactive: true }).then(function (z) { UI.el('dsp-zone-form').reset(); paintZones(z); M.Modal.open('dsp-zone-modal'); }).catch(function (e) { Toast.danger(UI.error(e)); }); }

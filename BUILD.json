@@ -1,8 +1,8 @@
 {
   "app": "Mrs Laundry Sys",
-  "version": "1.26.0",
-  "build": "ee030c229a",
-  "builtAt": "2026-11-07T03:32:16.854Z",
+  "version": "1.27.0",
+  "build": "1400c04e09",
+  "builtAt": "2026-11-07T13:33:56.899Z",
   "files": [
     ".nojekyll",
     "icons/apple-touch-icon.png",
