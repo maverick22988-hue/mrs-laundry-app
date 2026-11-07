@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '5f0ec108f1', version: '1.25.0' };</script>
+  <script>window.MLS_PWA = { build: 'ee030c229a', version: '1.26.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -53,7 +53,7 @@
     --mls-danger: #8E1B1B; --mls-success: #1E6A3C; --mls-warning: #8A5A00; --mls-info: #2F5E8E;
     --mls-danger-soft: #F8E3E3; --mls-success-soft: #E4F2E7; --mls-warning-soft: #FBEFD2; --mls-info-soft: #E4EDF7;
     --mls-danger-line: #E8BABA; --mls-success-line: #B9DBC3; --mls-warning-line: #EDD39A; --mls-info-line: #BBD0E6;
-    --mls-ink: #302A28; --mls-ink-soft: #817A73; --mls-ink-faint: #817A73; --mls-line: #E6D0AB; --mls-line-soft: #F1E3C8; --mls-bg: #FFF9E3; --mls-card: #FFFFFF; --mls-well: #FAF3E0;
+    --mls-ink: #302A28; --mls-ink-soft: #746E68; --mls-ink-faint: #746E68;  /* 1.26.0: the muted grey darkened from #817A73 for small text — 5.0:1 on white, 4.8 on ivory, 4.5 on the well */ --mls-line: #E6D0AB; --mls-line-soft: #F1E3C8; --mls-bg: #FFF9E3; --mls-card: #FFFFFF; --mls-well: #FAF3E0;
     --mls-sidebar: #6D2322; --mls-sidebar-active: #8A2D2C; --mls-sidebar-ink: #FFF9E3; --mls-sidebar-muted: rgba(230, 208, 171, .85); --mls-sidebar-line: rgba(255, 249, 227, .12);
     --mls-focus: rgba(164, 28, 30, .28);
     --mls-radius: 10px; --mls-radius-sm: 8px; --mls-radius-xs: 6px; --mls-radius-pill: 999px;
@@ -68,7 +68,7 @@
     --mls-font: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif; --mls-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     /* Bootstrap's palette mapped onto the tokens (1.24.0): its links, switches, alerts, badges and secondary buttons take the same colours */
     --bs-primary: #6D2322; --bs-primary-rgb: 109, 35, 34; --bs-link-color: #6D2322; --bs-link-color-rgb: 109, 35, 34; --bs-link-hover-color: #521A19; --bs-link-hover-color-rgb: 82, 26, 25;
-    --bs-secondary: #817A73; --bs-secondary-rgb: 129, 122, 115; --bs-secondary-color: #817A73; --bs-body-color: #302A28; --bs-body-color-rgb: 48, 42, 40; --bs-border-color: #E6D0AB;  /* --bs-body-bg stays white: cards, inputs, modals and tables are white on the ivory page */
+    --bs-secondary: #746E68; --bs-secondary-rgb: 116, 110, 104; --bs-secondary-color: #746E68; --bs-body-color: #302A28; --bs-body-color-rgb: 48, 42, 40; --bs-border-color: #E6D0AB;  /* --bs-body-bg stays white: cards, inputs, modals and tables are white on the ivory page */
     --bs-success: #1E6A3C; --bs-success-rgb: 30, 106, 60; --bs-danger: #8E1B1B; --bs-danger-rgb: 142, 27, 27; --bs-warning: #8A5A00; --bs-warning-rgb: 138, 90, 0; --bs-info: #2F5E8E; --bs-info-rgb: 47, 94, 142;
     --bs-success-text-emphasis: #1E6A3C; --bs-success-bg-subtle: #E4F2E7; --bs-success-border-subtle: #B9DBC3; --bs-danger-text-emphasis: #8E1B1B; --bs-danger-bg-subtle: #F8E3E3; --bs-danger-border-subtle: #E8BABA;
     --bs-warning-text-emphasis: #8A5A00; --bs-warning-bg-subtle: #FBEFD2; --bs-warning-border-subtle: #EDD39A; --bs-info-text-emphasis: #2F5E8E; --bs-info-bg-subtle: #E4EDF7; --bs-info-border-subtle: #BBD0E6;
@@ -167,8 +167,10 @@
   .skeleton + .skeleton { margin-top: 10px; } .skeleton.w-40 { width: 40%; } .skeleton.w-60 { width: 60%; } .skeleton.w-80 { width: 80%; } .skeleton.tall { height: 26px; }
   .skeleton-box { border: 1px solid var(--mls-line); border-radius: var(--mls-radius); background: var(--mls-card); padding: 14px 16px; }
   .skeleton-rows { padding: 12px 16px; } .skeleton-rows .skeleton { height: 14px; }
+  .skeleton-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }  /* 1.26.0: a grid of small cards (the POS catalogue) */
+  .skeleton-cards .skeleton-box { min-height: 72px; padding: 10px 12px; border-radius: var(--mls-radius-sm); }
   @keyframes mls-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-  .kbd { display: inline-block; font-family: var(--mls-mono); font-size: .72rem; line-height: 1; padding: .2em .45em; border: 1px solid var(--mls-line); border-bottom-width: 2px; border-radius: 5px; background: var(--mls-card); color: var(--mls-ink-soft); }
+  .kbd { display: inline-block; font-family: var(--mls-mono); font-size: var(--fs-xs); line-height: 1; padding: .2em .45em; border: 1px solid var(--mls-line); border-bottom-width: 2px; border-radius: 5px; background: var(--mls-card); color: var(--mls-ink-soft); }
 
   /* Brand mark */
   .brand { display: flex; align-items: center; gap: .65rem; text-decoration: none; color: inherit; }
@@ -311,14 +313,25 @@
   .chips button:hover { border-color: var(--mls-primary); color: var(--mls-primary); }
   .chips button.active { background: var(--mls-primary-soft); color: var(--mls-primary); border-color: var(--mls-primary); }
   .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 16px; }
-  .detail-grid .k { font-size: .74rem; color: var(--mls-ink-soft); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .detail-grid .k { font-size: var(--fs-xs); color: var(--mls-ink-soft); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
   .detail-grid .v { font-weight: 600; overflow-wrap: anywhere; }
   .timeline { list-style: none; margin: 0; padding: 0; }
   .timeline li { position: relative; padding: .25rem 0 .55rem 1.5rem; border-left: 2px solid var(--mls-line); margin-left: .4rem; }
   .timeline li::before { content: ''; position: absolute; left: -7px; top: .5rem; width: 12px; height: 12px; border-radius: 50%; background: var(--mls-primary); border: 2px solid var(--mls-card); box-shadow: 0 0 0 1px var(--mls-line); }
-  .timeline .when { font-size: .74rem; color: var(--mls-ink-soft); }
+  .timeline .when { font-size: var(--fs-xs); color: var(--mls-ink-soft); }
+  /* totals (1.26.0): every amount right-aligned in tabular figures, so the figures line up under each other and under the lines above */
   .totals { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; }
+  .totals > :nth-child(2n) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .totals .grand { font-size: 1.25rem; font-weight: 700; color: var(--mls-primary-ink); }
+  /* 1.26.0 (Stage 5): what only a phone card shows — a line's detail under its name, where the phone hides the columns that carry it */
+  .ph-only { display: none; }
+  /* the order dialog (1.26.0): the facts, then sections each with its title and a hairline — the items; the totals on the well beside the
+     payments; the timeline */
+  .od-section { margin-top: var(--sp-4); padding-top: 14px; border-top: 1px solid var(--mls-line-soft); }
+  .od-section .section-title { margin-bottom: var(--sp-2); }
+  .od-money { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }  /* a phone or a tablet: the totals right under the items, then the payments */
+  .od-money .totals { background: var(--mls-well); border-radius: var(--mls-radius-sm); padding: 12px 14px; }
+  @media (min-width: 992px) { .od-money { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; } .od-money > .od-totals { grid-column: 2; grid-row: 1; } .od-money > .od-pays { grid-column: 1; grid-row: 1; } }  /* beside each other only in the wide dialog; a tablet's 500 px dialog stacks them, the payments at full width */
   .sum-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; margin: 10px 0; }
   .sum-grid .tile { background: var(--mls-well); border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px 10px; min-width: 0; }
   .sum-grid .tile .k { font-size: .72rem; color: var(--mls-ink-soft); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -340,27 +353,51 @@
   .myday .k { font-size: .74rem; color: var(--mls-ink-soft); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; } .myday .v { font-weight: 700; }
 
   /* ---- POS ---- */
+  /* 1.26.0 (Stage 5): the catalogue tiles white, the first match a burgundy border on the soft fill; the cart on the well with white
+     fields, each field labelled above it; every line's amount in one column with the totals; Charge the only red. From 768 px up the
+     cart fits the screen: the order scrolls inside it and the totals with Charge stay in view, however long the order. */
   .pos-layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; }
   .pos-catalog .card { position: relative; }
-  .pos-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; } .pos-tiles > .empty-state { grid-column: 1 / -1; }
+  .pos-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; } .pos-tiles > .empty-state, .pos-tiles > .skeleton-wrap { grid-column: 1 / -1; }
   .pos-tile { border: 1px solid var(--mls-line); background: var(--mls-card); border-radius: var(--mls-radius-sm); padding: 10px 12px; text-align: left; min-height: 72px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; transition: box-shadow .12s, border-color .12s; }
   .pos-tile:hover, .pos-tile:focus-visible, .pos-tile.hot { border-color: var(--mls-primary); box-shadow: var(--mls-shadow-sm); outline: none; }
-  .pos-tile.hot { background: var(--mls-primary-soft); }
+  .pos-tile.hot { background: var(--mls-primary-soft); } .pos-tile.hot .meta { color: var(--mls-ink-70); }  /* the muted grey reads 4.1:1 on the soft fill, the darker ink 4.8 */
   .pos-tile .name { font-weight: 700; line-height: 1.2; } .pos-tile .price { color: var(--mls-primary-ink); font-weight: 700; }
-  .pos-tile .meta { font-size: .72rem; color: var(--mls-ink-soft); } .pos-tile.nopr { opacity: .5; }
+  .pos-tile .meta { font-size: var(--fs-xs); color: var(--mls-ink-soft); } .pos-tile.nopr { opacity: .5; }
   .pos-cart { position: sticky; top: calc(var(--mls-topbar-h) + 12px); }
+  .pos-cart > .card { background: var(--mls-well); }
+  .pos-cart .cart-foot { padding: 12px 16px 14px; border-top: 1px solid var(--mls-line); }
+  .pos-cart .money { font-variant-numeric: tabular-nums; } .pos-cart input.money, #pay-form input.money { text-align: right; }
   .cart-lines { max-height: 38vh; overflow: auto; }
-  .cart-line { display: grid; grid-template-columns: 1fr 92px 84px 32px; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--mls-line); }
-  .cart-line .name { font-weight: 600; font-size: .9rem; } .cart-line .sub { font-size: .72rem; color: var(--mls-ink-soft); }
+  /* a line: its name over its rate, the amount on the right in the totals' column, the weight or quantity under the amount */
+  .cart-line { display: grid; grid-template-columns: minmax(0, 1fr) 84px 32px; grid-template-areas: "name amt amt" "sub qty rm"; gap: 2px 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--mls-line); }
+  .cart-line > .name { grid-area: name; font-weight: 600; font-size: .9rem; line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
+  .cart-line > .sub { grid-area: sub; font-size: var(--fs-xs); color: var(--mls-ink-soft); min-width: 0; }
+  .cart-line > .qty { grid-area: qty; min-width: 0; } .cart-line > .qty .flat { display: block; text-align: right; font-size: var(--fs-xs); color: var(--mls-ink-soft); }
+  .cart-line > .qty[data-unit] { display: flex; align-items: center; gap: 4px; } .cart-line > .qty input { min-width: 0; flex: 1 1 auto; }
+  .cart-line > .qty[data-unit]::after { content: attr(data-unit); flex: 0 0 auto; font-size: var(--fs-xs); color: var(--mls-ink-soft); }
+  .cart-line > .amt { grid-area: amt; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cart-line > .rm { grid-area: rm; justify-self: end; }
   .cart-line input { padding: .25rem .4rem; font-size: .88rem; text-align: right; }
-  .cart-line .amt { text-align: right; font-weight: 700; }
   .cart-line .rm { border: 0; background: none; color: var(--mls-ink-faint); padding: 0; min-width: 32px; min-height: 32px; } .cart-line .rm:hover { color: var(--mls-danger); }
+  /* the order's other fields: a label above each, money right-aligned; the express switch sits level with the field beside it */
+  .cart-adjust { margin-top: 12px; }
+  .cart-adjust .form-label { font-size: var(--fs-xs); margin-bottom: 2px; }
+  .cart-adjust .form-switch { display: flex; align-items: center; gap: .5rem; min-height: 38px; margin: 0; padding-left: 0; }
+  .cart-adjust .form-switch .form-check-input { float: none; margin: 0; flex: 0 0 auto; } .cart-adjust .form-switch .form-check-label { font-weight: 600; }
   .cust-results { position: absolute; z-index: 20; left: 0; right: 0; background: var(--mls-card); border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); box-shadow: var(--mls-shadow); max-height: 220px; overflow: auto; }
   .cust-results button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: .5rem .75rem; border-bottom: 1px solid var(--mls-line); min-height: 40px; }
   .cust-results button:hover, .cust-results button:focus-visible { background: var(--mls-primary-soft); }
   .cust-chip { display: flex; align-items: center; gap: .6rem; padding: .5rem .75rem; border: 1px solid var(--mls-line); background: var(--mls-primary-soft); border-radius: var(--mls-radius-sm); }
+  .cust-chip .text-soft { color: var(--mls-ink-70); }  /* on the soft fill the darker ink keeps small text at 4.8:1 */
   .cust-chip .x { margin-left: auto; border: 0; background: none; color: var(--mls-ink-soft); min-width: 32px; min-height: 32px; }
-  .pos-keys { display: none; font-size: .74rem; color: var(--mls-ink-faint); margin-top: 8px; text-align: center; }
+  .pos-keys { display: none; font-size: var(--fs-xs); color: var(--mls-ink-faint); margin-top: 12px; text-align: center; }
+  @media (min-width: 768px) {
+    .pos-cart > .card { display: flex; flex-direction: column; max-height: calc(100vh - var(--mls-topbar-h) - 84px); }  /* whole on the screen from the first paint, below the page's head */
+    .pos-cart > .card > .card-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .pos-cart > .card > .card-header, .pos-cart > .card > .cart-foot { flex: 0 0 auto; }
+    .pos-cart .cart-lines { max-height: none; overflow: visible; }
+  }
   .pos-cartbar { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; background: var(--mls-card); border-top: 1px solid var(--mls-line); box-shadow: 0 -6px 20px rgba(48, 42, 40, .12); padding: 10px 14px; align-items: center; gap: 10px; }
   .pos-cartbar .sum { flex: 1 1 auto; min-width: 0; border: 0; background: none; text-align: left; padding: 0; }
   .pos-cartbar .sum .n { font-size: .76rem; color: var(--mls-ink-soft); } .pos-cartbar .sum .t { font-weight: 700; font-size: 1.15rem; }
@@ -518,7 +555,7 @@
     #main-nav .nav-link > span, #main-nav .nav-link .phase-badge { display: none; }
     #main-nav .nav-link i { width: auto; font-size: 1.1rem; }
     #sidebar .sidebar-foot { padding: 10px 4px 12px; text-align: center; font-size: .62rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .pos-layout { grid-template-columns: minmax(0, 1fr) 340px; } .cart-line { grid-template-columns: 1fr 76px 80px 32px; }
+    .pos-layout { grid-template-columns: minmax(0, 1fr) 340px; }
     .staff-layout, .roles-layout { grid-template-columns: 260px minmax(0, 1fr); }
   }
   /* ---- Tablet (under 992px): drawer sidebar; two-pane POS stays down to 768px ---- */
@@ -527,7 +564,7 @@
     body.sidebar-open #sidebar { transform: none; } body.sidebar-open #sidebar-backdrop { display: block; }
     #hamburger { display: inline-flex; } .topbar-brand { display: inline-flex; }
     #main-content { padding: 14px; }
-    .pos-layout { grid-template-columns: minmax(0, 1fr) 300px; } .cart-lines { max-height: 32vh; } .cart-line { grid-template-columns: 1fr 70px 76px 32px; }
+    .pos-layout { grid-template-columns: minmax(0, 1fr) 300px; }
     .eod-layout { grid-template-columns: minmax(0, 1fr); } .eod-count-card { position: static; }
     .staff-layout { grid-template-columns: minmax(0, 1fr); } .staff-list { max-height: 40vh; } .tc-grid { grid-template-columns: minmax(0, 1fr); }
     .roles-layout { grid-template-columns: minmax(0, 1fr); } #set-role-list { max-height: 32vh; }
@@ -557,6 +594,21 @@
     .table-cards thead { display: none; } .table-cards tbody td { display: flex; justify-content: space-between; gap: 10px; border: 0; padding: .25rem 0; }
     .table-cards tbody td::before { content: attr(data-label); color: var(--mls-ink-soft); font-size: .78rem; font-weight: 600; }
     .table-cards tbody td:empty, .table-cards tbody td.no-label::before { display: none; }
+    /* 1.26.0 (Stage 5), on the pages brought over. aligned: a value stands on the right as one block — a date with its due time under it,
+       a name with its mobile — the amounts right-aligned in tabular figures, the first cell the card's title with its status beside it.
+       compact: an item or a payment is one row — what it is with its detail under it, the amount on the right. No stripes inside a card. */
+    .table-cards.aligned tbody td { display: block; text-align: right; overflow-wrap: anywhere; }
+    .table-cards.aligned tbody td::before { float: left; margin-right: 12px; text-align: left; }
+    .table-cards.aligned tbody td.lead-cell { text-align: left; padding-bottom: .4rem; }
+    .table-cards.aligned tbody td.lead-cell .lead-status { float: right; margin-left: 8px; }
+    .table-cards.aligned tbody td.lead-cell::before, .table-cards.compact tbody td::before { display: none; }
+    .table-cards.aligned tbody td.ph-hide, .table-cards.compact tbody td.ph-hide, .table-cards.aligned tbody td:empty, .table-cards.compact tbody td:empty { display: none; }
+    .table-cards.aligned .ph-only, .table-cards.compact .ph-only { display: inline; }
+    .table-cards.aligned .ph-only.sub, .table-cards.compact .ph-only.sub { display: block; font-size: var(--fs-xs); font-weight: 400; color: var(--mls-ink-soft); }
+    .table-cards.aligned > tbody > tr > *, .table-cards.compact > tbody > tr > * { box-shadow: none; background-color: transparent; }
+    .table-cards.compact tbody tr { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: column; grid-auto-columns: auto; column-gap: 12px; align-items: start; padding: 10px 12px; }
+    .table-cards.compact tbody td { display: block; padding: 0; overflow-wrap: anywhere; }
+    .table-cards.compact tbody td.num { text-align: right; white-space: nowrap; overflow-wrap: normal; }
     .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin-left: -4px; padding-left: 4px; } .tabs::-webkit-scrollbar { display: none; }
     .tabs button { flex: 0 0 auto; }
     .btn { min-height: var(--mls-tap); } .btn-sm { min-height: 40px; } .btn-close { min-width: 40px; min-height: 40px; }
@@ -565,7 +617,7 @@
     .tabs button, .chips button { min-height: 40px; } .form-check-input { width: 1.25em; height: 1.25em; }
     .cart-line .rm, .line-editor .lx, .adj-line .lx, .cust-chip .x { min-width: 40px; min-height: 40px; }
     .pos-tiles { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); } .pos-tile { min-height: 80px; }
-    .cart-line { grid-template-columns: 1fr 76px 76px 40px; }
+    .cart-line { grid-template-columns: minmax(0, 1fr) 88px 40px; } .cart-adjust .form-switch { min-height: 40px; }
     .line-editor, .line-editor-head { grid-template-columns: 1fr 70px 90px 40px; } .line-editor .lt, .line-editor-head .lt { display: none; }
     .modal-xl .modal-body { max-height: none; }
     .toolbar .form-control, .toolbar .form-select { min-width: 0; flex: 1 1 45%; } .toolbar .search { flex: 1 1 100%; }
@@ -828,7 +880,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.25.0';
+  var VERSION = '1.26.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -975,6 +1027,8 @@ window.MLS = (function () {
      * updating…"), so a copy is never mistaken for the server's current state; when the live call fails, the head says the
      * screen was not updated and why. opts.seq (Api.sequence()) drops any reply, saved or live, for a request the screen has
      * since superseded (its error, if any, carries superseded: true so the page stays quiet). opts.cached = false asks for the live answer only (money screens).
+     * opts.dated (1.26.0) paints a saved answer only when it carries the time it was saved: a device that has never synced holds an empty
+     * store, not a copy, so a first visit shows its skeleton until the server answers instead of "no orders yet".
      */
     function read(action, payload, opts) {
       opts = opts || {};
@@ -993,7 +1047,7 @@ window.MLS = (function () {
           timer = setTimeout(function () { resolve(null); }, CACHED_WAIT_MS);
           try { Api.offline.answer(action, payload).then(function (hit) { clearTimeout(timer); resolve(hit); }, function () { clearTimeout(timer); resolve(null); }); } catch (e) { clearTimeout(timer); resolve(null); }
         }).then(function (hit) {
-          if (!hit || hit.data === undefined || hit.data === null || liveDone || !fresh()) return;
+          if (!hit || hit.data === undefined || hit.data === null || liveDone || !fresh() || (opts.dated && !hit.asOf)) return;
           paintedCached = true;
           try { opts.paint(hit.data, { cached: true, asOf: hit.asOf || null }); Refresh.cached(view, hit.asOf); try { Timing.view(view || action, Date.now() - startedAt, 'saved'); } catch (e) { /* ignore */ } } catch (e) { console.error(e); }
         });
@@ -1224,13 +1278,15 @@ window.MLS = (function () {
     },
     /**
      * Release 1.25.0: the placeholder of a first visit, where no saved copy exists — bars on the ivory well with a slow shimmer (none under
-     * reduced motion), replaced by the answer the moment it arrives. UI.skeleton({ kind: 'rows' | 'tiles', count, label }).
+     * reduced motion), replaced by the answer the moment it arrives. UI.skeleton({ kind: 'rows' | 'tiles' | 'cards', count, label }):
+     * rows for a list, tiles for the dashboard's figures, cards (1.26.0) for a grid of small cards such as the POS catalogue.
      */
     skeleton: function (o) {
       o = o || {}; var n = Math.max(1, Math.min(12, o.count || (o.kind === 'tiles' ? 4 : 5))), out = '', widths = ['w-80', '', 'w-60', 'w-80', 'w-40'];
       if (o.kind === 'tiles') { for (var i = 0; i < n; i++) out += '<div class="skeleton-box kpi-skel"><span class="skeleton w-60"></span><span class="skeleton tall w-80"></span><span class="skeleton w-40"></span></div>'; }
+      else if (o.kind === 'cards') { for (var k = 0; k < n; k++) out += '<div class="skeleton-box"><span class="skeleton w-80"></span><span class="skeleton w-40"></span><span class="skeleton w-60"></span></div>'; }
       else { out = '<div class="skeleton-rows">'; for (var j = 0; j < n; j++) out += '<span class="skeleton ' + widths[j % widths.length] + '"></span>'; out += '</div>'; }
-      return '<div class="skeleton-wrap' + (o.kind === 'tiles' ? ' kpi-grid' : '') + '" role="status" aria-busy="true"><span class="visually-hidden">' + UI.esc(o.label || 'Loading') + '</span>' + out + '</div>';
+      return '<div class="skeleton-wrap' + (o.kind === 'tiles' ? ' kpi-grid' : o.kind === 'cards' ? ' skeleton-cards' : '') + '" role="status" aria-busy="true"><span class="visually-hidden">' + UI.esc(o.label || 'Loading') + '</span>' + out + '</div>';
     }
   };
 
@@ -1376,11 +1432,17 @@ window.MLS = (function () {
 
   /** Server-paged table: Table.render(container, { columns, rows, total, page, pages, onPage, empty: 'text' | { icon, title, hint, action }, cards }) */
   var Table = {
+    /**
+     * Table.render(container, { columns: [{ key, label, format, align, num, cls }], rows, cls, ... }). Release 1.26.0 adds three options
+     * for the pages brought over in stage 5: a column's num (an amount: right-aligned in tabular figures), its cls (classes for its cells)
+     * and the table's cls (classes for the table, such as 'aligned' for phone cards whose values stand right-aligned as one block).
+     */
     render: function (container, spec) {
       var cols = spec.columns, rows = spec.rows || [];
-      var html = '<div class="table-wrap"><table class="table table-striped align-middle mb-0' + (spec.cards === false ? '' : ' table-cards') + '"><thead><tr>' + cols.map(function (c) { return '<th class="' + (c.align === 'right' ? 'text-end' : '') + '">' + UI.esc(c.label) + '</th>'; }).join('') + '</tr></thead><tbody>';
+      var thCls = function (c) { return (c.align === 'right' ? 'text-end' : '') + (c.num ? ' num' : ''); }, tdCls = function (c) { return thCls(c) + (c.cls ? ' ' + c.cls : ''); };
+      var html = '<div class="table-wrap"><table class="table table-striped align-middle mb-0' + (spec.cards === false ? '' : ' table-cards') + (spec.cls ? ' ' + spec.cls : '') + '"><thead><tr>' + cols.map(function (c) { return '<th class="' + thCls(c) + '">' + UI.esc(c.label) + '</th>'; }).join('') + '</tr></thead><tbody>';
       if (!rows.length) html += '<tr><td colspan="' + cols.length + '" class="no-label">' + UI.empty(spec.empty || 'Nothing to show yet.') + '</td></tr>';
-      rows.forEach(function (r, i) { html += '<tr data-index="' + i + '">' + cols.map(function (c) { var v = c.format ? c.format(r[c.key], r) : UI.esc(r[c.key]); return '<td data-label="' + UI.esc(c.label) + '" class="' + (c.align === 'right' ? 'text-end' : '') + '">' + v + '</td>'; }).join('') + '</tr>'; });
+      rows.forEach(function (r, i) { html += '<tr data-index="' + i + '">' + cols.map(function (c) { var v = c.format ? c.format(r[c.key], r) : UI.esc(r[c.key]); return '<td data-label="' + UI.esc(c.label) + '" class="' + tdCls(c) + '">' + v + '</td>'; }).join('') + '</tr>'; });
       html += '</tbody></table></div>';
       if (spec.pages > 1) html += '<div class="d-flex align-items-center gap-2 mt-2 small text-soft"><span>' + spec.total + ' records</span><span class="ms-auto"></span><button type="button" class="btn btn-sm btn-outline-secondary" data-page="' + (spec.page - 1) + '"' + (spec.page <= 1 ? ' disabled' : '') + '>Previous</button><span>Page ' + spec.page + ' of ' + spec.pages + '</span><button type="button" class="btn btn-sm btn-outline-secondary" data-page="' + (spec.page + 1) + '"' + (spec.page >= spec.pages ? ' disabled' : '') + '>Next</button></div>';
       container.innerHTML = html;
@@ -3006,6 +3068,7 @@ window.MLS = (function () {
         <div class="toolbar mb-2"><input class="form-control search" id="pos-search" placeholder="Search services and products" autocomplete="off" enterkeyhint="done" aria-label="Search services and products"></div>
         <div class="chips" id="pos-chips"></div>
         <div class="pos-tiles" id="pos-tiles"></div>
+        <div class="pos-keys" id="pos-keys"><span class="kbd">Enter</span> adds the first match · <span class="kbd">F4</span> customer · <span class="kbd">F9</span> charge · <span class="kbd">Esc</span> clears the search</div>
       </div></div>
     </div>
     <div class="pos-cart">
@@ -3024,25 +3087,28 @@ window.MLS = (function () {
             </div>
             <form id="pos-customer-form" class="border rounded p-2 mt-2" autocomplete="off" hidden>
               <div class="row g-2"><div class="col-12"><input class="form-control form-control-sm" name="FullName" placeholder="Full name" required></div><div class="col-12"><input class="form-control form-control-sm" name="Phone" placeholder="Mobile 09XXXXXXXXX" inputmode="tel"></div></div>
-              <div class="d-flex gap-2 mt-2"><button type="submit" class="btn btn-primary btn-sm">Save customer</button><button type="button" class="btn btn-outline-secondary btn-sm" id="pos-customer-cancel">Cancel</button></div>
+              <div class="d-flex gap-2 mt-2"><button type="submit" class="btn btn-outline-primary btn-sm">Save customer</button><button type="button" class="btn btn-outline-secondary btn-sm" id="pos-customer-cancel">Cancel</button></div>
             </form>
           </div>
           <div class="cart-lines" id="pos-lines"></div>
-          <div class="row g-2 mt-1 small">
+          <!-- 1.26.0 (Stage 5): every field labelled above it, the money fields right-aligned; same fields, ids and order as before -->
+          <div class="row g-2 cart-adjust align-items-end">
             <div class="col-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pos-express"><label class="form-check-label" for="pos-express">Express</label></div></div>
-            <div class="col-6"><div class="input-group input-group-sm"><span class="input-group-text">Bags</span><input class="form-control" type="number" min="0" step="1" inputmode="numeric" id="pos-bags" value="" aria-label="Bags"></div></div>
-            <div class="col-6"><div class="input-group input-group-sm"><span class="input-group-text">Delivery</span><input class="form-control money" type="number" min="0" step="0.01" inputmode="decimal" id="pos-delivery" placeholder="0.00" aria-label="Delivery fee"></div></div>
-            <div class="col-6"><div class="input-group input-group-sm"><span class="input-group-text">Other</span><input class="form-control money" type="number" min="0" step="0.01" inputmode="decimal" id="pos-other" placeholder="0.00" aria-label="Other charges"></div></div>
-            <div class="col-6" id="pos-discount-wrap"><div class="input-group input-group-sm"><span class="input-group-text">Discount</span><input class="form-control money" type="number" min="0" step="0.01" inputmode="decimal" id="pos-discount" placeholder="0.00" aria-label="Discount"></div></div>
-            <div class="col-6" id="pos-discount-reason-wrap" hidden><input class="form-control form-control-sm" id="pos-discount-reason" placeholder="Discount reason" maxlength="200"></div>
-            <div class="col-12"><div class="input-group input-group-sm"><span class="input-group-text"><i class="fa-solid fa-ticket"></i></span><input class="form-control upper" id="pos-promo" placeholder="Promo code" maxlength="24" autocapitalize="characters" autocomplete="off" aria-label="Promo code"><button type="button" class="btn btn-outline-secondary" id="pos-promo-clear" hidden aria-label="Remove the promo code"><i class="fa-solid fa-xmark"></i></button></div><div class="small mt-1" id="pos-promo-note" hidden></div></div>
-            <div class="col-12"><select class="form-select form-select-sm" id="pos-service-type" aria-label="Order type"></select></div>
-            <div class="col-12"><input class="form-control form-control-sm" id="pos-notes" placeholder="Notes for this order (optional)" maxlength="300"></div>
+            <div class="col-6"><label class="form-label" for="pos-bags">Bags</label><input class="form-control form-control-sm" type="number" min="0" step="1" inputmode="numeric" id="pos-bags" value="" placeholder="0"></div>
+            <div class="col-6"><label class="form-label" for="pos-delivery">Delivery fee</label><input class="form-control form-control-sm money" type="number" min="0" step="0.01" inputmode="decimal" id="pos-delivery" placeholder="0.00"></div>
+            <div class="col-6"><label class="form-label" for="pos-other">Other charges</label><input class="form-control form-control-sm money" type="number" min="0" step="0.01" inputmode="decimal" id="pos-other" placeholder="0.00"></div>
+            <div class="col-6" id="pos-discount-wrap"><label class="form-label" for="pos-discount">Discount</label><input class="form-control form-control-sm money" type="number" min="0" step="0.01" inputmode="decimal" id="pos-discount" placeholder="0.00"></div>
+            <div class="col-6" id="pos-discount-reason-wrap" hidden><label class="form-label" for="pos-discount-reason">Discount reason</label><input class="form-control form-control-sm" id="pos-discount-reason" maxlength="200" placeholder="Required"></div>
+            <div class="col-12"><label class="form-label" for="pos-promo">Promo code</label><div class="input-group input-group-sm"><span class="input-group-text" aria-hidden="true"><i class="fa-solid fa-ticket"></i></span><input class="form-control upper" id="pos-promo" maxlength="24" autocapitalize="characters" autocomplete="off"><button type="button" class="btn btn-outline-secondary" id="pos-promo-clear" hidden aria-label="Remove the promo code"><i class="fa-solid fa-xmark"></i></button></div><div class="small mt-1" id="pos-promo-note" hidden></div></div>
+            <div class="col-12"><label class="form-label" for="pos-service-type">Order type</label><select class="form-select form-select-sm" id="pos-service-type"></select></div>
+            <div class="col-12"><label class="form-label" for="pos-notes">Notes</label><input class="form-control form-control-sm" id="pos-notes" placeholder="Optional" maxlength="300"></div>
           </div>
-          <div class="totals mt-3" id="pos-totals"></div>
+        </div>
+        <!-- 1.26.0: the totals and Charge below the order; from 768 px up they stay in view while the order scrolls (the key legend moved under the tiles) -->
+        <div class="cart-foot">
+          <div class="totals" id="pos-totals"></div>
           <div class="small text-faint mt-1" id="pos-quote-note"></div>
           <button type="button" class="btn btn-primary w-100 py-2 mt-3" id="pos-checkout" disabled><i class="fa-solid fa-cash-register me-2"></i>Charge</button>
-          <div class="pos-keys" id="pos-keys"><span class="kbd">Enter</span> adds the first match · <span class="kbd">F4</span> customer · <span class="kbd">F9</span> charge · <span class="kbd">Esc</span> clears the search</div>
         </div>
       </div>
     </div>
@@ -3064,13 +3130,16 @@ window.MLS = (function () {
   var catSeq = Api.sequence(), prodSeq = Api.sequence();
   /** The catalogue: the copy on this device paints the tiles at once (the head says saved · updating), the server's answer replaces them; prices on the tiles are for reading — every total is quoted live or by the shared core. */
   function loadCatalog() {
-    if (!catalog.services.length && !catalog.products.length) UI.html('pos-tiles', '<div class="text-soft p-2">Loading catalog…</div>');
+    // 1.26.0 (Stage 5): while nothing is painted yet (a first visit with no catalogue on this device), skeleton tiles after 160 ms, so a
+    // saved copy that paints at once never flashes one; the tiles replace them the moment the services and the products are both in, and
+    // an error replaces them with the reason and Try again. (The products alone may arrive first: the tiles wait for both, so does this.)
+    var tiles = UI.el('pos-tiles'); if (!tiles.children.length) setTimeout(function () { if (!tiles.children.length) tiles.innerHTML = UI.skeleton({ kind: 'cards', count: 8, label: 'Loading the catalogue' }); }, 160);
     var got = { services: false, products: false }, paintAll = function () { if (got.services && got.products) { renderChips(); renderTiles(); } };
     return Promise.all([
       Api.read('services.list', { forPos: true }, { seq: catSeq, paint: function (r) { catalog.services = r.rows; catalog.categories = r.categories; got.services = true; paintAll(); } }),
       Api.read('inventory.all', { sellable: true, type: 'PRODUCT' }, { seq: prodSeq, paint: function (r) { catalog.products = r; got.products = true; paintAll(); } })
     ]).catch(function (e) {
-      if (e && e.superseded) return; Toast.danger('Catalog: ' + UI.error(e)); UI.html('pos-tiles', UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The catalog could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate', onClick: loadCatalog }, compact: true })); var again = UI.el('pos-tiles').querySelector('[data-empty-action]'); if (again) again.onclick = loadCatalog; });
+      if (e && e.superseded) return; Toast.danger('Catalog: ' + UI.error(e)); UI.html('pos-tiles', UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The catalog could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate', onClick: loadCatalog }, compact: true })); var again = UI.el('pos-tiles').querySelector('[data-empty-action]'); if (again) again.onclick = function () { UI.el('pos-tiles').innerHTML = ''; loadCatalog(); }; });
   }
   function renderChips() {
     var chips = ['ALL'].concat(catalog.categories).concat(catalog.products.length ? ['PRODUCTS'] : []);
@@ -3152,10 +3221,13 @@ window.MLS = (function () {
   }
   function render() { renderLines(); renderCustomer(); renderTotals(); requestQuote(); }
   function renderLines() {
+    // 1.26.0 (Stage 5): the name over its rate on the left, the amount on the right in the totals' column, the weight or quantity
+    // (with its unit) under the amount. Same inputs, data attributes and keyboard order as before: weight or quantity, then remove.
     var html = cart.lines.map(function (l) {
-      var qtyCell = l.pricingType === 'PER_KILO' ? '<input class="form-control" type="number" step="0.1" min="0" inputmode="decimal" value="' + UI.esc(l.weightKg) + '" data-weight="' + l.key + '" aria-label="kg">' : (l.pricingType === 'FLAT' ? '<span class="text-end small text-soft">flat</span>' : '<input class="form-control" type="number" step="1" min="1" inputmode="numeric" value="' + UI.esc(l.qty) + '" data-qty="' + l.key + '" aria-label="quantity">');
-      var sub = l.pricingType === 'PER_KILO' ? 'kg · ' + F.peso(l.price) + '/kg' + (l.minQty > 0 ? ' · min ' + l.minQty + ' kg' : '') : F.peso(l.price) + ' / ' + (l.unit || 'pc') + (l.lineType === 'PRODUCT' ? ' · ' + F.qty(l.onHand, l.unit) + ' on hand' : '');
-      return '<div class="cart-line" data-key="' + l.key + '"><div><div class="name">' + UI.esc(l.name) + '</div><div class="sub">' + UI.esc(sub) + '</div></div><div>' + qtyCell + '</div><div class="amt money" data-amt="' + l.key + '">' + F.peso(estimateLine(l)) + '</div><button type="button" class="rm" data-remove="' + l.key + '" aria-label="Remove"><i class="fa-solid fa-xmark"></i></button></div>';
+      var unit = l.pricingType === 'PER_KILO' ? 'kg' : (l.unit || 'pc');
+      var qtyCell = l.pricingType === 'PER_KILO' ? '<input class="form-control" type="number" step="0.1" min="0" inputmode="decimal" value="' + UI.esc(l.weightKg) + '" data-weight="' + l.key + '" aria-label="Weight in kg, ' + UI.esc(l.name) + '">' : (l.pricingType === 'FLAT' ? '<span class="flat">flat price</span>' : '<input class="form-control" type="number" step="1" min="1" inputmode="numeric" value="' + UI.esc(l.qty) + '" data-qty="' + l.key + '" aria-label="Quantity, ' + UI.esc(l.name) + '">');
+      var sub = l.pricingType === 'PER_KILO' ? F.peso(l.price) + ' per kg' + (l.minQty > 0 ? ' · min ' + l.minQty + ' kg' : '') : (l.pricingType === 'FLAT' ? F.peso(l.price) : F.peso(l.price) + ' per ' + unit) + (l.lineType === 'PRODUCT' ? ' · ' + F.qty(l.onHand, l.unit) + ' on hand' : '');
+      return '<div class="cart-line" data-key="' + l.key + '"><div class="name">' + UI.esc(l.name) + '</div><div class="sub">' + UI.esc(sub) + '</div><div class="qty"' + (l.pricingType === 'FLAT' ? '' : ' data-unit="' + UI.esc(unit) + '"') + '>' + qtyCell + '</div><div class="amt money" data-amt="' + l.key + '">' + F.peso(estimateLine(l)) + '</div><button type="button" class="rm" data-remove="' + l.key + '" aria-label="Remove ' + UI.esc(l.name) + '"><i class="fa-solid fa-xmark"></i></button></div>';
     }).join('');
     UI.html('pos-lines', html || UI.empty({ icon: 'fa-hand-pointer', title: 'Tap a service or product to start an order.', compact: true }));
     UI.el('pos-line-count').textContent = cart.lines.length ? cart.lines.length + ' line' + (cart.lines.length === 1 ? '' : 's') : '';
@@ -3583,16 +3655,26 @@ window.MLS = (function () {
     current = o;
     UI.el('order-modal-title').innerHTML = UI.esc(o.OrderNo) + ' ' + UI.badge(o.Status, o.StatusLabel) + (o.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + (o.ReceiptConfirmedAt ? ' <span class="badge text-bg-success" title="Confirmed on the tracking link ' + UI.esc(F.datetime(o.ReceiptConfirmedAt)) + '">customer confirmed receipt</span>' : '') + (o.ProblemReportedAt ? ' <span class="badge text-bg-danger" title="Reported on the tracking link ' + UI.esc(F.datetime(o.ProblemReportedAt)) + '; see Incidents">problem reported</span>' : '') + (o._pending ? ' <span class="pending-tag" title="Taken offline on this device; the server has not received it yet">not synced</span>' : (o.ProvisionalRef ? ' <span class="small text-soft">offline ref ' + UI.esc(o.ProvisionalRef) + '</span>' : ''));
     var head = [['Customer', UI.esc(o.CustomerName) + (o.CustomerPhone ? '<div class="small text-soft">' + UI.esc(o.CustomerPhone) + (o.Mobile ? '' : ' <span class="badge text-bg-light border" title="Not a mobile number: no SMS">no SMS</span>') + (o.Customer && o.Customer.SmsOptOut ? ' <span class="badge text-bg-secondary" title="Opted out of promotional messages">no promos</span>' : '') + '</div>' : '')], ['Received', F.datetime(o.CreatedAt)], ['Due', o.DueAt ? F.datetime(o.DueAt) : '—'], ['Branch', UI.esc(o.Branch)], ['Cashier', UI.esc(o.Cashier)], ['Type', F.status(o.ServiceType)], ['Bags · weight', (o.BagCount || 0) + ' · ' + F.qty(o.TotalWeightKg, 'kg')], ['Released', o.ReleasedAt ? F.datetime(o.ReleasedAt) + (o.ReleasedByName ? ' by ' + UI.esc(o.ReleasedByName) : '') : '—']];
-    var lines = o.Items.map(function (i) { return '<tr><td data-label="Item">' + UI.esc(i.Description) + (i.LineType === 'PRODUCT' ? ' <span class="badge text-bg-light border">product</span>' : '') + '</td><td data-label="Qty" class="text-end">' + lineQty(i) + '</td><td data-label="Unit price" class="text-end money">' + F.peso(i.UnitPrice) + '</td><td data-label="Line total" class="text-end money fw-bold">' + F.peso(i.LineTotal) + '</td></tr>'; }).join('');
-    var pays = o.Payments.length ? o.Payments.map(function (p) { return '<tr><td data-label="When">' + F.datetime(p.CreatedAt) + '</td><td data-label="Type">' + (p.Type === 'REFUND' ? '<span class="text-danger fw-bold">Refund</span>' : 'Payment') + '</td><td data-label="Method">' + UI.esc(methodLabel(p.Method)) + (p.ReferenceNo ? ' <span class="text-soft small">' + UI.esc(p.ReferenceNo) + '</span>' : '') + '</td><td data-label="By">' + UI.esc(p.Cashier) + '</td><td data-label="Amount" class="text-end money fw-bold">' + (p.Type === 'REFUND' ? '-' : '') + F.peso(p.Amount) + '</td><td class="text-end no-print">' + (M.Auth.can('POS_VOID') ? '<button type="button" class="btn btn-sm btn-link text-danger p-0" data-void="' + UI.esc(p.Id) + '">void</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="6" class="text-soft">No payments yet.</td></tr>';
+    // 1.26.0 (Stage 5): the facts, then three sections with their titles — the items with the totals, the payments, the timeline. Every
+    // amount right-aligned in tabular figures. On a phone each item and each payment is one row (what it is, its detail under it, the
+    // amount on the right) instead of a card of four or five label rows; the columns a phone hides are in that detail line.
+    var lines = o.Items.map(function (i) {
+      var q = i.LineType === 'SERVICE' && i.WeightKg ? F.qty(i.WeightKg, 'kg') + (Number(i.Qty) !== Number(i.WeightKg) ? ' · billed ' + F.qty(i.Qty, i.Unit) : '') : F.qty(i.Qty, i.Unit);
+      return '<tr><td data-label="Item" class="lead-cell">' + UI.esc(i.Description) + (i.LineType === 'PRODUCT' ? ' <span class="badge text-bg-light border">product</span>' : '') + '<span class="ph-only sub">' + UI.esc(q + ' × ' + F.peso(i.UnitPrice)) + '</span></td><td data-label="Qty" class="num ph-hide">' + lineQty(i) + '</td><td data-label="Unit price" class="num ph-hide money">' + F.peso(i.UnitPrice) + '</td><td data-label="Line total" class="num money fw-bold">' + F.peso(i.LineTotal) + '</td></tr>';
+    }).join('');
+    var pays = o.Payments.length ? o.Payments.map(function (p) {
+      var what = p.Type === 'REFUND' ? '<span class="text-danger fw-bold">Refund</span>' : 'Payment', how = UI.esc(methodLabel(p.Method)) + (p.ReferenceNo ? ' <span class="text-soft small">' + UI.esc(p.ReferenceNo) + '</span>' : '');
+      return '<tr><td data-label="When" class="ph-hide">' + F.datetime(p.CreatedAt) + '</td><td data-label="Type" class="lead-cell">' + what + '<span class="ph-only"> · ' + how + '</span><span class="ph-only sub">' + F.datetime(p.CreatedAt) + ' · ' + UI.esc(p.Cashier) + '</span></td><td data-label="Method" class="ph-hide">' + how + '</td><td data-label="By" class="ph-hide">' + UI.esc(p.Cashier) + '</td><td data-label="Amount" class="num money fw-bold">' + (p.Type === 'REFUND' ? '-' : '') + F.peso(p.Amount) + '</td><td class="num no-print">' + (M.Auth.can('POS_VOID') ? '<button type="button" class="btn btn-sm btn-link text-danger p-0" data-void="' + UI.esc(p.Id) + '">void</button>' : '') + '</td></tr>';
+    }).join('') : '<tr><td colspan="6" class="text-soft">No payments yet.</td></tr>';
     var tl = o.Timeline.map(function (a) { return '<li><div class="when">' + F.datetime(a.At) + (a.User ? ' · ' + UI.esc(a.User) : '') + '</div><div>' + UI.esc(a.Details || F.status(a.Activity)) + '</div></li>'; }).join('');
-    UI.html('order-modal-body', '<div class="detail-grid mb-3">' + head.map(function (h) { return '<div><div class="k">' + h[0] + '</div><div class="v">' + h[1] + '</div></div>'; }).join('') + '</div>' +
-      '<div class="table-wrap"><table class="table table-cards mb-0"><thead><tr><th>Item</th><th class="text-end">Qty</th><th class="text-end">Unit price</th><th class="text-end">Line total</th></tr></thead><tbody>' + lines + '</tbody></table></div>' +
-      '<div class="row mt-3"><div class="col-md-7"><h6 class="fw-bold">Payments</h6><div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>When</th><th>Type</th><th>Method</th><th>By</th><th class="text-end">Amount</th><th></th></tr></thead><tbody>' + pays + '</tbody></table></div></div>' +
-      '<div class="col-md-5"><div class="totals mt-2"><span>Subtotal</span><span class="money">' + F.peso(o.Subtotal) + '</span>' + (Number(o.DiscountAmount) ? '<span>Discount' + (o.DiscountReason ? ' <span class="text-soft small">' + UI.esc(o.DiscountReason) + '</span>' : '') + '</span><span class="money">-' + F.peso(o.DiscountAmount) + '</span>' : '') + (Number(o.DeliveryFee) ? '<span>Delivery fee</span><span class="money">' + F.peso(o.DeliveryFee) + '</span>' : '') + (Number(o.OtherCharges) ? '<span>Other charges</span><span class="money">' + F.peso(o.OtherCharges) + '</span>' : '') + '<span class="fw-bold">Total</span><span class="grand money">' + F.peso(o.OrderTotal) + '</span><span>Paid</span><span class="money">' + F.peso(o.PaidAmount) + '</span><span class="fw-bold">' + (Number(o.BalanceAmount) < 0 ? 'Overpaid' : 'Balance') + '</span><span class="money fw-bold ' + (Number(o.BalanceAmount) > 0 ? 'text-danger' : (Number(o.BalanceAmount) < 0 ? 'text-warning-emphasis' : 'text-success')) + '"' + (Number(o.BalanceAmount) < 0 ? ' title="More was paid than the order total — a payment taken offline on another device; refund the excess (Sync → Needs review)"' : '') + '>' + F.peso(Math.abs(Number(o.BalanceAmount))) + '</span></div></div></div>' +
+    var totals = '<div class="totals"><span>Subtotal</span><span class="money">' + F.peso(o.Subtotal) + '</span>' + (Number(o.DiscountAmount) ? '<span>Discount' + (o.DiscountReason ? ' <span class="text-soft small">' + UI.esc(o.DiscountReason) + '</span>' : '') + '</span><span class="money">-' + F.peso(o.DiscountAmount) + '</span>' : '') + (Number(o.DeliveryFee) ? '<span>Delivery fee</span><span class="money">' + F.peso(o.DeliveryFee) + '</span>' : '') + (Number(o.OtherCharges) ? '<span>Other charges</span><span class="money">' + F.peso(o.OtherCharges) + '</span>' : '') + '<span class="fw-bold">Total</span><span class="grand money">' + F.peso(o.OrderTotal) + '</span><span>Paid</span><span class="money">' + F.peso(o.PaidAmount) + '</span><span class="fw-bold">' + (Number(o.BalanceAmount) < 0 ? 'Overpaid' : 'Balance') + '</span><span class="money fw-bold ' + (Number(o.BalanceAmount) > 0 ? 'text-danger' : (Number(o.BalanceAmount) < 0 ? 'text-warning-emphasis' : 'text-success')) + '"' + (Number(o.BalanceAmount) < 0 ? ' title="More was paid than the order total — a payment taken offline on another device; refund the excess (Sync → Needs review)"' : '') + '>' + F.peso(Math.abs(Number(o.BalanceAmount))) + '</span></div>';
+    UI.html('order-modal-body', '<div class="detail-grid">' + head.map(function (h) { return '<div><div class="k">' + h[0] + '</div><div class="v">' + h[1] + '</div></div>'; }).join('') + '</div>' +
+      '<section class="od-section"><h6 class="section-title">Items</h6><div class="table-wrap"><table class="table table-sm table-cards compact mb-0"><thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Line total</th></tr></thead><tbody>' + lines + '</tbody></table></div></section>' +
+      '<section class="od-section od-money"><div class="od-totals">' + totals + '</div>' +
+      '<div class="od-pays"><h6 class="section-title">Payments</h6><div class="table-wrap"><table class="table table-sm table-cards compact mb-0"><thead><tr><th>When</th><th>Type</th><th>Method</th><th>By</th><th class="num">Amount</th><th></th></tr></thead><tbody>' + pays + '</tbody></table></div></div></section>' +
       (o.Notes ? '<div class="alert alert-light border small mt-3 mb-0"><i class="fa-regular fa-note-sticky me-1"></i>' + UI.esc(o.Notes) + '</div>' : '') +
       (o.Bags && M.Bags ? M.Bags.sectionHtml(o) : '') +  // 1.16.0: the order's bags while bag tracking is on
-      '<h6 class="fw-bold mt-3">Timeline</h6><ul class="timeline">' + tl + '</ul>');
+      '<section class="od-section"><h6 class="section-title">Timeline</h6><ul class="timeline">' + tl + '</ul></section>');
     UI.el('order-modal-body').querySelectorAll('[data-void]').forEach(function (b) { b.onclick = function () { voidPayment(b.getAttribute('data-void')); }; });
     if (o.Bags && M.Bags) M.Bags.wireSection(UI.el('order-modal-body'), o, function () { Api.call('orders.get', { id: o.Id }).then(changed).catch(function () { /* keep the view */ }); });
     // 1.25.0 (Stage 4): one primary — Add payment while a balance is owed, else Release to customer — at the right; the everyday actions as
@@ -3690,23 +3772,28 @@ window.MLS = (function () {
   var state = { status: 'OPEN', search: '', from: '', to: '', withBalance: false, page: 1 }, seq = Api.sequence();
   /** The list: the device's copy paints at once (marked as saved in the head), the server's answer replaces it; a reply for a tab, filter or search the user has since left is dropped. */
   function load() {
-    var box = UI.el('orders-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
-    return Api.read('orders.list', { status: state.status, search: state.search, from: state.from, to: state.to, withBalance: state.withBalance, page: state.page, size: 25 }, { seq: seq, paint: function (r) {
+    // 1.26.0 (Stage 5): a first visit with nothing saved on this device shows skeleton rows (after 160 ms, so a saved copy that paints at
+    // once never flashes them); the answer replaces them, and a failed first load replaces them with the reason and Try again
+    var box = UI.el('orders-table'); if (!box.innerHTML) setTimeout(function () { if (!box.innerHTML) box.innerHTML = UI.skeleton({ kind: 'rows', count: 6, label: 'Loading the orders' }); }, 160);
+    return Api.read('orders.list', { status: state.status, search: state.search, from: state.from, to: state.to, withBalance: state.withBalance, page: state.page, size: 25 }, { seq: seq, dated: true, paint: function (r) {
       ['OPEN', 'READY'].forEach(function (k) { var el = document.querySelector('#orders-tabs [data-count="' + k + '"]'); if (el) { var n = k === 'OPEN' ? Object.keys(r.counts).reduce(function (t, s) { return t + (['NEW', 'RECEIVED', 'PROCESSING', 'WASHING', 'DRYING', 'FOLDING', 'QC', 'READY', 'OUT_FOR_DELIVERY'].indexOf(s) >= 0 ? r.counts[s] : 0); }, 0) : (r.counts.READY || 0); el.textContent = n || ''; } });
       M.Table.render(box, {
         columns: [
-          { key: 'OrderNo', label: 'Order', format: function (v, row) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (row.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + (row._pending ? ' <span class="pending-tag" title="Taken offline on this device; the server has not received it yet">not synced</span>' : ''); } },
+          { key: 'OrderNo', label: 'Order', cls: 'lead-cell', format: function (v, row) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (row.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + (row._pending ? ' <span class="pending-tag" title="Taken offline on this device; the server has not received it yet">not synced</span>' : '') + '<span class="ph-only lead-status">' + UI.badge(row.Status, row.StatusLabel) + '</span>'; } },
           { key: 'OrderDate', label: 'Date', format: function (v, row) { return F.date(v) + (row.DueAt ? '<div class="small text-soft">due ' + F.datetime(row.DueAt) + '</div>' : ''); } },
           { key: 'CustomerName', label: 'Customer', format: function (v, row) { return UI.esc(v) + (row.CustomerPhone ? '<div class="small text-soft">' + UI.esc(row.CustomerPhone) + '</div>' : ''); } },
-          { key: 'OrderTotal', label: 'Total', align: 'right', format: function (v) { return '<span class="money">' + F.peso(v) + '</span>'; } },
-          { key: 'BalanceAmount', label: 'Balance', align: 'right', format: function (v) { return Number(v) < 0 ? '<span class="money text-warning-emphasis fw-bold" title="Overpaid — refund the excess (Sync → Needs review)">' + F.peso(Math.abs(Number(v))) + ' over</span>' : '<span class="money ' + (Number(v) > 0 ? 'text-danger fw-bold' : 'text-success') + '">' + F.peso(v) + '</span>'; } },
-          { key: 'Status', label: 'Status', format: function (v, row) { return UI.badge(v, row.StatusLabel); } }
+          { key: 'OrderTotal', label: 'Total', num: true, format: function (v) { return '<span class="money">' + F.peso(v) + '</span>'; } },
+          { key: 'BalanceAmount', label: 'Balance', num: true, format: function (v) { return Number(v) < 0 ? '<span class="money text-warning-emphasis fw-bold" title="Overpaid — refund the excess (Sync → Needs review)">' + F.peso(Math.abs(Number(v))) + ' over</span>' : '<span class="money ' + (Number(v) > 0 ? 'text-danger fw-bold' : 'text-success') + '">' + F.peso(v) + '</span>'; } },
+          { key: 'Status', label: 'Status', cls: 'ph-hide', format: function (v, row) { return UI.badge(v, row.StatusLabel); } }
         ],
-        rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-basket-shopping', title: state.search || state.from || state.to ? 'No orders match' : (state.status === 'OPEN' ? 'No open orders' : 'No orders here yet'), hint: state.search || state.from || state.to ? 'Change the search or the dates.' : 'Orders start at the point of sale and move through production to pickup or delivery.', action: !(state.search || state.from || state.to) && M.Auth.can('POS_CREATE') ? { label: 'Start an order', icon: 'fa-cash-register', href: '#/pos' } : null },
+        cls: 'aligned', rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-basket-shopping', title: state.search || state.from || state.to ? 'No orders match' : (state.status === 'OPEN' ? 'No open orders' : 'No orders here yet'), hint: state.search || state.from || state.to ? 'Change the search or the dates.' : 'Orders start at the point of sale and move through production to pickup or delivery.', action: !(state.search || state.from || state.to) && M.Auth.can('POS_CREATE') ? { label: 'Start an order', icon: 'fa-cash-register', href: '#/pos' } : null },
         onPage: function (p) { state.page = p; load(); }, onRow: function (row) { openOrder(row.Id, function () { load(); }); }
       });
       UI.el('orders-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + r.total + ' order' + (r.total === 1 ? '' : 's') + (r.window && !state.from ? ' · last ' + r.window.days + ' days (set a date for older ones)' : '');
-    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Orders: ' + UI.error(e)); });
+    } }).catch(function (e) {
+      if (e && e.superseded) return; Toast.danger('Orders: ' + UI.error(e));
+      if (!box.querySelector('table')) { box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The orders could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }); var again = box.querySelector('[data-empty-action]'); if (again) again.onclick = function () { box.innerHTML = ''; load(); }; }
+    });
   }
   function wire() {
     UI.el('orders-refresh').onclick = function () { resetMeta(); load(); };
@@ -7300,7 +7387,7 @@ window.MLS = (function () {
   function paintChart(c) {
     var card = UI.el('rp-chart-card'); if (chart) { try { chart.destroy(); } catch (e) { /* ignore */ } chart = null; }
     if (!c || !window.Chart || !c.labels.length) { card.hidden = true; return; }
-    card.hidden = false; var colors = ['#6D2322', '#8A5A00', '#2F5E8E', '#1E6A3C', '#A41C1E', '#817A73'];  // 1.24.0: the palette's burgundy, amber, blue, green, red and grey — six series tell apart
+    card.hidden = false; var colors = ['#6D2322', '#8A5A00', '#2F5E8E', '#1E6A3C', '#A41C1E', '#746E68'];  // 1.24.0: the palette's burgundy, amber, blue, green, red and grey — six series tell apart
     try {
       chart = new window.Chart(UI.el('rp-chart').getContext('2d'), { type: c.type, data: { labels: c.labels, datasets: c.datasets.map(function (ds, i) { return { label: ds.label, data: ds.data, backgroundColor: colors[i % colors.length] + (c.type === 'line' ? '33' : ''), borderColor: colors[i % colors.length], borderWidth: 2, tension: .3, fill: c.type === 'line' }; }) }, options: { responsive: true, maintainAspectRatio: true, animation: false, aspectRatio: window.innerWidth < 576 ? 1.4 : 3.2, plugins: { legend: { display: c.datasets.length > 1, position: 'bottom' } }, scales: { x: { stacked: !!c.stacked, ticks: { maxRotation: 0, autoSkip: true } }, y: { stacked: !!c.stacked, beginAtZero: true } } } });
     } catch (e) { card.hidden = true; }
