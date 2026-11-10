@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'c1f9e0c528', version: '1.28.0' };</script>
+  <script>window.MLS_PWA = { build: '32d20ff1d9', version: '1.29.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -505,6 +505,7 @@
   .scan-history { list-style: none; padding: 0; margin: 6px 0 0; font-size: .8rem; color: var(--mls-ink-soft); }
   .scan-history li { padding: 3px 0; border-top: 1px dashed var(--mls-line); }
   .tc-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; align-items: start; }
+  @media (min-width: 576px) { .tc-days tr.review > td { background-color: var(--mls-danger-soft); } .tc-days tr.review > td:first-child { box-shadow: inset 3px 0 0 var(--mls-danger); } }  /* 1.29.0: was Bootstrap's pink row; a phone card has a red edge */
   .clock-card { text-align: center; padding: 22px 16px; } .clock-time { font-size: 2.6rem; font-weight: 700; letter-spacing: .02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
   .clock-date { color: var(--mls-ink-soft); margin-bottom: 10px; } .btn-punch { width: 100%; max-width: 360px; padding: 1rem; font-size: 1.25rem; font-weight: 700; border-radius: 14px; }
   .punch-list { list-style: none; padding: 0; margin: 12px auto 0; max-width: 360px; text-align: left; } .punch-list li { display: flex; justify-content: space-between; padding: .3rem .2rem; border-bottom: 1px dashed var(--mls-line); font-size: .92rem; }
@@ -646,6 +647,10 @@
     .table-cards.compact tbody tr { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: column; grid-auto-columns: auto; column-gap: 12px; align-items: start; padding: 10px 12px; }
     .table-cards.compact tbody td { display: block; padding: 0; overflow-wrap: anywhere; }
     .table-cards.compact tbody td.num { text-align: right; white-space: nowrap; overflow-wrap: normal; }
+    /* 1.29.0: a part of a cell kept for the desktop only; a day to review on the time clock marked by a red edge on its card */
+    .table-cards.aligned .ph-hide, .table-cards.compact .ph-hide { display: none; }
+    .table-cards.tc-days tbody tr.review { border-left: 3px solid var(--mls-danger); } .table-cards.table-xs tbody td.lead-cell { white-space: normal; }
+    #tc-manage .toolbar > .form-select { flex: 1 1 100%; }
     .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin-left: -4px; padding-left: 4px; } .tabs::-webkit-scrollbar { display: none; }
     .tabs button { flex: 0 0 auto; }
     .btn { min-height: var(--mls-tap); } .btn-sm { min-height: 40px; } .btn-close { min-width: 40px; min-height: 40px; }
@@ -917,7 +922,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.28.0';
+  var VERSION = '1.29.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -2929,7 +2934,8 @@ window.MLS = (function () {
       </header>
       <div id="offline-bar" role="status" hidden><i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i><span id="offline-bar-text">No connection — showing what this device saved.</span></div>
       <main id="main-content" tabindex="-1">
-        <!-- Mrs Laundry Sys — DashboardPage.html: the Dashboard module: today's numbers under the branch lens, computed on the server and shaped by the caller's permissions; My day for staff and riders; the getting-started checklist for administrators of a new business. -->
+        <!-- Mrs Laundry Sys — DashboardPage.html: the Dashboard module: today's numbers under the branch lens, computed on the server and shaped by the caller's permissions; My day for staff and riders; the getting-started checklist for administrators of a new business.
+     Release 1.29.0 (the redesign, stage 5): a first load that fails says why with Try again where the tiles go (only a passing message told it, over an empty page); the low-stock list in amount columns, a card per item on a phone. -->
 <section id="view-dashboard" class="view" hidden>
   <div class="view-head">
     <h2>Dashboard</h2>
@@ -3080,7 +3086,7 @@ window.MLS = (function () {
     var inv = d.inventory, card = UI.el('dash-lowstock-card');
     if (inv && inv.lowStockItems && inv.lowStockItems.length) {
       card.hidden = false;
-      UI.html('dash-lowstock', '<div class="table-wrap"><table class="table table-cards mb-0"><thead><tr><th>Item</th><th class="text-end">On hand</th><th class="text-end">Reorder at</th></tr></thead><tbody>' + inv.lowStockItems.map(function (i) { return '<tr><td data-label="Item">' + UI.esc(i.Name) + '</td><td data-label="On hand" class="text-end mono">' + F.number(i.QtyOnHand) + ' ' + UI.esc(i.Unit) + '</td><td data-label="Reorder at" class="text-end mono">' + F.number(i.ReorderLevel) + '</td></tr>'; }).join('') + '</tbody></table></div>');
+      UI.html('dash-lowstock', '<div class="table-wrap"><table class="table table-cards aligned mb-0"><thead><tr><th>Item</th><th class="num">On hand</th><th class="num">Reorder at</th></tr></thead><tbody>' + inv.lowStockItems.map(function (i) { return '<tr><td data-label="Item" class="lead-cell fw-bold">' + UI.esc(i.Name) + '</td><td data-label="On hand" class="num">' + F.number(i.QtyOnHand) + ' ' + UI.esc(i.Unit) + '</td><td data-label="Reorder at" class="num">' + F.number(i.ReorderLevel) + '</td></tr>'; }).join('') + '</tbody></table></div>');
     } else card.hidden = true;
     var me = M.AppState.me, b = me && me.branches.filter(function (x) { return x.Id === d.branch; })[0];
     UI.el('dash-scope').textContent = d.branch === 'ALL' ? 'All branches' : (b ? b.Name : '');
@@ -3091,10 +3097,17 @@ window.MLS = (function () {
   /** A first visit with nothing saved on this device: skeleton tiles until the first answer (a saved copy paints within 150 ms and is never covered). */
   function skeleton() { var box = UI.el('dash-kpis'); if (box.children.length) return; setTimeout(function () { if (!box.children.length) box.innerHTML = UI.skeleton({ kind: 'tiles', count: 4, label: 'Loading the dashboard' }); }, 160); }
   function unskeleton() { var box = UI.el('dash-kpis'), sk = box.querySelector('.skeleton-wrap'); if (sk) box.innerHTML = ''; }
+  /** Release 1.29.0: tiles already on screen stay, with the passing message; with none, the reason and Try again stand where they go. */
+  function failed(e) {
+    unskeleton(); var box = UI.el('dash-kpis');
+    if (box.querySelector('.kpi')) { M.Toast.danger('Dashboard: ' + UI.error(e)); return; }
+    box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The dashboard could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } });
+    var again = box.querySelector('[data-empty-action]'); if (again) again.onclick = function () { box.innerHTML = ''; load(); };
+  }
   function load() {
     var btn = UI.el('dash-refresh'); btn.disabled = true; skeleton();
     var extra = M.Api.read('dashboard.extras', {}, { seq: extraSeq, paint: paintExtras, view: null }).catch(function (e) { if (!(e && e.superseded) && !(e && e.offline)) M.Toast.warning('Dashboard follow-ups: ' + UI.error(e)); });
-    return M.Api.read('dashboard.summary', {}, { seq: seq, paint: paint }).catch(function (e) { if (!(e && e.superseded)) { unskeleton(); M.Toast.danger('Dashboard: ' + UI.error(e)); } }).then(function () { btn.disabled = false; return extra; });
+    return M.Api.read('dashboard.summary', {}, { seq: seq, paint: paint }).catch(function (e) { if (!(e && e.superseded)) failed(e); }).then(function () { btn.disabled = false; return extra; });
   }
   M.Router.register('dashboard', {
     title: 'Dashboard',
@@ -6203,7 +6216,8 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — TimeClockPage.html: the Time Clock module: clock in and out on the signed-in staff member's own record, today's punches and schedule, this week's attendance; managers correct punches with a reason. -->
+        <!-- Mrs Laundry Sys — TimeClockPage.html: the Time Clock module: clock in and out on the signed-in staff member's own record, today's punches and schedule, this week's attendance; managers correct punches with a reason.
+     Release 1.29.0 (the redesign, stage 5): no punch button until the server has said whether you are in or out; a failed load says why with Try again (it said the login was not linked); skeleton rows for the week; the week's hours as amount columns and, on a phone, each day one card; every correction field labelled. -->
 <section id="view-timeclock" class="view" hidden>
   <div class="view-head">
     <h2>Time clock</h2>
@@ -6218,7 +6232,7 @@ window.MLS = (function () {
         <div class="clock-date" id="tc-date"></div>
         <div id="tc-staff" class="mb-2"></div>
         <div id="tc-state" class="mb-3"></div>
-        <button type="button" class="btn btn-primary btn-punch" id="tc-punch" disabled><i class="fa-solid fa-fingerprint me-2"></i>Clock in</button>
+        <button type="button" class="btn btn-primary btn-punch" id="tc-punch" disabled hidden><i class="fa-solid fa-fingerprint me-2"></i>Clock in</button>
         <div class="small text-soft mt-2" id="tc-schedule"></div>
         <ul class="punch-list" id="tc-punches"></ul>
         <div class="alert alert-warning small mt-3 mb-0" id="tc-unlinked" hidden>Your login is not linked to a staff record, so you cannot clock in. Ask an administrator to link it under Staff.</div>
@@ -6227,10 +6241,10 @@ window.MLS = (function () {
     <div>
       <div class="card mb-3"><div class="card-header d-flex align-items-center"><i class="fa-solid fa-calendar-week me-2 text-soft"></i>This week <span class="ms-auto small text-soft" id="tc-week-range"></span></div><div class="card-body p-0" id="tc-week"></div></div>
       <div class="card" id="tc-manage" hidden>
-        <div class="card-header d-flex align-items-center"><i class="fa-solid fa-user-pen me-2 text-soft"></i>Corrections <span class="ms-auto small text-soft">add, edit or void a punch with a reason</span></div>
+        <div class="card-header d-flex align-items-center flex-wrap column-gap-2"><span><i class="fa-solid fa-user-pen me-2 text-soft"></i>Corrections</span> <span class="ms-auto small text-soft">add, edit or void a punch with a reason</span></div>
         <div class="card-body">
           <div class="toolbar">
-            <select class="form-select" id="tc-m-staff"><option value="">Choose a staff member</option></select>
+            <select class="form-select" id="tc-m-staff" aria-label="Staff member"><option value="">Choose a staff member</option></select>
             <input class="form-control" id="tc-m-from" type="date" aria-label="From"><input class="form-control" id="tc-m-to" type="date" aria-label="To">
             <button type="button" class="btn btn-outline-primary btn-sm" id="tc-m-add" disabled><i class="fa-solid fa-plus me-1"></i>Add punch</button>
           </div>
@@ -6248,10 +6262,10 @@ window.MLS = (function () {
       <div class="modal-body">
         <input type="hidden" name="id"><input type="hidden" name="staffId">
         <div class="row g-2">
-          <div class="col-6"><label class="form-label">Date</label><input class="form-control" name="date" type="date" required></div>
-          <div class="col-6"><label class="form-label">Time</label><input class="form-control" name="time" type="time" required></div>
-          <div class="col-12"><label class="form-label">Punch</label><select class="form-select" name="logType"><option value="IN">Clock in</option><option value="OUT">Clock out</option><option value="VOID" id="tc-void-opt" hidden>Void (ignore this punch)</option></select></div>
-          <div class="col-12"><label class="form-label">Reason</label><input class="form-control" name="reason" maxlength="200" required placeholder="Forgot to clock out, confirmed by the supervisor"></div>
+          <div class="col-6"><label class="form-label" for="tc-c-date">Date</label><input class="form-control" id="tc-c-date" name="date" type="date" required></div>
+          <div class="col-6"><label class="form-label" for="tc-c-time">Time</label><input class="form-control" id="tc-c-time" name="time" type="time" required></div>
+          <div class="col-12"><label class="form-label" for="tc-c-type">Punch</label><select class="form-select" id="tc-c-type" name="logType"><option value="IN">Clock in</option><option value="OUT">Clock out</option><option value="VOID" id="tc-void-opt" hidden>Void (ignore this punch)</option></select></div>
+          <div class="col-12"><label class="form-label" for="tc-c-reason">Reason</label><input class="form-control" id="tc-c-reason" name="reason" maxlength="200" required placeholder="Forgot to clock out, confirmed by the supervisor"></div>
         </div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save</button></div>
@@ -6263,15 +6277,24 @@ window.MLS = (function () {
 (function () {
   'use strict';
   var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Form = M.Form;
-  var status = null, clockTimer = null, mstate = { staffId: '', from: '', to: '' }, onCorrected = null;
+  var status = null, statusState = 'unknown', clockTimer = null, mstate = { staffId: '', from: '', to: '' }, onCorrected = null;
   function pad(n) { return String(n).padStart(2, '0'); }
   function isoLocal(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function tick() { var d = new Date(); UI.el('tc-time').textContent = d.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', second: '2-digit' }); UI.el('tc-date').textContent = d.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }
 
-  function paintStatus() {
+  /** Release 1.29.0: until the server has answered, the card shows placeholders and no punch button (it said Clock in to someone clocked in);
+   *  a failed answer says why with Try again, and only the server's own "not linked" shows the not-linked notice. */
+  function paintStatus(err) {
     var s = status, btn = UI.el('tc-punch');
-    if (!s) { UI.el('tc-unlinked').hidden = false; btn.disabled = true; UI.html('tc-staff', ''); UI.html('tc-state', ''); UI.html('tc-punches', ''); UI.el('tc-schedule').textContent = ''; return; }
-    UI.el('tc-unlinked').hidden = true;
+    if (!s) {
+      btn.disabled = true; btn.hidden = true; UI.html('tc-punches', ''); UI.el('tc-schedule').textContent = '';
+      UI.el('tc-unlinked').hidden = statusState !== 'unlinked'; UI.html('tc-staff', '');
+      if (statusState === 'unknown') UI.html('tc-state', UI.skeleton({ kind: 'rows', count: 3, label: 'Loading your time clock' }));
+      else if (statusState === 'failed') { UI.html('tc-state', UI.empty({ icon: 'fa-plug-circle-xmark', title: 'Your time clock could not be loaded', hint: err ? UI.error(err) : '', action: { label: 'Try again', icon: 'fa-rotate' }, compact: true })); var again = UI.el('tc-state').querySelector('[data-empty-action]'); if (again) again.onclick = function () { statusState = 'unknown'; paintStatus(); loadStatus().then(loadWeek); }; }
+      else UI.html('tc-state', '');
+      return;
+    }
+    UI.el('tc-unlinked').hidden = true; btn.hidden = false;
     UI.html('tc-staff', '<div class="fw-bold">' + UI.esc(s.staff.FullName) + '</div><div class="small text-soft">' + UI.esc(s.staff.StaffNo) + (s.staff.Position ? ' · ' + UI.esc(s.staff.Position) : '') + ' · ' + UI.esc(s.staff.Branch) + '</div>');
     var pendingTag = s.pending ? '<div class="mt-1"><span class="pending-tag" title="Punched on this device; the server has not received it yet">not synced</span></div>' : '';
     UI.html('tc-state', (s.state === 'IN' ? UI.badge('IN', 'Clocked in since ' + F.clock(s.lastLog.Time)) + '<div class="small text-soft mt-1">' + F.minutes(s.workedMinutes) + ' worked so far</div>' : UI.badge('OUT', s.lastLog ? 'Clocked out at ' + F.clock(s.lastLog.Time) : 'Not clocked in today') + (s.workedMinutes ? '<div class="small text-soft mt-1">' + F.minutes(s.workedMinutes) + ' worked today</div>' : '')) + pendingTag);
@@ -6281,24 +6304,43 @@ window.MLS = (function () {
     if (s.punchesLeft <= 0) Toast.warning('The daily punch limit is reached; ask a manager to correct your time logs.');
   }
   function loadStatus() {
-    return Api.call('timeclock.status', {}).then(function (s) { status = s; paintStatus(); return s; }).catch(function (e) { status = null; paintStatus(); if (e.fields && e.fields.staffId === 'unlinked') return null; Toast.danger(UI.error(e)); return null; });
+    if (!status) { statusState = 'unknown'; paintStatus(); }
+    return Api.call('timeclock.status', {}).then(function (s) { status = s; statusState = 'ok'; paintStatus(); return s; }).catch(function (e) {
+      var unlinked = !!(e && e.fields && e.fields.staffId === 'unlinked');
+      if (status && !unlinked) { Toast.danger(UI.error(e)); return status; }  // a card already on screen stays, with the passing message
+      status = null; statusState = unlinked ? 'unlinked' : 'failed'; paintStatus(e); return null;
+    });
   }
   function punch() {
     var btn = UI.el('tc-punch'); btn.disabled = true; // a retried punch is caught on the server: the same punch type within 90 seconds is reported as a duplicate, never logged twice
     Api.call('timeclock.punch', { type: status && status.state === 'IN' ? 'OUT' : 'IN' }, { busy: true }).then(function (s) { status = s; paintStatus(); Toast.success(s.punched === 'OUT' ? 'Clocked out at ' + F.clock(s.lastLog.Time) + ' · ' + F.minutes(s.workedMinutes) + ' today' : 'Clocked in at ' + F.clock(s.lastLog.Time)); loadWeek(); }).catch(function (e) { btn.disabled = false; Toast.danger(UI.error(e)); loadStatus(); });
   }
   function weekRange() { var d = new Date(), dow = (d.getDay() + 6) % 7, mon = new Date(d); mon.setDate(d.getDate() - dow); return { from: isoLocal(mon), to: isoLocal(d) }; }
+  /** One day per row (shared with Staff → Time logs). Release 1.29.0: Worked, Late and Hours are amount columns; a day to review is marked by a
+   *  red edge instead of a pink fill; on a phone each day is one card — the date with its status, the shift and the punches under it, the hours
+   *  on the right, and the flags or note only when there are some. */
   function dayRows(rows, opts) {
     opts = opts || {};
-    return '<div class="table-wrap"><table class="table table-sm table-xs table-cards mb-0"><thead><tr><th>Date</th><th>Shift</th><th>In</th><th>Out</th><th class="text-end">Worked</th><th class="text-end">Late</th><th class="text-end">Hours</th><th>Status</th></tr></thead><tbody>' +
-      rows.map(function (r) { return '<tr' + (r.Status === 'REVIEW' ? ' class="table-danger"' : '') + '><td data-label="Date">' + F.date(r.Date) + ' <span class="text-soft">' + r.Weekday + '</span>' + (r.Holiday ? '<div class="small text-soft">' + UI.esc(r.Holiday) + '</div>' : '') + '</td><td data-label="Shift">' + (r.IsRestDay ? 'Rest day' : (r.ShiftStart ? F.clock(r.ShiftStart) + '–' + F.clock(r.ShiftEnd) : '—')) + '</td><td data-label="In">' + (r.FirstIn ? F.clock(r.FirstIn) : '—') + '</td><td data-label="Out">' + (r.LastOut ? F.clock(r.LastOut) : '—') + '</td><td data-label="Worked" class="text-end">' + (r.WorkedMinutes ? F.minutes(r.WorkedMinutes) : '—') + '</td><td data-label="Late" class="text-end">' + (r.LateMinutes ? r.LateMinutes + ' min' : '—') + '</td><td data-label="Hours" class="text-end fw-bold">' + F.hours(r.RegularHours + r.OvertimeHours + r.HolidayHours + r.RestDayHours) + '</td><td data-label="Status">' + UI.badge(r.Status) + (r.Flags && r.Flags.length ? '<div class="small text-danger">' + r.Flags.map(function (f) { return F.status(f); }).join(', ') + (opts.reviewLink ? ' · <a href="#" data-review="' + r.Date + '">Review attendance</a>' : '') + '</div>' : '') + (r.Note ? '<div class="small text-soft">' + UI.esc(r.Note) + '</div>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    return '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned tc-days mb-0"><thead><tr><th>Date</th><th>Shift</th><th>In</th><th>Out</th><th class="num">Worked</th><th class="num">Late</th><th class="num">Hours</th><th>Status</th></tr></thead><tbody>' +
+      rows.map(function (r) {
+        var shift = r.IsRestDay ? 'Rest day' : (r.ShiftStart ? F.clock(r.ShiftStart) + '–' + F.clock(r.ShiftEnd) : '—'), tin = r.FirstIn ? F.clock(r.FirstIn) : '—', tout = r.LastOut ? F.clock(r.LastOut) : '—';
+        var flags = r.Flags && r.Flags.length ? '<div class="small text-danger">' + r.Flags.map(function (f) { return F.status(f); }).join(', ') + (opts.reviewLink ? ' · <a href="#" data-review="' + r.Date + '">Review attendance</a>' : '') + '</div>' : '', note = r.Note ? '<div class="small text-soft">' + UI.esc(r.Note) + '</div>' : '';
+        var phone = ['Shift ' + shift, 'in ' + tin, 'out ' + tout].concat(r.WorkedMinutes ? ['worked ' + F.minutes(r.WorkedMinutes)] : []).concat(r.LateMinutes ? ['late ' + r.LateMinutes + ' min'] : []).join(' · ');
+        return '<tr' + (r.Status === 'REVIEW' ? ' class="review"' : '') + '><td data-label="Date" class="lead-cell"><span class="ph-only lead-status">' + UI.badge(r.Status) + '</span><span class="fw-bold">' + F.date(r.Date) + '</span> <span class="text-soft">' + r.Weekday + '</span>' + (r.Holiday ? '<div class="small text-soft">' + UI.esc(r.Holiday) + '</div>' : '') + '<span class="ph-only sub">' + UI.esc(phone) + '</span></td><td data-label="Shift" class="ph-hide">' + shift + '</td><td data-label="In" class="ph-hide">' + tin + '</td><td data-label="Out" class="ph-hide">' + tout + '</td><td data-label="Worked" class="num ph-hide">' + (r.WorkedMinutes ? F.minutes(r.WorkedMinutes) : '—') + '</td><td data-label="Late" class="num ph-hide">' + (r.LateMinutes ? r.LateMinutes + ' min' : '—') + '</td><td data-label="Hours" class="num fw-bold">' + F.hours(r.RegularHours + r.OvertimeHours + r.HolidayHours + r.RestDayHours) + '</td><td data-label="Status"' + (flags || note ? '' : ' class="ph-hide"') + '><span class="ph-hide">' + UI.badge(r.Status) + '</span>' + flags + note + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
   }
   var weekSeq = Api.sequence();
   function loadWeek() {
-    if (!status) { UI.html('tc-week', '<div class="p-3 text-soft small">Link your login to a staff record to see your week.</div>'); return Promise.resolve(); }
+    if (!status) { UI.html('tc-week', '<div class="p-3 text-soft small">' + (statusState === 'unlinked' ? 'Link your login to a staff record to see your week.' : 'Your week shows once your time clock has loaded.') + '</div>'); return Promise.resolve(); }
     var r = weekRange(); UI.el('tc-week-range').textContent = F.date(r.from) + ' – ' + F.date(r.to);
-    var ticket = weekSeq.take();
-    return Api.call('timeclock.daily', { from: r.from, to: r.to }).then(function (d) { if (!weekSeq.is(ticket)) return; UI.html('tc-week', dayRows(d.rows) + '<div class="p-2 small text-soft">' + d.summary.DaysPresent + ' day' + (d.summary.DaysPresent === 1 ? '' : 's') + ' present · ' + F.hours(d.summary.TotalHours) + ' h' + (d.summary.ReviewDays ? ' · <span class="text-danger">' + d.summary.ReviewDays + ' to review</span>' : '') + '</div>'); }).catch(function (e) { UI.html('tc-week', '<div class="p-3 text-danger small">' + UI.esc(UI.error(e)) + '</div>'); });
+    var ticket = weekSeq.take(), box = UI.el('tc-week');
+    if (!box.querySelector('table')) box.innerHTML = '<div class="p-3">' + UI.skeleton({ kind: 'rows', count: 4, label: 'Loading your week' }) + '</div>';
+    return Api.call('timeclock.daily', { from: r.from, to: r.to }).then(function (d) { if (!weekSeq.is(ticket)) return; UI.html('tc-week', dayRows(d.rows) + '<div class="p-2 small text-soft">' + d.summary.DaysPresent + ' day' + (d.summary.DaysPresent === 1 ? '' : 's') + ' present · ' + F.hours(d.summary.TotalHours) + ' h' + (d.summary.ReviewDays ? ' · <span class="text-danger">' + d.summary.ReviewDays + ' to review</span>' : '') + '</div>'); }).catch(function (e) {
+      if (!weekSeq.is(ticket)) return;
+      if (box.querySelector('table')) { Toast.danger(UI.error(e)); return; }
+      box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: 'Your week could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' }, compact: true });
+      var again = box.querySelector('[data-empty-action]'); if (again) again.onclick = function () { box.innerHTML = ''; loadWeek(); };
+    });
   }
 
   // ---------------------------------------------------------------- manager corrections
@@ -6306,11 +6348,16 @@ window.MLS = (function () {
   function loadStaffOptions() { return Api.call('staff.list', { status: 'ACTIVE', size: 200 }).then(function (r) { var sel = UI.el('tc-m-staff'); sel.innerHTML = '<option value="">Choose a staff member</option>' + UI.options(r.rows, mstate.staffId, function (s) { return s.FullName + ' (' + s.StaffNo + ')'; }); }).catch(function () { /* STAFF_VIEW may be missing */ }); }
   function loadLogs() {
     if (!mstate.staffId) { UI.html('tc-m-logs', '<div class="text-soft small">Pick a staff member to see their punches.</div>'); UI.el('tc-m-add').disabled = true; return Promise.resolve(); }
-    UI.el('tc-m-add').disabled = false;
+    UI.el('tc-m-add').disabled = false; var box = UI.el('tc-m-logs');
+    if (!box.querySelector('table')) box.innerHTML = UI.skeleton({ kind: 'rows', count: 3, label: 'Loading the punches' });
     return Api.call('timeclock.logs', { staffId: mstate.staffId, from: mstate.from, to: mstate.to, includeVoid: true }).then(function (r) {
-      UI.html('tc-m-logs', '<div class="table-wrap"><table class="table table-sm table-xs table-cards mb-0"><thead><tr><th>When</th><th>Punch</th><th>How</th><th>Edited</th><th></th></tr></thead><tbody>' + (r.rows.length ? r.rows.map(function (l) { return '<tr' + (l.LogType === 'VOID' ? ' class="text-soft text-decoration-line-through"' : '') + '><td data-label="When">' + F.date(l.Date) + ' ' + F.clock(l.Time) + '</td><td data-label="Punch">' + UI.badge(l.LogType) + '</td><td data-label="How">' + F.status(l.Method) + (l.DeviceLabel ? ' <span class="text-soft">' + UI.esc(l.DeviceLabel) + '</span>' : '') + '</td><td data-label="Edited" class="small">' + (l.EditReason ? UI.esc(l.EditedByName || '') + ': ' + UI.esc(l.EditReason) : '') + '</td><td class="text-end">' + (l.LogType !== 'VOID' ? '<button type="button" class="btn btn-sm btn-link p-0" data-edit="' + UI.esc(l.Id) + '">edit</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="text-soft">No punches in this range.</td></tr>') + '</tbody></table></div>');
+      UI.html('tc-m-logs', '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>When</th><th>Punch</th><th>How</th><th>Edited</th><th></th></tr></thead><tbody>' + (r.rows.length ? r.rows.map(function (l) { return '<tr' + (l.LogType === 'VOID' ? ' class="text-soft text-decoration-line-through"' : '') + '><td data-label="When" class="lead-cell"><span class="ph-only lead-status">' + UI.badge(l.LogType) + '</span><span class="fw-bold">' + F.date(l.Date) + ' ' + F.clock(l.Time) + '</span></td><td data-label="Punch" class="ph-hide">' + UI.badge(l.LogType) + '</td><td data-label="How">' + F.status(l.Method) + (l.DeviceLabel ? ' <span class="text-soft">' + UI.esc(l.DeviceLabel) + '</span>' : '') + '</td><td data-label="Edited" class="small' + (l.EditReason ? '' : ' ph-hide') + '">' + (l.EditReason ? UI.esc(l.EditedByName || '') + ': ' + UI.esc(l.EditReason) : '') + '</td><td class="text-end">' + (l.LogType !== 'VOID' ? '<button type="button" class="btn btn-sm btn-link p-0" data-edit="' + UI.esc(l.Id) + '">edit</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="no-label text-soft text-start">No punches in this range.</td></tr>') + '</tbody></table></div>');
       UI.el('tc-m-logs').querySelectorAll('[data-edit]').forEach(function (b) { b.onclick = function () { var l = r.rows.filter(function (x) { return x.Id === b.getAttribute('data-edit'); })[0]; openCorrection(mstate.staffId, l, loadLogs); }; });
-    }).catch(function (e) { Toast.danger(UI.error(e)); });
+    }).catch(function (e) {
+      if (box.querySelector('table')) { Toast.danger(UI.error(e)); return; }
+      box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The punches could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' }, compact: true });
+      var again = box.querySelector('[data-empty-action]'); if (again) again.onclick = function () { box.innerHTML = ''; loadLogs(); };
+    });
   }
   /** openCorrection(staffId, log | null, onDone, defaultDate) — add a punch (on defaultDate when given), or edit / void an existing one. */
   function openCorrection(staffId, log, onDone, defaultDate) {
@@ -7079,7 +7126,8 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — EODPage.html: the End of Day module: the day's cash computed by the server, the drawer counted by denomination, the variance explained, submit for approval, approve or reject, and the history of reports. -->
+        <!-- Mrs Laundry Sys — EODPage.html: the End of Day module: the day's cash computed by the server, the drawer counted by denomination, the variance explained, submit for approval, approve or reject, and the history of reports.
+     Release 1.29.0 (the redesign, stage 5): skeletons in the summary, the count and the rows while the sheet is computed (it said Loading… in one card and left the others blank); a failed sheet or history offers Try again; the amounts in amount columns; on a phone each payment, expense and report is one card. -->
 <section id="view-eod" class="view" hidden>
   <div class="view-head">
     <h2>End of Day</h2>
@@ -7098,7 +7146,7 @@ window.MLS = (function () {
   <div id="eod-banner"></div>
   <div class="eod-layout">
     <div>
-      <div class="card mb-3"><div class="card-header">Cash summary</div><div class="card-body" id="eod-figures"><div class="text-soft small">Loading…</div></div></div>
+      <div class="card mb-3"><div class="card-header">Cash summary</div><div class="card-body" id="eod-figures"></div></div>
       <div class="card"><div class="card-header d-flex align-items-center flex-wrap gap-2"><span>Rows this report covers</span><div class="tabs ms-auto mb-0 border-0" id="eod-row-tabs"><button type="button" class="active" data-tab="payments">Payments <span class="count" id="eod-pay-count">0</span></button><button type="button" data-tab="expenses">Expenses <span class="count" id="eod-exp-count">0</span></button></div></div><div class="card-body p-0" id="eod-rows"></div></div>
     </div>
     <div>
@@ -7112,7 +7160,7 @@ window.MLS = (function () {
     <div class="modal-content">
       <div class="modal-header"><h5 class="modal-title">End-of-day reports</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
-        <div class="toolbar"><input class="form-control" id="eod-h-from" type="date" aria-label="From"><input class="form-control" id="eod-h-to" type="date" aria-label="To"><select class="form-select" id="eod-h-status"><option value="">All statuses</option><option value="OPEN">Open</option><option value="SUBMITTED">Submitted</option><option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option></select><span class="small text-soft" id="eod-h-totals"></span></div>
+        <div class="toolbar"><input class="form-control" id="eod-h-from" type="date" aria-label="From"><input class="form-control" id="eod-h-to" type="date" aria-label="To"><select class="form-select" id="eod-h-status" aria-label="Status"><option value="">All statuses</option><option value="OPEN">Open</option><option value="SUBMITTED">Submitted</option><option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option></select><span class="small text-soft" id="eod-h-totals"></span></div>
         <div id="eod-h-table"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button></div>
@@ -7145,14 +7193,17 @@ window.MLS = (function () {
   /** The sheet is money: always the live answer (never the copy), and a reply for a day or branch the user has since left is dropped. */
   function load() {
     paintPending();
-    UI.el('eod-figures').innerHTML = '<div class="text-soft small">Loading…</div>';
+    // the sheet is money: whatever was on screen (another day, another branch, the figures before a save) gives way to placeholders until the server's answer
+    UI.el('eod-figures').innerHTML = UI.skeleton({ kind: 'rows', count: 6, label: 'Computing the end of day' });
+    UI.el('eod-count').innerHTML = UI.skeleton({ kind: 'rows', count: 5, label: 'Loading the count' }); UI.el('eod-rows').innerHTML = '<div class="p-3">' + UI.skeleton({ kind: 'rows', count: 4, label: 'Loading the rows' }) + '</div>';
+    data = null;  // nothing acts on the old figures while the new ones are computed (the queue's notice, the tabs, Print)
     var ticket = sheetSeq.take();
     return Api.call('eod.preview', { date: state.date, branchId: state.branchId || undefined }).then(function (d) {
       if (!sheetSeq.is(ticket)) return;
       data = d; counts = {}; typedActual = null;
       (d.report ? d.report.Denominations : []).forEach(function (x) { if (x.Count > 0) counts[x.Value] = x.Count; });
       paint();
-    }).catch(function (e) { if (!sheetSeq.is(ticket)) return; data = null; UI.el('eod-figures').innerHTML = UI.empty({ icon: 'fa-vault', title: 'The sheet could not be computed', hint: UI.error(e), compact: true }); UI.el('eod-count').innerHTML = ''; UI.el('eod-banner').innerHTML = ''; UI.el('eod-rows').innerHTML = ''; UI.el('eod-print').hidden = true; });
+    }).catch(function (e) { if (!sheetSeq.is(ticket)) return; data = null; UI.el('eod-figures').innerHTML = UI.empty({ icon: 'fa-vault', title: 'The sheet could not be computed', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' }, compact: true }); var again = UI.el('eod-figures').querySelector('[data-empty-action]'); if (again) again.onclick = function () { load(); }; UI.el('eod-count').innerHTML = ''; UI.el('eod-banner').innerHTML = ''; UI.el('eod-rows').innerHTML = ''; UI.el('eod-print').hidden = true; });
   }
   function paint() { paintBanner(); paintFigures(); paintRows(); paintCount(); UI.el('eod-print').hidden = !data; UI.el('eod-scope').textContent = UI.branchName(data.branchId) + ' · ' + F.date(data.date); }
   /** Operations made on this device that have not reached the server (bundle 1.5.0): the sheet cannot be closed over money the server has not seen. */
@@ -7180,7 +7231,7 @@ window.MLS = (function () {
     html += '<div class="sum-grid mt-3">' + [['Orders today', f.orders.count], ['Sales today', F.peso(f.orders.sales)], ['Refunds', f.refunds.count + (f.refunds.count ? ' · ' + F.peso(f.refunds.amount) : '')], ['Carry-over rows', f.carryOver.count]].map(function (t) { return '<div class="tile"><div class="k">' + t[0] + '</div><div class="v">' + t[1] + '</div></div>'; }).join('') + '</div>';
     if (f.offline && f.offline.count) html += '<div class="alert alert-info py-2 small mb-2"><i class="fa-solid fa-mobile-screen me-1"></i>' + f.offline.count + ' payment' + (f.offline.count === 1 ? '' : 's') + ' (' + F.peso(f.offline.amount) + ') ' + (f.offline.count === 1 ? 'was' : 'were') + ' collected on a device while it had no connection and accepted since; ' + (f.offline.count === 1 ? 'it is' : 'they are') + ' marked in the rows below.</div>';
     if (f.carryOver.count) html += '<div class="alert alert-warning py-2 small mb-2"><i class="fa-solid fa-circle-info me-1"></i>' + f.carryOver.count + ' row' + (f.carryOver.count === 1 ? '' : 's') + ' from earlier shifts ' + (f.carryOver.since ? 'after the last close on ' + F.date(f.carryOver.since) : '') + ' never made it onto a report; they are included here so no cash goes unreconciled.</div>';
-    if (f.byCashier.length) html += '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Handled by</th><th class="text-end">Cash</th><th class="text-end">Non-cash</th><th class="text-end">Rows</th></tr></thead><tbody>' + f.byCashier.map(function (c) { return '<tr><td>' + UI.esc(c.Cashier) + '</td><td class="text-end money">' + F.peso(c.Cash) + '</td><td class="text-end money">' + F.peso(c.NonCash) + '</td><td class="text-end">' + c.Count + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    if (f.byCashier.length) html += '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Handled by</th><th class="num">Cash</th><th class="num">Non-cash</th><th class="num">Rows</th></tr></thead><tbody>' + f.byCashier.map(function (c) { return '<tr><td>' + UI.esc(c.Cashier) + '</td><td class="num money">' + F.peso(c.Cash) + '</td><td class="num money">' + F.peso(c.NonCash) + '</td><td class="num">' + c.Count + '</td></tr>'; }).join('') + '</tbody></table></div>';
     UI.html('eod-figures', html);
     var op = UI.el('eod-opening'); if (op) op.oninput = function () { UI.el('eod-expected').textContent = F.peso(pesos(expectedCents())); paintVariance(); };
     void r;
@@ -7189,19 +7240,20 @@ window.MLS = (function () {
     var f = data.figures; UI.el('eod-pay-count').textContent = f.paymentCount; UI.el('eod-exp-count').textContent = f.expenseCount;
     UI.el('eod-row-tabs').querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === state.rowTab); });
     if (state.rowTab === 'payments') {
-      M.Table.render(UI.el('eod-rows'), { columns: [
-        { key: 'OrderNo', label: 'Order', format: function (v, p) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(p.CustomerName || '') + (p.ShiftDate !== data.date ? ' · shift ' + F.date(p.ShiftDate) : '') + '</div>'; } },
-        { key: 'Type', label: 'Type', format: function (v) { return v === 'REFUND' ? '<span class="status-badge s-rejected">Refund</span>' : '<span class="status-badge s-paid">Payment</span>'; } },
-        { key: 'Method', label: 'Method', format: function (v, p) { return methodLabel(v) + (p.OfflineAt ? ' <span class="pending-tag" title="Collected on a device while it had no connection; accepted at ' + UI.esc(F.datetime(p.CreatedAt)) + '">offline</span>' : '') + (p.ReferenceNo ? '<div class="small text-soft">ref ' + UI.esc(p.ReferenceNo) + '</div>' : ''); } },
-        { key: 'Amount', label: 'Amount', align: 'right', format: function (v, p) { return '<span class="money fw-bold' + (p.Type === 'REFUND' ? ' text-danger' : '') + '">' + (p.Type === 'REFUND' ? '−' : '') + F.peso(v) + '</span>'; } },
-        { key: 'Cashier', label: 'By', format: function (v, p) { return UI.esc(v || '—') + '<div class="small text-soft">' + F.time(p.CreatedAt) + '</div>'; } }
+      // on a phone each payment is one row: the order with the customer, then its type, method and who took it when; the amount on the right
+      M.Table.render(UI.el('eod-rows'), { cls: 'compact', columns: [
+        { key: 'OrderNo', label: 'Order', cls: 'lead-cell', format: function (v, p) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(p.CustomerName || '') + (p.ShiftDate !== data.date ? ' · shift ' + F.date(p.ShiftDate) : '') + '</div><span class="ph-only sub">' + (p.Type === 'REFUND' ? 'Refund' : 'Payment') + ' · ' + UI.esc(methodLabel(p.Method)) + (p.ReferenceNo ? ' ref ' + UI.esc(p.ReferenceNo) : '') + ' · ' + UI.esc(p.Cashier || '—') + ' ' + F.time(p.CreatedAt) + '</span>' + (p.OfflineAt ? '<span class="ph-only"><span class="pending-tag">offline</span></span>' : ''); } },
+        { key: 'Type', label: 'Type', cls: 'ph-hide', format: function (v) { return v === 'REFUND' ? '<span class="status-badge s-rejected">Refund</span>' : '<span class="status-badge s-paid">Payment</span>'; } },
+        { key: 'Method', label: 'Method', cls: 'ph-hide', format: function (v, p) { return methodLabel(v) + (p.OfflineAt ? ' <span class="pending-tag" title="Collected on a device while it had no connection; accepted at ' + UI.esc(F.datetime(p.CreatedAt)) + '">offline</span>' : '') + (p.ReferenceNo ? '<div class="small text-soft">ref ' + UI.esc(p.ReferenceNo) + '</div>' : ''); } },
+        { key: 'Amount', label: 'Amount', num: true, format: function (v, p) { return '<span class="money fw-bold' + (p.Type === 'REFUND' ? ' text-danger' : '') + '">' + (p.Type === 'REFUND' ? '−' : '') + F.peso(v) + '</span>'; } },
+        { key: 'Cashier', label: 'By', cls: 'ph-hide', format: function (v, p) { return UI.esc(v || '—') + '<div class="small text-soft">' + F.time(p.CreatedAt) + '</div>'; } }
       ], rows: f.payments, empty: { icon: 'fa-coins', title: 'No payments on this report', compact: true }, onRow: function (p) { if (M.OrdersUI && M.Auth.can('ORDER_VIEW')) M.OrdersUI.openOrder(p.OrderId); } });
     } else {
-      M.Table.render(UI.el('eod-rows'), { columns: [
-        { key: 'Category', label: 'Category', format: function (v, e) { return '<span class="fw-bold">' + UI.esc(v || '—') + '</span><div class="small text-soft">' + UI.esc(e.Payee || '') + (e.ShiftDate !== data.date ? ' · shift ' + F.date(e.ShiftDate) : '') + '</div>'; } },
-        { key: 'Description', label: 'Description', format: function (v, e) { return UI.esc(v || '—') + (e.ReceiptRef ? '<div class="small text-soft">ref ' + UI.esc(e.ReceiptRef) + '</div>' : ''); } },
-        { key: 'Method', label: 'Paid by', format: function (v) { return methodLabel(v); } },
-        { key: 'Amount', label: 'Amount', align: 'right', format: function (v) { return '<span class="money fw-bold">' + F.peso(v) + '</span>'; } }
+      M.Table.render(UI.el('eod-rows'), { cls: 'compact', columns: [
+        { key: 'Category', label: 'Category', cls: 'lead-cell', format: function (v, e) { return '<span class="fw-bold">' + UI.esc(v || '—') + '</span><div class="small text-soft">' + UI.esc(e.Payee || '') + (e.ShiftDate !== data.date ? ' · shift ' + F.date(e.ShiftDate) : '') + '</div><span class="ph-only sub">' + UI.esc(e.Description || '—') + (e.ReceiptRef ? ' · ref ' + UI.esc(e.ReceiptRef) : '') + ' · paid by ' + UI.esc(methodLabel(e.Method)) + '</span>'; } },
+        { key: 'Description', label: 'Description', cls: 'ph-hide', format: function (v, e) { return UI.esc(v || '—') + (e.ReceiptRef ? '<div class="small text-soft">ref ' + UI.esc(e.ReceiptRef) + '</div>' : ''); } },
+        { key: 'Method', label: 'Paid by', cls: 'ph-hide', format: function (v) { return methodLabel(v); } },
+        { key: 'Amount', label: 'Amount', num: true, format: function (v) { return '<span class="money fw-bold">' + F.peso(v) + '</span>'; } }
       ], rows: f.expenses, empty: { icon: 'fa-receipt', title: 'No expenses on this report', compact: true }, onRow: function (e) { if (M.ExpensesUI) M.ExpensesUI.open(e.Id); } });
     }
   }
@@ -7278,19 +7330,24 @@ window.MLS = (function () {
 
   // ---------------------------------------------------------------- history
   function loadHistory() {
-    var h = state.hist;
+    var h = state.hist, box = UI.el('eod-h-table');
+    if (!box.querySelector('table')) box.innerHTML = UI.skeleton({ kind: 'rows', count: 5, label: 'Loading the reports' });
     Api.call('eod.list', { from: h.from, to: h.to, status: h.status, page: h.page, size: 31 }).then(function (r) {
-      M.Table.render(UI.el('eod-h-table'), { columns: [
-        { key: 'EodDate', label: 'Date', format: function (v, x) { return '<span class="fw-bold">' + F.date(v) + '</span>' + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(x.Branch) + '</div>' : ''); } },
+      M.Table.render(UI.el('eod-h-table'), { cls: 'aligned', columns: [
+        { key: 'EodDate', label: 'Date', cls: 'lead-cell', format: function (v, x) { return '<span class="ph-only lead-status">' + UI.badge(x.Status) + '</span><span class="fw-bold">' + F.date(v) + '</span>' + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(x.Branch) + '</div>' : ''); } },
         { key: 'Cashier', label: 'Cashier', format: function (v, x) { return UI.esc(v || '—') + (x.Approver ? '<div class="small text-soft">' + (x.Status === 'REJECTED' ? 'rejected' : 'approved') + ' by ' + UI.esc(x.Approver) + '</div>' : ''); } },
-        { key: 'ExpectedCash', label: 'Expected', align: 'right', format: function (v) { return '<span class="money">' + F.peso(v) + '</span>'; } },
-        { key: 'ActualCash', label: 'Counted', align: 'right', format: function (v) { return '<span class="money">' + F.peso(v) + '</span>'; } },
-        { key: 'Variance', label: 'Variance', align: 'right', format: function (v) { var c = cents(v); return '<span class="money fw-bold ' + (c === 0 ? 'text-success' : (c < 0 ? 'text-danger' : 'text-warning-emphasis')) + '">' + F.peso(v) + '</span>'; } },
-        { key: 'NonCashSales', label: 'Non-cash', align: 'right', format: function (v) { return '<span class="money">' + F.peso(v) + '</span>'; } },
-        { key: 'Status', label: 'Status', format: function (v) { return UI.badge(v); } }
+        { key: 'ExpectedCash', label: 'Expected', num: true, format: function (v) { return '<span class="money">' + F.peso(v) + '</span>'; } },
+        { key: 'ActualCash', label: 'Counted', num: true, format: function (v) { return '<span class="money">' + F.peso(v) + '</span>'; } },
+        { key: 'Variance', label: 'Variance', num: true, format: function (v) { var c = cents(v); return '<span class="money fw-bold ' + (c === 0 ? 'text-success' : (c < 0 ? 'text-danger' : 'text-warning-emphasis')) + '">' + F.peso(v) + '</span>'; } },
+        { key: 'NonCashSales', label: 'Non-cash', num: true, format: function (v) { return '<span class="money">' + F.peso(v) + '</span>'; } },
+        { key: 'Status', label: 'Status', cls: 'ph-hide', format: function (v) { return UI.badge(v); } }
       ], rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-vault', title: 'No reports in this range', hint: 'A day appears here once its sheet is saved or submitted.' }, onPage: function (p) { h.page = p; loadHistory(); }, onRow: function (x) { M.Modal.closeThen('eod-hist-modal', function () { state.date = x.EodDate; state.branchId = x.BranchId; UI.el('eod-date').value = x.EodDate; if (!UI.el('eod-branch').hidden) UI.el('eod-branch').value = x.BranchId; load(); }); } });
       UI.el('eod-h-totals').textContent = r.total + ' report' + (r.total === 1 ? '' : 's') + (r.counts.SUBMITTED ? ' · ' + r.counts.SUBMITTED + ' awaiting approval' : '') + ' · approved cash sales ' + F.peso(r.totals.cashSales) + ' · variance ' + F.peso(r.totals.variance);
-    }).catch(function (e) { Toast.danger(UI.error(e)); });
+    }).catch(function (e) {
+      if (box.querySelector('table')) { Toast.danger(UI.error(e)); return; }
+      box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The reports could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } });
+      var again = box.querySelector('[data-empty-action]'); if (again) again.onclick = function () { box.innerHTML = ''; loadHistory(); };
+    });
   }
   function openHistory() {
     var h = state.hist; if (!h.from) { var d = new Date(); d.setDate(d.getDate() - 30); h.from = isoLocal(d); h.to = today(); } UI.el('eod-h-from').value = h.from; UI.el('eod-h-to').value = h.to; UI.el('eod-h-status').value = h.status; h.page = 1;
