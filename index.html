@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '32d20ff1d9', version: '1.29.0' };</script>
+  <script>window.MLS_PWA = { build: '91ee5e7f23', version: '1.30.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -736,6 +736,16 @@
   .receipt-paper .provisional { border: 2px dashed var(--mls-warning); color: var(--mls-warning); padding: .35rem .5rem; margin: .4rem 0; text-align: center; font-weight: 700; letter-spacing: .04em; }
   .receipt-paper .provisional small { display: block; font-weight: 400; letter-spacing: 0; margin-top: .15rem; }
   @media (max-width: 575.98px) { .queue-badge span { display: none; } .queue-badge { padding: .25rem .45rem; } .sync-list li { grid-template-columns: minmax(0, 1fr) auto; } .sync-list .when { grid-column: 1 / -1; } }
+  /* 1.30.0 (stage 5, Services, Inventory, Purchases). A purchase's line: on a phone the item picker takes its own row, the quantity, the
+     unit cost (each with its sign), the line total and the remove button share the next; the column heads give way to the signs. */
+  .line-editor .le-field { display: block; margin: 0; min-width: 0; } .line-editor .le-tag { display: none; }
+  @media (max-width: 575.98px) {
+    .line-editor { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto 40px; row-gap: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--mls-line-soft); margin-bottom: 8px; }
+    .line-editor > [data-f=itemId] { grid-column: 1 / -1; }
+    .line-editor .le-field { display: flex; align-items: center; gap: 6px; } .line-editor .le-tag { display: inline; font-size: var(--fs-xs); font-weight: 600; color: var(--mls-ink-soft); }
+    .line-editor .lt { display: block; min-width: 72px; } .line-editor-head { display: none; }
+    .table-cards.aligned tbody td[colspan] { text-align: left; }  /* a list's message (no price yet, no materials) reads from the left */
+  }
 </style>
 
 </head>
@@ -922,7 +932,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.29.0';
+  var VERSION = '1.30.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -4045,7 +4055,8 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — ServicesPage.html: the Services module: the catalog with base prices, price lists by branch and customer type, and material recipes. -->
+        <!-- Mrs Laundry Sys — ServicesPage.html: the Services module: the catalog with base prices, price lists by branch and customer type, and material recipes.
+     1.30.0 (stage 5): skeleton rows and Try again, amount columns, a card per service and per code on a phone, labels tied to their fields. -->
 <section id="view-services" class="view" hidden>
   <div class="view-head">
     <h2>Services</h2>
@@ -4070,17 +4081,17 @@ window.MLS = (function () {
       <div class="modal-body">
         <input type="hidden" name="Id">
         <div class="row g-2">
-          <div class="col-7"><label class="form-label">Name</label><input class="form-control" name="Name" maxlength="80" required></div>
-          <div class="col-5"><label class="form-label">Code</label><input class="form-control upper" name="Code" maxlength="24" placeholder="from the name" autocapitalize="characters"></div>
-          <div class="col-6"><label class="form-label">Discount</label><select class="form-select" name="DiscountType"><option value="PERCENT">Percent off the subtotal</option><option value="AMOUNT">Peso amount off</option></select></div>
-          <div class="col-6"><label class="form-label">Value</label><input class="form-control" name="Value" type="number" inputmode="decimal" step="0.01" min="0.01" required></div>
-          <div class="col-6"><label class="form-label">Minimum subtotal</label><input class="form-control money" name="MinSubtotal" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
-          <div class="col-6"><label class="form-label">Max uses</label><input class="form-control" name="MaxUses" type="number" inputmode="numeric" step="1" min="0" placeholder="unlimited"></div>
-          <div class="col-6"><label class="form-label">Starts</label><input class="form-control" name="StartDate" type="date"></div>
-          <div class="col-6"><label class="form-label">Ends</label><input class="form-control" name="EndDate" type="date"></div>
-          <div class="col-6"><label class="form-label">Branch</label><select class="form-select" name="BranchId"><option value="">All branches</option></select></div>
-          <div class="col-6"><label class="form-label">Customer type</label><select class="form-select" name="CustomerType"><option value="">All types</option></select></div>
-          <div class="col-6" id="promo-status-wrap" hidden><label class="form-label">Status</label><select class="form-select" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
+          <div class="col-7"><label class="form-label" for="promo-f-name">Name</label><input class="form-control" id="promo-f-name" name="Name" maxlength="80" required></div>
+          <div class="col-5"><label class="form-label" for="promo-f-code">Code</label><input class="form-control upper" id="promo-f-code" name="Code" maxlength="24" placeholder="from the name" autocapitalize="characters"></div>
+          <div class="col-6"><label class="form-label" for="promo-f-type">Discount</label><select class="form-select" id="promo-f-type" name="DiscountType"><option value="PERCENT">Percent off the subtotal</option><option value="AMOUNT">Peso amount off</option></select></div>
+          <div class="col-6"><label class="form-label" for="promo-f-value">Value</label><input class="form-control" id="promo-f-value" name="Value" type="number" inputmode="decimal" step="0.01" min="0.01" required></div>
+          <div class="col-6"><label class="form-label" for="promo-f-min">Minimum subtotal</label><input class="form-control money" id="promo-f-min" name="MinSubtotal" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+          <div class="col-6"><label class="form-label" for="promo-f-uses">Max uses</label><input class="form-control" id="promo-f-uses" name="MaxUses" type="number" inputmode="numeric" step="1" min="0" placeholder="unlimited"></div>
+          <div class="col-6"><label class="form-label" for="promo-f-start">Starts</label><input class="form-control" id="promo-f-start" name="StartDate" type="date"></div>
+          <div class="col-6"><label class="form-label" for="promo-f-end">Ends</label><input class="form-control" id="promo-f-end" name="EndDate" type="date"></div>
+          <div class="col-6"><label class="form-label" for="promo-f-branch">Branch</label><select class="form-select" id="promo-f-branch" name="BranchId"><option value="">All branches</option></select></div>
+          <div class="col-6"><label class="form-label" for="promo-f-ctype">Customer type</label><select class="form-select" id="promo-f-ctype" name="CustomerType"><option value="">All types</option></select></div>
+          <div class="col-6" id="promo-status-wrap" hidden><label class="form-label" for="promo-f-status">Status</label><select class="form-select" id="promo-f-status" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
         </div>
         <div class="alert alert-danger py-2 small mt-3" id="promo-error" hidden></div>
       </div>
@@ -4096,17 +4107,17 @@ window.MLS = (function () {
       <div class="modal-body">
         <input type="hidden" name="Id">
         <div class="row g-2">
-          <div class="col-8"><label class="form-label">Name</label><input class="form-control" name="Name" maxlength="80" required></div>
-          <div class="col-4"><label class="form-label">Code</label><input class="form-control" name="Code" maxlength="32" placeholder="auto"></div>
-          <div class="col-6"><label class="form-label">Category</label><input class="form-control" name="Category" list="svc-categories" maxlength="40"><datalist id="svc-categories"></datalist></div>
-          <div class="col-6"><label class="form-label">Pricing</label><select class="form-select" name="PricingType"><option value="PER_KILO">Per kilo</option><option value="PER_PIECE">Per piece</option><option value="PER_LOAD">Per load</option><option value="FLAT">Flat price</option></select></div>
-          <div class="col-6"><label class="form-label">Base price</label><input class="form-control money" name="Price" type="number" step="0.01" min="0" inputmode="decimal"></div>
-          <div class="col-6"><label class="form-label">Unit label</label><input class="form-control" name="Unit" maxlength="12" placeholder="kg / pc / load"></div>
-          <div class="col-6"><label class="form-label">Minimum quantity</label><input class="form-control" name="MinimumQty" type="number" step="0.5" min="0" inputmode="decimal"><div class="form-text">Per kilo: the kg billed at least</div></div>
-          <div class="col-6"><label class="form-label">Minimum amount</label><input class="form-control money" name="MinimumAmount" type="number" step="0.01" min="0" inputmode="decimal"></div>
-          <div class="col-6"><label class="form-label">Express surcharge %</label><input class="form-control" name="ExpressSurchargePct" type="number" step="1" min="0" inputmode="numeric"><div class="form-text">Blank: the setting applies</div></div>
-          <div class="col-6"><label class="form-label">Estimated hours</label><input class="form-control" name="EstimatedHours" type="number" step="1" min="0" inputmode="numeric"></div>
-          <div class="col-12" id="svc-status-wrap" hidden><label class="form-label">Status</label><select class="form-select" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
+          <div class="col-8"><label class="form-label" for="svc-f-name">Name</label><input class="form-control" id="svc-f-name" name="Name" maxlength="80" required></div>
+          <div class="col-4"><label class="form-label" for="svc-f-code">Code</label><input class="form-control" id="svc-f-code" name="Code" maxlength="32" placeholder="auto"></div>
+          <div class="col-6"><label class="form-label" for="svc-f-cat">Category</label><input class="form-control" id="svc-f-cat" name="Category" list="svc-categories" maxlength="40"><datalist id="svc-categories"></datalist></div>
+          <div class="col-6"><label class="form-label" for="svc-f-pricing">Pricing</label><select class="form-select" id="svc-f-pricing" name="PricingType"><option value="PER_KILO">Per kilo</option><option value="PER_PIECE">Per piece</option><option value="PER_LOAD">Per load</option><option value="FLAT">Flat price</option></select></div>
+          <div class="col-6"><label class="form-label" for="svc-f-price">Base price</label><input class="form-control money" id="svc-f-price" name="Price" type="number" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="col-6"><label class="form-label" for="svc-f-unit">Unit label</label><input class="form-control" id="svc-f-unit" name="Unit" maxlength="12" placeholder="kg / pc / load"></div>
+          <div class="col-6"><label class="form-label" for="svc-f-minqty">Minimum quantity</label><input class="form-control" id="svc-f-minqty" name="MinimumQty" type="number" step="0.5" min="0" inputmode="decimal"><div class="form-text">Per kilo: the kg billed at least</div></div>
+          <div class="col-6"><label class="form-label" for="svc-f-minamt">Minimum amount</label><input class="form-control money" id="svc-f-minamt" name="MinimumAmount" type="number" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="col-6"><label class="form-label" for="svc-f-express">Express surcharge %</label><input class="form-control" id="svc-f-express" name="ExpressSurchargePct" type="number" step="1" min="0" inputmode="numeric"><div class="form-text">Blank: the setting applies</div></div>
+          <div class="col-6"><label class="form-label" for="svc-f-hours">Estimated hours</label><input class="form-control" id="svc-f-hours" name="EstimatedHours" type="number" step="1" min="0" inputmode="numeric"></div>
+          <div class="col-12" id="svc-status-wrap" hidden><label class="form-label" for="svc-f-status">Status</label><select class="form-select" id="svc-f-status" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
         </div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save</button></div>
@@ -4122,21 +4133,21 @@ window.MLS = (function () {
         <div class="detail-grid mb-3" id="svc-view-grid"></div>
         <div class="tabs" id="svc-view-tabs"><button type="button" data-tab="prices" class="active">Price list</button><button type="button" data-tab="recipe">Materials used</button></div>
         <div id="svc-tab-prices">
-          <div class="table-wrap"><table class="table table-sm table-cards mb-2"><thead><tr><th>Branch</th><th>Customer type</th><th>Effective</th><th class="text-end">Price</th><th></th></tr></thead><tbody id="svc-prices"></tbody></table></div>
+          <div class="table-wrap"><table class="table table-sm table-cards aligned mb-2"><thead><tr><th>Branch</th><th>Customer type</th><th>Effective</th><th class="num">Price</th><th></th></tr></thead><tbody id="svc-prices"></tbody></table></div>
           <form class="row g-2 align-items-end" id="svc-price-form" autocomplete="off" hidden>
-            <div class="col-md-3"><label class="form-label small">Branch</label><select class="form-select form-select-sm" name="BranchId"><option value="">All branches</option></select></div>
-            <div class="col-md-3"><label class="form-label small">Customer type</label><select class="form-select form-select-sm" name="CustomerType"><option value="">All types</option></select></div>
-            <div class="col-md-2"><label class="form-label small">From</label><input class="form-control form-control-sm" name="EffectiveFrom" type="date"></div>
-            <div class="col-md-2"><label class="form-label small">To</label><input class="form-control form-control-sm" name="EffectiveTo" type="date"></div>
-            <div class="col-md-2"><label class="form-label small">Price</label><div class="input-group input-group-sm"><input class="form-control" name="Price" type="number" step="0.01" min="0" inputmode="decimal" required><button class="btn btn-primary" type="submit">Add</button></div></div>
+            <div class="col-md-3"><label class="form-label small" for="svc-p-branch">Branch</label><select class="form-select form-select-sm" id="svc-p-branch" name="BranchId"><option value="">All branches</option></select></div>
+            <div class="col-md-3"><label class="form-label small" for="svc-p-ctype">Customer type</label><select class="form-select form-select-sm" id="svc-p-ctype" name="CustomerType"><option value="">All types</option></select></div>
+            <div class="col-md-2"><label class="form-label small" for="svc-p-from">From</label><input class="form-control form-control-sm" id="svc-p-from" name="EffectiveFrom" type="date"></div>
+            <div class="col-md-2"><label class="form-label small" for="svc-p-to">To</label><input class="form-control form-control-sm" id="svc-p-to" name="EffectiveTo" type="date"></div>
+            <div class="col-md-2"><label class="form-label small" for="svc-p-price">Price</label><div class="input-group input-group-sm"><input class="form-control money" id="svc-p-price" name="Price" type="number" step="0.01" min="0" inputmode="decimal" required><button class="btn btn-primary" type="submit">Add</button></div></div>
           </form>
         </div>
         <div id="svc-tab-recipe" hidden>
           <p class="small text-soft">Quantity of each material consumed per billable unit of this service (per kg, per piece, per load or per order). Consumed from stock when an order reaches the configured production stage.</p>
-          <div class="table-wrap"><table class="table table-sm table-cards mb-2"><thead><tr><th>Material</th><th class="text-end">Per unit</th><th></th></tr></thead><tbody id="svc-recipe"></tbody></table></div>
+          <div class="table-wrap"><table class="table table-sm table-cards aligned mb-2"><thead><tr><th>Material</th><th class="num">Per unit</th><th></th></tr></thead><tbody id="svc-recipe"></tbody></table></div>
           <form class="row g-2 align-items-end" id="svc-recipe-form" autocomplete="off" hidden>
-            <div class="col-md-6"><label class="form-label small">Material</label><select class="form-select form-select-sm" name="ItemId" required></select></div>
-            <div class="col-md-4"><label class="form-label small">Quantity per unit</label><div class="input-group input-group-sm"><input class="form-control" name="QtyPerUnit" type="number" step="any" min="0" inputmode="decimal" required><span class="input-group-text" id="svc-recipe-unit"></span><button class="btn btn-primary" type="submit">Add</button></div></div>
+            <div class="col-md-6"><label class="form-label small" for="svc-r-item">Material</label><select class="form-select form-select-sm" id="svc-r-item" name="ItemId" required></select></div>
+            <div class="col-md-4"><label class="form-label small" for="svc-r-qty">Quantity per unit</label><div class="input-group input-group-sm"><input class="form-control" id="svc-r-qty" name="QtyPerUnit" type="number" step="any" min="0" inputmode="decimal" required><span class="input-group-text" id="svc-recipe-unit"></span><button class="btn btn-primary" type="submit">Add</button></div></div>
           </form>
         </div>
       </div>
@@ -4152,27 +4163,32 @@ window.MLS = (function () {
   var rows = [], categories = [], current = null, materials = null;
   function canEdit() { return M.Auth.can('SERVICE_EDIT'); }
   function typeLabel(t) { return { PER_KILO: 'Per kilo', PER_PIECE: 'Per piece', PER_LOAD: 'Per load', FLAT: 'Flat' }[t] || t; }
+  /** A code such as WASH_AND_FOLD wraps after an underscore, never inside a word (1.30.0). */
+  function code(v) { return UI.esc(v).replace(/_/g, '_<wbr>'); }
+  /** Grey rows while a list waits for its first answer (after 160 ms, so a saved list never flashes them); the reason and Try again when it fails with nothing on screen (1.30.0). */
+  function waiting(box, label) { if (!box.innerHTML) setTimeout(function () { if (!box.innerHTML) box.innerHTML = UI.skeleton({ kind: 'rows', count: 4, label: label }); }, 160); }
+  function failed(box, title, e, again) { if (box.querySelector('table')) return; box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: title, hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }); var b = box.querySelector('[data-empty-action]'); if (b) b.onclick = function () { box.innerHTML = ''; again(); }; }
 
   var listSeq = Api.sequence();
   function load() {
-    var box = UI.el('svc-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    var box = UI.el('svc-table'); waiting(box, 'Loading the services');
     return Api.read('services.list', { includeInactive: UI.el('svc-inactive').checked }, { seq: listSeq, paint: function (r) {
       rows = r.rows; categories = r.categories; UI.el('svc-categories').innerHTML = categories.map(function (c) { return '<option value="' + UI.esc(c) + '">'; }).join('');
       M.Table.render(UI.el('svc-table'), {
         columns: [
-          { key: 'Name', label: 'Service', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(r.Code) + ' · ' + UI.esc(r.Category) + '</div>'; } },
+          { key: 'Name', label: 'Service', cls: 'lead-cell', format: function (v, r) { return '<span class="lead-status ph-only">' + UI.badge(r.Status) + '</span><span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + code(r.Code) + ' · ' + UI.esc(r.Category) + '</div>'; } },
           { key: 'PricingType', label: 'Pricing', format: function (v, r) { return typeLabel(v) + (r.MinimumQty > 0 ? '<div class="small text-soft">min ' + F.qty(r.MinimumQty, r.Unit) + '</div>' : '') + (r.MinimumAmount > 0 ? '<div class="small text-soft">at least ' + F.peso(r.MinimumAmount) + '</div>' : ''); } },
-          { key: 'BasePrice', label: 'Base price', align: 'right', format: function (v, r) { return v === null ? '<span class="text-danger small">not set</span>' : '<span class="money fw-bold">' + F.peso(v) + '</span><div class="small text-soft">/ ' + UI.esc(r.Unit) + (r.Prices.length > 1 ? ' · ' + (r.Prices.length - 1) + ' list price' + (r.Prices.length > 2 ? 's' : '') : '') + '</div>'; } },
-          { key: 'ExpressSurchargePct', label: 'Express', align: 'right', format: function (v) { return v > 0 ? '+' + v + '%' : '<span class="text-soft">setting</span>'; } },
-          { key: 'EstimatedHours', label: 'Hours', align: 'right', format: function (v) { return v > 0 ? v + ' h' : '<span class="text-soft">default</span>'; } },
+          { key: 'BasePrice', label: 'Base price', num: true, format: function (v, r) { return v === null ? '<span class="text-danger small">not set</span>' : '<span class="money fw-bold">' + F.peso(v) + '</span><div class="small text-soft">/ ' + UI.esc(r.Unit) + (r.Prices.length > 1 ? ' · ' + (r.Prices.length - 1) + ' list price' + (r.Prices.length > 2 ? 's' : '') : '') + '</div>'; } },
+          { key: 'ExpressSurchargePct', label: 'Express', num: true, format: function (v) { return v > 0 ? '+' + v + '%' : '<span class="text-soft">setting</span>'; } },
+          { key: 'EstimatedHours', label: 'Hours', num: true, format: function (v) { return v > 0 ? v + ' h' : '<span class="text-soft">default</span>'; } },
           { key: 'Recipe', label: 'Materials', format: function (v) { return v.length ? v.length + ' material' + (v.length === 1 ? '' : 's') : '<span class="text-soft">none</span>'; } },
-          { key: 'Status', label: 'Status', format: function (v) { return UI.badge(v); } }
+          { key: 'Status', label: 'Status', cls: 'ph-hide', format: function (v) { return UI.badge(v); } }
         ],
-        rows: rows, total: rows.length, page: 1, pages: 1, empty: { icon: 'fa-shirt', title: 'No services yet', hint: 'Add your first service — wash and fold per kilo, dry cleaning per piece, comforters — with its price; the point of sale shows them as tiles.', action: canEdit() ? { label: 'New service', icon: 'fa-plus', onClick: function () { openForm(null); } } : null },
+        cls: 'aligned', rows: rows, total: rows.length, page: 1, pages: 1, empty: { icon: 'fa-shirt', title: 'No services yet', hint: 'Add your first service — wash and fold per kilo, dry cleaning per piece, comforters — with its price; the point of sale shows them as tiles.', action: canEdit() ? { label: 'New service', icon: 'fa-plus', onClick: function () { openForm(null); } } : null },
         onRow: function (r) { open(r.Id); }
       });
       UI.el('svc-count').textContent = rows.length + ' service' + (rows.length === 1 ? '' : 's');
-    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Services: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Services: ' + UI.error(e)); failed(box, 'The services could not be loaded', e, load); });
   }
   function openForm(s) {
     var f = UI.el('svc-form'); f.reset(); Form.clearErrors(f); UI.el('svc-form-title').textContent = s ? 'Edit ' + s.Name : 'New service'; UI.el('svc-status-wrap').hidden = !s;
@@ -4183,10 +4199,10 @@ window.MLS = (function () {
   function paintView(s) {
     current = s; var me = M.AppState.me;
     UI.el('svc-view-title').innerHTML = UI.esc(s.Name) + ' ' + UI.badge(s.Status);
-    var grid = [['Code', UI.esc(s.Code)], ['Category', UI.esc(s.Category)], ['Pricing', typeLabel(s.PricingType) + ' · per ' + UI.esc(s.Unit)], ['Base price', s.BasePrice === null ? '<span class="text-danger">not set</span>' : F.peso(s.BasePrice)], ['Minimum', (s.MinimumQty > 0 ? F.qty(s.MinimumQty, s.Unit) : '—') + (s.MinimumAmount > 0 ? ' · ' + F.peso(s.MinimumAmount) : '')], ['Express', s.ExpressSurchargePct > 0 ? '+' + s.ExpressSurchargePct + '%' : 'setting (' + (me.settings.ExpressSurchargePct || 0) + '%)'], ['Estimated', s.EstimatedHours > 0 ? s.EstimatedHours + ' h' : 'default (' + (me.settings.DefaultDueHours || 48) + ' h)'], ['Consumes materials', s.ConsumesMaterials ? 'Yes' : 'No']];
+    var grid = [['Code', code(s.Code)], ['Category', UI.esc(s.Category)], ['Pricing', typeLabel(s.PricingType) + ' · per ' + UI.esc(s.Unit)], ['Base price', s.BasePrice === null ? '<span class="text-danger">not set</span>' : F.peso(s.BasePrice)], ['Minimum', (s.MinimumQty > 0 ? F.qty(s.MinimumQty, s.Unit) : '—') + (s.MinimumAmount > 0 ? ' · ' + F.peso(s.MinimumAmount) : '')], ['Express', s.ExpressSurchargePct > 0 ? '+' + s.ExpressSurchargePct + '%' : 'setting (' + (me.settings.ExpressSurchargePct || 0) + '%)'], ['Estimated', s.EstimatedHours > 0 ? s.EstimatedHours + ' h' : 'default (' + (me.settings.DefaultDueHours || 48) + ' h)'], ['Consumes materials', s.ConsumesMaterials ? 'Yes' : 'No']];
     UI.html('svc-view-grid', grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join(''));
-    UI.html('svc-prices', s.Prices.length ? s.Prices.map(function (p) { var base = !p.BranchId && !p.CustomerType && !p.EffectiveFrom && !p.EffectiveTo; return '<tr><td data-label="Branch">' + UI.esc(p.BranchId ? UI.branchName(p.BranchId) : 'All branches') + '</td><td data-label="Type">' + UI.esc(p.CustomerType ? F.status(p.CustomerType) : 'All types') + '</td><td data-label="Effective">' + (p.EffectiveFrom || p.EffectiveTo ? UI.esc((p.EffectiveFrom || '…') + ' → ' + (p.EffectiveTo || '…')) : 'always') + '</td><td data-label="Price" class="text-end money fw-bold">' + F.peso(p.Price) + '</td><td class="text-end">' + (canEdit() && !base ? '<button type="button" class="btn btn-sm btn-link text-danger p-0" data-rm-price="' + UI.esc(p.Id) + '">remove</button>' : (base ? '<span class="small text-soft">base</span>' : '')) + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="text-soft">No price yet — set the base price with Edit.</td></tr>');
-    UI.html('svc-recipe', s.Recipe.length ? s.Recipe.map(function (r) { return '<tr><td data-label="Material">' + UI.esc(r.ItemName) + '</td><td data-label="Per unit" class="text-end">' + F.qty(r.QtyPerUnit, r.Unit) + ' / ' + UI.esc(s.Unit) + '</td><td class="text-end">' + (canEdit() ? '<button type="button" class="btn btn-sm btn-link text-danger p-0" data-rm-recipe="' + UI.esc(r.Id) + '">remove</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="3" class="text-soft">No materials linked. Add detergent, softener… and their quantity per ' + UI.esc(s.Unit) + '.</td></tr>');
+    UI.html('svc-prices', s.Prices.length ? s.Prices.map(function (p) { var base = !p.BranchId && !p.CustomerType && !p.EffectiveFrom && !p.EffectiveTo; return '<tr><td data-label="Branch" class="lead-cell">' + UI.esc(p.BranchId ? UI.branchName(p.BranchId) : 'All branches') + '</td><td data-label="Type">' + UI.esc(p.CustomerType ? F.status(p.CustomerType) : 'All types') + '</td><td data-label="Effective">' + (p.EffectiveFrom || p.EffectiveTo ? UI.esc((p.EffectiveFrom || '…') + ' → ' + (p.EffectiveTo || '…')) : 'always') + '</td><td data-label="Price" class="num money fw-bold">' + F.peso(p.Price) + '</td><td class="text-end no-label">' + (canEdit() && !base ? '<button type="button" class="btn btn-sm btn-link text-danger p-0" data-rm-price="' + UI.esc(p.Id) + '">remove</button>' : (base ? '<span class="small text-soft">base</span>' : '')) + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="text-soft no-label">No price yet — set the base price with Edit.</td></tr>');
+    UI.html('svc-recipe', s.Recipe.length ? s.Recipe.map(function (r) { return '<tr><td data-label="Material" class="lead-cell">' + UI.esc(r.ItemName) + '</td><td data-label="Per unit" class="num">' + F.qty(r.QtyPerUnit, r.Unit) + ' / ' + UI.esc(s.Unit) + '</td><td class="text-end no-label">' + (canEdit() ? '<button type="button" class="btn btn-sm btn-link text-danger p-0" data-rm-recipe="' + UI.esc(r.Id) + '">remove</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="3" class="text-soft no-label">No materials linked. Add detergent, softener… and their quantity per ' + UI.esc(s.Unit) + '.</td></tr>');
     UI.el('svc-price-form').hidden = !canEdit(); UI.el('svc-recipe-form').hidden = !canEdit(); UI.el('svc-view-edit').hidden = !canEdit();
     var pf = UI.el('svc-price-form'); pf.querySelector('[name=BranchId]').innerHTML = '<option value="">All branches</option>' + UI.options(me.branches, ''); pf.querySelector('[name=CustomerType]').innerHTML = '<option value="">All types</option>' + UI.options(['REGULAR', 'VIP', 'CORPORATE'], '', function (t) { return F.status(t); }, function (t) { return t; });
     document.querySelectorAll('[data-rm-price]').forEach(function (b) { b.onclick = function () { Api.call('services.removePrice', { id: b.getAttribute('data-rm-price') }, { busy: true }).then(function (r) { paintView(r); load(); }).catch(function (e) { Toast.danger(UI.error(e)); }); }; });
@@ -4203,21 +4219,23 @@ window.MLS = (function () {
     UI.el('svc-new').hidden = name !== 'services' || !canEdit(); UI.el('promo-new').hidden = name !== 'promos' || !canEdit(); UI.el('svc-inactive').parentElement.hidden = false;
     if (name === 'promos') loadPromos();
   }
+  function promoStatus(p) { return p.Status !== 'ACTIVE' ? UI.badge('INACTIVE') : (p.IsLive ? UI.badge('ACTIVE', 'Live') : UI.badge('PENDING', 'Not usable now')); }
   function promoRule(p) { return (p.DiscountType === 'PERCENT' ? Number(p.Value) + '% off' : F.peso(p.Value) + ' off') + (Number(p.MinSubtotal) > 0 ? ' from ' + F.peso(p.MinSubtotal) : ''); }
   function loadPromos() {
+    var box = UI.el('promo-table'); waiting(box, 'Loading the promo codes');
     return Api.call('promos.list', { includeInactive: UI.el('svc-inactive').checked }).then(function (r) {
       M.Table.render(UI.el('promo-table'), {
         columns: [
-          { key: 'Code', label: 'Code', format: function (v, p) { return '<span class="fw-bold font-monospace">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(p.Name) + '</div>'; } },
+          { key: 'Code', label: 'Code', cls: 'lead-cell', format: function (v, p) { return '<span class="lead-status ph-only">' + promoStatus(p) + '</span><span class="fw-bold font-monospace">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(p.Name) + '</div>'; } },
           { key: 'Value', label: 'Discount', format: function (v, p) { return promoRule(p); } },
           { key: 'StartDate', label: 'Valid', format: function (v, p) { return (v || p.EndDate ? UI.esc((v || '…') + ' → ' + (p.EndDate || '…')) : 'always') + (p.BranchName !== 'All branches' ? '<div class="small text-soft">' + UI.esc(p.BranchName) + '</div>' : '') + (p.CustomerType ? '<div class="small text-soft">' + F.status(p.CustomerType) + ' customers</div>' : ''); } },
-          { key: 'UsedCount', label: 'Uses', align: 'right', format: function (v, p) { return F.number(v, 0) + (Number(p.MaxUses) > 0 ? ' / ' + F.number(p.MaxUses, 0) : ''); } },
-          { key: 'IsLive', label: 'Status', format: function (v, p) { return p.Status !== 'ACTIVE' ? UI.badge('INACTIVE') : (v ? UI.badge('ACTIVE', 'Live') : UI.badge('PENDING', 'Not usable now')); } }
+          { key: 'UsedCount', label: 'Uses', num: true, format: function (v, p) { return F.number(v, 0) + (Number(p.MaxUses) > 0 ? ' / ' + F.number(p.MaxUses, 0) : ''); } },
+          { key: 'IsLive', label: 'Status', cls: 'ph-hide', format: function (v, p) { return promoStatus(p); } }
         ],
-        rows: r.rows, total: r.rows.length, page: 1, pages: 1, empty: { icon: 'fa-ticket', title: 'No promo codes yet', hint: 'Create a code such as WELCOME10 and the cashier applies it at checkout; the rules decide whether it is accepted.', action: canEdit() ? { label: 'New promo code', icon: 'fa-ticket', onClick: function () { openPromo(null); } } : null },
+        cls: 'aligned', rows: r.rows, total: r.rows.length, page: 1, pages: 1, empty: { icon: 'fa-ticket', title: 'No promo codes yet', hint: 'Create a code such as WELCOME10 and the cashier applies it at checkout; the rules decide whether it is accepted.', action: canEdit() ? { label: 'New promo code', icon: 'fa-ticket', onClick: function () { openPromo(null); } } : null },
         onRow: function (p) { if (canEdit()) openPromo(p); }
       });
-    }).catch(function (e) { Toast.danger('Promo codes: ' + UI.error(e)); });
+    }).catch(function (e) { Toast.danger('Promo codes: ' + UI.error(e)); failed(box, 'The promo codes could not be loaded', e, loadPromos); });
   }
   function openPromo(p) {
     var f = UI.el('promo-form'), me = M.AppState.me; f.reset(); Form.clearErrors(f); UI.hide('promo-error');
@@ -4252,7 +4270,9 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — InventoryPage.html: the Inventory module: items (products for sale and materials consumed by services), stock on hand per branch, manual adjustments, transfers between branches and the movement ledger. -->
+        <!-- Mrs Laundry Sys — InventoryPage.html: the Inventory module: items (products for sale and materials consumed by services), stock on hand per branch, manual adjustments, transfers between branches and the movement ledger.
+     1.30.0 (stage 5): skeleton rows and Try again on the three tabs, amount columns, a card per item on a phone that keeps inside the screen,
+     the movements' window told under the tab (it was squeezed into the tab's count), the item's sections titled, labels tied to their fields. -->
 <section id="view-inventory" class="view" hidden>
   <div class="view-head">
     <h2>Inventory</h2>
@@ -4273,6 +4293,7 @@ window.MLS = (function () {
     <div class="card"><div class="card-body p-0" id="inv-items-table"></div></div>
   </div>
   <div id="inv-tab-moves" hidden>
+    <p class="small text-soft mb-2" id="inv-moves-window" hidden>The last 30 days. Set a date for older movements.</p>
     <div class="toolbar">
       <input class="form-control search" id="mv-search" placeholder="Search item, reference or notes" autocomplete="off">
       <select class="form-select" id="mv-type"><option value="">All movement types</option></select>
@@ -4294,17 +4315,17 @@ window.MLS = (function () {
       <div class="modal-body">
         <input type="hidden" name="Id">
         <div class="row g-2">
-          <div class="col-8"><label class="form-label">Name</label><input class="form-control" name="Name" maxlength="80" required></div>
-          <div class="col-4"><label class="form-label">Code</label><input class="form-control" name="Code" maxlength="32" placeholder="auto"></div>
-          <div class="col-6"><label class="form-label">Type</label><select class="form-select" name="ItemType"><option value="PRODUCT">Product (sold at the POS)</option><option value="MATERIAL">Material (consumed by services)</option></select></div>
-          <div class="col-6"><label class="form-label">Category</label><input class="form-control" name="Category" list="item-categories" maxlength="40"><datalist id="item-categories"></datalist></div>
-          <div class="col-4"><label class="form-label">Unit</label><input class="form-control" name="Unit" maxlength="12" placeholder="pc / g / ml"></div>
-          <div class="col-4"><label class="form-label">Cost per unit</label><input class="form-control money" name="Cost" type="number" step="0.01" min="0" inputmode="decimal"></div>
-          <div class="col-4" id="item-price-wrap"><label class="form-label">Selling price</label><input class="form-control money" name="SellingPrice" type="number" step="0.01" min="0" inputmode="decimal"></div>
-          <div class="col-6"><label class="form-label">Reorder level</label><input class="form-control" name="ReorderLevel" type="number" step="any" min="0" inputmode="decimal"><div class="form-text">Low-stock alert at or below this</div></div>
+          <div class="col-8"><label class="form-label" for="item-f-name">Name</label><input class="form-control" id="item-f-name" name="Name" maxlength="80" required></div>
+          <div class="col-4"><label class="form-label" for="item-f-code">Code</label><input class="form-control" id="item-f-code" name="Code" maxlength="32" placeholder="auto"></div>
+          <div class="col-6"><label class="form-label" for="item-f-type">Type</label><select class="form-select" id="item-f-type" name="ItemType"><option value="PRODUCT">Product (sold at the POS)</option><option value="MATERIAL">Material (consumed by services)</option></select></div>
+          <div class="col-6"><label class="form-label" for="item-f-cat">Category</label><input class="form-control" id="item-f-cat" name="Category" list="item-categories" maxlength="40"><datalist id="item-categories"></datalist></div>
+          <div class="col-4"><label class="form-label" for="item-f-unit">Unit</label><input class="form-control" id="item-f-unit" name="Unit" maxlength="12" placeholder="pc / g / ml"></div>
+          <div class="col-4"><label class="form-label" for="item-f-cost">Cost per unit</label><input class="form-control money" id="item-f-cost" name="Cost" type="number" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="col-4" id="item-price-wrap"><label class="form-label" for="item-f-price">Selling price</label><input class="form-control money" id="item-f-price" name="SellingPrice" type="number" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="col-6"><label class="form-label" for="item-f-reorder">Reorder level</label><input class="form-control" id="item-f-reorder" name="ReorderLevel" type="number" step="any" min="0" inputmode="decimal"><div class="form-text">Low-stock alert at or below this</div></div>
           <div class="col-6" id="item-sellable-wrap"><label class="form-label d-block">Sold at the POS</label><label class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" name="IsSellable" checked><span class="form-check-label small">Show on the POS</span></label></div>
-          <div class="col-12" id="item-supplier-wrap" hidden><label class="form-label">Usual supplier</label><select class="form-select" name="SupplierId"><option value="">— none (the last purchase's) —</option></select><div class="form-text">Its lead time sets how far ahead the reorder suggestion looks</div></div>
-          <div class="col-12" id="item-status-wrap" hidden><label class="form-label">Status</label><select class="form-select" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
+          <div class="col-12" id="item-supplier-wrap" hidden><label class="form-label" for="item-f-supplier">Usual supplier</label><select class="form-select" id="item-f-supplier" name="SupplierId"><option value="">— none (the last purchase's) —</option></select><div class="form-text">Its lead time sets how far ahead the reorder suggestion looks</div></div>
+          <div class="col-12" id="item-status-wrap" hidden><label class="form-label" for="item-f-status">Status</label><select class="form-select" id="item-f-status" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
         </div>
         <p class="small text-soft mt-2 mb-0">Stock on hand never changes here: use <strong>Adjust stock</strong> for beginning stock and corrections, <strong>Purchases</strong> for deliveries.</p>
       </div>
@@ -4329,12 +4350,12 @@ window.MLS = (function () {
       <div class="modal-header"><h5 class="modal-title">Adjust stock</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
         <div class="row g-2">
-          <div class="col-12" id="move-branch-wrap"><label class="form-label">Branch</label><select class="form-select" name="branchId"></select></div>
-          <div class="col-12"><label class="form-label">Item</label><select class="form-select" name="itemId" required></select><div class="form-text" id="move-onhand"></div></div>
-          <div class="col-12"><label class="form-label">Movement</label><select class="form-select" name="type"><option value="BEGINNING">Beginning stock (opening count)</option><option value="ADJUSTMENT_IN">Adjustment in (found, returned, corrected up)</option><option value="ADJUSTMENT_OUT">Adjustment out (damaged, lost, corrected down)</option></select></div>
-          <div class="col-6"><label class="form-label">Quantity</label><div class="input-group"><input class="form-control" name="qty" type="number" step="any" min="0" inputmode="decimal" required><span class="input-group-text" id="move-unit"></span></div></div>
-          <div class="col-6" id="move-cost-wrap"><label class="form-label">Unit cost</label><input class="form-control money" name="unitCost" type="number" step="0.01" min="0" inputmode="decimal" placeholder="item cost"></div>
-          <div class="col-12"><label class="form-label">Reason</label><input class="form-control" name="notes" maxlength="300" placeholder="Physical count, damaged bag, supplier return…" required></div>
+          <div class="col-12" id="move-branch-wrap"><label class="form-label" for="move-f-branch">Branch</label><select class="form-select" id="move-f-branch" name="branchId"></select></div>
+          <div class="col-12"><label class="form-label" for="move-f-item">Item</label><select class="form-select" id="move-f-item" name="itemId" required></select><div class="form-text" id="move-onhand"></div></div>
+          <div class="col-12"><label class="form-label" for="move-f-type">Movement</label><select class="form-select" id="move-f-type" name="type"><option value="BEGINNING">Beginning stock (opening count)</option><option value="ADJUSTMENT_IN">Adjustment in (found, returned, corrected up)</option><option value="ADJUSTMENT_OUT">Adjustment out (damaged, lost, corrected down)</option></select></div>
+          <div class="col-6"><label class="form-label" for="move-f-qty">Quantity</label><div class="input-group"><input class="form-control" id="move-f-qty" name="qty" type="number" step="any" min="0" inputmode="decimal" required><span class="input-group-text" id="move-unit"></span></div></div>
+          <div class="col-6" id="move-cost-wrap"><label class="form-label" for="move-f-cost">Unit cost</label><input class="form-control money" id="move-f-cost" name="unitCost" type="number" step="0.01" min="0" inputmode="decimal" placeholder="item cost"></div>
+          <div class="col-12"><label class="form-label" for="move-f-notes">Reason</label><input class="form-control" id="move-f-notes" name="notes" maxlength="300" placeholder="Physical count, damaged bag, supplier return…" required></div>
         </div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Post movement</button></div>
@@ -4348,11 +4369,11 @@ window.MLS = (function () {
       <div class="modal-header"><h5 class="modal-title">Transfer stock between branches</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
         <div class="row g-2">
-          <div class="col-12"><label class="form-label">Item</label><select class="form-select" name="itemId" required></select></div>
-          <div class="col-6"><label class="form-label">From</label><select class="form-select" name="fromBranchId" required></select></div>
-          <div class="col-6"><label class="form-label">To</label><select class="form-select" name="toBranchId" required></select></div>
-          <div class="col-6"><label class="form-label">Quantity</label><div class="input-group"><input class="form-control" name="qty" type="number" step="any" min="0" inputmode="decimal" required><span class="input-group-text" id="xfer-unit"></span></div></div>
-          <div class="col-12"><label class="form-label">Notes</label><input class="form-control" name="notes" maxlength="300" placeholder="Who carried it, why"></div>
+          <div class="col-12"><label class="form-label" for="xfer-f-item">Item</label><select class="form-select" id="xfer-f-item" name="itemId" required></select></div>
+          <div class="col-6"><label class="form-label" for="xfer-f-from">From</label><select class="form-select" id="xfer-f-from" name="fromBranchId" required></select></div>
+          <div class="col-6"><label class="form-label" for="xfer-f-to">To</label><select class="form-select" id="xfer-f-to" name="toBranchId" required></select></div>
+          <div class="col-6"><label class="form-label" for="xfer-f-qty">Quantity</label><div class="input-group"><input class="form-control" id="xfer-f-qty" name="qty" type="number" step="any" min="0" inputmode="decimal" required><span class="input-group-text" id="xfer-unit"></span></div></div>
+          <div class="col-12"><label class="form-label" for="xfer-f-notes">Notes</label><input class="form-control" id="xfer-f-notes" name="notes" maxlength="300" placeholder="Who carried it, why"></div>
         </div>
         <p class="small text-soft mt-2 mb-0">Writes a transfer-out at the sending branch and a transfer-in at the receiving branch in one step. The sending branch must have the stock on hand.</p>
       </div>
@@ -4373,6 +4394,11 @@ window.MLS = (function () {
   function typeLabel(t) { return t === 'MATERIAL' ? 'Material' : 'Product'; }
   function moveLabel(t) { return F.status(t); }
   function signedQty(m) { var q = Number(m.Qty) || 0; return '<span class="' + (q < 0 ? 'text-danger' : 'text-success') + ' fw-bold">' + (q > 0 ? '+' : '') + F.qty(q, m.Unit) + '</span>'; }
+  /** A code such as DETERGENT_POWDER wraps after an underscore, never inside a word (1.30.0). */
+  function code(v) { return UI.esc(v).replace(/_/g, '_<wbr>'); }
+  /** Grey rows while a tab waits for its first answer (after 160 ms, so a saved list never flashes them); the reason and Try again when it fails with nothing on screen (1.30.0). */
+  function waiting(box, label) { if (!box.innerHTML) setTimeout(function () { if (!box.innerHTML) box.innerHTML = UI.skeleton({ kind: 'rows', count: 5, label: label }); }, 160); }
+  function failed(box, title, e, again) { if (box.querySelector('table')) return; box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: title, hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }); var b = box.querySelector('[data-empty-action]'); if (b) b.onclick = function () { box.innerHTML = ''; again(); }; }
   function lensBranch() { var me = M.AppState.me; return me.activeBranch && me.activeBranch !== 'ALL' ? me.activeBranch : (me.branches.length === 1 ? me.branches[0].Id : ''); }
   function loadAll(force) { if (all && !force) return Promise.resolve(all); return Api.call('inventory.all', {}).then(function (r) { all = r; return r; }); }
   function itemById(id) { return (all || []).filter(function (i) { return i.Id === id; })[0] || null; }
@@ -4380,65 +4406,65 @@ window.MLS = (function () {
   // ---------------------------------------------------------------- lists
   var itemSeq = Api.sequence(), moveSeq = Api.sequence();
   function loadItems() {
-    var box = UI.el('inv-items-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    var box = UI.el('inv-items-table'); waiting(box, 'Loading the items');
     return Api.read('inventory.items', { search: state.search, type: state.type, lowOnly: state.lowOnly, includeInactive: state.includeInactive, page: state.page, size: 50 }, { seq: itemSeq, paint: function (r) {
       categories = r.categories || []; UI.el('item-categories').innerHTML = categories.map(function (c) { return '<option value="' + UI.esc(c) + '">'; }).join('');
       M.Table.render(UI.el('inv-items-table'), {
         columns: [
-          { key: 'Name', label: 'Item', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (r.Status !== 'ACTIVE' ? ' ' + UI.badge(r.Status) : '') + '<div class="small text-soft">' + UI.esc(r.Code) + ' · ' + UI.esc(r.Category || '') + '</div>'; } },
+          { key: 'Name', label: 'Item', cls: 'lead-cell', format: function (v, r) { return (r.Low ? '<span class="lead-status ph-only"><span class="badge text-bg-warning">Low</span></span>' : '') + '<span class="fw-bold">' + UI.esc(v) + '</span>' + (r.Status !== 'ACTIVE' ? ' ' + UI.badge(r.Status) : '') + '<div class="small text-soft">' + code(r.Code) + ' · ' + UI.esc(r.Category || '') + '</div>'; } },
           { key: 'ItemType', label: 'Type', format: function (v, r) { return typeLabel(v) + (v === 'PRODUCT' && !r.IsSellable ? '<div class="small text-soft">not on POS</div>' : ''); } },
-          { key: 'QtyOnHand', label: 'On hand', align: 'right', format: function (v, r) { return '<span class="fw-bold ' + (Number(v) < 0 ? 'text-danger' : '') + '">' + F.qty(v, r.Unit) + '</span>' + (r.Low ? '<div><span class="badge text-bg-warning">Low</span></div>' : '') + (M.AppState.me.activeBranch === 'ALL' && r.Branches > 1 ? '<div class="small text-soft">' + r.Branches + ' branches</div>' : ''); } },
-          { key: 'ReorderLevel', label: 'Reorder at', align: 'right', format: function (v, r) { return v > 0 ? F.qty(v, r.Unit) : '<span class="text-soft">—</span>'; } },
-          { key: 'Cost', label: 'Cost', align: 'right', format: function (v, r) { return '<span class="money">' + F.peso(v) + '</span><div class="small text-soft">/ ' + UI.esc(r.Unit) + '</div>'; } },
-          { key: 'SellingPrice', label: 'Price', align: 'right', format: function (v, r) { return r.ItemType === 'PRODUCT' ? '<span class="money fw-bold">' + F.peso(v) + '</span>' : '<span class="text-soft">—</span>'; } }
+          { key: 'QtyOnHand', label: 'On hand', num: true, format: function (v, r) { return '<span class="fw-bold ' + (Number(v) < 0 ? 'text-danger' : '') + '">' + F.qty(v, r.Unit) + '</span>' + (r.Low ? '<div class="ph-hide"><span class="badge text-bg-warning">Low</span></div>' : '') + (M.AppState.me.activeBranch === 'ALL' && r.Branches > 1 ? '<div class="small text-soft">' + r.Branches + ' branches</div>' : ''); } },
+          { key: 'ReorderLevel', label: 'Reorder at', num: true, format: function (v, r) { return v > 0 ? F.qty(v, r.Unit) : '<span class="text-soft">—</span>'; } },
+          { key: 'Cost', label: 'Cost', num: true, format: function (v, r) { return '<span class="money">' + F.peso(v) + '</span><span class="small text-soft"> / ' + UI.esc(r.Unit) + '</span>'; } },
+          { key: 'SellingPrice', label: 'Price', num: true, cls: r.rows.some(function (x) { return x.ItemType === 'PRODUCT'; }) ? '' : 'ph-hide', format: function (v, r) { return r.ItemType === 'PRODUCT' ? '<span class="money fw-bold">' + F.peso(v) + '</span>' : '<span class="text-soft">—</span>'; } }
         ],
-        rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: state.lowOnly ? { icon: 'fa-circle-check', title: 'Nothing is low on stock', hint: 'Every tracked item is above its reorder level.' } : (state.search ? { icon: 'fa-magnifying-glass', title: 'No item matches', hint: 'Try the code, the name or the category.' } : { icon: 'fa-boxes-stacked', title: 'No items yet', hint: 'Add the products you sell (bags, hangers) and the materials your services consume (detergent, softener); recipes draw from them automatically.', action: canAdjust() ? { label: 'New item', icon: 'fa-plus', onClick: function () { openForm(null); } } : null }),
+        cls: 'aligned', rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: state.lowOnly ? { icon: 'fa-circle-check', title: 'Nothing is low on stock', hint: 'Every tracked item is above its reorder level.' } : (state.search ? { icon: 'fa-magnifying-glass', title: 'No item matches', hint: 'Try the code, the name or the category.' } : { icon: 'fa-boxes-stacked', title: 'No items yet', hint: 'Add the products you sell (bags, hangers) and the materials your services consume (detergent, softener); recipes draw from them automatically.', action: canAdjust() ? { label: 'New item', icon: 'fa-plus', onClick: function () { openForm(null); } } : null }),
         onPage: function (p) { state.page = p; loadItems(); }, onRow: function (row) { open(row.Id); }
       });
       UI.el('inv-count-items').textContent = r.total;
       UI.el('inv-scope').textContent = 'Stock at ' + UI.branchName(M.AppState.me.activeBranch);
-    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Inventory: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Inventory: ' + UI.error(e)); failed(box, 'The items could not be loaded', e, loadItems); });
   }
   function loadMoves() {
-    var box = UI.el('inv-moves-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    var box = UI.el('inv-moves-table'); waiting(box, 'Loading the movements');
     return Api.read('inventory.movements', { search: state.mvSearch, type: state.mvType, from: state.mvFrom, to: state.mvTo, page: state.mvPage, size: 50 }, { seq: moveSeq, paint: function (r) {
       var sel = UI.el('mv-type'); if (sel.options.length === 1) sel.innerHTML += UI.options(r.types || [], '', moveLabel, function (t) { return t; });
       M.Table.render(UI.el('inv-moves-table'), {
         columns: [
-          { key: 'CreatedAt', label: 'When', format: function (v, r) { return '<span class="small">' + F.datetime(v) + '</span><div class="small text-soft">' + UI.esc(r.CreatedBy || '') + '</div>'; } },
+          { key: 'CreatedAt', label: 'When', cls: 'lead-cell', format: function (v, r) { return '<span class="small">' + F.datetime(v) + '</span><div class="small text-soft">' + UI.esc(r.CreatedBy || '') + '</div>'; } },
           { key: 'ItemName', label: 'Item', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(r.Branch) + '</div>' : ''); } },
           { key: 'MovementType', label: 'Movement', format: function (v) { return moveLabel(v); } },
-          { key: 'Qty', label: 'Qty', align: 'right', format: function (v, r) { return signedQty(r); } },
-          { key: 'QtyAfter', label: 'Before → after', align: 'right', format: function (v, r) { return '<span class="small">' + F.qty(r.QtyBefore) + ' → <strong>' + F.qty(v) + '</strong></span>'; } },
+          { key: 'Qty', label: 'Qty', num: true, format: function (v, r) { return signedQty(r); } },
+          { key: 'QtyAfter', label: 'Before → after', num: true, format: function (v, r) { return '<span class="small">' + F.qty(r.QtyBefore) + ' → <strong>' + F.qty(v) + '</strong></span>'; } },
           { key: 'Notes', label: 'Reference', format: function (v, r) { return '<span class="small">' + UI.esc(v || '') + (r.ReferenceType && r.ReferenceType !== 'MANUAL' ? '<div class="text-soft">' + UI.esc(F.status(r.ReferenceType)) + '</div>' : '') + '</span>'; } }
         ],
-        rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-right-left', title: 'No stock movements in this range', hint: 'Beginning counts, purchases, consumption, sales, adjustments and transfers appear here.' },
+        cls: 'aligned', rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-right-left', title: 'No stock movements in this range', hint: 'Beginning counts, purchases, consumption, sales, adjustments and transfers appear here.' },
         onPage: function (p) { state.mvPage = p; loadMoves(); }, onRow: function (row) { open(row.ItemId); }
       });
-      UI.el('inv-count-moves').textContent = r.total + (r.window && !state.mvFrom ? ' (last 30 days — set a date for older ones)' : '');
-    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Movements: ' + UI.error(e)); });
+      UI.el('inv-count-moves').textContent = r.total; UI.el('inv-moves-window').hidden = !(r.window && !state.mvFrom);
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Movements: ' + UI.error(e)); failed(box, 'The movements could not be loaded', e, loadMoves); });
   }
   /** Release 1.12.0 (R15): what to reorder — the daily use measured on the ledger, the days of cover, the supplier's lead time and the quantity that covers lead time plus the cover days. */
   var reorderSeq = Api.sequence();
   function loadReorder() {
-    var box = UI.el('inv-reorder-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    var box = UI.el('inv-reorder-table'); waiting(box, 'Loading the reorder list');
     return Api.read('inventory.reorder', {}, { seq: reorderSeq, paint: function (r) {
       UI.el('inv-count-reorder').textContent = r.toReorder || '';
       UI.el('inv-reorder-note').textContent = 'Daily use measured on sales and consumption since ' + F.date(r.from) + ' (' + r.windowDays + ' days) · a suggestion covers the supplier\'s lead time (' + r.defaultLeadTimeDays + ' days when none is set) plus ' + r.coverDays + ' days of use · an item at or below its reorder level with no measured use is brought to twice the level.';
       var cover = function (x) { return x.DaysOfCover === null ? '<span class="text-soft">no use measured</span>' : (x.DaysOfCover <= x.LeadTimeDays ? '<span class="text-danger fw-bold">' : (x.Suggested > 0 ? '<span class="text-warning-emphasis fw-bold">' : '<span>')) + F.number(x.DaysOfCover, 1) + ' d</span>' + (x.RunsOutOn ? '<div class="small text-soft">runs out ' + F.date(x.RunsOutOn) + '</div>' : ''); };
       M.Table.render(box, {
         columns: [
-          { key: 'Name', label: 'Item', format: function (v, x) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(x.Code) + ' · ' + (x.ItemType === 'MATERIAL' ? 'material' : 'product') + '</div>'; } },
-          { key: 'QtyOnHand', label: 'On hand', align: 'right', format: function (v, x) { return (x.Low ? '<span class="text-danger fw-bold">' : '<span>') + F.qty(v, x.Unit) + '</span>' + (x.ReorderLevel ? '<div class="small text-soft">level ' + F.qty(x.ReorderLevel, x.Unit) + '</div>' : ''); } },
-          { key: 'PerDay', label: 'Use / day', align: 'right', format: function (v, x) { return F.qty(v, x.Unit) + '<div class="small text-soft">' + F.qty(x.UsedInWindow, x.Unit) + ' used</div>'; } },
-          { key: 'DaysOfCover', label: 'Cover', align: 'right', format: function (v, x) { return cover(x); } },
-          { key: 'LeadTimeDays', label: 'Lead time', align: 'right', format: function (v, x) { return v + ' d<div class="small text-soft">' + (x.LeadTimeFrom === 'supplier' ? UI.esc(x.Supplier) : 'default') + '</div>'; } },
-          { key: 'Suggested', label: 'Reorder', align: 'right', format: function (v, x) { return v > 0 ? '<span class="fw-bold">' + F.qty(v, x.Unit) + '</span><div class="small text-soft">' + F.peso(x.SuggestedCost) + (x.Supplier ? ' · ' + UI.esc(x.Supplier) + (x.SupplierFrom === 'last purchase' ? ' (last purchase)' : '') : '') + '</div>' : '<span class="text-soft">—</span>'; } }
+          { key: 'Name', label: 'Item', cls: 'lead-cell', format: function (v, x) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + code(x.Code) + ' · ' + (x.ItemType === 'MATERIAL' ? 'material' : 'product') + '</div>'; } },
+          { key: 'QtyOnHand', label: 'On hand', num: true, format: function (v, x) { return (x.Low ? '<span class="text-danger fw-bold">' : '<span>') + F.qty(v, x.Unit) + '</span>' + (x.ReorderLevel ? '<div class="small text-soft">level ' + F.qty(x.ReorderLevel, x.Unit) + '</div>' : ''); } },
+          { key: 'PerDay', label: 'Use / day', num: true, format: function (v, x) { return F.qty(v, x.Unit) + '<div class="small text-soft">' + F.qty(x.UsedInWindow, x.Unit) + ' used</div>'; } },
+          { key: 'DaysOfCover', label: 'Cover', num: true, format: function (v, x) { return cover(x); } },
+          { key: 'LeadTimeDays', label: 'Lead time', num: true, format: function (v, x) { return v + ' d<div class="small text-soft">' + (x.LeadTimeFrom === 'supplier' ? UI.esc(x.Supplier) : 'default') + '</div>'; } },
+          { key: 'Suggested', label: 'Reorder', num: true, format: function (v, x) { return v > 0 ? '<span class="fw-bold">' + F.qty(v, x.Unit) + '</span><div class="small text-soft">' + F.peso(x.SuggestedCost) + (x.Supplier ? ' · ' + UI.esc(x.Supplier) + (x.SupplierFrom === 'last purchase' ? ' (last purchase)' : '') : '') + '</div>' : '<span class="text-soft">—</span>'; } }
         ],
-        rows: r.rows, total: r.rows.length, page: 1, pages: 1, empty: { icon: 'fa-boxes-stacked', title: 'No active items', hint: 'Items appear here with their daily use once stock moves.' },
+        cls: 'aligned', rows: r.rows, total: r.rows.length, page: 1, pages: 1, empty: { icon: 'fa-boxes-stacked', title: 'No active items', hint: 'Items appear here with their daily use once stock moves.' },
         onRow: function (x) { open(x.Id); }
       });
-    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Reorder: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Reorder: ' + UI.error(e)); failed(box, 'The reorder list could not be loaded', e, loadReorder); });
   }
   function showTab(tab) {
     state.tab = tab;
@@ -4468,20 +4494,21 @@ window.MLS = (function () {
       if (mine !== viewCount) return;
       var i = res[0], mv = res[1]; current = i;
       UI.el('item-view-title').innerHTML = UI.esc(i.Name) + ' ' + UI.badge(i.Status) + (i.Low ? ' <span class="badge text-bg-warning">Low stock</span>' : '');
-      var grid = [['Code', UI.esc(i.Code)], ['Type', typeLabel(i.ItemType) + (i.ItemType === 'PRODUCT' ? (i.IsSellable ? ' · on POS' : ' · not on POS') : '')], ['Category', UI.esc(i.Category || '—')], ['Unit', UI.esc(i.Unit)], ['Cost', F.peso(i.Cost) + ' / ' + UI.esc(i.Unit)]];
+      var grid = [['Code', code(i.Code)], ['Type', typeLabel(i.ItemType) + (i.ItemType === 'PRODUCT' ? (i.IsSellable ? ' · on POS' : ' · not on POS') : '')], ['Category', UI.esc(i.Category || '—')], ['Unit', UI.esc(i.Unit)], ['Cost', F.peso(i.Cost) + ' / ' + UI.esc(i.Unit)]];
       if (i.ItemType === 'PRODUCT') grid.push(['Selling price', F.peso(i.SellingPrice)]);
       grid.push(['Reorder level', i.ReorderLevel > 0 ? F.qty(i.ReorderLevel, i.Unit) : '—'], ['On hand (' + UI.esc(UI.branchName(M.AppState.me.activeBranch)) + ')', '<span class="' + (Number(i.QtyOnHand) < 0 ? 'text-danger' : '') + '">' + F.qty(i.QtyOnHand, i.Unit) + '</span>']);
-      var levels = i.Levels.length ? i.Levels.map(function (l) { return '<tr><td data-label="Branch">' + UI.esc(l.Branch) + '</td><td data-label="On hand" class="text-end fw-bold ' + (Number(l.QtyOnHand) < 0 ? 'text-danger' : '') + '">' + F.qty(l.QtyOnHand, i.Unit) + '</td><td data-label="Updated" class="text-end small text-soft">' + F.datetime(l.UpdatedAt) + '</td></tr>'; }).join('') : '<tr><td colspan="3" class="text-soft">No stock recorded at any branch yet — post beginning stock with Adjust stock.</td></tr>';
-      var used = i.UsedBy.length ? '<h6 class="fw-bold mt-3">Used by services</h6><ul class="mb-0 small">' + i.UsedBy.map(function (u) { return '<li>' + UI.esc(u.Service) + ' — ' + F.qty(u.QtyPerUnit, u.Unit) + ' per unit</li>'; }).join('') + '</ul>' : (i.ItemType === 'MATERIAL' ? '<p class="small text-soft mt-3 mb-0">Not linked to any service yet. Link it under Services → Materials used so orders consume it.</p>' : '');
-      var moves = mv.rows.length ? mv.rows.map(function (m) { return '<tr><td data-label="When" class="small">' + F.datetime(m.CreatedAt) + '</td><td data-label="Movement">' + moveLabel(m.MovementType) + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(m.Branch) + '</div>' : '') + '</td><td data-label="Qty" class="text-end">' + signedQty(m) + '</td><td data-label="After" class="text-end small">' + F.qty(m.QtyAfter) + '</td><td data-label="Notes" class="small text-soft">' + UI.esc(m.Notes || '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="text-soft">No movements yet.</td></tr>';
-      UI.html('item-view-body', '<div class="detail-grid mb-3">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
-        '<h6 class="fw-bold">Stock by branch</h6><div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>Branch</th><th class="text-end">On hand</th><th class="text-end">Updated</th></tr></thead><tbody>' + levels + '</tbody></table></div>' + used +
-        '<h6 class="fw-bold mt-3">Recent movements <span class="text-soft small fw-normal">(' + UI.esc(UI.branchName(M.AppState.me.activeBranch)) + ')</span></h6><div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>When</th><th>Movement</th><th class="text-end">Qty</th><th class="text-end">After</th><th>Notes</th></tr></thead><tbody>' + moves + '</tbody></table></div>');
+      var levels = i.Levels.length ? i.Levels.map(function (l) { return '<tr><td data-label="Branch" class="lead-cell">' + UI.esc(l.Branch) + '</td><td data-label="On hand" class="num fw-bold ' + (Number(l.QtyOnHand) < 0 ? 'text-danger' : '') + '">' + F.qty(l.QtyOnHand, i.Unit) + '</td><td data-label="Updated" class="num small text-soft">' + F.datetime(l.UpdatedAt) + '</td></tr>'; }).join('') : '<tr><td colspan="3" class="text-soft no-label">No stock recorded at any branch yet — post beginning stock with Adjust stock.</td></tr>';
+      var used = i.UsedBy.length ? '<section class="od-section"><h6 class="section-title">Used by services</h6><ul class="mb-0 small">' + i.UsedBy.map(function (u) { return '<li>' + UI.esc(u.Service) + ' — ' + F.qty(u.QtyPerUnit, u.Unit) + ' per unit</li>'; }).join('') + '</ul></section>' : (i.ItemType === 'MATERIAL' ? '<section class="od-section"><h6 class="section-title">Used by services</h6><p class="small text-soft mb-0">Not linked to any service yet. Link it under Services → Materials used so orders consume it.</p></section>' : '');
+      var moves = mv.rows.length ? mv.rows.map(function (m) { return '<tr><td data-label="When" class="small lead-cell">' + F.datetime(m.CreatedAt) + '</td><td data-label="Movement">' + moveLabel(m.MovementType) + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(m.Branch) + '</div>' : '') + '</td><td data-label="Qty" class="num">' + signedQty(m) + '</td><td data-label="After" class="num small">' + F.qty(m.QtyAfter) + '</td><td data-label="Notes" class="small text-soft">' + UI.esc(m.Notes || '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="text-soft no-label">No movements yet.</td></tr>';
+      UI.html('item-view-body', '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
+        '<section class="od-section"><h6 class="section-title">Stock by branch</h6><div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Branch</th><th class="num">On hand</th><th class="num">Updated</th></tr></thead><tbody>' + levels + '</tbody></table></div></section>' + used +
+        '<section class="od-section"><h6 class="section-title">Recent movements <span class="text-soft small fw-normal">(' + UI.esc(UI.branchName(M.AppState.me.activeBranch)) + ')</span></h6><div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>When</th><th>Movement</th><th class="num">Qty</th><th class="num">After</th><th>Notes</th></tr></thead><tbody>' + moves + '</tbody></table></div></section>');
+      // the footer ordered like the order dialog's (1.30.0): Close at the left, the item's actions at the right, Adjust stock (the one primary) last
       var acts = [];
-      if (canAdjust() && i.Status === 'ACTIVE') acts.push('<button type="button" class="btn btn-sm btn-primary" data-act="adjust"><i class="fa-solid fa-sliders me-1"></i>Adjust stock</button>');
-      if (canTransfer() && i.Status === 'ACTIVE') acts.push('<button type="button" class="btn btn-sm btn-outline-primary" data-act="transfer"><i class="fa-solid fa-right-left me-1"></i>Transfer</button>');
       if (canAdjust()) acts.push('<button type="button" class="btn btn-sm btn-outline-primary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button>');
-      UI.html('item-view-actions', acts.join('') + '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>');
+      if (canTransfer() && i.Status === 'ACTIVE') acts.push('<button type="button" class="btn btn-sm btn-outline-primary" data-act="transfer"><i class="fa-solid fa-right-left me-1"></i>Transfer</button>');
+      if (canAdjust() && i.Status === 'ACTIVE') acts.push('<button type="button" class="btn btn-sm btn-primary" data-act="adjust"><i class="fa-solid fa-sliders me-1"></i>Adjust stock</button>');
+      UI.html('item-view-actions', '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button><span class="spacer"></span>' + acts.join(''));
       UI.el('item-view-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); M.Modal.closeThen('item-view-modal', function () { if (a === 'adjust') openMove(i); else if (a === 'transfer') openTransfer(i); else openForm(i); }); }; });
       M.Modal.open('item-view-modal');
     }).catch(function (e) { Toast.danger(UI.error(e)); });
@@ -4571,7 +4598,9 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — PurchasesPage.html: the Purchases module: supplier deliveries that bring stock in, the purchase register with payment status, and suppliers. -->
+        <!-- Mrs Laundry Sys — PurchasesPage.html: the Purchases module: supplier deliveries that bring stock in, the purchase register with payment status, and suppliers.
+     1.30.0 (stage 5): skeleton rows and Try again, amount columns, a card per purchase and per supplier on a phone, each delivered item one row,
+     a purchase's line on a phone with the item picker on its own row, the purchase's footer ordered, labels tied to their fields. -->
 <section id="view-purchases" class="view" hidden>
   <div class="view-head">
     <h2>Purchases</h2>
@@ -4595,18 +4624,18 @@ window.MLS = (function () {
       <div class="modal-header"><h5 class="modal-title">New purchase</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
         <div class="row g-2 mb-3">
-          <div class="col-md-4" id="po-branch-wrap"><label class="form-label">Branch receiving the stock</label><select class="form-select" name="branchId"></select></div>
-          <div class="col-md-4"><label class="form-label">Supplier</label><select class="form-select" name="supplierId"></select></div>
-          <div class="col-md-4" id="po-supplier-new" hidden><label class="form-label">New supplier name</label><input class="form-control" name="supplierName" maxlength="80"></div>
-          <div class="col-md-4"><label class="form-label">Purchase date</label><input class="form-control" name="purchaseDate" type="date" required></div>
+          <div class="col-md-4" id="po-branch-wrap"><label class="form-label" for="po-f-branch">Branch receiving the stock</label><select class="form-select" id="po-f-branch" name="branchId"></select></div>
+          <div class="col-md-4"><label class="form-label" for="po-f-supplier">Supplier</label><select class="form-select" id="po-f-supplier" name="supplierId"></select></div>
+          <div class="col-md-4" id="po-supplier-new" hidden><label class="form-label" for="po-f-supname">New supplier name</label><input class="form-control" id="po-f-supname" name="supplierName" maxlength="80"></div>
+          <div class="col-md-4"><label class="form-label" for="po-f-date">Purchase date</label><input class="form-control" id="po-f-date" name="purchaseDate" type="date" required></div>
         </div>
         <div class="line-editor-head"><span>Item</span><span>Qty</span><span>Unit cost</span><span class="lt">Line total</span><span></span></div>
         <div id="po-lines"></div>
         <button type="button" class="btn btn-sm btn-outline-primary mb-3" id="po-add-line"><i class="fa-solid fa-plus me-1"></i>Add item</button>
         <div class="row g-2">
-          <div class="col-md-4"><label class="form-label">Other charges</label><input class="form-control money" name="otherCharges" type="number" step="0.01" min="0" inputmode="decimal" placeholder="delivery, handling"></div>
-          <div class="col-md-4"><label class="form-label">Payment</label><select class="form-select" name="paymentStatus"><option value="UNPAID">Unpaid (on account)</option><option value="PARTIAL">Partially paid</option><option value="PAID">Paid</option></select></div>
-          <div class="col-md-4"><label class="form-label">Notes</label><input class="form-control" name="notes" maxlength="300" placeholder="Invoice no., remarks"></div>
+          <div class="col-md-4"><label class="form-label" for="po-f-other">Other charges</label><input class="form-control money" id="po-f-other" name="otherCharges" type="number" step="0.01" min="0" inputmode="decimal" placeholder="delivery, handling"></div>
+          <div class="col-md-4"><label class="form-label" for="po-f-pay">Payment</label><select class="form-select" id="po-f-pay" name="paymentStatus"><option value="UNPAID">Unpaid (on account)</option><option value="PARTIAL">Partially paid</option><option value="PAID">Paid</option></select></div>
+          <div class="col-md-4"><label class="form-label" for="po-f-notes">Notes</label><input class="form-control" id="po-f-notes" name="notes" maxlength="300" placeholder="Invoice no., remarks"></div>
         </div>
         <div class="totals mt-3" id="po-totals"></div>
         <div class="alert alert-danger py-2 small mt-2" id="po-error" hidden></div>
@@ -4631,19 +4660,19 @@ window.MLS = (function () {
     <div class="modal-content">
       <div class="modal-header"><h5 class="modal-title">Suppliers</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
-        <div class="table-wrap mb-3"><table class="table table-sm table-cards mb-0"><thead><tr><th>Supplier</th><th>Contact</th><th>Terms</th><th>Status</th><th></th></tr></thead><tbody id="sup-rows"></tbody></table></div>
+        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Supplier</th><th>Contact</th><th>Terms</th><th>Status</th><th></th></tr></thead><tbody id="sup-rows"></tbody></table></div>
         <form id="sup-form" class="border rounded p-3" autocomplete="off" hidden>
           <h6 class="fw-bold" id="sup-form-title">New supplier</h6>
           <input type="hidden" name="Id">
           <div class="row g-2">
-            <div class="col-md-6"><label class="form-label small">Name</label><input class="form-control form-control-sm" name="Name" maxlength="80" required></div>
-            <div class="col-md-6"><label class="form-label small">Contact person</label><input class="form-control form-control-sm" name="ContactPerson" maxlength="80"></div>
-            <div class="col-md-4"><label class="form-label small">Phone</label><input class="form-control form-control-sm" name="Phone" maxlength="30" inputmode="tel"></div>
-            <div class="col-md-4"><label class="form-label small">E-mail</label><input class="form-control form-control-sm" name="Email" type="email"></div>
-            <div class="col-md-4"><label class="form-label small">Terms</label><input class="form-control form-control-sm" name="Terms" maxlength="60" placeholder="COD, 15 days…"></div>
-            <div class="col-md-4"><label class="form-label small">Lead time (days)</label><input class="form-control form-control-sm" name="LeadTimeDays" type="number" min="0" max="365" step="1" inputmode="numeric" placeholder="order to delivery"></div>
-            <div class="col-md-4"><label class="form-label small">Address</label><input class="form-control form-control-sm" name="Address" maxlength="200"></div>
-            <div class="col-md-4"><label class="form-label small">Status</label><select class="form-select form-select-sm" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
+            <div class="col-md-6"><label class="form-label small" for="sup-f-name">Name</label><input class="form-control form-control-sm" id="sup-f-name" name="Name" maxlength="80" required></div>
+            <div class="col-md-6"><label class="form-label small" for="sup-f-contact">Contact person</label><input class="form-control form-control-sm" id="sup-f-contact" name="ContactPerson" maxlength="80"></div>
+            <div class="col-md-4"><label class="form-label small" for="sup-f-phone">Phone</label><input class="form-control form-control-sm" id="sup-f-phone" name="Phone" maxlength="30" inputmode="tel"></div>
+            <div class="col-md-4"><label class="form-label small" for="sup-f-email">E-mail</label><input class="form-control form-control-sm" id="sup-f-email" name="Email" type="email"></div>
+            <div class="col-md-4"><label class="form-label small" for="sup-f-terms">Terms</label><input class="form-control form-control-sm" id="sup-f-terms" name="Terms" maxlength="60" placeholder="COD, 15 days…"></div>
+            <div class="col-md-4"><label class="form-label small" for="sup-f-lead">Lead time (days)</label><input class="form-control form-control-sm" id="sup-f-lead" name="LeadTimeDays" type="number" min="0" max="365" step="1" inputmode="numeric" placeholder="order to delivery"></div>
+            <div class="col-md-4"><label class="form-label small" for="sup-f-address">Address</label><input class="form-control form-control-sm" id="sup-f-address" name="Address" maxlength="200"></div>
+            <div class="col-md-4"><label class="form-label small" for="sup-f-status">Status</label><select class="form-select form-select-sm" id="sup-f-status" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
           </div>
           <div class="d-flex gap-2 mt-3"><button type="submit" class="btn btn-sm btn-primary">Save supplier</button><button type="button" class="btn btn-sm btn-outline-secondary" id="sup-cancel">Cancel</button></div>
         </form>
@@ -4668,26 +4697,29 @@ window.MLS = (function () {
   function loadItems(force) { if (items && !force) return Promise.resolve(items); return Api.call('inventory.all', {}).then(function (r) { items = r; return r; }); }
   function loadSuppliers(force, includeInactive) { if (suppliers && !force && !includeInactive) return Promise.resolve(suppliers); return Api.call('purchases.suppliers', { includeInactive: !!includeInactive }).then(function (r) { if (!includeInactive) suppliers = r; return r; }); }
   function itemById(id) { return (items || []).filter(function (i) { return i.Id === id; })[0] || null; }
+  /** Grey rows while the register waits for its first answer (after 160 ms, so a saved list never flashes them); the reason and Try again when it fails with nothing on screen (1.30.0). */
+  function waiting(box, label) { if (!box.innerHTML) setTimeout(function () { if (!box.innerHTML) box.innerHTML = UI.skeleton({ kind: 'rows', count: 4, label: label }); }, 160); }
+  function failed(box, title, e, again) { if (box.querySelector('table')) return; box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: title, hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }); var b = box.querySelector('[data-empty-action]'); if (b) b.onclick = function () { box.innerHTML = ''; again(); }; }
   function round2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
 
   // ---------------------------------------------------------------- register
   var listSeq = Api.sequence();
   function load() {
-    var box = UI.el('po-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    var box = UI.el('po-table'); waiting(box, 'Loading the purchases');
     return Api.read('purchases.list', { search: state.search, paymentStatus: state.status, from: state.from, to: state.to, page: state.page, size: 25 }, { seq: listSeq, paint: function (r) {
       M.Table.render(UI.el('po-table'), {
         columns: [
-          { key: 'PurchaseNo', label: 'Purchase', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + F.date(r.PurchaseDate) + (M.AppState.me.activeBranch === 'ALL' ? ' · ' + UI.esc(UI.branchName(r.BranchId)) : '') + '</div>'; } },
+          { key: 'PurchaseNo', label: 'Purchase', cls: 'lead-cell', format: function (v, r) { return '<span class="lead-status ph-only">' + UI.badge(r.PaymentStatus) + '</span><span class="fw-bold">' + F.breakable(v) + '</span><div class="small text-soft">' + F.date(r.PurchaseDate) + (M.AppState.me.activeBranch === 'ALL' ? ' · ' + UI.esc(UI.branchName(r.BranchId)) : '') + '</div>'; } },
           { key: 'Supplier', label: 'Supplier', format: function (v, r) { return UI.esc(v || '—') + (r.Notes ? '<div class="small text-soft">' + UI.esc(r.Notes) + '</div>' : ''); } },
-          { key: 'Total', label: 'Total', align: 'right', format: function (v, r) { return '<span class="money fw-bold">' + F.peso(v) + '</span>' + (Number(r.OtherCharges) > 0 ? '<div class="small text-soft">incl. ' + F.peso(r.OtherCharges) + ' charges</div>' : ''); } },
-          { key: 'PaymentStatus', label: 'Payment', format: function (v) { return UI.badge(v); } },
+          { key: 'Total', label: 'Total', num: true, format: function (v, r) { return '<span class="money fw-bold">' + F.peso(v) + '</span>' + (Number(r.OtherCharges) > 0 ? '<div class="small text-soft">incl. ' + F.peso(r.OtherCharges) + ' charges</div>' : ''); } },
+          { key: 'PaymentStatus', label: 'Payment', cls: 'ph-hide', format: function (v) { return UI.badge(v); } },
           { key: 'CreatedBy', label: 'Posted by', format: function (v) { return '<span class="small">' + UI.esc(v || '') + '</span>'; } }
         ],
-        rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-truck-ramp-box', title: 'No purchases yet', hint: 'Post a supplier delivery to bring stock in; the cost updates the items and the stock ledger.', action: canCreate() ? { label: 'New purchase', icon: 'fa-plus', onClick: openForm } : null },
+        cls: 'aligned', rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-truck-ramp-box', title: 'No purchases yet', hint: 'Post a supplier delivery to bring stock in; the cost updates the items and the stock ledger.', action: canCreate() ? { label: 'New purchase', icon: 'fa-plus', onClick: openForm } : null },
         onPage: function (p) { state.page = p; load(); }, onRow: function (row) { open(row.Id); }
       });
       UI.el('po-scope').textContent = r.total + ' purchase' + (r.total === 1 ? '' : 's') + (Number(r.unpaid) > 0 ? ' · ' + F.peso(r.unpaid) + ' unpaid' : '');
-    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Purchases: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Purchases: ' + UI.error(e)); failed(box, 'The purchases could not be loaded', e, load); });
   }
 
   // ---------------------------------------------------------------- new purchase
@@ -4708,9 +4740,9 @@ window.MLS = (function () {
     var host = UI.el('po-lines');
     host.innerHTML = lines.map(function (l) {
       return '<div class="line-editor" data-key="' + l.key + '">' +
-        '<select class="form-select form-select-sm" data-f="itemId"><option value="">Choose an item</option>' + UI.options(items || [], l.itemId, function (i) { return i.Name + ' (' + i.Unit + ')'; }) + '</select>' +
-        '<input class="form-control form-control-sm text-end" data-f="qty" type="number" step="any" min="0" inputmode="decimal" value="' + UI.esc(l.qty) + '" aria-label="Quantity">' +
-        '<input class="form-control form-control-sm text-end" data-f="unitCost" type="number" step="0.01" min="0" inputmode="decimal" value="' + UI.esc(l.unitCost) + '" placeholder="cost" aria-label="Unit cost">' +
+        '<select class="form-select form-select-sm" data-f="itemId" aria-label="Item"><option value="">Choose an item</option>' + UI.options(items || [], l.itemId, function (i) { return i.Name + ' (' + i.Unit + ')'; }) + '</select>' +
+        '<label class="le-field"><span class="le-tag">Qty</span><input class="form-control form-control-sm text-end" data-f="qty" type="number" step="any" min="0" inputmode="decimal" value="' + UI.esc(l.qty) + '" aria-label="Quantity"></label>' +
+        '<label class="le-field"><span class="le-tag">₱</span><input class="form-control form-control-sm text-end" data-f="unitCost" type="number" step="0.01" min="0" inputmode="decimal" value="' + UI.esc(l.unitCost) + '" placeholder="cost" aria-label="Unit cost"></label>' +
         '<span class="lt">' + F.peso(lineTotal(l)) + '</span>' +
         '<button type="button" class="lx" data-rm="' + l.key + '" aria-label="Remove line"><i class="fa-solid fa-xmark"></i></button></div>';
     }).join('');
@@ -4751,13 +4783,14 @@ window.MLS = (function () {
     UI.el('po-view-title').innerHTML = UI.esc(p.PurchaseNo) + ' ' + UI.badge(p.PaymentStatus);
     var grid = [['Supplier', UI.esc(p.Supplier || '—')], ['Branch', UI.esc(p.Branch)], ['Date', F.date(p.PurchaseDate)], ['Items', F.peso(p.Subtotal)], ['Other charges', F.peso(p.OtherCharges)], ['Total', '<span class="text-primary">' + F.peso(p.Total) + '</span>'], ['Posted by', UI.esc(p.CreatedBy || '') + '<div class="small text-soft fw-normal">' + F.datetime(p.CreatedAt) + '</div>']];
     var mv = {}; (p.Movements || []).forEach(function (m) { mv[m.ItemId] = m; });
-    var rows = p.Lines.map(function (l) { var m = mv[l.ItemId]; return '<tr><td data-label="Item"><span class="fw-bold">' + UI.esc(l.ItemName) + '</span>' + (m ? '<div class="small text-soft">stock ' + F.qty(m.QtyBefore) + ' → ' + F.qty(m.QtyAfter) + '</div>' : '') + '</td><td data-label="Qty" class="text-end">' + F.qty(l.Qty, l.Unit) + '</td><td data-label="Unit cost" class="text-end money">' + F.peso(l.UnitCost) + '</td><td data-label="Line total" class="text-end money fw-bold">' + F.peso(l.LineTotal) + '</td></tr>'; }).join('');
-    UI.html('po-view-body', '<div class="detail-grid mb-3">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' + (p.Notes ? '<div class="alert alert-light border small py-2">' + UI.esc(p.Notes) + '</div>' : '') +
-      '<div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>Item</th><th class="text-end">Qty</th><th class="text-end">Unit cost</th><th class="text-end">Line total</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      (canEdit() ? '<form class="row g-2 align-items-end mt-2" id="po-edit-form" autocomplete="off"><div class="col-md-4"><label class="form-label small">Payment</label><select class="form-select form-select-sm" name="paymentStatus">' + UI.options(['UNPAID', 'PARTIAL', 'PAID'], p.PaymentStatus, function (s) { return F.status(s); }, function (s) { return s; }) + '</select></div><div class="col-md-6"><label class="form-label small">Notes</label><input class="form-control form-control-sm" name="notes" maxlength="300" value="' + UI.esc(p.Notes || '') + '"></div><div class="col-md-2 d-grid"><button type="submit" class="btn btn-sm btn-primary">Save</button></div></form><p class="small text-soft mt-2 mb-0">Lines are final once posted because the stock has moved. To correct a wrong delivery post a stock adjustment under Inventory.</p>' : ''));
+    var rows = p.Lines.map(function (l) { var m = mv[l.ItemId]; return '<tr><td data-label="Item"><span class="fw-bold">' + UI.esc(l.ItemName) + '</span><span class="ph-only sub">' + F.qty(l.Qty, l.Unit) + ' × ' + F.peso(l.UnitCost) + '</span>' + (m ? '<div class="small text-soft">stock ' + F.qty(m.QtyBefore) + ' → ' + F.qty(m.QtyAfter) + '</div>' : '') + '</td><td data-label="Qty" class="num ph-hide">' + F.qty(l.Qty, l.Unit) + '</td><td data-label="Unit cost" class="num money ph-hide">' + F.peso(l.UnitCost) + '</td><td data-label="Line total" class="num money fw-bold">' + F.peso(l.LineTotal) + '</td></tr>'; }).join('');
+    UI.html('po-view-body', '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' + (p.Notes ? '<div class="alert alert-light border small py-2 mt-3 mb-0">' + UI.esc(p.Notes) + '</div>' : '') +
+      '<section class="od-section"><h6 class="section-title">Items delivered</h6><div class="table-wrap"><table class="table table-sm table-cards compact mb-0"><thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Unit cost</th><th class="num">Line total</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>' +
+      (canEdit() ? '<section class="od-section"><h6 class="section-title">Payment and notes</h6><form class="row g-2 align-items-end" id="po-edit-form" autocomplete="off"><div class="col-md-4"><label class="form-label small" for="po-e-pay">Payment</label><select class="form-select form-select-sm" id="po-e-pay" name="paymentStatus">' + UI.options(['UNPAID', 'PARTIAL', 'PAID'], p.PaymentStatus, function (s) { return F.status(s); }, function (s) { return s; }) + '</select></div><div class="col-md-6"><label class="form-label small" for="po-e-notes">Notes</label><input class="form-control form-control-sm" id="po-e-notes" name="notes" maxlength="300" value="' + UI.esc(p.Notes || '') + '"></div><div class="col-md-2 d-grid"><button type="submit" class="btn btn-sm btn-outline-primary">Save</button></div></form><p class="small text-soft mt-2 mb-0">Lines are final once posted because the stock has moved. To correct a wrong delivery post a stock adjustment under Inventory.</p></section>' : ''));
     var ef = UI.el('po-edit-form');
     if (ef) ef.onsubmit = function (ev) { ev.preventDefault(); var d = Form.read(ef); Api.call('purchases.update', { id: p.Id, paymentStatus: d.paymentStatus, notes: d.notes }, { busy: true }).then(function (u) { Toast.success('Purchase updated'); paint(u); load(); }).catch(function (e) { Toast.danger(UI.error(e)); }); };
-    UI.html('po-view-actions', (canEdit() && p.PaymentStatus !== 'PAID' ? '<button type="button" class="btn btn-sm btn-success" data-act="paid"><i class="fa-solid fa-check me-1"></i>Mark as paid</button>' : '') + '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>');
+    // the footer ordered like the order dialog's (1.30.0): Close at the left, Mark as paid (the one primary) at the right
+    UI.html('po-view-actions', '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button><span class="spacer"></span>' + (canEdit() && p.PaymentStatus !== 'PAID' ? '<button type="button" class="btn btn-sm btn-primary" data-act="paid"><i class="fa-solid fa-check me-1"></i>Mark as paid</button>' : ''));
     var paid = UI.el('po-view-actions').querySelector('[data-act=paid]');
     if (paid) paid.onclick = function () { Api.call('purchases.update', { id: p.Id, paymentStatus: 'PAID' }, { busy: true }).then(function (u) { Toast.success(u.PurchaseNo + ' marked as paid'); paint(u); load(); }).catch(function (e) { Toast.danger(UI.error(e)); }); };
   }
@@ -4765,12 +4798,13 @@ window.MLS = (function () {
 
   // ---------------------------------------------------------------- suppliers
   function paintSuppliers(list) {
-    UI.html('sup-rows', list.length ? list.map(function (s) { return '<tr><td data-label="Supplier"><span class="fw-bold">' + UI.esc(s.Name) + '</span>' + (s.Address ? '<div class="small text-soft">' + UI.esc(s.Address) + '</div>' : '') + '</td><td data-label="Contact" class="small">' + UI.esc([s.ContactPerson, s.Phone, s.Email].filter(Boolean).join(' · ') || '—') + '</td><td data-label="Terms" class="small">' + UI.esc(s.Terms || '—') + (s.LeadTimeDays !== '' && s.LeadTimeDays !== undefined ? '<div class="text-soft">lead time ' + UI.esc(s.LeadTimeDays) + ' day' + (Number(s.LeadTimeDays) === 1 ? '' : 's') + '</div>' : '') + '</td><td data-label="Status">' + UI.badge(s.Status) + '</td><td class="text-end">' + (canSuppliers() ? '<button type="button" class="btn btn-sm btn-link p-0" data-edit="' + UI.esc(s.Id) + '">edit</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="text-soft">No suppliers yet.</td></tr>');
+    UI.html('sup-rows', list.length ? list.map(function (s) { return '<tr><td data-label="Supplier" class="lead-cell"><span class="lead-status ph-only">' + UI.badge(s.Status) + '</span><span class="fw-bold">' + UI.esc(s.Name) + '</span>' + (s.Address ? '<div class="small text-soft">' + UI.esc(s.Address) + '</div>' : '') + '</td><td data-label="Contact" class="small">' + UI.esc([s.ContactPerson, s.Phone, s.Email].filter(Boolean).join(' · ') || '—') + '</td><td data-label="Terms" class="small">' + UI.esc(s.Terms || '—') + (s.LeadTimeDays !== '' && s.LeadTimeDays !== undefined ? '<div class="text-soft">lead time ' + UI.esc(s.LeadTimeDays) + ' day' + (Number(s.LeadTimeDays) === 1 ? '' : 's') + '</div>' : '') + '</td><td data-label="Status" class="ph-hide">' + UI.badge(s.Status) + '</td><td class="text-end no-label">' + (canSuppliers() ? '<button type="button" class="btn btn-sm btn-link p-0" data-edit="' + UI.esc(s.Id) + '">edit</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="text-soft no-label">No suppliers yet.</td></tr>');
     UI.el('sup-rows').querySelectorAll('[data-edit]').forEach(function (b) { b.onclick = function () { var s = list.filter(function (x) { return x.Id === b.getAttribute('data-edit'); })[0]; openSupplierForm(s); }; });
   }
   function openSuppliers() {
     UI.el('sup-form').hidden = true; UI.el('sup-new').hidden = !canSuppliers();
-    loadSuppliers(true, true).then(paintSuppliers).catch(function (e) { Toast.danger(UI.error(e)); });
+    UI.html('sup-rows', '<tr><td colspan="5" class="no-label">' + UI.skeleton({ kind: 'rows', count: 2, label: 'Loading the suppliers' }) + '</td></tr>');
+    loadSuppliers(true, true).then(paintSuppliers).catch(function (e) { Toast.danger(UI.error(e)); UI.html('sup-rows', '<tr><td colspan="5" class="no-label">' + UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The suppliers could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' }, compact: true }) + '</td></tr>'); var b = UI.el('sup-rows').querySelector('[data-empty-action]'); if (b) b.onclick = openSuppliers; });
     M.Modal.open('sup-modal');
   }
   function openSupplierForm(s) {
