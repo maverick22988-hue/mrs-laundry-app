@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '91ee5e7f23', version: '1.30.0' };</script>
+  <script>window.MLS_PWA = { build: '0df8da6541', version: '1.31.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -341,7 +341,7 @@
   @media (min-width: 992px) { .od-money { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; } .od-money > .od-totals { grid-column: 2; grid-row: 1; } .od-money > .od-pays { grid-column: 1; grid-row: 1; } }  /* beside each other only in the wide dialog; a tablet's 500 px dialog stacks them, the payments at full width */
   .sum-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; margin: 10px 0; }
   .sum-grid .tile { background: var(--mls-well); border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px 10px; min-width: 0; }
-  .sum-grid .tile .k { font-size: .72rem; color: var(--mls-ink-soft); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sum-grid .tile .k { font-size: var(--fs-xs); color: var(--mls-ink-soft);  /* 12 px since 1.31.0 (it was 11.5 px, muted) */  text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sum-grid .tile .v { font-size: 1.15rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
   .sum-grid .tile .v.text { font-size: 1rem; }
   .side-list { max-height: 70vh; overflow: auto; } .side-list button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: .55rem .75rem; border-bottom: 1px solid var(--mls-line); min-height: var(--mls-tap); }
@@ -746,6 +746,10 @@
     .line-editor .lt { display: block; min-width: 72px; } .line-editor-head { display: none; }
     .table-cards.aligned tbody td[colspan] { text-align: left; }  /* a list's message (no price yet, no materials) reads from the left */
   }
+  /* 1.31.0 (stage 5, Equipment, Incidents, Expenses). The machines' placeholders and their failure state span the grid; an expense's
+     locked note takes the room between Close and the actions. */
+  .machine-grid > .skeleton-wrap, .machine-grid > .empty-state { grid-column: 1 / -1; }
+  .modal-footer .exp-locked { flex: 1 1 200px; }
 </style>
 
 </head>
@@ -932,7 +936,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.30.0';
+  var VERSION = '1.31.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -5070,7 +5074,8 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — EquipmentPage.html: the Equipment module (release 1.15.0, audit R16): the machines of each branch with their service plan and whether they run, the out-of-service and back-in-service dialogs, maintenance and repairs with their cost (an expense when asked), utilisation from the production log, and every machine's history. -->
+        <!-- Mrs Laundry Sys — EquipmentPage.html: the Equipment module (release 1.15.0, audit R16): the machines of each branch with their service plan and whether they run, the out-of-service and back-in-service dialogs, maintenance and repairs with their cost (an expense when asked), utilisation from the production log, and every machine's history.
+     1.31.0 (stage 5): grey placeholders and Try again on the three tabs, amount columns, a card per row on a phone, the machine's parts titled and its footer ordered (Close at the left, the next step at the right). -->
 <section id="view-equipment" class="view" hidden>
   <div class="view-head">
     <h2>Equipment</h2>
@@ -5211,6 +5216,9 @@ window.MLS = (function () {
     var cls = s.state === 'DUE' ? 'DUE' : (s.state === 'SOON' ? 'SOON' : 'OK');
     return UI.badge(cls, s.state === 'DUE' ? 'Service due' : (s.state === 'SOON' ? 'Service soon' : 'Service OK')) + ' <span class="small text-soft">' + UI.esc(bits.join(' · ')) + '</span>';
   }
+  /** Grey placeholders while a tab waits for its first answer (after 160 ms, so a saved list never flashes them); the reason and Try again when it fails with nothing on screen (1.31.0). */
+  function waiting(box, label, kind) { if (!box.querySelector('table, .machine-card')) setTimeout(function () { if (!box.querySelector('table, .machine-card, .empty-state')) box.innerHTML = UI.skeleton({ kind: kind || 'rows', count: 4, label: label }); }, 160); }
+  function failed(box, title, e, again) { if (box.querySelector('table, .machine-card')) return; box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: title, hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }); var b = box.querySelector('[data-empty-action]'); if (b) b.onclick = function () { box.innerHTML = ''; again(); }; }
   function statusBadge(m) { return UI.badge(m.Status, m.Status === 'DOWN' ? 'Out of service' : (m.Status === 'RETIRED' ? 'Retired' : 'In service')); }
 
   // ---------------------------------------------------------------- machines
@@ -5229,6 +5237,7 @@ window.MLS = (function () {
   }
   var listSeq = Api.sequence();
   function load() {
+    var box = UI.el('eq-machines'); waiting(box, 'Loading the machines', 'cards');
     return Api.read('equipment.list', {}, { seq: listSeq, paint: function (r) {
       data = r; var c = r.counts;
       UI.html('eq-tiles', [['Machines', c.total], ['In service', c.active], ['Out of service', c.down], ['Service due', c.due], ['Service soon', c.soon]].map(function (t) { return '<div class="tile"><div class="k">' + t[0] + '</div><div class="v">' + t[1] + '</div></div>'; }).join(''));
@@ -5240,7 +5249,7 @@ window.MLS = (function () {
       UI.el('eq-count-down').textContent = c.down || '';
       UI.el('eq-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + c.total + ' machine' + (c.total === 1 ? '' : 's') + (c.down ? ' · ' + c.down + ' out of service' : '');
       UI.el('eq-new').hidden = !r.canEdit;
-    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Equipment: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Equipment: ' + UI.error(e)); failed(box, 'The machines could not be loaded', e, load); });
   }
   function findRow(id) { return (data && data.rows || []).filter(function (m) { return m.Id === id; })[0] || current; }
 
@@ -5256,26 +5265,28 @@ window.MLS = (function () {
       (m.Status === 'DOWN' && m.OpenLog ? '<div class="alert alert-danger py-2 small"><b>' + UI.esc(LOG_LABEL[m.OpenLog.LogType] || m.OpenLog.LogType) + ' since ' + F.datetime(m.DownAt) + '.</b> ' + UI.esc(m.OpenLog.Problem) + ' <span class="text-soft">— reported by ' + UI.esc(m.OpenLog.By) + '</span></div>' : '') +
       (m.InUse ? '<div class="alert alert-info py-2 small"><i class="fa-solid fa-spinner me-1"></i>Running ' + UI.esc(m.InUse.OrderNo) + ' (' + UI.esc(F.status(m.InUse.Stage).toLowerCase()) + ') since ' + F.datetime(m.InUse.Since) + '</div>' : '') +
       '<div class="mb-2">' + serviceBadge(m.Service) + '</div>' +
-      '<div class="detail-grid mb-3">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
-      '<h6 class="fw-bold">The last 30 days</h6><div class="sum-grid mb-3">' + [['Loads', u.Loads || 0], ['In use', hours(u.BusyMinutes)], ['Out of service', hours(u.DowntimeMinutes)], ['Could run', hours(u.AvailableMinutes)], ['Used', (u.UtilisationPct || 0) + '%']].map(function (t) { return '<div class="tile"><div class="k">' + t[0] + '</div><div class="v">' + t[1] + '</div></div>'; }).join('') + '</div>' +
-      (m.Notes ? '<p class="small"><i class="fa-regular fa-note-sticky me-1"></i>' + UI.esc(m.Notes) + '</p>' : '') +
-      '<h6 class="fw-bold">History</h6>' + (logs.length ? '<div class="table-wrap mb-3"><table class="table table-sm table-cards mb-0"><thead><tr><th>When</th><th>What</th><th class="text-end">Stopped</th><th class="text-end">Cost</th><th></th></tr></thead><tbody>' + logs.map(function (l) {
-        return '<tr' + (l.Status === 'VOID' ? ' class="text-faint"' : '') + '><td data-label="When">' + F.datetime(l.StartedAt) + '<div class="small text-soft">' + UI.esc(l.By) + '</div></td><td data-label="What"><span class="fw-bold">' + UI.esc(LOG_LABEL[l.LogType] || l.LogType) + '</span> ' + UI.badge(l.Status) + (l.IsService === true ? ' <span class="badge text-bg-light border">service</span>' : '') +
+      '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
+      '<section class="od-section"><h6 class="section-title">The last 30 days</h6><div class="sum-grid mb-0">' + [['Loads', u.Loads || 0], ['In use', hours(u.BusyMinutes)], ['Out of service', hours(u.DowntimeMinutes)], ['Could run', hours(u.AvailableMinutes)], ['Used', (u.UtilisationPct || 0) + '%']].map(function (t) { return '<div class="tile"><div class="k">' + t[0] + '</div><div class="v">' + t[1] + '</div></div>'; }).join('') + '</div></section>' +
+      (m.Notes ? '<p class="small mt-3 mb-0"><i class="fa-regular fa-note-sticky me-1"></i>' + UI.esc(m.Notes) + '</p>' : '') +
+      '<section class="od-section"><h6 class="section-title">History</h6>' + (logs.length ? '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>When</th><th>What</th><th class="num">Stopped</th><th class="num">Cost</th><th></th></tr></thead><tbody>' + logs.map(function (l) {
+        return '<tr' + (l.Status === 'VOID' ? ' class="text-faint"' : '') + '><td data-label="When" class="lead-cell">' + F.datetime(l.StartedAt) + '<div class="small text-soft">' + UI.esc(l.By) + '</div></td><td data-label="What"><span class="fw-bold">' + UI.esc(LOG_LABEL[l.LogType] || l.LogType) + '</span> ' + UI.badge(l.Status) + (l.IsService === true ? ' <span class="badge text-bg-light border">service</span>' : '') +
           (l.Problem ? '<div class="small">' + UI.esc(l.Problem) + '</div>' : '') + (l.WorkDone ? '<div class="small text-soft">Done: ' + UI.esc(l.WorkDone) + (l.Technician ? ' · ' + UI.esc(l.Technician) : '') + '</div>' : '') + (l.Status === 'VOID' && l.Notes ? '<div class="small text-soft">' + UI.esc(l.Notes) + '</div>' : '') + '</td>' +
-          '<td data-label="Stopped" class="text-end">' + (l.Status === 'OPEN' ? '<span class="text-danger small">still down</span>' : (Number(l.DowntimeMinutes) ? F.minutes(l.DowntimeMinutes) : '—')) + '</td>' +
-          '<td data-label="Cost" class="text-end money">' + (Number(l.Cost) > 0 ? F.peso(l.Cost) : '—') + (l.Expense ? '<div class="small text-soft">' + UI.esc(l.Expense.Id) + (l.Expense.Status === 'VOID' ? ' (void)' : (l.Expense.Status === 'ARCHIVED' ? ' (archived)' : '')) + '</div>' : '') + '</td>' +
-          '<td class="text-end">' + (m.canEdit && l.Status !== 'VOID' ? '<button type="button" class="btn btn-sm btn-link px-2 py-0" data-void="' + UI.esc(l.Id) + '">Void</button>' : '') + '</td></tr>';
-      }).join('') + '</tbody></table></div>' : '<p class="small text-soft">Nothing recorded yet: breakdowns, maintenance and repairs appear here with their downtime and cost.</p>') +
-      '<h6 class="fw-bold">Latest loads</h6>' + ((m.Recent || []).length ? '<div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>Started</th><th>Order</th><th>Stage</th><th class="text-end">Time</th></tr></thead><tbody>' + m.Recent.map(function (l) { return '<tr class="pointer" data-order="' + UI.esc(l.OrderId) + '"><td data-label="Started">' + F.datetime(l.StartedAt) + '<div class="small text-soft">' + UI.esc(l.By) + '</div></td><td data-label="Order" class="fw-bold">' + UI.esc(l.OrderNo) + (Number(l.WeightKg) > 0 ? ' <span class="small text-soft fw-normal">' + F.qty(l.WeightKg, 'kg') + '</span>' : '') + '</td><td data-label="Stage">' + UI.badge(l.Stage) + '</td><td data-label="Time" class="text-end">' + (l.EndedAt ? F.minutes(l.Minutes) : '<span class="small">running</span>') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="small text-soft">No production stage has named this machine yet.</p>'));
+          '<td data-label="Stopped" class="num">' + (l.Status === 'OPEN' ? '<span class="text-danger small">still down</span>' : (Number(l.DowntimeMinutes) ? F.minutes(l.DowntimeMinutes) : '—')) + '</td>' +
+          '<td data-label="Cost" class="num money">' + (Number(l.Cost) > 0 ? F.peso(l.Cost) : '—') + (l.Expense ? '<div class="small text-soft">' + UI.esc(l.Expense.Id) + (l.Expense.Status === 'VOID' ? ' (void)' : (l.Expense.Status === 'ARCHIVED' ? ' (archived)' : '')) + '</div>' : '') + '</td>' +
+          '<td class="text-end no-label">' + (m.canEdit && l.Status !== 'VOID' ? '<button type="button" class="btn btn-sm btn-link px-2 py-0" data-void="' + UI.esc(l.Id) + '">Void</button>' : '') + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : '<p class="small text-soft mb-0">Nothing recorded yet: breakdowns, maintenance and repairs appear here with their downtime and cost.</p>') + '</section>' +
+      '<section class="od-section"><h6 class="section-title">Latest loads</h6>' + ((m.Recent || []).length ? '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Started</th><th>Order</th><th>Stage</th><th class="num">Time</th></tr></thead><tbody>' + m.Recent.map(function (l) { return '<tr class="pointer" data-order="' + UI.esc(l.OrderId) + '"><td data-label="Started" class="lead-cell">' + F.datetime(l.StartedAt) + '<div class="small text-soft">' + UI.esc(l.By) + '</div></td><td data-label="Order" class="fw-bold">' + UI.esc(l.OrderNo) + (Number(l.WeightKg) > 0 ? ' <span class="small text-soft fw-normal">' + F.qty(l.WeightKg, 'kg') + '</span>' : '') + '</td><td data-label="Stage">' + UI.badge(l.Stage) + '</td><td data-label="Time" class="num">' + (l.EndedAt ? F.minutes(l.Minutes) : '<span class="small">running</span>') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="small text-soft mb-0">No production stage has named this machine yet.</p>') + '</section>');
     var body = UI.el('eq-machine-body');
     body.querySelectorAll('[data-void]').forEach(function (b) { b.onclick = function () { voidEntry(b.getAttribute('data-void')); }; });
     body.querySelectorAll('[data-order]').forEach(function (tr) { tr.onclick = function () { Modal.closeThen('eq-machine-modal', function () { M.OrdersUI.openOrder(tr.getAttribute('data-order')); }); }; });
+    // the footer ordered like the order dialog's (1.31.0): Close at the left, then Edit and Record, and the machine's next step
+    // (Out of service, or Back in service) at the right
     var acts = '';
+    if (m.canEdit) acts += '<button type="button" class="btn btn-sm btn-outline-secondary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button>';
+    if (m.Status !== 'RETIRED' && m.canEdit) acts += '<button type="button" class="btn btn-sm btn-outline-primary" data-act="record"><i class="fa-solid fa-screwdriver-wrench me-1"></i>Record maintenance or repair</button>';
     if (m.Status === 'ACTIVE' && m.canReport) acts += '<button type="button" class="btn btn-sm btn-outline-danger" data-act="down"><i class="fa-solid fa-power-off me-1"></i>Out of service</button>';
     if (m.Status === 'DOWN' && m.canEdit) acts += '<button type="button" class="btn btn-sm btn-success" data-act="up"><i class="fa-solid fa-check me-1"></i>Back in service</button>';
-    if (m.Status !== 'RETIRED' && m.canEdit) acts += '<button type="button" class="btn btn-sm btn-outline-primary" data-act="record"><i class="fa-solid fa-screwdriver-wrench me-1"></i>Record maintenance or repair</button>';
-    if (m.canEdit) acts += '<button type="button" class="btn btn-sm btn-outline-secondary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button>';
-    UI.html('eq-machine-actions', acts + '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>');
+    UI.html('eq-machine-actions', '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button><span class="spacer"></span>' + acts);
     UI.el('eq-machine-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); if (a === 'down') openDown(m); else if (a === 'up') openWork('up', m); else if (a === 'record') openWork('record', m); else if (a === 'edit') Modal.closeThen('eq-machine-modal', function () { openForm(m); }); }; });
   }
   function open(id) { return Api.call('equipment.get', { id: id }, { busy: true }).then(function (m) { paint(m); Modal.open('eq-machine-modal'); return m; }).catch(function (e) { Toast.danger(UI.error(e)); }); }
@@ -5354,36 +5365,36 @@ window.MLS = (function () {
   // ---------------------------------------------------------------- utilisation and history
   function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function loadUtil() {
-    var box = UI.el('eq-util-table'); box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    var box = UI.el('eq-util-table'); waiting(box, 'Loading the utilisation');
     return Api.call('equipment.utilisation', { from: state.utilFrom, to: state.utilTo }).then(function (r) {
       var t = r.totals;
       UI.html('eq-util-tiles', [['Machines', t.machines], ['Loads', t.loads], ['In use', hours(t.busyMinutes)], ['Out of service', hours(t.downtimeMinutes)], ['Used', t.utilisationPct + '%'], ['Washed', F.qty(t.weightKg, 'kg')]].map(function (x) { return '<div class="tile"><div class="k">' + x[0] + '</div><div class="v">' + x[1] + '</div></div>'; }).join(''));
       M.Table.render(box, { columns: [
-        { key: 'Code', label: 'Machine', format: function (v, x) { return '<span class="fw-bold">' + UI.esc(v) + '</span> <span class="small text-soft">' + UI.esc(x.Name) + '</span>' + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(x.Branch) + '</div>' : '') + (x.Status === 'DOWN' ? '<div>' + UI.badge('DOWN', 'Out of service') + '</div>' : ''); } },
+        { key: 'Code', label: 'Machine', cls: 'lead-cell', format: function (v, x) { return (x.Status === 'DOWN' ? '<span class="lead-status ph-only">' + UI.badge('DOWN', 'Out of service') + '</span>' : '') + '<span class="fw-bold">' + UI.esc(v) + '</span> <span class="small text-soft">' + UI.esc(x.Name) + '</span>' + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(x.Branch) + '</div>' : '') + (x.Status === 'DOWN' ? '<div class="ph-hide">' + UI.badge('DOWN', 'Out of service') + '</div>' : ''); } },
         { key: 'KindLabel', label: 'Kind' },
-        { key: 'Loads', label: 'Loads', align: 'right' },
-        { key: 'BusyMinutes', label: 'In use', align: 'right', format: function (v) { return hours(v); } },
-        { key: 'DowntimeMinutes', label: 'Out of service', align: 'right', format: function (v) { return Number(v) ? '<span class="text-danger">' + hours(v) + '</span>' : '—'; } },
-        { key: 'AvailableMinutes', label: 'Could run', align: 'right', format: function (v) { return hours(v); } },
-        { key: 'UtilisationPct', label: 'Used', align: 'right', format: function (v) { return '<span class="fw-bold">' + v + '%</span>'; } },
-        { key: 'WeightKg', label: 'Washed', align: 'right', format: function (v) { return Number(v) ? F.qty(v, 'kg') : '—'; } }
-      ], rows: r.rows, empty: { icon: 'fa-chart-column', title: 'No machines to measure', hint: 'Register the machines and name them when a stage starts on the production board.' }, onRow: function (x) { open(x.MachineId); } });
+        { key: 'Loads', label: 'Loads', num: true },
+        { key: 'BusyMinutes', label: 'In use', num: true, format: function (v) { return hours(v); } },
+        { key: 'DowntimeMinutes', label: 'Out of service', num: true, format: function (v) { return Number(v) ? '<span class="text-danger">' + hours(v) + '</span>' : '—'; } },
+        { key: 'AvailableMinutes', label: 'Could run', num: true, format: function (v) { return hours(v); } },
+        { key: 'UtilisationPct', label: 'Used', num: true, format: function (v) { return '<span class="fw-bold">' + v + '%</span>'; } },
+        { key: 'WeightKg', label: 'Washed', num: true, format: function (v) { return Number(v) ? F.qty(v, 'kg') : '—'; } }
+      ], cls: 'aligned', rows: r.rows, empty: { icon: 'fa-chart-column', title: 'No machines to measure', hint: 'Register the machines and name them when a stage starts on the production board.' }, onRow: function (x) { open(x.MachineId); } });
       UI.el('eq-util-note').textContent = 'From ' + F.date(r.from) + ' to ' + F.date(r.to) + ' (' + r.days + ' day' + (r.days === 1 ? '' : 's') + ' × ' + r.hoursPerDay + ' h, the setting MachineHoursPerDay). In use is the time orders spent in a stage on the machine — from the start of the stage to the move to the next one — not the motor\'s running time.' + (r.covers && r.covers.note ? ' ' + r.covers.note + '.' : '') + (r.unregistered.length ? ' Codes typed on the board that no machine carries: ' + r.unregistered.map(function (u) { return u.Code + ' (' + u.Loads + ' load' + (u.Loads === 1 ? '' : 's') + ')'; }).join(', ') + ' — register them to count them.' : '');
-    }).catch(function (e) { box.innerHTML = UI.empty({ icon: 'fa-chart-column', title: 'Utilisation could not be loaded', hint: UI.error(e), compact: true }); });
+    }).catch(function (e) { Toast.danger('Utilisation: ' + UI.error(e)); failed(box, 'The utilisation could not be loaded', e, loadUtil); });
   }
   function loadHistory() {
-    var box = UI.el('eq-hist-table'); box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    var box = UI.el('eq-hist-table'); waiting(box, 'Loading the history');
     return Api.call('equipment.history', { from: state.histFrom, to: state.histTo, logType: state.histType }).then(function (r) {
       var t = r.totals;
       UI.html('eq-hist-tiles', [['Entries', t.entries], ['Breakdowns', t.breakdowns], ['Out of service', hours(t.downtimeMinutes)], ['Cost', F.peso(t.cost)]].map(function (x) { return '<div class="tile"><div class="k">' + x[0] + '</div><div class="v">' + x[1] + '</div></div>'; }).join(''));
       M.Table.render(box, { columns: [
-        { key: 'StartedAt', label: 'When', format: function (v, l) { return F.datetime(v) + '<div class="small text-soft">' + UI.esc(l.By) + '</div>'; } },
+        { key: 'StartedAt', label: 'When', cls: 'lead-cell', format: function (v, l) { return F.datetime(v) + '<div class="small text-soft">' + UI.esc(l.By) + '</div>'; } },
         { key: 'Code', label: 'Machine', format: function (v, l) { return '<span class="fw-bold">' + UI.esc(v) + '</span> <span class="small text-soft">' + UI.esc(l.MachineName) + '</span>'; } },
         { key: 'LogType', label: 'What', format: function (v, l) { return '<span class="fw-bold">' + UI.esc(LOG_LABEL[v] || v) + '</span> ' + UI.badge(l.Status) + (l.Problem ? '<div class="small">' + UI.esc(l.Problem) + '</div>' : '') + (l.WorkDone ? '<div class="small text-soft">Done: ' + UI.esc(l.WorkDone) + '</div>' : ''); } },
-        { key: 'DowntimeMinutes', label: 'Stopped', align: 'right', format: function (v, l) { return l.Status === 'OPEN' ? '<span class="text-danger small">still down</span>' : (Number(v) ? F.minutes(v) : '—'); } },
-        { key: 'Cost', label: 'Cost', align: 'right', format: function (v, l) { return (Number(v) > 0 ? F.peso(v) : '—') + (l.Expense ? '<div class="small text-soft">' + UI.esc(l.Expense.Id) + '</div>' : ''); } }
-      ], rows: r.rows, empty: { icon: 'fa-screwdriver-wrench', title: 'Nothing recorded in this range', hint: 'Breakdowns, maintenance and repairs are listed here with the downtime and the cost.' }, onRow: function (l) { open(l.MachineId); } });
-    }).catch(function (e) { box.innerHTML = UI.empty({ icon: 'fa-screwdriver-wrench', title: 'The history could not be loaded', hint: UI.error(e), compact: true }); });
+        { key: 'DowntimeMinutes', label: 'Stopped', num: true, format: function (v, l) { return l.Status === 'OPEN' ? '<span class="text-danger small">still down</span>' : (Number(v) ? F.minutes(v) : '—'); } },
+        { key: 'Cost', label: 'Cost', num: true, format: function (v, l) { return (Number(v) > 0 ? F.peso(v) : '—') + (l.Expense ? '<div class="small text-soft">' + UI.esc(l.Expense.Id) + '</div>' : ''); } }
+      ], cls: 'aligned', rows: r.rows, empty: { icon: 'fa-screwdriver-wrench', title: 'Nothing recorded in this range', hint: 'Breakdowns, maintenance and repairs are listed here with the downtime and the cost.' }, onRow: function (l) { open(l.MachineId); } });
+    }).catch(function (e) { Toast.danger('History: ' + UI.error(e)); failed(box, 'The history could not be loaded', e, loadHistory); });
   }
   function showTab(t) {
     state.tab = t; UI.el('eq-tabs').querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === t); });
@@ -6075,7 +6086,8 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — IncidentsPage.html: the Incidents module (damage, loss, complaints, delays): the list under the lens, the report dialog every module shares (M.Incidents.report), and the review page for managers. -->
+        <!-- Mrs Laundry Sys — IncidentsPage.html: the Incidents module (damage, loss, complaints, delays): the list under the lens, the report dialog every module shares (M.Incidents.report), and the review page for managers.
+     1.31.0 (stage 5): grey rows and Try again, a card per incident on a phone with its status beside its number, the incident's parts titled and its footer ordered (the next step at the right). -->
 <section id="view-incidents" class="view" hidden>
   <div class="view-head">
     <h2>Incidents</h2>
@@ -6148,6 +6160,9 @@ window.MLS = (function () {
   var TYPES = ['DAMAGE', 'LOSS', 'COMPLAINT', 'DELAY', 'OTHER'], TYPE_LABEL = { DAMAGE: 'Damaged item', LOSS: 'Lost item', COMPLAINT: 'Customer complaint', DELAY: 'Delay', OTHER: 'Other' };
   var state = { status: 'OPEN', type: '', search: '', page: 1 }, current = null, onChange = null;
   function typeLabel(t) { return TYPE_LABEL[t] || F.status(t); }
+  /** Grey rows while the list waits for its first answer (after 160 ms, so a saved list never flashes them); the reason and Try again when it fails with nothing on screen (1.31.0). */
+  function waiting(box, label) { if (!box.innerHTML) setTimeout(function () { if (!box.innerHTML) box.innerHTML = UI.skeleton({ kind: 'rows', count: 4, label: label }); }, 160); }
+  function failed(box, title, e, again) { if (box.querySelector('table')) return; box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: title, hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }); var b = box.querySelector('[data-empty-action]'); if (b) b.onclick = function () { box.innerHTML = ''; again(); }; }
   function typeBadge(t) { return '<span class="badge ' + ({ DAMAGE: 'text-bg-danger', LOSS: 'text-bg-danger', COMPLAINT: 'text-bg-warning', DELAY: 'text-bg-info', OTHER: 'text-bg-secondary' }[t] || 'text-bg-secondary') + '">' + UI.esc(typeLabel(t)) + '</span>'; }
 
   /** M.Incidents.report({ orderId, orderNo, customerId, customerName, deliveryId }, onDone) — the shared report dialog. */
@@ -6171,19 +6186,21 @@ window.MLS = (function () {
     current = i;
     UI.el('inc-title').innerHTML = UI.esc(i.Id) + ' ' + typeBadge(i.Type) + ' ' + UI.badge(i.Status);
     var grid = [['Reported', F.datetime(i.CreatedAt) + ' · ' + UI.esc(i.ReportedBy)], ['Order', i.OrderId ? '<a href="#" data-open-order="' + UI.esc(i.OrderId) + '">' + UI.esc(i.OrderNo || i.OrderId) + '</a>' + (i.OrderStatus ? ' ' + UI.badge(i.OrderStatus) : '') : '—'], ['Customer', UI.esc(i.CustomerName || '—') + (i.CustomerPhone ? '<div class="small text-soft">' + UI.esc(i.CustomerPhone) + '</div>' : '')], ['Delivery job', i.DeliveryId ? UI.esc(i.DeliveryId) + (i.Rider ? ' · ' + UI.esc(i.Rider) : '') + (i.ProofStatus ? '<div class="small">' + UI.badge(i.ProofStatus, { ATTACHED: 'Proof kept', MISSING: 'Proof missing', REMOVED: 'Proof removed' }[i.ProofStatus] || i.ProofStatus) + (i.ReceivedBy ? ' received by ' + UI.esc(i.ReceivedBy) : '') + (i.ProofStatus === 'ATTACHED' && M.Auth.can('DISPATCH_VIEW') ? ' <a href="#" data-open-proof="' + UI.esc(i.DeliveryId) + '">view proof</a>' : '') + '</div>' : '') : '—'], ['Branch', UI.esc(i.Branch)], ['Resolved', i.ResolvedAt ? F.datetime(i.ResolvedAt) + (i.ResolvedByName ? ' by ' + UI.esc(i.ResolvedByName) : '') : '—']];
-    UI.html('inc-body', '<div class="detail-grid mb-3">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
-      '<h6 class="fw-bold">What happened</h6><p class="inc-desc">' + UI.esc(i.Description) + '</p>' +
-      (i.Resolution ? '<h6 class="fw-bold">Resolution</h6><div class="inc-res">' + UI.esc(i.Resolution) + (Number(i.CompensationAmount) > 0 ? '<div class="mt-1 small"><b>Compensation:</b> ' + F.peso(i.CompensationAmount) + '</div>' : '') + '</div>' : ''));
+    UI.html('inc-body', '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
+      '<section class="od-section"><h6 class="section-title">What happened</h6><p class="inc-desc mb-0">' + UI.esc(i.Description) + '</p></section>' +
+      (i.Resolution ? '<section class="od-section"><h6 class="section-title">Resolution</h6><div class="inc-res">' + UI.esc(i.Resolution) + (Number(i.CompensationAmount) > 0 ? '<div class="mt-1 small"><b>Compensation:</b> ' + F.peso(i.CompensationAmount) + '</div>' : '') + '</div></section>' : ''));
     UI.el('inc-body').querySelectorAll('[data-open-order]').forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); Modal.closeThen('inc-modal', function () { M.OrdersUI.openOrder(a.getAttribute('data-open-order')); }); }; });
     UI.el('inc-body').querySelectorAll('[data-open-proof]').forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); M.DeliveriesUI.openProof(a.getAttribute('data-open-proof')); }; });  // 1.15.0: the proof kept with the delivery
+    // the footer ordered like the order dialog's (1.31.0): Edit details and the text messages at the left, then Reopen, Close,
+    // Start review and Resolve, the next step, at the right
     var acts = [], t = i.Transitions || [];
+    if (t.indexOf('OPEN') >= 0) acts.push(['OPEN', 'btn-outline-warning', 'fa-rotate-left', 'Reopen']);
+    if (t.indexOf('CLOSED') >= 0) acts.push(['CLOSED', 'btn-outline-secondary', 'fa-box-archive', 'Close']);
     if (t.indexOf('IN_REVIEW') >= 0) acts.push(['IN_REVIEW', 'btn-outline-primary', 'fa-magnifying-glass', 'Start review']);
     if (t.indexOf('RESOLVED') >= 0) acts.push(['RESOLVED', 'btn-success', 'fa-circle-check', 'Resolve']);
-    if (t.indexOf('CLOSED') >= 0) acts.push(['CLOSED', 'btn-outline-secondary', 'fa-box-archive', 'Close']);
-    if (t.indexOf('OPEN') >= 0) acts.push(['OPEN', 'btn-outline-warning', 'fa-rotate-left', 'Reopen']);
-    if (i.CanManage) acts.push(['EDIT', 'btn-outline-secondary', 'fa-pen', 'Edit details']);
+    var edit = i.CanManage ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-status="EDIT"><i class="fa-solid fa-pen me-1"></i>Edit details</button>' : '';
     var smsMenu = (i.OrderId || i.CustomerId) && M.Sms && M.Sms.can(i.CustomerMobile) ? M.Sms.menuHtml({ id: 'inc-sms-menu', items: [{ code: 'ORDER_DELAYED', label: 'Order delayed', icon: 'fa-hourglass-half', suggested: i.Type === 'DELAY' }, { code: 'GENERAL', label: 'General message', icon: 'fa-comment', suggested: i.Type !== 'DELAY' }] }) : '';
-    UI.html('inc-actions', acts.map(function (a) { return '<button type="button" class="btn btn-sm ' + a[1] + '" data-status="' + a[0] + '"><i class="fa-solid ' + a[2] + ' me-1"></i>' + a[3] + '</button>'; }).join('') + smsMenu);
+    UI.html('inc-actions', edit + smsMenu + '<span class="spacer"></span>' + acts.map(function (a) { return '<button type="button" class="btn btn-sm ' + a[1] + '" data-status="' + a[0] + '"><i class="fa-solid ' + a[2] + ' me-1"></i>' + a[3] + '</button>'; }).join(''));
     UI.el('inc-actions').querySelectorAll('[data-status]').forEach(function (b) { b.onclick = function () { act(b.getAttribute('data-status')); }; });
     if (smsMenu) M.Sms.wireMenu(UI.el('inc-actions'), { orderId: i.OrderId, customerId: i.CustomerId });
   }
@@ -6216,24 +6233,24 @@ window.MLS = (function () {
   }
   var listSeq = Api.sequence();
   function load() {
-    var box = UI.el('inc-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    var box = UI.el('inc-table'); waiting(box, 'Loading the incidents');
     return Api.read('incidents.list', { status: state.status, type: state.type, search: state.search, page: state.page, size: 25 }, { seq: listSeq, paint: function (r) {
       var sel = UI.el('inc-type'); if (sel.options.length === 1) sel.innerHTML += UI.options(r.types || TYPES, '', typeLabel, function (t) { return t; });
       var openCount = (r.counts.OPEN || 0) + (r.counts.IN_REVIEW || 0); var c = document.querySelector('#inc-tabs [data-count="OPEN"]'); if (c) c.textContent = openCount || '';
       M.Table.render(box, {
         columns: [
-          { key: 'Id', label: 'Incident', format: function (v, row) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + F.datetime(row.CreatedAt) + '</div>'; } },
+          { key: 'Id', label: 'Incident', cls: 'lead-cell', format: function (v, row) { return '<span class="lead-status ph-only">' + UI.badge(row.Status) + '</span><span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + F.datetime(row.CreatedAt) + '</div>'; } },
           { key: 'Type', label: 'Type', format: function (v) { return typeBadge(v); } },
           { key: 'Description', label: 'What happened', format: function (v) { return '<span class="small">' + UI.esc(String(v || '').slice(0, 120)) + (String(v || '').length > 120 ? '…' : '') + '</span>'; } },
           { key: 'OrderNo', label: 'Order · customer', format: function (v, row) { return (v ? '<span class="fw-bold">' + UI.esc(v) + '</span>' : '') + (row.CustomerName ? '<div class="small text-soft">' + UI.esc(row.CustomerName) + '</div>' : ''); } },
           { key: 'ReportedBy', label: 'Reported by' },
-          { key: 'Status', label: 'Status', format: function (v) { return UI.badge(v); } }
+          { key: 'Status', label: 'Status', cls: 'ph-hide', format: function (v) { return UI.badge(v); } }
         ],
-        rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-shield-heart', title: state.status === 'OPEN' ? 'No open incidents' : 'No incidents here', hint: 'Damage, loss, complaints and delays reported from an order, a customer or a delivery job land here for review.', action: M.Auth.can('INCIDENT_CREATE') ? { label: 'Report incident', icon: 'fa-triangle-exclamation', onClick: function () { report({}); } } : null },
+        cls: 'aligned', rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-shield-heart', title: state.status === 'OPEN' ? 'No open incidents' : 'No incidents here', hint: 'Damage, loss, complaints and delays reported from an order, a customer or a delivery job land here for review.', action: M.Auth.can('INCIDENT_CREATE') ? { label: 'Report incident', icon: 'fa-triangle-exclamation', onClick: function () { report({}); } } : null },
         onPage: function (p) { state.page = p; load(); }, onRow: function (row) { open(row.Id, function () { load(); }); }
       });
       UI.el('inc-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + r.total + ' incident' + (r.total === 1 ? '' : 's');
-    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Incidents: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Incidents: ' + UI.error(e)); failed(box, 'The incidents could not be loaded', e, load); });
   }
   function wire() {
     UI.el('inc-new').onclick = function () { report({}); };
@@ -6969,7 +6986,8 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — ExpensesPage.html: the Expenses module: shop expenses by category with totals, the expense form, voiding with a reason, and the category list. -->
+        <!-- Mrs Laundry Sys — ExpensesPage.html: the Expenses module: shop expenses by category with totals, the expense form, voiding with a reason, and the category list.
+     1.31.0 (stage 5): grey rows and Try again, Amount an amount column, a card per expense on a phone with its status beside its date, the expense's footer ordered, labels tied to their fields. -->
 <section id="view-expenses" class="view" hidden>
   <div class="view-head">
     <h2>Expenses</h2>
@@ -6997,15 +7015,15 @@ window.MLS = (function () {
       <div class="modal-body">
         <input type="hidden" name="id">
         <div class="row g-2">
-          <div class="col-12" id="exp-branch-wrap"><label class="form-label">Branch</label><select class="form-select" name="branchId"></select></div>
-          <div class="col-6"><label class="form-label">Date</label><input class="form-control" name="expenseDate" type="date" required></div>
-          <div class="col-6"><label class="form-label">Category</label><select class="form-select" name="categoryId" required></select></div>
-          <div class="col-12"><label class="form-label">Paid to</label><input class="form-control" name="payee" maxlength="80" placeholder="Supplier, store, person"></div>
-          <div class="col-12"><label class="form-label">What for</label><input class="form-control" name="description" maxlength="200" placeholder="e.g. Detergent, water bill, repair"></div>
-          <div class="col-6"><label class="form-label">Amount</label><input class="form-control money" name="amount" type="number" step="0.01" min="0.01" inputmode="decimal" required></div>
-          <div class="col-6"><label class="form-label">Paid by</label><select class="form-select" name="method"></select></div>
-          <div class="col-6"><label class="form-label">Receipt / reference</label><input class="form-control" name="receiptRef" maxlength="60" placeholder="OR no."></div>
-          <div class="col-6"><label class="form-label">Notes</label><input class="form-control" name="notes" maxlength="300"></div>
+          <div class="col-12" id="exp-branch-wrap"><label class="form-label" for="exp-f-branch">Branch</label><select class="form-select" id="exp-f-branch" name="branchId"></select></div>
+          <div class="col-6"><label class="form-label" for="exp-f-date">Date</label><input class="form-control" id="exp-f-date" name="expenseDate" type="date" required></div>
+          <div class="col-6"><label class="form-label" for="exp-f-cat">Category</label><select class="form-select" id="exp-f-cat" name="categoryId" required></select></div>
+          <div class="col-12"><label class="form-label" for="exp-f-payee">Paid to</label><input class="form-control" id="exp-f-payee" name="payee" maxlength="80" placeholder="Supplier, store, person"></div>
+          <div class="col-12"><label class="form-label" for="exp-f-desc">What for</label><input class="form-control" id="exp-f-desc" name="description" maxlength="200" placeholder="e.g. Detergent, water bill, repair"></div>
+          <div class="col-6"><label class="form-label" for="exp-f-amount">Amount</label><input class="form-control money" id="exp-f-amount" name="amount" type="number" step="0.01" min="0.01" inputmode="decimal" required></div>
+          <div class="col-6"><label class="form-label" for="exp-f-method">Paid by</label><select class="form-select" id="exp-f-method" name="method"></select></div>
+          <div class="col-6"><label class="form-label" for="exp-f-ref">Receipt / reference</label><input class="form-control" id="exp-f-ref" name="receiptRef" maxlength="60" placeholder="OR no."></div>
+          <div class="col-6"><label class="form-label" for="exp-f-notes">Notes</label><input class="form-control" id="exp-f-notes" name="notes" maxlength="300"></div>
         </div>
         <p class="small text-soft mt-3 mb-0"><i class="fa-solid fa-circle-info me-1"></i>A cash expense reduces the cash the end-of-day count expects in the drawer. Once the day is submitted the expense is locked.</p>
         <div class="alert alert-danger py-2 small mt-2" id="exp-error" hidden></div>
@@ -7030,14 +7048,14 @@ window.MLS = (function () {
     <div class="modal-content">
       <div class="modal-header"><h5 class="modal-title">Expense categories</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
-        <div class="table-wrap mb-3"><table class="table table-sm table-cards mb-0"><thead><tr><th>Category</th><th>Description</th><th>Status</th><th></th></tr></thead><tbody id="exp-cat-rows"></tbody></table></div>
+        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Category</th><th>Description</th><th>Status</th><th></th></tr></thead><tbody id="exp-cat-rows"></tbody></table></div>
         <form id="exp-cat-form" class="border rounded p-3" autocomplete="off" hidden>
           <h6 class="fw-bold" id="exp-cat-form-title">New category</h6>
           <input type="hidden" name="Id">
           <div class="row g-2">
-            <div class="col-md-5"><label class="form-label small">Name</label><input class="form-control form-control-sm" name="Name" maxlength="60" required></div>
-            <div class="col-md-7"><label class="form-label small">Description</label><input class="form-control form-control-sm" name="Description" maxlength="200"></div>
-            <div class="col-md-5"><label class="form-label small">Status</label><select class="form-select form-select-sm" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
+            <div class="col-md-5"><label class="form-label small" for="exp-c-name">Name</label><input class="form-control form-control-sm" id="exp-c-name" name="Name" maxlength="60" required></div>
+            <div class="col-md-7"><label class="form-label small" for="exp-c-desc">Description</label><input class="form-control form-control-sm" id="exp-c-desc" name="Description" maxlength="200"></div>
+            <div class="col-md-5"><label class="form-label small" for="exp-c-status">Status</label><select class="form-select form-select-sm" id="exp-c-status" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
           </div>
           <div class="d-flex gap-2 mt-3"><button type="submit" class="btn btn-sm btn-primary">Save category</button><button type="button" class="btn btn-sm btn-outline-secondary" id="exp-cat-cancel">Cancel</button></div>
         </form>
@@ -7061,29 +7079,32 @@ window.MLS = (function () {
   function monthStart() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-01'; }
   function lensBranch() { var me = M.AppState.me; return me.activeBranch && me.activeBranch !== 'ALL' ? me.activeBranch : (me.branches.length === 1 ? me.branches[0].Id : ''); }
   function methodLabel(m) { return F.status(m); }
+  /** Grey rows while the list waits for its first answer (after 160 ms, so a saved list never flashes them); the reason and Try again when it fails with nothing on screen (1.31.0). */
+  function waiting(box, label) { if (!box.innerHTML) setTimeout(function () { if (!box.innerHTML) box.innerHTML = UI.skeleton({ kind: 'rows', count: 5, label: label }); }, 160); }
+  function failed(box, title, e, again) { if (box.querySelector('table')) return; box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: title, hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }); var b = box.querySelector('[data-empty-action]'); if (b) b.onclick = function () { box.innerHTML = ''; again(); }; }
 
   // ---------------------------------------------------------------- list
   var listSeq = Api.sequence();
   function load() {
-    var box = UI.el('exp-table'); if (!box.innerHTML) box.innerHTML = '<div class="p-3 text-soft">Loading…</div>';
+    var box = UI.el('exp-table'); waiting(box, 'Loading the expenses');
     return Api.read('expenses.list', { search: state.search, categoryId: state.categoryId, method: state.method, status: state.status, from: state.from, to: state.to, page: state.page, size: 25 }, { seq: listSeq, paint: function (r) {
       categories = r.categories || categories; methods = r.methods || methods;
       if (!filtersReady) { filtersReady = true; UI.el('exp-category').innerHTML = '<option value="">All categories</option>' + UI.options(categories, state.categoryId); UI.el('exp-method').innerHTML = '<option value="">All methods</option>' + UI.options(methods, state.method, methodLabel, function (m) { return m; }); }
       M.Table.render(UI.el('exp-table'), {
         columns: [
-          { key: 'ExpenseDate', label: 'Date', format: function (v, e) { return '<span class="fw-bold">' + F.date(v) + '</span>' + (e.ShiftDate && e.ShiftDate !== e.ExpenseDate ? '<div class="small text-soft">recorded ' + F.date(e.ShiftDate) + '</div>' : '') + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(e.Branch) + '</div>' : ''); } },
+          { key: 'ExpenseDate', label: 'Date', cls: 'lead-cell', format: function (v, e) { return '<span class="lead-status ph-only">' + UI.badge(e.Status) + (e.Locked ? ' <i class="fa-solid fa-lock text-soft" title="On a submitted end-of-day report"></i>' : '') + '</span><span class="fw-bold">' + F.date(v) + '</span>' + (e.ShiftDate && e.ShiftDate !== e.ExpenseDate ? '<div class="small text-soft">recorded ' + F.date(e.ShiftDate) + '</div>' : '') + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(e.Branch) + '</div>' : ''); } },
           { key: 'Category', label: 'Category', format: function (v, e) { return UI.esc(v || '—') + (e.Payee ? '<div class="small text-soft">' + UI.esc(e.Payee) + '</div>' : ''); } },
           { key: 'Description', label: 'Description', format: function (v, e) { return UI.esc(v || '—') + (e.ReceiptRef ? '<div class="small text-soft">ref ' + UI.esc(e.ReceiptRef) + '</div>' : ''); } },
-          { key: 'Amount', label: 'Amount', align: 'right', format: function (v, e) { return '<span class="money fw-bold' + (e.Status === 'VOID' ? ' text-decoration-line-through text-soft' : '') + '">' + F.peso(v) + '</span><div class="small text-soft">' + methodLabel(e.Method) + '</div>'; } },
-          { key: 'Status', label: 'Status', format: function (v, e) { return UI.badge(v) + (e.Locked ? ' <span class="small text-soft" title="On a submitted end-of-day report"><i class="fa-solid fa-lock"></i></span>' : ''); } }
+          { key: 'Amount', label: 'Amount', num: true, format: function (v, e) { return '<span class="money fw-bold' + (e.Status === 'VOID' ? ' text-decoration-line-through text-soft' : '') + '">' + F.peso(v) + '</span><div class="small text-soft">' + methodLabel(e.Method) + '</div>'; } },
+          { key: 'Status', label: 'Status', cls: 'ph-hide', format: function (v, e) { return UI.badge(v) + (e.Locked ? ' <span class="small text-soft" title="On a submitted end-of-day report"><i class="fa-solid fa-lock"></i></span>' : ''); } }
         ],
-        rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-receipt', title: 'No expenses in this range', hint: 'Record what the shop pays for — supplies, utilities, repairs — so the end of day and the reports see it.', action: canCreate() ? { label: 'New expense', icon: 'fa-plus', onClick: function () { openForm(null); } } : null },
+        cls: 'aligned', rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: { icon: 'fa-receipt', title: 'No expenses in this range', hint: 'Record what the shop pays for — supplies, utilities, repairs — so the end of day and the reports see it.', action: canCreate() ? { label: 'New expense', icon: 'fa-plus', onClick: function () { openForm(null); } } : null },
         onPage: function (p) { state.page = p; load(); }, onRow: function (row) { open(row.Id); }
       });
       UI.el('exp-scope').textContent = r.count + ' expense' + (r.count === 1 ? '' : 's') + ' · ' + F.peso(r.totalAmount);
       var tiles = [['Total', F.peso(r.totalAmount)], ['Count', r.count]].concat(r.byMethod.map(function (m) { return [methodLabel(m.Method), F.peso(m.Amount)]; })).concat(r.byCategory.slice(0, 4).map(function (c) { return [c.Category, F.peso(c.Amount)]; }));
       UI.html('exp-summary', tiles.map(function (t) { return '<div class="tile"><div class="k">' + UI.esc(t[0]) + '</div><div class="v">' + UI.esc(t[1]) + '</div></div>'; }).join(''));
-    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Expenses: ' + UI.error(e)); });
+    } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Expenses: ' + UI.error(e)); failed(box, 'The expenses could not be loaded', e, load); });
   }
 
   // ---------------------------------------------------------------- form
@@ -7115,7 +7136,8 @@ window.MLS = (function () {
     var grid = [['Date', F.date(e.ExpenseDate) + (e.ShiftDate !== e.ExpenseDate ? '<div class="small text-soft fw-normal">recorded on the ' + F.date(e.ShiftDate) + ' shift</div>' : '')], ['Category', UI.esc(e.Category || '—')], ['Paid to', UI.esc(e.Payee || '—')], ['Paid by', methodLabel(e.Method)], ['Receipt', UI.esc(e.ReceiptRef || '—')], ['Branch', UI.esc(e.Branch)], ['Recorded by', UI.esc(e.CreatedBy || '') + '<div class="small text-soft fw-normal">' + F.datetime(e.CreatedAt) + '</div>']];
     UI.html('exp-view-body', '<div class="detail-grid mb-3">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' + (e.Description ? '<p class="mb-2">' + UI.esc(e.Description) + '</p>' : '') + (e.Notes ? '<div class="alert alert-light border small py-2 mb-0">' + UI.esc(e.Notes) + '</div>' : ''));
     var editable = canEdit() && e.Status === 'ACTIVE' && !e.Locked;
-    UI.html('exp-view-actions', (editable ? '<button type="button" class="btn btn-sm btn-outline-primary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button><button type="button" class="btn btn-sm btn-outline-danger" data-act="void"><i class="fa-solid fa-ban me-1"></i>Void</button>' : '') + (e.Locked ? '<span class="small text-soft me-auto">Locked by the end-of-day report; ask the approver to reject it to make changes.</span>' : '') + '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>');
+    // the footer ordered like the order dialog's (1.31.0): Close at the left, Void then Edit at the right
+    UI.html('exp-view-actions', '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>' + (e.Locked ? '<span class="small text-soft exp-locked">Locked by the end-of-day report; ask the approver to reject it to make changes.</span>' : '<span class="spacer"></span>') + (editable ? '<button type="button" class="btn btn-sm btn-outline-danger" data-act="void"><i class="fa-solid fa-ban me-1"></i>Void</button><button type="button" class="btn btn-sm btn-outline-primary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button>' : ''));
     var acts = UI.el('exp-view-actions'), eb = acts.querySelector('[data-act=edit]'), vb = acts.querySelector('[data-act=void]');
     if (eb) eb.onclick = function () { M.Modal.closeThen('exp-view-modal', function () { openForm(e); }); };
     if (vb) vb.onclick = function () { M.OrdersUI.openReason({ title: 'Void this expense', hint: 'The row stays in the book marked void with your reason; nothing is deleted.', label: 'Reason for voiding', confirmText: 'Void expense', danger: true, onSubmit: function (d) { return Api.call('expenses.void', { id: e.Id, reason: d.reason }).then(function (v) { Toast.warning('Expense voided'); paint(v); load(); return v; }); } }); };
@@ -7124,12 +7146,13 @@ window.MLS = (function () {
 
   // ---------------------------------------------------------------- categories
   function paintCategories(list) {
-    UI.html('exp-cat-rows', list.length ? list.map(function (c) { return '<tr><td data-label="Category"><span class="fw-bold">' + UI.esc(c.Name) + '</span></td><td data-label="Description" class="small">' + UI.esc(c.Description || '—') + '</td><td data-label="Status">' + UI.badge(c.Status) + '</td><td class="text-end">' + (canEdit() ? '<button type="button" class="btn btn-sm btn-link p-0" data-edit="' + UI.esc(c.Id) + '">edit</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="4" class="text-soft">No categories yet. Add Supplies, Utilities, Rent, Repairs…</td></tr>');
+    UI.html('exp-cat-rows', list.length ? list.map(function (c) { return '<tr><td data-label="Category" class="lead-cell"><span class="lead-status ph-only">' + UI.badge(c.Status) + '</span><span class="fw-bold">' + UI.esc(c.Name) + '</span></td><td data-label="Description" class="small">' + UI.esc(c.Description || '—') + '</td><td data-label="Status" class="ph-hide">' + UI.badge(c.Status) + '</td><td class="text-end no-label">' + (canEdit() ? '<button type="button" class="btn btn-sm btn-link p-0" data-edit="' + UI.esc(c.Id) + '">edit</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="4" class="text-soft no-label">No categories yet. Add Supplies, Utilities, Rent, Repairs…</td></tr>');
     UI.el('exp-cat-rows').querySelectorAll('[data-edit]').forEach(function (b) { b.onclick = function () { var c = list.filter(function (x) { return x.Id === b.getAttribute('data-edit'); })[0]; openCategoryForm(c); }; });
   }
   function openCategories() {
     UI.el('exp-cat-form').hidden = true; UI.el('exp-cat-new').hidden = !canEdit();
-    Api.call('expenses.categories', { includeInactive: true }).then(paintCategories).catch(function (e) { Toast.danger(UI.error(e)); });
+    UI.html('exp-cat-rows', '<tr><td colspan="4" class="no-label">' + UI.skeleton({ kind: 'rows', count: 2, label: 'Loading the categories' }) + '</td></tr>');
+    Api.call('expenses.categories', { includeInactive: true }).then(paintCategories).catch(function (e) { Toast.danger(UI.error(e)); UI.html('exp-cat-rows', '<tr><td colspan="4" class="no-label">' + UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The categories could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' }, compact: true }) + '</td></tr>'); var b = UI.el('exp-cat-rows').querySelector('[data-empty-action]'); if (b) b.onclick = openCategories; });
     M.Modal.open('exp-cat-modal');
   }
   function openCategoryForm(c) {
