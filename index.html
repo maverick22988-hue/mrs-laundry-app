@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '1b8d969d46', version: '1.34.0' };</script>
+  <script>window.MLS_PWA = { build: 'dde529cd22', version: '1.35.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -474,6 +474,17 @@
   .window-tag { display: inline-flex; align-items: center; gap: 4px; font-size: .8rem; font-weight: 700; padding: .1rem .5rem; border-radius: 999px; background: var(--mls-info-soft); color: var(--mls-info); }
   .window-tag.late { background: var(--mls-danger-soft); color: var(--mls-danger); }
   .sig-pad { display: block; width: 100%; height: 180px; border: 1px dashed var(--mls-ink-faint); border-radius: var(--mls-radius-sm); background: var(--mls-card); touch-action: none; cursor: crosshair; }
+  /* 1.35.0 (stage 6): product photos. A thumbnail box in a list (48 px) and on the item's page (96 px): the picture covers it, grey while it is on its way, a muted mark when the item has none */
+  .thumb { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 48px; height: 48px; border-radius: var(--mls-radius-sm); background: var(--mls-well); border: 1px solid var(--mls-line-soft); color: var(--mls-ink-faint); overflow: hidden; vertical-align: middle; }
+  .thumb.lg { width: 96px; height: 96px; font-size: 1.5rem; }
+  .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .item-cell { display: flex; align-items: center; gap: 10px; min-width: 0; } .item-cell > .item-text { min-width: 0; flex: 1 1 auto; }
+  .item-photo { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; } .item-photo .item-photo-side { min-width: 0; flex: 1 1 200px; }
+  .item-photo .thumb-btn { border: 0; padding: 0; background: none; border-radius: var(--mls-radius-sm); line-height: 0; cursor: pointer; }
+  .item-photo .thumb-btn:focus-visible { outline: 3px solid var(--mls-focus); outline-offset: 2px; }
+  .item-photo-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .photo-full { display: block; max-width: 100%; max-height: 60vh; margin: 12px auto 0; border-radius: var(--mls-radius-sm); border: 1px solid var(--mls-line); }
+  .skeleton.photo-wait { height: 220px; margin-top: 12px; }
   .proof-thumb { display: block; max-width: 100%; max-height: 160px; border-radius: var(--mls-radius-sm); border: 1px solid var(--mls-line); margin-top: 6px; }
   .proof-view { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; } .proof-view figure { margin: 0; min-width: 0; }
   .proof-view img { display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; border-radius: var(--mls-radius-sm); border: 1px solid var(--mls-line); background: var(--mls-card); }
@@ -942,7 +953,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.34.0';
+  var VERSION = '1.35.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -1636,6 +1647,25 @@ window.MLS = (function () {
         var out = c.toDataURL('image/png'); return { data: out, w: size, h: size, bytes: Photo.bytesOf(out) };
       });
     },
+    /**
+     * Release 1.35.0: an item's photo made on this device, so the phone's original never leaves it: the photo (a JPEG at most 1,000 px
+     * on its long side, under 300 KB) and its thumbnail (at most 160 px, under 20 KB), each drawn smaller or plainer while over its
+     * budget, on a white ground (a transparent PNG keeps no hole). Resolves { data, thumb, w, h, bytes, thumbBytes }.
+     */
+    product: function (file) {
+      return Photo.load(file).then(function (img) {
+        var w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height; if (!w0 || !h0) throw new Error('The picture could not be read');
+        var sizeOf = function (url) { var b = String(url).split(',')[1] || ''; return Math.floor(b.length * 3 / 4) - (b.slice(-2) === '==' ? 2 : b.slice(-1) === '=' ? 1 : 0); };
+        var draw = function (side, q) { var k = Math.min(1, side / Math.max(w0, h0)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w0 * k)); c.height = Math.max(1, Math.round(h0 * k)); var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height); var out = c.toDataURL('image/jpeg', q); return { data: out, w: c.width, h: c.height, bytes: sizeOf(out) }; };
+        var fit = function (tries, maxBytes, what) {
+          for (var i = 0; i < tries.length; i++) { var d; try { d = draw(tries[i][0], tries[i][1]); } catch (e) { throw new Error('This picture could not be converted on this device; choose a JPG or PNG file'); } if (!/^data:image\/jpeg;base64,/.test(d.data)) throw new Error('This device could not convert the picture to JPEG'); if (d.bytes <= maxBytes) return d; }
+          throw new Error('The ' + what + ' is too large even after shrinking it');
+        };
+        var big = fit([[1000, .82], [1000, .7], [800, .7], [640, .6], [480, .5]], Photo.PRODUCT.bytes, 'photo'), small = fit([[160, .8], [160, .6], [128, .6], [96, .5]], Photo.PRODUCT.thumbBytes, 'thumbnail');
+        return { data: big.data, thumb: small.data, w: big.w, h: big.h, bytes: big.bytes, thumbBytes: small.bytes };
+      });
+    },
+    PRODUCT: { side: 1000, bytes: 300 * 1024, thumbSide: 160, thumbBytes: 20 * 1024 },
     /** An Image from a File, a Blob or a data URL. */
     load: function (src) {
       return new Promise(function (resolve, reject) {
@@ -1741,6 +1771,89 @@ window.MLS = (function () {
     function check() { var missing = MODULES.filter(function (m) { return m.phase <= APP_PHASE && !registry[m.route]; }).map(function (m) { return m.route; }); if (missing.length) { console.error('[Mrs Laundry Sys] modules missing for this phase: ' + missing.join(', ')); Toast.danger('Some modules did not load: ' + missing.join(', ') + '. Reload the page; if it persists open Settings → Maintenance → Browser error details.', 10000); } return missing; }
     window.addEventListener('hashchange', function () { if (AppState.me) { var r = fromHash(); if (r && r !== current) go(r); } });
     return { register: register, go: go, current: function () { return current; }, paintNav: paintNav, refreshAll: refreshAll, fromHash: fromHash, check: check, registered: function () { return Object.keys(registry); }, allowed: allowed, placeBar: placeBar };
+  })();
+
+  // ------------------------------------------------------------------ product thumbnails (release 1.35.0, Stage 6 of the redesign)
+  /**
+   * The thumbnails of the items' photos on this device. A list carries only each item's ImageId (the id of its photo, new at every
+   * change); the thumbnail itself is kept here, in a small IndexedDB database of its own (mls-thumbs — apart from the offline copy,
+   * which it never touches), so it shows offline. A list that shows an id this device does not keep asks inventory.thumbs once, for
+   * every id it lacks together, and paints them when they arrive: no request per picture and none at all once they are kept. An id
+   * the server says is gone is kept as "no picture", so it is not asked again. Without IndexedDB the thumbnails live for the visit.
+   */
+  var Thumbs = (function () {
+    var DB_NAME = 'mls-thumbs', STORE = 'thumbs', MAX_KEPT = 1500, BATCH = 60, OPEN_MS = 8000;  // 60 thumbnails a request (about 0.6 MB): a long catalogue arrives in parts, each light on a slow phone
+    var OK = /^data:image\/(?:jpeg|png);base64,[A-Za-z0-9+/=]+$/;
+    var mem = {}, loaded = null, dbp = null, asked = {}, wanted = {}, timer = null;
+    function open() {
+      if (dbp) return dbp;
+      dbp = new Promise(function (resolve, reject) {
+        if (!window.indexedDB) { reject(new Error('IndexedDB is not available')); return; }
+        var req; try { req = indexedDB.open(DB_NAME, 1); } catch (e) { reject(e); return; }
+        var t = setTimeout(function () { reject(new Error('IndexedDB did not open in time')); }, OPEN_MS);
+        req.onupgradeneeded = function () { if (!req.result.objectStoreNames.contains(STORE)) req.result.createObjectStore(STORE); };
+        req.onsuccess = function () { clearTimeout(t); var db = req.result; db.onversionchange = function () { db.close(); dbp = null; }; resolve(db); };
+        req.onerror = function () { clearTimeout(t); reject(req.error || new Error('IndexedDB refused to open')); };
+        req.onblocked = function () { clearTimeout(t); reject(new Error('IndexedDB is blocked by another tab')); };
+      });
+      dbp.catch(function () { dbp = null; });
+      return dbp;
+    }
+    function tx(mode, fn) { return open().then(function (db) { return new Promise(function (resolve, reject) { var t = db.transaction(STORE, mode), out; t.oncomplete = function () { resolve(out); }; t.onerror = t.onabort = function () { reject(t.error || new Error('transaction failed')); }; try { out = fn(t.objectStore(STORE)); } catch (e) { reject(e); } }); }); }
+    /** What this device keeps, read once per visit. Never rejects: without the database the thumbnails live for the visit. */
+    function load() {
+      if (loaded) return loaded;
+      loaded = tx('readonly', function (os) { var k = os.getAllKeys(), v = os.getAll(); return { k: k, v: v }; }).then(function (r) {
+        var keys = r.k.result || [], vals = r.v.result || [];
+        if (keys.length > MAX_KEPT) return tx('readwrite', function (os) { os.clear(); });  // ids of photos long replaced: start again, the lists ask for what they show
+        keys.forEach(function (k, i) { if (mem[k] === undefined) mem[k] = typeof vals[i] === 'string' && OK.test(vals[i]) ? vals[i] : ''; });
+      }).catch(function () { /* no database on this device */ });
+      return loaded;
+    }
+    function store(entries) { if (!entries.length) return; tx('readwrite', function (os) { entries.forEach(function (e) { os.put(e[1], e[0]); }); }).catch(function () { /* kept for the visit only */ }); }
+    function img(url) { return '<img src="' + url + '" alt="" decoding="async">'; }
+    /** The box a list shows for an item: its thumbnail when this device keeps it, an empty box that paint() fills when it does not, a muted picture mark when the item has no photo. cls: '' (48 px) or 'lg' (96 px). */
+    function html(id, cls) {
+      var c = 'thumb' + (cls ? ' ' + cls : '');
+      if (!id) return '<span class="' + c + ' none" aria-hidden="true"><i class="fa-regular fa-image"></i></span>';
+      return '<span class="' + c + '" data-thumb="' + UI.esc(id) + '" aria-hidden="true">' + (mem[id] ? img(mem[id]) : '') + '</span>';
+    }
+    function fill(root) {
+      var need = [];
+      (root || document).querySelectorAll('[data-thumb]').forEach(function (el) {
+        var id = el.getAttribute('data-thumb'), url = mem[id];
+        if (url) { if (!el.firstChild || el.firstChild.tagName !== 'IMG' || el.firstChild.getAttribute('src') !== url) el.innerHTML = img(url); el.classList.remove('wait'); }
+        else if (url === '') { el.classList.remove('wait'); el.classList.add('none'); if (!el.firstChild) el.innerHTML = '<i class="fa-regular fa-image"></i>'; }
+        else { el.classList.add('wait'); need.push(id); }
+      });
+      return need;
+    }
+    /** Asks the server once for the ids this device lacks: together, a moment after the lists that need them were painted. */
+    function request(ids) {
+      ids.forEach(function (id) { if (!asked[id]) { asked[id] = true; wanted[id] = true; } });
+      if (timer || !Object.keys(wanted).length) return;
+      timer = setTimeout(function () {
+        timer = null; var all = Object.keys(wanted); wanted = {};
+        var next = function () {
+          var chunk = all.splice(0, BATCH); if (!chunk.length) return;
+          Api.call('inventory.thumbs', { ids: chunk }, { noRedirect: true, noOffline: true }).then(function (r) {
+            var keep = [], got = (r && r.thumbs) || {};
+            Object.keys(got).forEach(function (id) { if (OK.test(String(got[id]))) { mem[id] = got[id]; keep.push([id, got[id]]); } });
+            ((r && r.gone) || []).forEach(function (id) { mem[id] = ''; keep.push([id, '']); });
+            chunk.forEach(function (id) { if (mem[id] === undefined) delete asked[id]; });  // pending on the server: asked again by the next list that shows it
+            store(keep); fill(document);
+          }, function () { chunk.forEach(function (id) { delete asked[id]; }); /* offline or refused: the boxes stay grey; the next list that shows them asks again */ }).then(next);
+        };
+        next();
+      }, 40);
+    }
+    /** After a list was painted: fills the boxes this device keeps and asks for the rest. */
+    function paint(root) { return load().then(function () { request(fill(root)); }); }
+    /** After an upload on this device: the thumbnail it just made is kept under the id the server gave it, so nothing is fetched back. */
+    function keep(id, url) { if (!id || !OK.test(String(url || ''))) return; mem[id] = url; asked[id] = true; store([[id, url]]); fill(document); }
+    /** Forget this device: the kept thumbnails go with the rest. */
+    function clear() { mem = {}; asked = {}; wanted = {}; loaded = null; return tx('readwrite', function (os) { os.clear(); }).catch(function () { /* nothing kept */ }); }
+    return { html: html, paint: paint, keep: keep, clear: clear, has: function (id) { return !!mem[id]; } };
   })();
 
   // ------------------------------------------------------------------ the brand (release 1.24.0, Stage 3 of the redesign)
@@ -1951,7 +2064,7 @@ window.MLS = (function () {
       var waiting = window.MLS && window.MLS.Queue ? window.MLS.Queue.state().pending : 0;
       Modal.closeThen('device-modal', function () { Modal.confirm({ title: 'Forget this device', body: 'Sign out here and remove the server address, the device label and the cached app from this browser. Nothing on the server changes.' + (waiting ? ' WARNING: ' + waiting + ' operation' + (waiting === 1 ? '' : 's') + ' made offline (orders, payments, punches…) ' + (waiting === 1 ? 'has' : 'have') + ' not reached the server yet and will be LOST. Connect and let Sync finish first.' : ''), okText: waiting ? 'Discard ' + waiting + ' and forget' : 'Forget', danger: true }).then(function (yes) {
         if (!yes) return; var token = AppState.token;
-        var done = function () { AppState.forget(); var p = Promise.resolve(); var S = window.MLS && window.MLS.Store; if (S) p = p.then(function () { return S.clearAll(); }).catch(function () { /* ignore */ }); if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) p = navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }).catch(function () { /* ignore */ }); if (window.caches && caches.keys) p = p.then(function () { return caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }); }).catch(function () { /* ignore */ }); p.then(function () { location.replace(location.pathname); }); };
+        var done = function () { AppState.forget(); var p = Promise.resolve(); var S = window.MLS && window.MLS.Store; if (S) p = p.then(function () { return S.clearAll(); }).catch(function () { /* ignore */ }); p = p.then(function () { return Thumbs.clear(); }).catch(function () { /* ignore */ }); if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) p = navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }).catch(function () { /* ignore */ }); if (window.caches && caches.keys) p = p.then(function () { return caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }); }).catch(function () { /* ignore */ }); p.then(function () { location.replace(location.pathname); }); };
         if (token) Api.call('auth.logout', {}, { noRedirect: true }).then(done, done); else done();
       }); });
     });
@@ -2101,7 +2214,7 @@ window.MLS = (function () {
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else setTimeout(boot, 0);
 
-  return { version: VERSION, phase: APP_PHASE, host: HOST, MODULES: MODULES, AppState: AppState, Api: Api, Net: Net, Pwa: Pwa, Notify: Notify, Timing: Timing, runDeviceCheck: runDeviceCheck, UI: UI, Toast: Toast, Modal: Modal, Form: Form, Validator: Validator, Formatter: Formatter, Table: Table, Print: Print, Photo: Photo, Qr: Qr, Keys: Keys, Router: Router, Auth: Auth, Brand: Brand, openDevice: openDevice, start: start };
+  return { version: VERSION, phase: APP_PHASE, host: HOST, MODULES: MODULES, AppState: AppState, Api: Api, Net: Net, Pwa: Pwa, Notify: Notify, Timing: Timing, runDeviceCheck: runDeviceCheck, UI: UI, Toast: Toast, Modal: Modal, Form: Form, Validator: Validator, Formatter: Formatter, Table: Table, Print: Print, Photo: Photo, Qr: Qr, Keys: Keys, Router: Router, Auth: Auth, Brand: Brand, Thumbs: Thumbs, openDevice: openDevice, start: start };
 })();
 </script>
 
@@ -4282,7 +4395,8 @@ window.MLS = (function () {
 
         <!-- Mrs Laundry Sys — InventoryPage.html: the Inventory module: items (products for sale and materials consumed by services), stock on hand per branch, manual adjustments, transfers between branches and the movement ledger.
      1.30.0 (stage 5): skeleton rows and Try again on the three tabs, amount columns, a card per item on a phone that keeps inside the screen,
-     the movements' window told under the tab (it was squeezed into the tab's count), the item's sections titled, labels tied to their fields. -->
+     the movements' window told under the tab (it was squeezed into the tab's count), the item's sections titled, labels tied to their fields.
+     1.35.0 (stage 6): an item's photo — added, replaced, removed and opened on its page; a thumbnail beside the name in the items list once any item on the page has one. -->
 <section id="view-inventory" class="view" hidden>
   <div class="view-head">
     <h2>Inventory</h2>
@@ -4419,9 +4533,10 @@ window.MLS = (function () {
     var box = UI.el('inv-items-table'); waiting(box, 'Loading the items');
     return Api.read('inventory.items', { search: state.search, type: state.type, lowOnly: state.lowOnly, includeInactive: state.includeInactive, page: state.page, size: 50 }, { seq: itemSeq, paint: function (r) {
       categories = r.categories || []; UI.el('item-categories').innerHTML = categories.map(function (c) { return '<option value="' + UI.esc(c) + '">'; }).join('');
+      var pics = r.rows.some(function (x) { return !!x.ImageId; });  // 1.35.0: a thumbnail beside the name once any item on the page has a photo; a page without one is drawn as before
       M.Table.render(UI.el('inv-items-table'), {
         columns: [
-          { key: 'Name', label: 'Item', cls: 'lead-cell', format: function (v, r) { return (r.Low ? '<span class="lead-status ph-only"><span class="badge text-bg-warning">Low</span></span>' : '') + '<span class="fw-bold">' + UI.esc(v) + '</span>' + (r.Status !== 'ACTIVE' ? ' ' + UI.badge(r.Status) : '') + '<div class="small text-soft">' + code(r.Code) + ' · ' + UI.esc(r.Category || '') + '</div>'; } },
+          { key: 'Name', label: 'Item', cls: 'lead-cell', format: function (v, r) { var text = (r.Low ? '<span class="lead-status ph-only"><span class="badge text-bg-warning">Low</span></span>' : '') + '<span class="fw-bold">' + UI.esc(v) + '</span>' + (r.Status !== 'ACTIVE' ? ' ' + UI.badge(r.Status) : '') + '<div class="small text-soft">' + code(r.Code) + ' · ' + UI.esc(r.Category || '') + '</div>'; return pics ? '<div class="item-cell">' + M.Thumbs.html(r.ImageId) + '<div class="item-text">' + text + '</div></div>' : text; } },
           { key: 'ItemType', label: 'Type', format: function (v, r) { return typeLabel(v) + (v === 'PRODUCT' && !r.IsSellable ? '<div class="small text-soft">not on POS</div>' : ''); } },
           { key: 'QtyOnHand', label: 'On hand', num: true, format: function (v, r) { return '<span class="fw-bold ' + (Number(v) < 0 ? 'text-danger' : '') + '">' + F.qty(v, r.Unit) + '</span>' + (r.Low ? '<div class="ph-hide"><span class="badge text-bg-warning">Low</span></div>' : '') + (M.AppState.me.activeBranch === 'ALL' && r.Branches > 1 ? '<div class="small text-soft">' + r.Branches + ' branches</div>' : ''); } },
           { key: 'ReorderLevel', label: 'Reorder at', num: true, format: function (v, r) { return v > 0 ? F.qty(v, r.Unit) : '<span class="text-soft">—</span>'; } },
@@ -4431,6 +4546,7 @@ window.MLS = (function () {
         cls: 'aligned', rows: r.rows, total: r.total, page: r.page, pages: r.pages, empty: state.lowOnly ? { icon: 'fa-circle-check', title: 'Nothing is low on stock', hint: 'Every tracked item is above its reorder level.' } : (state.search ? { icon: 'fa-magnifying-glass', title: 'No item matches', hint: 'Try the code, the name or the category.' } : { icon: 'fa-boxes-stacked', title: 'No items yet', hint: 'Add the products you sell (bags, hangers) and the materials your services consume (detergent, softener); recipes draw from them automatically.', action: canAdjust() ? { label: 'New item', icon: 'fa-plus', onClick: function () { openForm(null); } } : null }),
         onPage: function (p) { state.page = p; loadItems(); }, onRow: function (row) { open(row.Id); }
       });
+      if (pics) M.Thumbs.paint(UI.el('inv-items-table'));
       UI.el('inv-count-items').textContent = r.total;
       UI.el('inv-scope').textContent = 'Stock at ' + UI.branchName(M.AppState.me.activeBranch);
     } }).catch(function (e) { if (e && e.superseded) return; Toast.danger('Inventory: ' + UI.error(e)); failed(box, 'The items could not be loaded', e, loadItems); });
@@ -4510,7 +4626,7 @@ window.MLS = (function () {
       var levels = i.Levels.length ? i.Levels.map(function (l) { return '<tr><td data-label="Branch" class="lead-cell">' + UI.esc(l.Branch) + '</td><td data-label="On hand" class="num fw-bold ' + (Number(l.QtyOnHand) < 0 ? 'text-danger' : '') + '">' + F.qty(l.QtyOnHand, i.Unit) + '</td><td data-label="Updated" class="num small text-soft">' + F.datetime(l.UpdatedAt) + '</td></tr>'; }).join('') : '<tr><td colspan="3" class="text-soft no-label">No stock recorded at any branch yet — post beginning stock with Adjust stock.</td></tr>';
       var used = i.UsedBy.length ? '<section class="od-section"><h6 class="section-title">Used by services</h6><ul class="mb-0 small">' + i.UsedBy.map(function (u) { return '<li>' + UI.esc(u.Service) + ' — ' + F.qty(u.QtyPerUnit, u.Unit) + ' per unit</li>'; }).join('') + '</ul></section>' : (i.ItemType === 'MATERIAL' ? '<section class="od-section"><h6 class="section-title">Used by services</h6><p class="small text-soft mb-0">Not linked to any service yet. Link it under Services → Materials used so orders consume it.</p></section>' : '');
       var moves = mv.rows.length ? mv.rows.map(function (m) { return '<tr><td data-label="When" class="small lead-cell">' + F.datetime(m.CreatedAt) + '</td><td data-label="Movement">' + moveLabel(m.MovementType) + (M.AppState.me.activeBranch === 'ALL' ? '<div class="small text-soft">' + UI.esc(m.Branch) + '</div>' : '') + '</td><td data-label="Qty" class="num">' + signedQty(m) + '</td><td data-label="After" class="num small">' + F.qty(m.QtyAfter) + '</td><td data-label="Notes" class="small text-soft">' + UI.esc(m.Notes || '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="text-soft no-label">No movements yet.</td></tr>';
-      UI.html('item-view-body', '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
+      UI.html('item-view-body', photoSection(i) + '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
         '<section class="od-section"><h6 class="section-title">Stock by branch</h6><div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Branch</th><th class="num">On hand</th><th class="num">Updated</th></tr></thead><tbody>' + levels + '</tbody></table></div></section>' + used +
         '<section class="od-section"><h6 class="section-title">Recent movements <span class="text-soft small fw-normal">(' + UI.esc(UI.branchName(M.AppState.me.activeBranch)) + ')</span></h6><div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>When</th><th>Movement</th><th class="num">Qty</th><th class="num">After</th><th>Notes</th></tr></thead><tbody>' + moves + '</tbody></table></div></section>');
       // the footer ordered like the order dialog's (1.30.0): Close at the left, the item's actions at the right, Adjust stock (the one primary) last
@@ -4520,8 +4636,80 @@ window.MLS = (function () {
       if (canAdjust() && i.Status === 'ACTIVE') acts.push('<button type="button" class="btn btn-sm btn-primary" data-act="adjust"><i class="fa-solid fa-sliders me-1"></i>Adjust stock</button>');
       UI.html('item-view-actions', '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button><span class="spacer"></span>' + acts.join(''));
       UI.el('item-view-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); M.Modal.closeThen('item-view-modal', function () { if (a === 'adjust') openMove(i); else if (a === 'transfer') openTransfer(i); else openForm(i); }); }; });
+      wirePhoto(i);
       M.Modal.open('item-view-modal');
     }).catch(function (e) { Toast.danger(UI.error(e)); });
+  }
+
+  // ---------------------------------------------------------------- the item's photo (1.35.0, stage 6)
+  var full = {};  // the photos opened in this visit, by their id: opened again without a request
+  /** The photo block at the top of the item's page: the thumbnail (tap to open the photo), and for who may edit the item, Add / Replace and Remove. An item without a photo shows nothing to someone who cannot add one. */
+  function photoSection(i) {
+    if (!i.ImageId && !canAdjust()) return '';
+    return '<section class="item-photo-section mb-3" id="item-photo-section"><div class="item-photo" id="item-photo">' + photoBlock(i) + '</div><div id="item-photo-full"></div></section>';
+  }
+  function photoBlock(i) {
+    var has = !!i.ImageId, edit = canAdjust() && i.Status === 'ACTIVE';
+    var pic = has ? '<button type="button" class="thumb-btn" id="item-photo-open" aria-expanded="false" aria-controls="item-photo-full" aria-label="Open the photo of ' + UI.esc(i.Name) + '">' + M.Thumbs.html(i.ImageId, 'lg') + '</button>' : M.Thumbs.html('', 'lg');
+    var acts = edit ? '<div class="item-photo-acts"><button type="button" class="btn btn-sm btn-outline-primary" id="item-photo-pick"><i class="fa-solid fa-camera me-1"></i>' + (has ? 'Replace photo' : 'Add photo') + '</button>' + (has ? '<button type="button" class="btn btn-sm btn-outline-secondary" id="item-photo-remove"><i class="fa-solid fa-trash-can me-1"></i>Remove</button>' : '') + '<input type="file" id="item-photo-input" accept="image/*" hidden></div>' : '';
+    return pic + '<div class="item-photo-side"><div class="small text-soft" id="item-photo-note" role="status">' + (has ? 'Tap the picture to open the photo.' : 'No photo yet. A photo shows beside the item in the lists.') + '</div>' + acts + '</div>';
+  }
+  function photoNote(text, bad) { var n = UI.el('item-photo-note'); if (!n) return; n.textContent = text; n.classList.toggle('text-danger', !!bad); n.classList.toggle('text-soft', !bad); n.setAttribute('role', bad ? 'alert' : 'status'); }
+  /** After a change: the block again, the lists again; the dialog stays open on the item as the server now has it. */
+  function photoChanged(i) { current = i; var box = UI.el('item-photo'); if (box) { box.innerHTML = photoBlock(i); UI.el('item-photo-full').innerHTML = ''; wirePhoto(i); } reload(); }
+  function wirePhoto(i) {
+    var openBtn = UI.el('item-photo-open'), pick = UI.el('item-photo-pick'), input = UI.el('item-photo-input'), rm = UI.el('item-photo-remove');
+    if (UI.el('item-photo')) M.Thumbs.paint(UI.el('item-photo'));
+    if (openBtn) openBtn.onclick = function () { togglePhoto(i); };
+    if (pick && input) {
+      pick.onclick = function () { input.click(); };
+      input.onchange = function () {
+        var file = input.files && input.files[0]; input.value = ''; if (!file) return;
+        pick.disabled = true; if (rm) rm.disabled = true; photoNote('Preparing the photo…');
+        M.Photo.product(file).then(function (p) {
+          photoNote('Saving the photo · ' + Math.round(p.bytes / 1024) + ' KB…');
+          return Api.call('inventory.imageSet', { itemId: i.Id, data: p.data, thumb: p.thumb }, { busy: true, timeoutMs: 120000, noOffline: true }).then(function (r) {
+            if (r.unchanged) { Toast.info('That is the photo ' + i.Name + ' already has'); photoChanged(r.item); return; }
+            M.Thumbs.keep(r.imageId, p.thumb); full[r.imageId] = p.data;
+            Toast.success('Photo saved for ' + i.Name); photoChanged(r.item);
+          });
+        }).catch(function (e) { pick.disabled = false; if (rm) rm.disabled = false; photoNote(UI.error(e), true); Toast.danger('Photo: ' + UI.error(e)); });
+      };
+    }
+    if (rm) rm.onclick = function () {
+      // asked in place: the dialog stays open (a second dialog over this one would close it)
+      var acts = rm.parentNode; rm.hidden = true; if (pick) pick.hidden = true;
+      var ask = document.createElement('span'); ask.className = 'd-inline-flex flex-wrap align-items-center gap-2'; ask.id = 'item-photo-confirm';
+      ask.innerHTML = '<span class="small">Remove this photo?</span><button type="button" class="btn btn-sm btn-outline-secondary" data-photo="keep">Keep it</button><button type="button" class="btn btn-sm btn-danger" data-photo="remove">Remove</button>';
+      acts.appendChild(ask);
+      ask.querySelector('[data-photo=keep]').onclick = function () { acts.removeChild(ask); rm.hidden = false; if (pick) pick.hidden = false; rm.focus(); };
+      ask.querySelector('[data-photo=remove]').onclick = function () {
+        var b = this; b.disabled = true;
+        Api.call('inventory.imageRemove', { itemId: i.Id }, { busy: true, noOffline: true }).then(function (r) { Toast.success('Photo removed from ' + i.Name); photoChanged(r.item); }).catch(function (e) { b.disabled = false; photoNote(UI.error(e), true); Toast.danger('Photo: ' + UI.error(e)); });
+      };
+      ask.querySelector('[data-photo=keep]').focus();
+    };
+  }
+  /** The photo itself, read only when someone opens it: a grey box while it is on its way, the reason and Try again when it fails; tapping the thumbnail again closes it. */
+  function togglePhoto(i) {
+    var box = UI.el('item-photo-full'), btn = UI.el('item-photo-open'); if (!box || !btn) return;
+    if (box.innerHTML) { box.innerHTML = ''; btn.setAttribute('aria-expanded', 'false'); return; }
+    btn.setAttribute('aria-expanded', 'true');
+    var show = function (url) { box.innerHTML = '<img class="photo-full" id="item-photo-img" alt="Photo of ' + UI.esc(i.Name) + '" src="' + url + '">'; };
+    if (full[i.ImageId]) { show(full[i.ImageId]); return; }
+    var id = i.ImageId, load = function () {
+      box.innerHTML = '<span class="skeleton photo-wait" role="status" aria-label="Loading the photo"></span>';
+      Api.call('inventory.image', { itemId: i.Id }, { noOffline: true }).then(function (r) {
+        if (!/^data:image\/(?:jpeg|png);base64,[A-Za-z0-9+\/=]+$/.test(String(r.data || ''))) throw new Error('The photo could not be read');
+        full[r.imageId] = r.data; if (!current || current.Id !== i.Id || current.ImageId !== id || !UI.el('item-photo-full') || !box.innerHTML) return;  // closed, or another item or photo meanwhile
+        show(r.data);
+      }).catch(function (e) {
+        if (!box.innerHTML) return;
+        box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The photo could not be loaded', hint: UI.error(e), compact: true, action: { label: 'Try again', icon: 'fa-rotate' } });
+        var b = box.querySelector('[data-empty-action]'); if (b) b.onclick = load;
+      });
+    };
+    load();
   }
 
   // ---------------------------------------------------------------- adjust stock
