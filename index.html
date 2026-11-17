@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '737e7715f7', version: '1.33.0' };</script>
+  <script>window.MLS_PWA = { build: '1b8d969d46', version: '1.34.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -718,6 +718,8 @@
   .sync-list { list-style: none; margin: 0; padding: 0; }
   .sync-list li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .6rem .9rem; align-items: start; padding: .6rem 0; border-bottom: 1px solid var(--mls-line); }
   .sync-list li:last-child { border-bottom: 0; }
+  .sync-list li.sync-plain { display: block; }  /* 1.34.0: a placeholder, a failure or an empty line fills the row */
+  .review-list li.sync-plain, .review-list li.sync-plain:last-child { background: none; border: 0; padding: .3rem 0; margin: 0; }
   .sync-list .when { font-size: .76rem; color: var(--mls-ink-soft); white-space: nowrap; }
   .sync-list .what { font-size: .92rem; min-width: 0; overflow-wrap: anywhere; }
   .sync-list .why { font-size: .82rem; color: var(--mls-danger); margin-top: .15rem; }
@@ -940,7 +942,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.33.0';
+  var VERSION = '1.34.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -8755,7 +8757,7 @@ window.MLS = (function () {
     <div class="card-header d-flex align-items-center flex-wrap gap-2"><i class="fa-solid fa-flag me-2 text-soft"></i>Needs review <span class="small text-soft" id="sync-review-scope"></span>
       <select class="form-select form-select-sm ms-auto w-auto" id="sync-review-status" aria-label="Which items"><option value="OPEN">Open</option><option value="RESOLVED">Settled</option><option value="ALL">All</option></select>
     </div>
-    <div class="card-body"><p class="small text-soft">What the server accepted from a device while it was offline but a person must look at. Accepting keeps it as it is; a refund or a stock movement made through the normal action reverses it and is recorded here; dismissing needs a note. Nothing is deleted.</p><ul class="sync-list review-list" id="sync-review"><li class="text-soft small">Loading…</li></ul></div>
+    <div class="card-body"><p class="small text-soft">What the server accepted from a device while it was offline but a person must look at. Accepting keeps it as it is; a refund or a stock movement made through the normal action reverses it and is recorded here; dismissing needs a note. Nothing is deleted.</p><ul class="sync-list review-list" id="sync-review"></ul></div>
   </div>
   <div class="card mb-3" id="sync-others-card" hidden>
     <div class="card-header d-flex align-items-center"><i class="fa-solid fa-users me-2 text-soft"></i>Other users on this device</div>
@@ -8763,7 +8765,7 @@ window.MLS = (function () {
   </div>
   <div class="card mb-3">
     <div class="card-header d-flex align-items-center flex-wrap gap-2"><i class="fa-solid fa-mobile-screen me-2 text-soft"></i>On this device <span class="small text-soft ms-auto" id="sync-device"></span></div>
-    <div class="card-body"><ul class="sync-list" id="sync-queue"><li class="text-soft small">Loading…</li></ul></div>
+    <div class="card-body"><ul class="sync-list" id="sync-queue"></ul></div>
   </div>
   <div class="card">
     <div class="card-header d-flex align-items-center flex-wrap gap-2"><i class="fa-solid fa-server me-2 text-soft"></i>On the server <span class="small text-soft" id="sync-ledger-scope"></span>
@@ -8771,7 +8773,7 @@ window.MLS = (function () {
       <select class="form-select form-select-sm w-auto" id="sync-ledger-kind" aria-label="Which operations"><option value="">Everything</option><option value="OFFLINE">Made offline</option><option value="BOARD">From the board</option></select>
       <select class="form-select form-select-sm w-auto" id="sync-ledger-days" aria-label="Days"><option value="1">Today</option><option value="7" selected>7 days</option><option value="30">30 days</option></select>
     </div>
-    <div class="card-body"><ul class="sync-list" id="sync-ledger"><li class="text-soft small">Loading…</li></ul></div>
+    <div class="card-body"><ul class="sync-list" id="sync-ledger"></ul></div>
   </div>
 </section>
 <script>
@@ -8779,6 +8781,16 @@ window.MLS = (function () {
   'use strict';
   var M = window.MLS, UI = M.UI, Api = M.Api, Toast = M.Toast, F = M.Formatter;
   var wired = false;
+  // 1.34.0: grey placeholders until the first answer of each list, and a failure that says why and offers Try again
+  var seen = { review: false, queue: false, ledger: false };
+  function waiting(id, n, label) { UI.html(id, '<li class="sync-plain">' + UI.skeleton({ kind: 'rows', count: n || 3, label: label || 'Loading' }) + '</li>'); }
+  function away(e) { return !!(e && (e.offline || e.code === 'NETWORK' || e.code === 'TIMEOUT')); }
+  function failed(id, title, e, again, offlineTitle) {
+    var off = away(e) && offlineTitle;
+    UI.html(id, '<li class="sync-plain">' + UI.empty({ icon: 'fa-plug-circle-xmark', title: off ? offlineTitle : title, hint: off ? 'It loads when the connection is back.' : UI.error(e), compact: true, action: { label: 'Try again', icon: 'fa-rotate' } }) + '</li>');
+    var b = UI.el(id).querySelector('[data-empty-action]'); if (b) b.onclick = again;
+  }
+  function plain(text) { return '<li class="sync-plain text-soft small">' + text + '</li>'; }
   function when(v) { return v ? F.datetime(v) : ''; }
   function actionLabel(a) { return { 'orders.create': 'Order', 'customers.quickAdd': 'New customer', 'customers.save': 'New customer', 'payments.create': 'Payment', 'production.advance': 'Production stage', 'production.qc': 'Quality check', 'timeclock.punch': 'Time clock', 'deliveries.accept': 'Job accepted', 'deliveries.start': 'Job started', 'deliveries.complete': 'Job completed', 'deliveries.fail': 'Job failed' }[a] || a; }
   function stateTag(o) {
@@ -8799,12 +8811,14 @@ window.MLS = (function () {
   }
   function paintQueue() {
     var me = M.AppState.me; if (!me || !M.Queue) return Promise.resolve();
+    if (!seen.queue) waiting('sync-queue', 3, 'Loading what this device holds');
     return M.Queue.list().then(function (q) {
+      seen.queue = true;
       var mine = q.filter(function (o) { return o.userId === me.user.Id; }), others = q.filter(function (o) { return o.userId !== me.user.Id && o.state !== 'APPLIED'; });
       var st = M.Queue.state();
       UI.html('sync-stat', '<span><b>' + st.pending + '</b> waiting</span><span><b>' + st.rejected + '</b> refused</span><span><b>' + st.flagged + '</b> flagged for review</span>' + (st.lastPush ? '<span class="text-soft">last sent ' + UI.esc(when(st.lastPush)) + '</span>' : '') + (st.lastError ? '<span class="text-danger">' + UI.esc(st.lastError) + (st.nextTryAt ? ' · next try ' + UI.esc(F.time(st.nextTryAt)) : '') + '</span>' : ''));
       UI.el('sync-push').disabled = !!st.pushing || !st.pending || M.Net.state() !== 'online';
-      UI.html('sync-queue', mine.length ? mine.map(function (o) { return queueItem(o, true); }).join('') : '<li class="text-soft small">Nothing was made offline on this device' + (st.lastPush ? ' since the last send' : '') + '.</li>');
+      UI.html('sync-queue', mine.length ? mine.map(function (o) { return queueItem(o, true); }).join('') : plain('Nothing was made offline on this device' + (st.lastPush ? ' since the last send' : '') + '.'));
       UI.el('sync-device').textContent = 'device ' + (M.Queue.deviceCode ? M.Queue.deviceCode() : '') + (M.AppState.device() ? ' · ' + M.AppState.device() : '');
       var card = UI.el('sync-others-card'); card.hidden = !others.length;
       if (others.length) {
@@ -8814,7 +8828,7 @@ window.MLS = (function () {
         UI.el('sync-others').querySelectorAll('[data-submit]').forEach(function (b) { b.onclick = function () { var uid = b.getAttribute('data-submit'); M.Modal.confirm({ title: 'Submit another user\'s operations', body: 'Their operations are applied under their own name and permissions; the server records that you submitted them.', okText: 'Submit' }).then(function (yes) { if (yes) M.Queue.submitOthers(uid).then(function () { paintQueue(); paintLedger(); }); }); }; });
       }
       document.querySelectorAll('#view-sync [data-discard]').forEach(function (b) { b.onclick = function () { var id = b.getAttribute('data-discard'); M.Modal.confirm({ title: 'Discard this operation', body: 'It was refused by the server and will be removed from this device. Nothing changes on the server; redo it there if it is still needed.', okText: 'Discard', danger: true }).then(function (yes) { if (yes) M.Queue.discard(id).then(paintQueue).catch(function (e) { Toast.danger(UI.error(e)); }); }); }; });
-    });
+    }).catch(function (e) { seen.queue = false; failed('sync-queue', 'What this device holds could not be read', e, function () { paintQueue(); }); });
   }
   function ledgerItem(r) {
     var ok = r.Status === 'APPLIED';
@@ -8826,11 +8840,12 @@ window.MLS = (function () {
   }
   function paintLedger() {
     var who = UI.el('sync-ledger-who').value, days = Number(UI.el('sync-ledger-days').value) || 7, kind = UI.el('sync-ledger-kind').value;
+    if (!seen.ledger) waiting('sync-ledger', 4, 'Loading the server\'s list');
     return Api.call('sync.status', { userId: who || undefined, days: days, kind: kind || undefined }, { noOffline: true }).then(function (r) {
-      UI.el('sync-ledger-who').hidden = !r.canSeeOthers;
+      seen.ledger = true; UI.el('sync-ledger-who').hidden = !r.canSeeOthers;
       UI.el('sync-ledger-scope').textContent = r.total + ' operation' + (r.total === 1 ? '' : 's') + ' · ' + (r.counts.APPLIED || 0) + ' applied, ' + (r.counts.REJECTED || 0) + ' refused, ' + (r.counts.flagged || 0) + ' flagged' + (r.counts.board ? ' · ' + r.counts.board + ' from the production board' : '');
-      UI.html('sync-ledger', r.rows.length ? r.rows.map(ledgerItem).join('') : '<li class="text-soft small">The server has received ' + (kind === 'BOARD' ? 'no stage move from the production board' : (kind === 'OFFLINE' ? 'nothing made offline' : 'nothing made offline, and no stage move from the production board,')) + ' ' + (who === 'ALL' ? 'from anyone' : 'from you') + ' in the last ' + days + ' day' + (days === 1 ? '' : 's') + '.</li>');
-    }).catch(function (e) { UI.html('sync-ledger', '<li class="text-soft small">' + (e && (e.offline || e.code === 'NETWORK' || e.code === 'TIMEOUT') ? 'The server\'s ledger needs a connection.' : UI.esc(UI.error(e))) + '</li>'); UI.el('sync-ledger-scope').textContent = ''; });
+      UI.html('sync-ledger', r.rows.length ? r.rows.map(ledgerItem).join('') : plain('The server has received ' + (kind === 'BOARD' ? 'no stage move from the production board' : (kind === 'OFFLINE' ? 'nothing made offline' : 'nothing made offline, and no stage move from the production board,')) + ' ' + (who === 'ALL' ? 'from anyone' : 'from you') + ' in the last ' + days + ' day' + (days === 1 ? '' : 's') + '.'));
+    }).catch(function (e) { seen.ledger = false; failed('sync-ledger', 'The server\'s list could not be loaded', e, function () { paintLedger(); }, 'The server\'s list needs a connection'); UI.el('sync-ledger-scope').textContent = ''; });
   }
   // ---------------------------------------------------------------- the review (1.5.0)
   var reversing = null;  // the review item a stock movement opened from here will settle
@@ -8863,9 +8878,10 @@ window.MLS = (function () {
     var card = UI.el('sync-review-card'); if (!card) return Promise.resolve();
     if (!M.Auth.can('SYNC_REVIEW')) { card.hidden = true; return Promise.resolve(); }
     card.hidden = false; var status = UI.el('sync-review-status').value;
+    if (!seen.review) waiting('sync-review', 2, 'Loading the review');
     return Api.call('sync.conflicts', { status: status, days: 30 }, { noOffline: true }).then(function (r) {
-      UI.el('sync-review-scope').textContent = r.counts.open + ' open' + (status !== 'OPEN' ? ' · ' + r.total + ' shown' : '');
-      UI.html('sync-review', r.rows.length ? r.rows.map(reviewItem).join('') : '<li class="text-soft small">' + (status === 'OPEN' ? 'Nothing waits for a review.' : 'Nothing settled in the last 30 days.') + '</li>');
+      seen.review = true; UI.el('sync-review-scope').textContent = r.counts.open + ' open' + (status !== 'OPEN' ? ' · ' + r.total + ' shown' : '');
+      UI.html('sync-review', r.rows.length ? r.rows.map(reviewItem).join('') : plain(status === 'OPEN' ? 'Nothing waits for a review.' : 'Nothing settled in the last 30 days.'));
       var byId = {}; r.rows.forEach(function (c) { byId[c.Id] = c; });
       var root = UI.el('sync-review');
       root.querySelectorAll('[data-rv-order]').forEach(function (a) { a.onclick = function (ev) { ev.preventDefault(); M.OrdersUI.openOrder(a.getAttribute('data-rv-order'), paintReview); }; });
@@ -8876,7 +8892,7 @@ window.MLS = (function () {
           onSubmit: function (r) { return Api.call('payments.refund', { orderId: c.OrderId, amount: r.amount, method: r.method, referenceNo: r.referenceNo, reason: r.reason, requestId: UI.uuid() }, { noOffline: true }).then(function (res) { return Api.call('sync.resolveConflict', { id: c.Id, resolution: 'REVERSED', referenceId: res.payment.Id, note: r.reason }, { noOffline: true }); }); }
         }).then(function (r) { if (r) { Toast.success('Refunded and settled.'); paintReview(); } }); }; });
       root.querySelectorAll('[data-rv-adjust]').forEach(function (b) { b.onclick = function () { var c = byId[b.getAttribute('data-rv-adjust')]; reversing = c; M.InventoryUI.openMove({ Id: c.ItemId, Name: c.Item, Unit: c.Unit }); Toast.info('Post the stock movement; it settles this item as reversed.', 5000); }; });
-    }).catch(function (e) { UI.html('sync-review', '<li class="text-soft small">' + (e && (e.offline || e.code === 'NETWORK' || e.code === 'TIMEOUT') ? 'The review needs a connection.' : UI.esc(UI.error(e))) + '</li>'); UI.el('sync-review-scope').textContent = ''; });
+    }).catch(function (e) { seen.review = false; failed('sync-review', 'The review could not be loaded', e, function () { paintReview(); }, 'The review needs a connection'); UI.el('sync-review-scope').textContent = ''; });
   }
   document.addEventListener('mls:inventory-moved', function (ev) {
     var r = ev.detail, c = reversing; if (!c || !r || !r.movement) return; reversing = null;
@@ -9678,8 +9694,18 @@ window.MLS = (function () {
   function link(e164, body) { return 'sms:' + e164 + (isIos() ? '&' : '?') + 'body=' + encodeURIComponent(body || ''); }
   function placeholders(body) { return String(body || '').match(/\{\{[^}]*\}\}/g) || []; }
 
-  var st = { opts: null, options: null, prep: null, logId: null, context: null };
-  function setError(msg) { var e = UI.el('sms-error'); if (!msg) { e.hidden = true; return; } e.textContent = msg; e.hidden = false; }
+  var st = { opts: null, options: null, prep: null, logId: null, context: null, seq: 0 };
+  /** The dialog's red line; with again (1.34.0) it ends in Try again. */
+  function setError(msg, again) {
+    var e = UI.el('sms-error'); if (!msg) { e.hidden = true; e.textContent = ''; return; }
+    e.textContent = msg; e.hidden = false;
+    if (again) { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-sm btn-outline-danger ms-2'; b.id = 'sms-retry'; b.innerHTML = '<i class="fa-solid fa-rotate me-1"></i>Try again'; b.onclick = again; e.appendChild(b); }
+  }
+  /** 1.34.0: while the server prepares the text nothing can be opened, copied or sent, and the box cannot be typed in; a grey line stands where the count will be. */
+  function preparing(on) {
+    var ta = UI.el('sms-body'); ta.readOnly = on; ta.setAttribute('aria-busy', on ? 'true' : 'false');
+    if (on) { UI.el('sms-count').innerHTML = '<span class="skeleton w-40" role="status" aria-label="Preparing the text"></span>'; var a = UI.el('sms-open'); a.classList.add('disabled'); a.setAttribute('aria-disabled', 'true'); a.href = '#'; UI.el('sms-send').disabled = true; UI.el('sms-copy').disabled = true; }
+  }
   function contextOf(o) { return { customerId: o.customerId || '', orderId: o.orderId || '', deliveryId: o.deliveryId || '', paymentId: o.paymentId || '' }; }
   function templateHint(t) { if (!t) return ''; if (!t.usable) return t.blocked ? 'Not available here: ' + t.blocked : ''; return (t.Category === 'MARKETING' ? 'Promotional template' : 'Operational template') + (t.missing && t.missing.length ? ' · no value yet for ' + t.missing.map(function (v) { return '{{' + v + '}}'; }).join(', ') : ''); }
   function paintCount() {
@@ -9711,11 +9737,13 @@ window.MLS = (function () {
     UI.el('sms-template-hint').textContent = templateHint(t);
     UI.el('sms-custom-wrap').hidden = !(t && t.usable && (t.Variables || []).indexOf('custom_message') >= 0);
     setError('');
-    if (!t || !t.usable) { UI.el('sms-body').value = ''; st.prep = null; paintWarnings([{ code: 'variables', text: t ? 'This template cannot be used here: ' + t.blocked : 'Choose a template' }]); paintVars({ variables: {} }); paintCount(); return Promise.resolve(); }
+    if (!t || !t.usable) { ++st.seq; preparing(false); UI.el('sms-body').value = ''; st.prep = null; paintWarnings([{ code: 'variables', text: t ? 'This template cannot be used here: ' + t.blocked : 'Choose a template' }]); paintVars({ variables: {} }); paintCount(); return Promise.resolve(); }
+    var seq = ++st.seq; st.prep = null; preparing(true);
     return Api.call('sms.prepare', Object.assign({ templateId: id, customMessage: UI.el('sms-custom').value }, st.context)).then(function (p) {
-      st.prep = p; UI.el('sms-body').value = p.body; paintTo(p.to, p); paintVars(p); paintWarnings(p.warnings); paintCount();
+      if (seq !== st.seq) return;  // a later choice is on its way: its answer paints, not this one
+      preparing(false); st.prep = p; UI.el('sms-body').value = p.body; paintTo(p.to, p); paintVars(p); paintWarnings(p.warnings); paintCount();
       if (!UI.el('sms-custom-wrap').hidden && !UI.el('sms-custom').value && !UI.isTouch()) UI.el('sms-custom').focus();
-    }).catch(function (e) { st.prep = null; UI.el('sms-body').value = ''; paintVars({ variables: {} }); paintWarnings([]); paintCount(); setError(UI.error(e)); });
+    }).catch(function (e) { if (seq !== st.seq) return; preparing(false); st.prep = null; UI.el('sms-body').value = ''; paintVars({ variables: {} }); paintWarnings([]); paintCount(); setError('The text could not be prepared: ' + UI.error(e), function () { prepare(); }); });
   }
   function paintTemplates(o) {
     var sel = UI.el('sms-template'), rows = o.templates.slice().sort(function (a, b) { return (a.usable === b.usable ? 0 : a.usable ? -1 : 1) || (a.Workflow === o.workflow ? -1 : b.Workflow === o.workflow ? 1 : 0); });
@@ -9729,7 +9757,7 @@ window.MLS = (function () {
    * Buttons that call it should only appear for SMS_INITIATE holders and recipients with a mobile; the server checks both again.
    */
   function open(o) {
-    o = o || {}; st.opts = o; st.context = contextOf(o); st.prep = null; st.logId = null; st.options = null;
+    o = o || {}; st.opts = o; st.context = contextOf(o); st.prep = null; st.logId = null; st.options = null; ++st.seq; preparing(false);
     setError(''); showStep(false); UI.el('sms-body').value = ''; UI.el('sms-custom').value = o.customMessage || ''; UI.html('sms-vars', ''); UI.html('sms-warnings', ''); UI.el('sms-count').textContent = ''; UI.el('sms-report-fallback').hidden = true;
     return Api.call('sms.options', Object.assign({ workflow: o.workflow || '' }, st.context), { busy: true }).then(function (opt) {
       st.options = opt; paintTo(opt.to, opt); paintTemplates(opt);
