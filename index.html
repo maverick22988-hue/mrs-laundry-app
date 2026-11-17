@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '51570f673a', version: '1.32.0' };</script>
+  <script>window.MLS_PWA = { build: '737e7715f7', version: '1.33.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -745,6 +745,8 @@
     .line-editor .le-field { display: flex; align-items: center; gap: 6px; } .line-editor .le-tag { display: inline; font-size: var(--fs-xs); font-weight: 600; color: var(--mls-ink-soft); }
     .line-editor .lt { display: block; min-width: 72px; } .line-editor-head { display: none; }
     .table-cards.aligned tbody td[colspan] { text-align: left; }  /* a list's message (no price yet, no materials) reads from the left */
+    /* 1.33.0 (stage 5, Settings and Data): a long second line of a card's title (a device's browser) is cut within the screen (a one-line text sets its table's width, and 320 px pushed the card's values off a phone's edge) */
+    .table-cards.aligned td.lead-cell .max-w-320 { max-width: min(320px, calc(100vw - 96px)); }
     /* 1.32.0 (stage 5, Staff, Reports, Bags): a marked row keeps its mark on a phone as its card's edge (a day to review, a stale pay record, a holiday) */
     .table-cards.aligned tbody tr.table-danger { border-left: 3px solid var(--mls-danger); } .table-cards.aligned tbody tr.table-warning { border-left: 3px solid var(--mls-warning); } .table-cards.aligned tbody tr.table-info { border-left: 3px solid var(--mls-info); }
   }
@@ -938,7 +940,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.32.0';
+  var VERSION = '1.33.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -7719,7 +7721,7 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — SettingsPage.html: Settings & Profile: the signed-in person's profile, sessions and password; business and receipt settings; the brand (1.24.0: name, tagline, logo, icon, colours); branches; users; roles and the permission editor; every settings group; the maintenance panel. Admin tabs appear by permission; the server decides regardless. -->
+        <!-- Mrs Laundry Sys — SettingsPage.html (brought to the design system in 1.33.0, stage 5: grey placeholders and a failure state with Try again on every tab, the signed-in devices and the users; devices, branches and users a card each on a phone; a user's dialog Close first, Edit last; every field of a user, a branch and a role tied to its label): Settings & Profile: the signed-in person's profile, sessions and password; business and receipt settings; the brand (1.24.0: name, tagline, logo, icon, colours); branches; users; roles and the permission editor; every settings group; the maintenance panel. Admin tabs appear by permission; the server decides regardless. -->
 <section id="view-settings" class="view" hidden>
   <div class="view-head">
     <h2>Settings &amp; Profile</h2>
@@ -7737,14 +7739,14 @@ window.MLS = (function () {
       <div class="modal-body">
         <input type="hidden" name="Id">
         <div class="row g-2">
-          <div class="col-6"><label class="form-label">Username</label><input class="form-control" name="Username" maxlength="32" autocapitalize="none" spellcheck="false" required></div>
-          <div class="col-6"><label class="form-label">Display name</label><input class="form-control" name="DisplayName" maxlength="80" required></div>
-          <div class="col-12"><label class="form-label">E-mail (optional)</label><input class="form-control" name="Email" type="email"></div>
-          <div class="col-6"><label class="form-label">Role</label><select class="form-select" name="RoleId"></select></div>
-          <div class="col-6"><label class="form-label">Home branch</label><select class="form-select" name="HomeBranchId"></select></div>
+          <div class="col-6"><label class="form-label" for="set-user-f-Username">Username</label><input id="set-user-f-Username" class="form-control" name="Username" maxlength="32" autocapitalize="none" spellcheck="false" required></div>
+          <div class="col-6"><label class="form-label" for="set-user-f-DisplayName">Display name</label><input id="set-user-f-DisplayName" class="form-control" name="DisplayName" maxlength="80" required></div>
+          <div class="col-12"><label class="form-label" for="set-user-f-Email">E-mail (optional)</label><input id="set-user-f-Email" class="form-control" name="Email" type="email"></div>
+          <div class="col-6"><label class="form-label" for="set-user-f-RoleId">Role</label><select id="set-user-f-RoleId" class="form-select" name="RoleId"></select></div>
+          <div class="col-6"><label class="form-label" for="set-user-f-HomeBranchId">Home branch</label><select id="set-user-f-HomeBranchId" class="form-select" name="HomeBranchId"></select></div>
           <div class="col-12"><label class="form-label">Branch access</label><div id="set-user-branches" class="d-flex flex-wrap gap-3"></div><div class="form-text">The home branch is always included. Choose All branches for owners and administrators.</div></div>
-          <div class="col-6" id="set-user-status-wrap"><label class="form-label">Status</label><select class="form-select" name="Status"><option value="ACTIVE">Active</option><option value="DISABLED">Disabled</option></select></div>
-          <div class="col-6" id="set-user-pw-wrap"><label class="form-label">Temporary password</label><input class="form-control" name="password" autocomplete="new-password" placeholder="leave blank to generate"><div class="form-text">Must be changed at first sign-in.</div></div>
+          <div class="col-6" id="set-user-status-wrap"><label class="form-label" for="set-user-f-Status">Status</label><select id="set-user-f-Status" class="form-select" name="Status"><option value="ACTIVE">Active</option><option value="DISABLED">Disabled</option></select></div>
+          <div class="col-6" id="set-user-pw-wrap"><label class="form-label" for="set-user-f-password">Temporary password</label><input id="set-user-f-password" class="form-control" name="password" autocomplete="new-password" placeholder="leave blank to generate"><div class="form-text">Must be changed at first sign-in.</div></div>
         </div>
         <div class="alert alert-danger py-2 small mt-3" id="set-user-error" hidden></div>
       </div>
@@ -7784,13 +7786,13 @@ window.MLS = (function () {
       <div class="modal-body">
         <input type="hidden" name="Id">
         <div class="row g-2">
-          <div class="col-8"><label class="form-label">Name</label><input class="form-control" name="Name" maxlength="60" required></div>
-          <div class="col-4"><label class="form-label">Code</label><input class="form-control upper" name="Code" maxlength="12" placeholder="auto"></div>
-          <div class="col-12"><label class="form-label">Address</label><input class="form-control" name="Address" maxlength="200"></div>
-          <div class="col-6"><label class="form-label">Phone</label><input class="form-control" name="Phone" maxlength="30" inputmode="tel"></div>
-          <div class="col-6"><label class="form-label">Status</label><select class="form-select" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
-          <div class="col-12"><label class="form-label">Receipt header (this branch)</label><input class="form-control" name="ReceiptHeader" maxlength="200"></div>
-          <div class="col-12"><label class="form-label">Receipt footer (this branch)</label><input class="form-control" name="ReceiptFooter" maxlength="200"></div>
+          <div class="col-8"><label class="form-label" for="set-branch-f-Name">Name</label><input id="set-branch-f-Name" class="form-control" name="Name" maxlength="60" required></div>
+          <div class="col-4"><label class="form-label" for="set-branch-f-Code">Code</label><input id="set-branch-f-Code" class="form-control upper" name="Code" maxlength="12" placeholder="auto"></div>
+          <div class="col-12"><label class="form-label" for="set-branch-f-Address">Address</label><input id="set-branch-f-Address" class="form-control" name="Address" maxlength="200"></div>
+          <div class="col-6"><label class="form-label" for="set-branch-f-Phone">Phone</label><input id="set-branch-f-Phone" class="form-control" name="Phone" maxlength="30" inputmode="tel"></div>
+          <div class="col-6"><label class="form-label" for="set-branch-f-Status">Status</label><select id="set-branch-f-Status" class="form-select" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
+          <div class="col-12"><label class="form-label" for="set-branch-f-ReceiptHeader">Receipt header (this branch)</label><input id="set-branch-f-ReceiptHeader" class="form-control" name="ReceiptHeader" maxlength="200"></div>
+          <div class="col-12"><label class="form-label" for="set-branch-f-ReceiptFooter">Receipt footer (this branch)</label><input id="set-branch-f-ReceiptFooter" class="form-control" name="ReceiptFooter" maxlength="200"></div>
         </div>
         <div class="alert alert-danger py-2 small mt-3" id="set-branch-error" hidden></div>
       </div>
@@ -7806,10 +7808,10 @@ window.MLS = (function () {
       <div class="modal-body">
         <input type="hidden" name="Id">
         <div class="row g-2">
-          <div class="col-7"><label class="form-label">Name</label><input class="form-control" name="Name" maxlength="60" required></div>
-          <div class="col-5"><label class="form-label">Code</label><input class="form-control upper" name="Code" maxlength="30" placeholder="auto"></div>
-          <div class="col-12"><label class="form-label">Description</label><input class="form-control" name="Description" maxlength="200"></div>
-          <div class="col-6" id="set-role-status-wrap"><label class="form-label">Status</label><select class="form-select" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
+          <div class="col-7"><label class="form-label" for="set-role-f-Name">Name</label><input id="set-role-f-Name" class="form-control" name="Name" maxlength="60" required></div>
+          <div class="col-5"><label class="form-label" for="set-role-f-Code">Code</label><input id="set-role-f-Code" class="form-control upper" name="Code" maxlength="30" placeholder="auto"></div>
+          <div class="col-12"><label class="form-label" for="set-role-f-Description">Description</label><input id="set-role-f-Description" class="form-control" name="Description" maxlength="200"></div>
+          <div class="col-6" id="set-role-status-wrap"><label class="form-label" for="set-role-f-Status">Status</label><select id="set-role-f-Status" class="form-select" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
         </div>
         <div class="alert alert-danger py-2 small mt-3" id="set-role-error" hidden></div>
       </div>
@@ -7855,6 +7857,11 @@ window.MLS = (function () {
   function fail(e) { Toast.danger(UI.error(e)); }
   function card(title, inner, extra) { return '<div class="card mb-3"><div class="card-header d-flex align-items-center flex-wrap gap-2"><span>' + title + '</span>' + (extra || '') + '</div><div class="card-body">' + inner + '</div></div>'; }
 
+  // 1.33.0 (stage 5): grey placeholders while a tab's first answer is on its way, and a failure state with the reason and Try again where a red line stood.
+  function skel(n, label) { return UI.skeleton({ kind: 'rows', count: n || 5, label: label || 'Loading' }); }
+  function failed(box, title, e, again) { box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: title, hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }); var b = box.querySelector('[data-empty-action]'); if (b) b.onclick = function () { again(); }; }
+  function tabFailed(e) { var name = TABS.filter(function (x) { return x[0] === state.tab; })[0][1]; failed(body(), name + ' could not be loaded', e, function () { showTab(); }); }
+
   // ---------------------------------------------------------------- tabs
   function paintTabs() {
     UI.html('set-tabs', TABS.filter(function (t) { return t[2](); }).map(function (t) { return '<button type="button" data-tab="' + t[0] + '"' + (t[0] === state.tab ? ' class="active"' : '') + '>' + t[1] + '</button>'; }).join(''));
@@ -7872,7 +7879,7 @@ window.MLS = (function () {
     if (can('SERVICE_VIEW')) links.push(['services', 'fa-shirt', 'Services and pricing']); if (can('EXPENSE_VIEW')) links.push(['expenses', 'fa-tags', 'Expense categories']); if (can('STAFF_PAYROLL_HOURS_VIEW') || can('STAFF_PAYROLL_ADMIN')) links.push(['staff', 'fa-calendar-check', 'Payroll periods and holidays']); if (can('REPORT_VIEW')) links.push(['reports', 'fa-chart-line', 'Reports and the audit log']);
     var grid = [['Name', UI.esc(u.DisplayName)], ['Username', UI.esc(u.Username)], ['E-mail', UI.esc(u.Email || '—')], ['Role', UI.esc(u.RoleName) + ' <span class="small text-soft">' + UI.esc(u.RoleCode) + '</span>'], ['Home branch', UI.esc(UI.branchName(u.HomeBranchId))], ['Branch access', me().canSeeAllBranches ? 'All branches' : me().branches.map(function (b) { return UI.esc(b.Name); }).join(', ')], ['Staff record', u.StaffId ? '<a href="#/staff">Open my profile</a>' : '<span class="text-soft">not linked</span>'], ['This device', UI.esc(M.AppState.device() || 'unlabelled')]];
     body().innerHTML = card('My profile', '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div><div class="d-flex flex-wrap gap-2 mt-3"><button type="button" class="btn btn-outline-primary btn-sm" id="set-pw"><i class="fa-solid fa-key me-1"></i>Change password</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-device"><i class="fa-solid fa-desktop me-1"></i>Label this device</button></div>') +
-      card('Signed-in devices', '<div id="set-sessions"><div class="text-soft small">Loading…</div></div>', '<button type="button" class="btn btn-sm btn-outline-danger ms-auto" id="set-signout-others" hidden><i class="fa-solid fa-right-from-bracket me-1"></i>Sign out other devices</button>') +
+      card('Signed-in devices', '<div id="set-sessions">' + skel(3, 'Loading your signed-in devices') + '</div>', '<button type="button" class="btn btn-sm btn-outline-danger ms-auto" id="set-signout-others" hidden><i class="fa-solid fa-right-from-bracket me-1"></i>Sign out other devices</button>') +
       (links.length ? card('Shortcuts', '<div class="d-flex flex-wrap gap-2">' + links.map(function (l) { return '<a class="btn btn-outline-secondary btn-sm" href="#/' + l[0] + '"><i class="fa-solid ' + l[1] + ' me-1"></i>' + l[2] + '</a>'; }).join('') + '</div>') : '');
     UI.el('set-pw').onclick = function () { M.Auth.openChangePassword(false); }; UI.el('set-device').onclick = function () { M.openDevice(); };
     loadSessions();
@@ -7880,9 +7887,9 @@ window.MLS = (function () {
   function loadSessions() {
     Api.call('auth.sessions').then(function (d) {
       var box = UI.el('set-sessions'); if (!box) return;
-      box.innerHTML = '<div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>Device</th><th>Signed in</th><th>Last seen</th><th>Expires</th><th></th></tr></thead><tbody>' + d.rows.map(function (s) { return '<tr' + (s.Current ? ' class="table-active"' : '') + '><td data-label="Device"><span class="fw-bold">' + UI.esc(s.Device || 'Unlabelled device') + '</span>' + (s.UserAgent ? '<div class="small text-soft text-truncate max-w-320">' + UI.esc(s.UserAgent) + '</div>' : '') + '</td><td data-label="Signed in">' + F.datetime(s.IssuedAt) + '</td><td data-label="Last seen">' + F.relative(s.LastSeenAt) + '</td><td data-label="Expires">' + F.datetime(s.ExpiresAt) + '</td><td class="text-end">' + (s.Current ? '<span class="status-badge s-paid">This device</span>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div><p class="small text-soft mt-2 mb-0">Sessions end after ' + Math.round(d.idleMinutes / 60) + ' h without activity and ' + d.maxHours + ' h at most.</p>';
+      box.innerHTML = '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Device</th><th>Signed in</th><th>Last seen</th><th>Expires</th><th></th></tr></thead><tbody>' + d.rows.map(function (s) { return '<tr' + (s.Current ? ' class="table-active"' : '') + '><td data-label="Device" class="lead-cell">' + (s.Current ? '<span class="lead-status ph-only"><span class="status-badge s-paid">This device</span></span>' : '') + '<span class="fw-bold">' + UI.esc(s.Device || 'Unlabelled device') + '</span>' + (s.UserAgent ? '<div class="small text-soft text-truncate max-w-320">' + UI.esc(s.UserAgent) + '</div>' : '') + '</td><td data-label="Signed in">' + F.datetime(s.IssuedAt) + '</td><td data-label="Last seen">' + F.relative(s.LastSeenAt) + '</td><td data-label="Expires">' + F.datetime(s.ExpiresAt) + '</td><td class="text-end ph-hide">' + (s.Current ? '<span class="status-badge s-paid">This device</span>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div><p class="small text-soft mt-2 mb-0">Sessions end after ' + Math.round(d.idleMinutes / 60) + ' h without activity and ' + d.maxHours + ' h at most.</p>';
       var b = UI.el('set-signout-others'); if (b) { b.hidden = d.rows.length < 2; b.onclick = function () { M.Modal.confirm({ title: 'Sign out other devices', body: 'Every other session of your account ends now; this device stays signed in.', okText: 'Sign out others', danger: true }).then(function (yes) { if (!yes) return; Api.call('auth.signOutOthers', {}, { busy: true }).then(function (r) { Toast.success(r.revoked + ' other session' + (r.revoked === 1 ? '' : 's') + ' signed out'); loadSessions(); }).catch(fail); }); }; }
-    }).catch(function (e) { var box = UI.el('set-sessions'); if (box) box.innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
+    }).catch(function (e) { var box = UI.el('set-sessions'); if (box) failed(box, 'Your signed-in devices could not be loaded', e, function () { box.innerHTML = skel(3, 'Loading your signed-in devices'); loadSessions(); }); });
   }
 
   // ---------------------------------------------------------------- settings editor (shared by Business and Settings)
@@ -7931,11 +7938,11 @@ window.MLS = (function () {
     });
   }
   function tabBusiness() {
-    body().innerHTML = '<div class="text-soft small">Loading…</div>';
-    loadSettings().then(function (d) { if (state.tab !== 'business') return; body().innerHTML = d.groups.filter(function (g) { return BUSINESS_GROUPS.indexOf(g.Group) >= 0; }).map(function (g, i, all) { return card(g.Group === 'Business' ? 'Business information' : 'Receipts', groupForm(g, d.canEdit, all.length > 1)); }).join('') + card('Branches, services and pricing', '<p class="small text-soft mb-2">Branch addresses and receipt lines live under <strong>Branches</strong>; services, prices and recipes under <strong>Services</strong>.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-go-tab="branches"><i class="fa-solid fa-store me-1"></i>Branches</button><a class="btn btn-outline-secondary btn-sm" href="#/services"><i class="fa-solid fa-shirt me-1"></i>Services and pricing</a></div>'); wireGroupForms(body()); body().querySelectorAll('[data-go-tab]').forEach(function (b) { b.onclick = function () { state.tab = b.getAttribute('data-go-tab'); paintTabs(); showTab(); }; }); }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
+    body().innerHTML = skel(6);
+    loadSettings().then(function (d) { if (state.tab !== 'business') return; body().innerHTML = d.groups.filter(function (g) { return BUSINESS_GROUPS.indexOf(g.Group) >= 0; }).map(function (g, i, all) { return card(g.Group === 'Business' ? 'Business information' : 'Receipts', groupForm(g, d.canEdit, all.length > 1)); }).join('') + card('Branches, services and pricing', '<p class="small text-soft mb-2">Branch addresses and receipt lines live under <strong>Branches</strong>; services, prices and recipes under <strong>Services</strong>.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-go-tab="branches"><i class="fa-solid fa-store me-1"></i>Branches</button><a class="btn btn-outline-secondary btn-sm" href="#/services"><i class="fa-solid fa-shirt me-1"></i>Services and pricing</a></div>'); wireGroupForms(body()); body().querySelectorAll('[data-go-tab]').forEach(function (b) { b.onclick = function () { state.tab = b.getAttribute('data-go-tab'); paintTabs(); showTab(); }; }); }).catch(function (e) { tabFailed(e); });
   }
   function tabSettings() {
-    body().innerHTML = '<div class="text-soft small">Loading…</div>';
+    body().innerHTML = skel(6);
     loadSettings().then(function (d) {
       if (state.tab !== 'settings') return;  // the user has moved to another tab meanwhile: this answer must not paint over it
       var groups = d.groups.filter(function (g) { return BUSINESS_GROUPS.indexOf(g.Group) < 0; }); if (!state.group || !groups.some(function (g) { return g.Group === state.group; })) state.group = groups[0] ? groups[0].Group : '';
@@ -7943,7 +7950,7 @@ window.MLS = (function () {
       body().innerHTML = '<div class="chips" id="set-groups">' + groups.map(function (x) { return '<button type="button" data-group="' + UI.esc(x.Group) + '"' + (x.Group === state.group ? ' class="active"' : '') + '>' + UI.esc(x.Group) + ' <span class="count">' + x.Settings.length + '</span></button>'; }).join('') + '</div>' + (g ? card(g.Group + ' settings', groupForm(g, d.canEdit)) : '');
       body().querySelectorAll('#set-groups button').forEach(function (b) { b.onclick = function () { state.group = b.getAttribute('data-group'); tabSettings(); }; }); wireGroupForms(body());
       body().querySelectorAll('[data-go-tab]').forEach(function (b) { b.onclick = function (ev) { ev.preventDefault(); state.tab = b.getAttribute('data-go-tab'); paintTabs(); showTab(); }; });  // 1.24.0: a managed setting points at its own tab
-    }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
+    }).catch(function (e) { tabFailed(e); });
   }
 
   // ---------------------------------------------------------------- branding (release 1.24.0, Stage 3 of the redesign)
@@ -7965,7 +7972,7 @@ window.MLS = (function () {
     return '<div class="col-md-6"><label class="form-label" for="br-' + key + '-hex">' + label + '</label><div class="d-flex align-items-center gap-2"><input type="color" class="form-control form-control-color" id="br-' + key + '" value="' + UI.esc(v) + '" aria-label="' + label + ' picker"' + dis + '><input class="form-control font-monospace br-hex" id="br-' + key + '-hex" maxlength="7" value="' + UI.esc(value || '') + '" placeholder="' + dflt + '"' + dis + '><button type="button" class="btn btn-outline-secondary btn-sm" data-br-standard="' + key + '"' + dis + '>Standard</button></div><div class="form-text">' + hint + '</div><div class="small mt-1" id="br-' + key + '-contrast"></div></div>';
   }
   function tabBranding() {
-    body().innerHTML = '<div class="text-soft small">Loading…</div>';
+    body().innerHTML = skel(6);
     Api.call('branding.get').then(function (d) {
       if (state.tab !== 'branding') return;
       br = { data: d, logo: null, dark: null, icon: null };
@@ -7992,7 +7999,7 @@ window.MLS = (function () {
         (canEdit ? '<div class="d-flex align-items-center gap-2 mt-3"><button type="button" class="btn btn-outline-primary btn-sm" id="br-save-colours"><i class="fa-solid fa-floppy-disk me-1"></i>Save colours</button><span class="small text-danger" id="br-colours-error"></span></div>' : ro);
       body().innerHTML = card('Name and tagline', textCard) + card('Logo', logoCard) + card('App icon', iconCard) + card('Brand colours', coloursCard) + card('Preview', '<div id="br-preview"></div><p class="small text-soft mt-2 mb-0">The sign-in card, the sidebar head and a printed header with what is on this screen now — saved or not. Every device takes a saved change at its next sign-in or settings refresh.</p>');
       wireBranding(canEdit); brPreview();
-    }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
+    }).catch(function (e) { tabFailed(e); });
   }
   /** What the preview and the colour lines read: the fields as they stand, the pictures converted but not yet sent, else the ones in use. */
   function brCurrent() {
@@ -8112,14 +8119,14 @@ window.MLS = (function () {
 
   // ---------------------------------------------------------------- branches
   function tabBranches() {
-    body().innerHTML = '<div class="text-soft small">Loading…</div>';
+    body().innerHTML = skel(6);
     Api.call('branches.list').then(function (d) {
       if (state.tab !== 'branches') return;
       cache.branches = d;
-      body().innerHTML = card('Branches', '<div class="table-wrap"><table class="table table-sm table-cards mb-0" id="set-branch-table"><thead><tr><th>Branch</th><th>Address</th><th>Phone</th><th class="text-end">Users</th><th class="text-end">Staff</th><th>Status</th><th></th></tr></thead><tbody>' + d.rows.map(function (b) { return '<tr data-id="' + UI.esc(b.Id) + '"><td data-label="Branch"><span class="fw-bold">' + UI.esc(b.Name) + '</span> <span class="small text-soft">' + UI.esc(b.Code) + '</span>' + (b.ReceiptHeader ? '<div class="small text-soft">' + UI.esc(b.ReceiptHeader) + '</div>' : '') + '</td><td data-label="Address" class="small">' + UI.esc(b.Address || '—') + '</td><td data-label="Phone" class="small">' + UI.esc(b.Phone || '—') + '</td><td data-label="Users" class="text-end">' + b.Users + '</td><td data-label="Staff" class="text-end">' + b.Staff + '</td><td data-label="Status">' + UI.badge(b.Status) + '</td><td class="text-end">' + (d.canEdit ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-edit="' + UI.esc(b.Id) + '"><i class="fa-solid fa-pen me-1"></i>Edit</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>', d.canEdit && me().canSeeAllBranches ? '<button type="button" class="btn btn-sm btn-primary ms-auto" id="set-branch-new"><i class="fa-solid fa-plus me-1"></i>New branch</button>' : '');
+      body().innerHTML = card('Branches', '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0" id="set-branch-table"><thead><tr><th>Branch</th><th>Address</th><th>Phone</th><th class="text-end num">Users</th><th class="text-end num">Staff</th><th>Status</th><th></th></tr></thead><tbody>' + d.rows.map(function (b) { return '<tr data-id="' + UI.esc(b.Id) + '"><td data-label="Branch" class="lead-cell"><span class="lead-status ph-only">' + UI.badge(b.Status) + '</span><span class="fw-bold">' + UI.esc(b.Name) + '</span> <span class="small text-soft">' + UI.esc(b.Code) + '</span>' + (b.ReceiptHeader ? '<div class="small text-soft">' + UI.esc(b.ReceiptHeader) + '</div>' : '') + '</td><td data-label="Address" class="small">' + UI.esc(b.Address || '—') + '</td><td data-label="Phone" class="small">' + UI.esc(b.Phone || '—') + '</td><td data-label="Users" class="text-end num">' + b.Users + '</td><td data-label="Staff" class="text-end num">' + b.Staff + '</td><td data-label="Status" class="ph-hide">' + UI.badge(b.Status) + '</td><td class="text-end no-label">' + (d.canEdit ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-edit="' + UI.esc(b.Id) + '"><i class="fa-solid fa-pen me-1"></i>Edit</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>', d.canEdit && me().canSeeAllBranches ? '<button type="button" class="btn btn-sm btn-primary ms-auto" id="set-branch-new"><i class="fa-solid fa-plus me-1"></i>New branch</button>' : '');
       var nb = UI.el('set-branch-new'); if (nb) nb.onclick = function () { openBranch(null); };
       body().querySelectorAll('[data-edit]').forEach(function (b) { b.onclick = function () { openBranch(d.rows.filter(function (x) { return x.Id === b.getAttribute('data-edit'); })[0]); }; });
-    }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
+    }).catch(function (e) { tabFailed(e); });
   }
   function openBranch(b) {
     var f = UI.el('set-branch-form'); f.reset(); Form.clearErrors(f); UI.el('set-branch-error').hidden = true; UI.el('set-branch-title').textContent = b ? 'Edit ' + b.Name : 'New branch';
@@ -8133,7 +8140,7 @@ window.MLS = (function () {
 
   // ---------------------------------------------------------------- users
   function tabUsers() {
-    body().innerHTML = '<div class="toolbar"><input class="form-control search" id="set-user-search" placeholder="Search name, username, e-mail" value="' + UI.esc(state.usersSearch) + '" autocomplete="off"><select class="form-select" id="set-user-status">' + UI.options(['ALL', 'ACTIVE', 'DISABLED'], state.usersStatus, function (s) { return s === 'ALL' ? 'All users' : F.status(s); }, function (s) { return s; }) + '</select><span class="spacer"></span><button type="button" class="btn btn-primary btn-sm" id="set-user-new"><i class="fa-solid fa-user-plus me-1"></i>New user</button></div><div class="card"><div class="card-body p-0" id="set-user-table"><div class="text-soft small p-3">Loading…</div></div></div>';
+    body().innerHTML = '<div class="toolbar"><input class="form-control search" id="set-user-search" placeholder="Search name, username, e-mail" value="' + UI.esc(state.usersSearch) + '" autocomplete="off"><select class="form-select" id="set-user-status">' + UI.options(['ALL', 'ACTIVE', 'DISABLED'], state.usersStatus, function (s) { return s === 'ALL' ? 'All users' : F.status(s); }, function (s) { return s; }) + '</select><span class="spacer"></span><button type="button" class="btn btn-primary btn-sm" id="set-user-new"><i class="fa-solid fa-user-plus me-1"></i>New user</button></div><div class="card"><div class="card-body p-0" id="set-user-table">' + skel(6, 'Loading the users') + '</div></div>';
     UI.el('set-user-search').oninput = UI.debounce(function () { state.usersSearch = UI.el('set-user-search').value.trim(); loadUsers(); }, 350); UI.el('set-user-status').onchange = function () { state.usersStatus = this.value; loadUsers(); }; UI.el('set-user-new').onclick = function () { openUser(null); };
     loadUsers();
   }
@@ -8144,13 +8151,13 @@ window.MLS = (function () {
       if (!usersSeq.is(ticket)) return;  // a slower answer for an earlier search
       cache.users = d; var host = UI.el('set-user-table'); if (!host) return;
       M.Table.render(host, { columns: [
-        { key: 'DisplayName', label: 'User', format: function (v, u) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(u.Username) + (u.Email ? ' · ' + UI.esc(u.Email) : '') + (u.StaffName ? ' · staff ' + UI.esc(u.StaffName) : '') + '</div>'; } },
+        { key: 'DisplayName', label: 'User', cls: 'lead-cell', format: function (v, u) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + UI.esc(u.Username) + (u.Email ? ' · ' + UI.esc(u.Email) : '') + (u.StaffName ? ' · staff ' + UI.esc(u.StaffName) : '') + '</div>'; } },
         { key: 'RoleName', label: 'Role', format: function (v, u) { return UI.esc(v) + '<div class="small text-soft">' + UI.esc(u.RoleCode) + '</div>'; } },
         { key: 'HomeBranch', label: 'Branches', format: function (v, u) { return UI.esc(v) + (u.AllowedBranches === 'ALL' ? '<div class="small text-soft">all branches</div>' : (u.AllowedBranchNames.length > 1 ? '<div class="small text-soft">' + UI.esc(u.AllowedBranchNames.join(', ')) + '</div>' : '')); } },
         { key: 'Status', label: 'Status', format: function (v, u) { return UI.badge(v) + (u.Locked ? ' <span class="status-badge s-rejected">locked</span>' : '') + (u.MustChangePassword ? ' <span class="status-badge s-pending">temp password</span>' : '') + (u.TestUser ? ' <span class="badge text-bg-light border" title="Everything this account makes is listed for tagging as test data (Data management)">test user</span>' : ''); } },
         { key: 'LastLoginAt', label: 'Last sign-in', format: function (v, u) { return (v ? F.relative(v) : '<span class="text-soft">never</span>') + (u.Sessions ? '<div class="small text-soft">' + u.Sessions + ' live session' + (u.Sessions === 1 ? '' : 's') + '</div>' : ''); } }
-      ], rows: d.rows, empty: { icon: 'fa-users', title: 'No users match', hint: 'Try another name or username, or include disabled accounts.' }, onRow: function (u) { openUserView(u.Id); } });
-    }).catch(fail);
+      ], rows: d.rows, cls: 'aligned', empty: { icon: 'fa-users', title: 'No users match', hint: 'Try another name or username, or include disabled accounts.' }, onRow: function (u) { openUserView(u.Id); } });
+    }).catch(function (e) { fail(e); var host = UI.el('set-user-table'); if (host && !host.querySelector('table')) failed(host, 'The users could not be loaded', e, function () { host.innerHTML = skel(6, 'Loading the users'); loadUsers(); }); });
   }
   function openUser(u) {
     var f = UI.el('set-user-form'), d = cache.users; f.reset(); Form.clearErrors(f); UI.el('set-user-error').hidden = true; UI.el('set-user-title').textContent = u ? 'Edit ' + u.DisplayName : 'New user';
@@ -8187,9 +8194,9 @@ window.MLS = (function () {
       UI.el('set-user-view-title').innerHTML = UI.esc(u.DisplayName) + ' ' + UI.badge(u.Status) + (u.Locked ? ' <span class="status-badge s-rejected">locked</span>' : '') + (u.TestUser ? ' <span class="badge text-bg-light border">test user</span>' : '');
       var grid = [['Username', UI.esc(u.Username)], ['E-mail', UI.esc(u.Email || '—')], ['Role', UI.esc(u.RoleName)], ['Home branch', UI.esc(u.HomeBranch)], ['Branch access', UI.esc(u.AllowedBranchNames.join(', '))], ['Staff record', UI.esc(u.StaffName || '—')], ['Last sign-in', u.LastLoginAt ? F.datetime(u.LastLoginAt) : 'never'], ['Password', u.MustChangePassword ? 'temporary — must be changed' : 'set by the user']];
       UI.html('set-user-view-body', '<div class="detail-grid mb-3">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' + (u.ActiveSessions.length ? '<h6 class="small text-uppercase text-soft">Live sessions</h6><ul class="small mb-0">' + u.ActiveSessions.map(function (s) { return '<li>' + UI.esc(s.Device || 'Unlabelled device') + ' · last seen ' + F.relative(s.LastSeenAt) + '</li>'; }).join('') + '</ul>' : '<p class="small text-soft mb-0">No live sessions.</p>'));
-      UI.html('set-user-view-actions', '<button type="button" class="btn btn-sm btn-outline-primary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button><button type="button" class="btn btn-sm btn-outline-secondary" data-act="reset"><i class="fa-solid fa-key me-1"></i>Reset password</button>' + (u.Locked ? '<button type="button" class="btn btn-sm btn-outline-warning" data-act="unlock"><i class="fa-solid fa-lock-open me-1"></i>Unlock</button>' : '') + (u.ActiveSessions.length ? '<button type="button" class="btn btn-sm btn-outline-danger" data-act="revoke"><i class="fa-solid fa-right-from-bracket me-1"></i>Sign out everywhere</button>' : '') + '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>');
+      UI.html('set-user-view-actions', '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button><span class="spacer"></span>' + (u.ActiveSessions.length ? '<button type="button" class="btn btn-sm btn-outline-danger" data-act="revoke"><i class="fa-solid fa-right-from-bracket me-1"></i>Sign out everywhere</button>' : '') + (u.Locked ? '<button type="button" class="btn btn-sm btn-outline-warning" data-act="unlock"><i class="fa-solid fa-lock-open me-1"></i>Unlock</button>' : '') + '<button type="button" class="btn btn-sm btn-outline-secondary" data-act="reset"><i class="fa-solid fa-key me-1"></i>Reset password</button><button type="button" class="btn btn-sm btn-outline-primary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button>');
       // 1.23.0: the Super administrator marks an account as a test user (stage 3 of the demo and test data cleanup), or takes the mark off
-      if (u.CanMarkTestUser) UI.el('set-user-view-actions').insertAdjacentHTML('beforeend', '<button type="button" class="btn btn-sm ' + (u.TestUser ? 'btn-outline-secondary' : 'btn-outline-warning') + '" data-act="testuser"><i class="fa-solid fa-user-graduate me-1"></i>' + (u.TestUser ? 'Not a test user' : 'Mark as test user') + '</button>');
+      if (u.CanMarkTestUser) UI.el('set-user-view-actions').querySelector('.spacer').insertAdjacentHTML('afterend', '<button type="button" class="btn btn-sm ' + (u.TestUser ? 'btn-outline-secondary' : 'btn-outline-warning') + '" data-act="testuser"><i class="fa-solid fa-user-graduate me-1"></i>' + (u.TestUser ? 'Not a test user' : 'Mark as test user') + '</button>');
       var acts = UI.el('set-user-view-actions');
       var tb = acts.querySelector('[data-act=testuser]'); if (tb) tb.onclick = function () { markTestUser(u); };
       acts.querySelector('[data-act=edit]').onclick = function () { M.Modal.closeThen('set-user-view', function () { openUser(u); }); };
@@ -8202,7 +8209,7 @@ window.MLS = (function () {
 
   // ---------------------------------------------------------------- roles and the permission editor
   function tabRoles() {
-    body().innerHTML = '<div class="text-soft small">Loading…</div>';
+    body().innerHTML = skel(6);
     Api.call('roles.list').then(function (d) {
       if (state.tab !== 'roles') return;
       cache.roles = d; if (!state.roleId || !d.rows.some(function (r) { return r.Id === state.roleId; })) state.roleId = d.rows[0].Id;
@@ -8211,7 +8218,7 @@ window.MLS = (function () {
       body().querySelectorAll('[data-role]').forEach(function (b) { b.onclick = function () { state.roleId = b.getAttribute('data-role'); tabRoles(); }; });
       var nb = UI.el('set-role-new'); if (nb) nb.onclick = function () { openRole(null); };
       paintRole(role, d);
-    }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
+    }).catch(function (e) { tabFailed(e); });
   }
   function paintRole(role, d) {
     var canEdit = d.canEdit && !(role.Code === 'SUPER_ADMIN' && d.actorRole !== 'SUPER_ADMIN'), fixed = role.Code === 'SUPER_ADMIN', beyond = role.Grants.filter(function (c) { return d.actorPermissions.indexOf(c) < 0; }), locked = beyond.length > 0;
@@ -8242,7 +8249,7 @@ window.MLS = (function () {
   /** Sample values for the variables the workflow supports; anything else stays as a placeholder, exactly as the server would leave it. */
   function sampleRender(body, allowed) { var biz = (me().settings || {}).BusinessName || 'Mrs Laundry Sys'; return String(body || '').replace(/\{\{\s*([A-Za-z_]+)\s*\}\}/g, function (m, n) { n = n.toLowerCase(); if (allowed && allowed.indexOf(n) < 0) return m; if (n === 'business_name') return biz; return SAMPLE[n] !== undefined ? SAMPLE[n] : m; }); }
   function tabSms() {
-    body().innerHTML = '<div class="text-soft small">Loading…</div>';
+    body().innerHTML = skel(6);
     Api.call('sms.templates').then(function (r) {
       if (state.tab !== 'sms') return;
       cache.sms = r; var byWf = {}; r.rows.forEach(function (t) { (byWf[t.Workflow] = byWf[t.Workflow] || []).push(t); });
@@ -8261,7 +8268,7 @@ window.MLS = (function () {
       body().querySelectorAll('[data-tpl-toggle]').forEach(function (b) { b.onclick = function () { var t = r.rows.filter(function (x) { return x.Id === b.getAttribute('data-tpl-toggle'); })[0]; Api.call('sms.saveTemplate', { Id: t.Id, Name: t.Name, Category: t.Category, Workflow: t.Workflow, Body: t.Body, IsDefault: t.IsDefault, Status: t.Status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' }, { busy: true }).then(function (x) { Toast.success(x.Name + (x.Status === 'ACTIVE' ? ' enabled' : ' disabled')); tabSms(); }).catch(fail); }; });
       body().querySelectorAll('[data-tpl-default]').forEach(function (b) { b.onclick = function () { var t = r.rows.filter(function (x) { return x.Id === b.getAttribute('data-tpl-default'); })[0]; Api.call('sms.saveTemplate', { Id: t.Id, Name: t.Name, Category: t.Category, Workflow: t.Workflow, Body: t.Body, IsDefault: true, Status: t.Status }, { busy: true }).then(function (x) { Toast.success(x.Name + ' is now the default for ' + x.WorkflowLabel.toLowerCase()); tabSms(); }).catch(fail); }; });
       body().querySelectorAll('[data-tpl-restore]').forEach(function (b) { b.onclick = function () { Api.call('sms.restoreDefaults', { code: b.getAttribute('data-tpl-restore') }, { busy: true }).then(function (x) { Toast.success(x.restored.length ? 'Original text restored' : 'Already the original text'); tabSms(); }).catch(fail); }; });
-    }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
+    }).catch(function (e) { tabFailed(e); });
   }
   function openTemplate(t) {
     var r = cache.sms, f = UI.el('set-tpl-form'); f.reset(); Form.clearErrors(f); UI.hide('set-tpl-error');
@@ -8285,7 +8292,7 @@ window.MLS = (function () {
 
   // ---------------------------------------------------------------- maintenance
   function tabMaintenance() {
-    body().innerHTML = '<div class="text-soft small">Loading…</div>';
+    body().innerHTML = skel(6);
     Api.call('maintenance.report').then(function (r) {
       if (state.tab !== 'maintenance') return;
       var inst = r.install || {}, instText = !inst.version ? 'Bundle.gs missing' : (inst.ok ? 'matches release ' + inst.version : (inst.counts.mismatch + inst.counts.missing + inst.counts.extra) + ' file' + ((inst.counts.mismatch + inst.counts.missing + inst.counts.extra) === 1 ? '' : 's') + ' differ');
@@ -8335,7 +8342,7 @@ window.MLS = (function () {
       UI.el('set-mt-verify').onclick = function () { Api.call('maintenance.selfCheck', {}, { busy: true }).then(function (v) { var c = v.counts, bad = v.files.filter(function (f) { return f.status !== 'OK'; }); out('<div class="alert ' + (v.ok ? 'alert-success' : 'alert-danger') + ' py-2 small">' + (v.ok ? 'Installation verified' : 'Installation differs from the bundle') + ' — ' + v.level + ' check against release ' + UI.esc(v.version || '?') + (v.builtAt ? ' built ' + F.datetime(v.builtAt) : '') + ': ' + c.ok + ' OK' + (c.mismatch ? ', ' + c.mismatch + ' changed' : '') + (c.missing ? ', ' + c.missing + ' missing' : '') + (c.extra ? ', ' + c.extra + ' extra' : '') + (c.unverified ? ', ' + c.unverified + ' unverified' : '') + '</div>' + (v.notes.length ? '<ul class="small text-soft">' + v.notes.map(function (n) { return '<li>' + UI.esc(n) + '</li>'; }).join('') + '</ul>' : '') + '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>File</th><th>Status</th><th>Checked by</th><th>Note</th></tr></thead><tbody>' + bad.concat(v.files.filter(function (f) { return f.status === 'OK'; })).map(function (f) { return '<tr' + (f.status === 'OK' ? '' : ' class="table-danger"') + '><td class="font-monospace">' + UI.esc(f.name) + '</td><td>' + UI.badge(f.status === 'OK' ? 'OK' : (f.status === 'UNVERIFIED' ? 'PENDING' : 'REJECTED'), f.status) + '</td><td class="small text-soft">' + UI.esc(f.how) + '</td><td class="small">' + UI.esc(f.note || '') + '</td></tr>'; }).join('') + '</tbody></table></div>'); }).catch(fail); };
       UI.el('set-mt-endpoints').onclick = function () { Api.call('system.endpoints', {}, { busy: true }).then(function (list) { out('<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Action</th><th>Needs</th><th>Scope</th></tr></thead><tbody>' + list.map(function (e) { return '<tr><td class="font-monospace">' + UI.esc(e.action) + '</td><td class="small">' + (e.isPublic ? '<span class="text-soft">public</span>' : UI.esc(e.permission || 'any login')) + '</td><td class="small text-soft">' + UI.esc([e.branch ? 'branch ' + e.branch : '', e.own ? 'own ' + e.own : ''].filter(Boolean).join(' · ')) + '</td></tr>'; }).join('') + '</tbody></table></div>'); }).catch(fail); };
       UI.el('set-mt-browser').onclick = function () { var e = window.__mlsFirstError, res = window.__mlsFailedResources || [], libs = { bootstrap: typeof window.bootstrap === 'object', Chart: typeof window.Chart === 'function' }; out('<pre class="small bg-light border rounded p-2 mb-0 pre-wrap">' + UI.esc((e ? 'FIRST SCRIPT ERROR\n' + JSON.stringify(e, null, 2) : 'No script error has been raised on this page since it loaded.') + '\n\nRESOURCES THAT FAILED TO LOAD: ' + (res.length ? '\n' + JSON.stringify(res, null, 2) : 'none') + '\n\nLIBRARIES PRESENT: ' + JSON.stringify(libs) + '\n\nMODULES REGISTERED: ' + M.Router.registered().join(', ') + '\n\nAPP: v' + M.version + ' phase ' + M.phase + ' · ' + navigator.userAgent + (M.Timing ? '\n\nTIMINGS ON THIS DEVICE (round trip p50/p95/p99 · max · server p50/p95 · calls; percentiles over the last ' + 200 + ' of each):\n' + (M.Timing.summary().map(function (t) { return t.action + ': ' + t.p50Ms + '/' + t.p95Ms + '/' + t.p99Ms + ' ms · max ' + t.maxMs + ' · server ' + (t.p50ServerMs === null ? '—' : t.p50ServerMs + '/' + t.p95ServerMs) + ' ms · ×' + t.count + (t.sources ? ' · ' + JSON.stringify(t.sources) : ''); }).join('\n') || 'none yet') : '')) + '</pre>'); };
-    }).catch(function (e) { body().innerHTML = '<div class="text-danger small">' + UI.esc(UI.error(e)) + '</div>'; });
+    }).catch(function (e) { tabFailed(e); });
   }
   function chunk(a, n) { var out = []; for (var i = 0; i < a.length; i += n) out.push(a.slice(i, i + n)); return out; }
   /** 1.18.0: the rows per table as the last good backup counted them (every night), or counted just now — counting every sheet costs two calls a sheet, so the screen no longer does it on each visit. */
@@ -8403,7 +8410,7 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — DataPage.html: Data management (Super administrator only, SYSTEM_DATA_CLEANUP), opened from Settings → Maintenance. Three tabs: the demo and test data cleanup (release 1.19.0: what a cleanup would remove and keep, counted from the sheets; release 1.20.0: the cleanup itself — start, back up and verify, confirm, delete with Continue, the report), the data preview (the review: list the business records, tag them as test, demo or sample data, or mark them real), and the cleanup history with each run's report. Online only: nothing here is kept on the device. -->
+        <!-- Mrs Laundry Sys — DataPage.html (1.33.0, stage 5: grey placeholders and a failure state with Try again on the count, the records and the cleanups; count columns): Data management (Super administrator only, SYSTEM_DATA_CLEANUP), opened from Settings → Maintenance. Three tabs: the demo and test data cleanup (release 1.19.0: what a cleanup would remove and keep, counted from the sheets; release 1.20.0: the cleanup itself — start, back up and verify, confirm, delete with Continue, the report), the data preview (the review: list the business records, tag them as test, demo or sample data, or mark them real), and the cleanup history with each run's report. Online only: nothing here is kept on the device. -->
 <section id="view-data" class="view" hidden>
   <div class="view-head">
     <h2>Data management</h2>
@@ -8493,7 +8500,10 @@ window.MLS = (function () {
   function fail(e) { Toast.danger(UI.error(e)); }
   function n(v) { return F.number(v || 0, 0); }
   function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-  function table(head, rows, empty) { return '<div class="table-wrap"><table class="table table-sm mb-0"><thead><tr>' + head.map(function (h) { return '<th' + (h[1] ? ' class="text-end"' : '') + '>' + h[0] + '</th>'; }).join('') + '</tr></thead><tbody>' + (rows.length ? rows.join('') : '<tr><td colspan="' + head.length + '" class="text-soft p-3">' + UI.esc(empty || 'Nothing here') + '</td></tr>') + '</tbody></table></div>'; }
+  // 1.33.0 (stage 5): grey placeholders while a list's answer is on its way; a failure keeps its reason on the page with Try again (it was a passing message over a loading text).
+  function skel(n, label) { return UI.skeleton({ kind: 'rows', count: n || 5, label: label }); }
+  function failed(id, title, e, again) { var box = UI.el(id); if (!box || box.querySelector('table')) return; box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: title, hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }); var b = box.querySelector('[data-empty-action]'); if (b) b.onclick = function () { again(); }; }
+  function table(head, rows, empty) { return '<div class="table-wrap"><table class="table table-sm mb-0"><thead><tr>' + head.map(function (h) { return '<th' + (h[1] ? ' class="text-end num"' : '') + '>' + h[0] + '</th>'; }).join('') + '</tr></thead><tbody>' + (rows.length ? rows.join('') : '<tr><td colspan="' + head.length + '" class="text-soft p-3">' + UI.esc(empty || 'Nothing here') + '</td></tr>') + '</tbody></table></div>'; }
 
   // ---------------------------------------------------------------- the cleanup preview (deletes nothing)
   function paintDb(r) {
@@ -8501,25 +8511,25 @@ window.MLS = (function () {
     UI.html('dm-db', 'Database: <b>' + UI.esc(r.database.name) + '</b> <span class="font-monospace">' + UI.esc(r.database.id) + '</span> · ' + env + ' · review started ' + UI.esc(F.datetime(r.reviewFrom)));
   }
   function loadCleanup() {
-    UI.html('dm-sheets', '<div class="p-3 text-soft">Counting…</div>');
+    UI.html('dm-sheets', skel(8, 'Counting the records'));
     return Api.call('cleanup.preview', {}, { timeoutMs: 180000 }).then(function (r) {
       paintDb(r);
       var t = r.totals, tiles = [['Eligible for deletion', n(t.eligible), t.eligible ? 'danger' : ''], ['To be preserved', n(t.preserved), ''], ['Not yet reviewed', n(t.unreviewed), t.unreviewed ? 'warn' : ''], ['Related records affected', n(t.related), ''], ['Blocked', n(t.blocked), t.blocked ? 'warn' : '']];
       UI.html('dm-tiles', tiles.map(function (x) { return '<div class="tile' + (x[2] === 'danger' ? ' border-danger' : x[2] === 'warn' ? ' border-warning' : '') + '" data-tile="dm-' + x[0].toLowerCase().replace(/ /g, '-') + '"><div class="k">' + x[0] + '</div><div class="v">' + x[1] + '</div></div>'; }).join(''));
-      var rows = r.sheets.map(function (s) { return '<tr data-sheet="' + UI.esc(s.table) + '"><td>' + UI.esc(s.label) + ' <span class="text-soft small">' + UI.esc(s.table) + (s.kind === 'dependent' ? ' · only with its parent' : '') + '</span></td><td class="text-end">' + n(s.total) + '</td><td class="text-end' + (s.test ? ' text-danger fw-bold' : '') + '">' + n(s.test) + '</td><td class="text-end">' + n(s.protected) + '</td><td class="text-end">' + (s.kind === 'dependent' ? '—' : n(s.unreviewed)) + '</td><td class="text-end">' + (s.blocked ? '<span class="text-warning fw-bold">' + n(s.blocked) + '</span>' : '0') + '</td></tr>'; });
+      var rows = r.sheets.map(function (s) { return '<tr data-sheet="' + UI.esc(s.table) + '"><td>' + UI.esc(s.label) + ' <span class="text-soft small">' + UI.esc(s.table) + (s.kind === 'dependent' ? ' · only with its parent' : '') + '</span></td><td class="text-end num">' + n(s.total) + '</td><td class="text-end num' + (s.test ? ' text-danger fw-bold' : '') + '">' + n(s.test) + '</td><td class="text-end num">' + n(s.protected) + '</td><td class="text-end num">' + (s.kind === 'dependent' ? '—' : n(s.unreviewed)) + '</td><td class="text-end num">' + (s.blocked ? '<span class="text-warning fw-bold">' + n(s.blocked) + '</span>' : '0') + '</td></tr>'; });
       UI.html('dm-sheets', table([['Database sheet'], ['Total records', 1], ['Confirmed test records', 1], ['Protected records', 1], ['Not yet reviewed', 1], ['Blocked', 1]], rows));
-      UI.html('dm-preserved', table([['Group'], ['Sheets'], ['Records', 1]], r.preserved.map(function (g) { return '<tr><td>' + UI.esc(g.group) + '</td><td class="small text-soft">' + UI.esc(g.tables.join(', ')) + '</td><td class="text-end">' + n(g.rows) + '</td></tr>'; })));
+      UI.html('dm-preserved', table([['Group'], ['Sheets'], ['Records', 1]], r.preserved.map(function (g) { return '<tr><td>' + UI.esc(g.group) + '</td><td class="small text-soft">' + UI.esc(g.tables.join(', ')) + '</td><td class="text-end num">' + n(g.rows) + '</td></tr>'; })));
       UI.el('dm-blocked-count').textContent = r.blocked.length ? String(r.totals.blocked) : '';
       UI.html('dm-blocked', table([['Kind'], ['Record'], ['Why it stays']], r.blocked.map(function (b) { return '<tr><td>' + UI.esc(b.label) + '</td><td><span class="fw-bold">' + UI.esc(b.name) + '</span> <span class="text-soft small">' + UI.esc(b.id) + '</span></td><td class="small">' + UI.esc(b.reason) + '</td></tr>'; }), 'No tagged record is blocked.'));
       UI.el('dm-scope').textContent = n(t.eligible) + ' to remove · ' + n(t.unreviewed) + ' not yet reviewed';
       state.preview = r; paintRun(r.openRun);
-    }).catch(fail);
+    }).catch(function (e) { fail(e); failed('dm-sheets', 'The records could not be counted', e, loadCleanup); });
   }
 
   // ---------------------------------------------------------------- the cleanup itself (release 1.20.0): start, back up and verify, confirm, delete, report
   var STATUS_TEXT = { PLANNED: 'Planned — back up next', BACKED_UP: 'Backed up — confirm to delete', RUNNING: 'Deleting', PARTIAL: 'Part done — continue', COMPLETED: 'Completed', STOPPED: 'Stopped', FAILED: 'Failed', CANCELLED: 'Cancelled' };
   function sheetsTable(run) {
-    return table([['Sheet'], ['Planned', 1], ['Deleted', 1], ['Not found', 1], ['Left', 1], ['Rows now', 1]], (run.sheets || []).map(function (x) { return '<tr data-run-sheet="' + UI.esc(x.table) + '"><td>' + UI.esc(x.label || x.table) + ' <span class="text-soft small">' + UI.esc(x.table) + '</span></td><td class="text-end">' + n(x.planned) + '</td><td class="text-end' + (x.deleted ? ' text-danger fw-bold' : '') + '">' + n(x.deleted) + '</td><td class="text-end">' + n(x.missing) + '</td><td class="text-end">' + n(x.remaining) + '</td><td class="text-end">' + (x.kept === null || x.kept === undefined ? '—' : n(x.kept)) + '</td></tr>'; }), 'Nothing planned.');
+    return table([['Sheet'], ['Planned', 1], ['Deleted', 1], ['Not found', 1], ['Left', 1], ['Rows now', 1]], (run.sheets || []).map(function (x) { return '<tr data-run-sheet="' + UI.esc(x.table) + '"><td>' + UI.esc(x.label || x.table) + ' <span class="text-soft small">' + UI.esc(x.table) + '</span></td><td class="text-end num">' + n(x.planned) + '</td><td class="text-end' + (x.deleted ? ' text-danger fw-bold' : '') + '">' + n(x.deleted) + '</td><td class="text-end num">' + n(x.missing) + '</td><td class="text-end num">' + n(x.remaining) + '</td><td class="text-end num">' + (x.kept === null || x.kept === undefined ? '—' : n(x.kept)) + '</td></tr>'; }), 'Nothing planned.');
   }
   /** One run as a report (brief §11): who, when, which database, the backup, the counts per sheet, what was rebuilt, the outcome. at: the id prefix (dm on the run card, dm-h under the history), so the two never share an id. */
   function reportHtml(run, at) {
@@ -8603,7 +8613,7 @@ window.MLS = (function () {
     UI.el('dm-list-title').textContent = (state.list ? state.list.label + ': ' + n(total) + ' record' + (total === 1 ? '' : 's') : 'Records') + (k ? ' · ' + k + ' ticked' : '');
   }
   function loadList() {
-    UI.html('dm-list', '<div class="p-3 text-soft">Loading…</div>');
+    UI.html('dm-list', skel(6, 'Loading the records'));
     return Api.call('cleanup.candidates', { table: state.kind, filter: filter(), page: state.page, size: 50 }).then(function (r) {
       state.list = r; state.ticked = {}; paintTestUsers(r.testUsers);
       var rows = r.rows.map(function (x) { return '<tr><td><input type="checkbox" class="form-check-input" data-tick="' + UI.esc(x.Id) + '" aria-label="Tick ' + UI.esc(x.Id) + '"></td><td><span class="fw-bold">' + UI.esc(x.Title || x.Id) + '</span> <span class="text-soft small">' + UI.esc(x.Id) + '</span><div class="small text-soft">' + UI.esc(x.Detail || '') + '</div></td><td class="small text-nowrap">' + UI.esc(F.datetime(x.CreatedAt)) + '<div class="text-soft">' + UI.esc(x.CreatedBy || '') + (madeByTestUser(x.CreatedBy) ? ' <span class="badge text-bg-light border">test user</span>' : '') + '</div></td><td class="small">' + UI.esc(x.Branch || '') + '</td><td>' + (x.Tag ? UI.badge(x.Tag, x.Tag === 'PRODUCTION' ? 'Real' : x.Tag.charAt(0) + x.Tag.slice(1).toLowerCase()) : (x.Unreviewed ? UI.badge('PENDING', 'Not reviewed') : '<span class="text-soft small">—</span>')) + '</td></tr>'; });
@@ -8614,7 +8624,7 @@ window.MLS = (function () {
       if (UI.el('dm-prev')) UI.el('dm-prev').onclick = function () { state.page--; loadList(); };
       if (UI.el('dm-next')) UI.el('dm-next').onclick = function () { state.page++; loadList(); };
       paintButtons();
-    }).catch(fail);
+    }).catch(function (e) { fail(e); failed('dm-list', 'The records could not be loaded', e, loadList); });
   }
   /** The tag dialog: what kind of data, and why (required for test, demo and sample). Resolves to { recordType, reason } or null. */
   function askTag(what) {
@@ -8638,7 +8648,7 @@ window.MLS = (function () {
     Api.call('cleanup.candidates', { summary: true, filter: { state: 'untagged', to: to } }, { timeoutMs: 180000 }).then(function (r) {
       var total = r.kinds.reduce(function (s, k) { return s + k.count; }, 0);
       state.every = { to: to, counts: {}, total: total }; r.kinds.forEach(function (k) { state.every.counts[k.table] = k.count; });
-      UI.html('dm-every-out', table([['Kind'], ['Not tagged, created up to ' + UI.esc(to), 1]], r.kinds.filter(function (k) { return k.count; }).map(function (k) { return '<tr><td>' + UI.esc(k.label) + '</td><td class="text-end">' + n(k.count) + '</td></tr>'; }).concat(['<tr><td class="fw-bold">Total</td><td class="text-end fw-bold" id="dm-every-total">' + n(total) + '</td></tr>']), 'Nothing to tag.'));
+      UI.html('dm-every-out', table([['Kind'], ['Not tagged, created up to ' + UI.esc(to), 1]], r.kinds.filter(function (k) { return k.count; }).map(function (k) { return '<tr><td>' + UI.esc(k.label) + '</td><td class="text-end num">' + n(k.count) + '</td></tr>'; }).concat(['<tr><td class="fw-bold">Total</td><td class="text-end num fw-bold" id="dm-every-total">' + n(total) + '</td></tr>']), 'Nothing to tag.'));
       UI.el('dm-every-tag').disabled = !total; UI.el('dm-every-tag').innerHTML = '<i class="fa-solid fa-tags me-1"></i>Tag all ' + n(total) + ' as test data';
     }).catch(fail);
   }
@@ -8667,7 +8677,7 @@ window.MLS = (function () {
       var total = r.kinds.reduce(function (s, k) { return s + k.count; }, 0);
       var hours = r.kinds.filter(function (k) { return TIME_AND_PAY[k.table] && k.count; }), hoursN = hours.reduce(function (s, k) { return s + k.count; }, 0);
       state.tu = { counts: {}, total: total, hours: hoursN }; r.kinds.forEach(function (k) { state.tu.counts[k.table] = k.count; });
-      UI.html('dm-tu-out', table([['Kind'], ['Made by a test user, not tagged', 1]], r.kinds.filter(function (k) { return k.count; }).map(function (k) { return '<tr><td>' + UI.esc(k.label) + '</td><td class="text-end">' + n(k.count) + '</td></tr>'; }).concat(['<tr><td class="fw-bold">Total</td><td class="text-end fw-bold" id="dm-tu-total">' + n(total) + '</td></tr>']), 'Nothing to tag.')
+      UI.html('dm-tu-out', table([['Kind'], ['Made by a test user, not tagged', 1]], r.kinds.filter(function (k) { return k.count; }).map(function (k) { return '<tr><td>' + UI.esc(k.label) + '</td><td class="text-end num">' + n(k.count) + '</td></tr>'; }).concat(['<tr><td class="fw-bold">Total</td><td class="text-end num fw-bold" id="dm-tu-total">' + n(total) + '</td></tr>']), 'Nothing to tag.')
         + (hoursN ? '<div class="alert alert-warning small mt-2 mb-0" id="dm-tu-hours"><i class="fa-solid fa-triangle-exclamation me-1"></i>' + n(hoursN) + ' of them ' + (hoursN === 1 ? 'is' : 'are') + ' working time or pay (' + UI.esc(hours.map(function (k) { return k.label.toLowerCase(); }).join(', ')) + '). If a test user is a real employee in training, these are real hours: list them first (<i>List them below</i>, then choose the kind), tick them and press <i>Mark ticked real</i>, then count again.</div>' : ''));
       UI.el('dm-tu-tag').disabled = !total; UI.el('dm-tu-tag').innerHTML = '<i class="fa-solid fa-tags me-1"></i>Tag all ' + n(total) + ' as test data';
     }).catch(fail);
@@ -8683,11 +8693,11 @@ window.MLS = (function () {
 
   // ---------------------------------------------------------------- history
   function loadHistory() {
-    UI.html('dm-history', '<div class="p-3 text-soft">Loading…</div>'); UI.html('dm-history-report', '');
+    UI.html('dm-history', skel(4, 'Loading the cleanups')); UI.html('dm-history-report', '');
     return Api.call('cleanup.history', {}).then(function (r) {
-      UI.html('dm-history', table([['Cleanup'], ['Status'], ['Database'], ['Backup'], ['Deleted', 1], ['Kept', 1], ['Error']], r.rows.map(function (x) { return '<tr data-run="' + UI.esc(x.Id) + '"><td><button type="button" class="btn btn-link btn-sm p-0 fw-bold" data-report="' + UI.esc(x.Id) + '">' + UI.esc(x.Id) + '</button><div class="small text-soft">' + UI.esc(F.datetime(x.StartedAt || x.CreatedAt)) + ' · ' + UI.esc(x.By || '') + '</div></td><td>' + UI.badge(x.Status, STATUS_TEXT[x.Status] || x.Status) + '</td><td class="small">' + UI.esc(x.SpreadsheetName || '') + '</td><td class="small">' + UI.esc(x.BackupId || '') + '</td><td class="text-end">' + n(x.deleted) + '</td><td class="text-end">' + n(x.Preserved) + '</td><td class="small text-danger">' + UI.esc(x.Error || '') + '</td></tr>'; }), 'No cleanup has run.'));
+      UI.html('dm-history', table([['Cleanup'], ['Status'], ['Database'], ['Backup'], ['Deleted', 1], ['Kept', 1], ['Error']], r.rows.map(function (x) { return '<tr data-run="' + UI.esc(x.Id) + '"><td><button type="button" class="btn btn-link btn-sm p-0 fw-bold" data-report="' + UI.esc(x.Id) + '">' + UI.esc(x.Id) + '</button><div class="small text-soft">' + UI.esc(F.datetime(x.StartedAt || x.CreatedAt)) + ' · ' + UI.esc(x.By || '') + '</div></td><td>' + UI.badge(x.Status, STATUS_TEXT[x.Status] || x.Status) + '</td><td class="small">' + UI.esc(x.SpreadsheetName || '') + '</td><td class="small">' + UI.esc(x.BackupId || '') + '</td><td class="text-end num">' + n(x.deleted) + '</td><td class="text-end num">' + n(x.Preserved) + '</td><td class="small text-danger">' + UI.esc(x.Error || '') + '</td></tr>'; }), 'No cleanup has run.'));
       UI.el('dm-history').querySelectorAll('[data-report]').forEach(function (b) { b.onclick = function () { Api.call('cleanup.report', { runId: b.getAttribute('data-report') }).then(function (run) { UI.html('dm-history-report', '<div class="card mt-3"><div class="card-header">Report ' + UI.esc(run.Id) + '</div><div class="card-body">' + reportHtml(run, 'dm-h') + '</div></div>'); }).catch(fail); }; });
-    }).catch(fail);
+    }).catch(function (e) { fail(e); failed('dm-history', 'The cleanups could not be loaded', e, loadHistory); });
   }
 
   // ---------------------------------------------------------------- wiring
@@ -8697,7 +8707,9 @@ window.MLS = (function () {
     ['cleanup', 'preview', 'history'].forEach(function (t) { UI.el('dm-tab-' + t).hidden = t !== tab; });
     if (tab === 'cleanup') return loadCleanup();
     if (tab === 'history') return loadHistory();
-    return kinds().then(loadList);
+    // 1.33.0: the kinds are the first call of this tab; refused, nothing showed and nothing said why
+    if (!state.kinds.length) UI.html('dm-list', skel(6, 'Loading the records'));
+    return kinds().then(loadList, function (e) { fail(e); UI.html('dm-list', ''); failed('dm-list', 'The records could not be loaded', e, function () { show('preview'); }); });
   }
   function kinds() {
     if (state.kinds.length) return Promise.resolve();
