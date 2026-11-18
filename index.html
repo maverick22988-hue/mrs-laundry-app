@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'd06e922fc3', version: '1.36.0' };</script>
+  <script>window.MLS_PWA = { build: '5c6583564b', version: '1.37.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -157,6 +157,7 @@
   .modal.fade .modal-dialog { transform: scale(.98); opacity: 0; transition: transform 200ms var(--ease-out), opacity 200ms var(--ease-out); }
   .modal.show .modal-dialog { transform: none; opacity: 1; }
   .modal.fade:not(.show) .modal-dialog { transition-duration: var(--motion-fast); transition-timing-function: var(--ease-in); }
+  .dropdown-menu > .ph-more { display: none; }  /* 1.37.0: entries a menu carries on a phone only (an order's Receipt and Add note) */
   .modal-xl .modal-body { max-height: 75vh; overflow: auto; } .modal-footer .spacer { flex: 1 1 auto; } .modal-footer > .order-more { margin-right: auto; }
   /* menus: the one shadow, beige border; they fade in (150 ms, opacity only — Popper owns their transform) */
   .dropdown-menu { border-color: var(--mls-line); border-radius: var(--mls-radius-sm); box-shadow: var(--mls-shadow); }
@@ -642,8 +643,8 @@
     #topbar { gap: .5rem; padding: 0 10px; } .user-chip .who { display: none; } #branch-switch { max-width: 150px; font-size: 16px; }
     #topbar .page-title { font-size: 1.05rem; line-height: 1.15; white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-overflow: clip; flex: 1 1 auto; }
     .tabs { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
-    .mls-toast button { min-width: 40px; min-height: 40px; margin-top: -8px; margin-bottom: -8px; }
-    .sms-chip { min-height: 40px; padding: 6px 12px; } .sms-body { font-size: 16px; } .tpl-grid { grid-template-columns: 1fr; }
+    .mls-toast button { min-width: var(--mls-tap); min-height: var(--mls-tap); margin-top: -8px; margin-bottom: -8px; }
+    .sms-chip { min-height: var(--mls-tap); padding: 6px 12px; } .sms-body { font-size: 16px; } .tpl-grid { grid-template-columns: 1fr; }
     .view > .view-head { gap: .5rem; }
     .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .kpi { padding: 12px; } .kpi .kpi-icon { display: none; } .kpi .kpi-value { font-size: 1.3rem; margin-top: 2px; }
     .table-cards tbody tr { display: block; border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); margin-bottom: 10px; padding: 8px 10px; background: var(--mls-card); }
@@ -671,11 +672,11 @@
     #tc-manage .toolbar > .form-select { flex: 1 1 100%; }
     .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin-left: -4px; padding-left: 4px; } .tabs::-webkit-scrollbar { display: none; }
     .tabs button { flex: 0 0 auto; }
-    .btn { min-height: var(--mls-tap); } .btn-sm { min-height: 40px; } .btn-close { min-width: 40px; min-height: 40px; }
+    .btn { min-height: var(--mls-tap); } .btn-sm { min-height: var(--mls-tap); } .btn-close { min-width: 40px; min-height: 40px; }  /* 1.37.0: every button a finger presses is 44 px on a phone (small ones were 40; the close cross, 40 px plus its padding, was already taller) */
     .form-control, .form-select { min-height: var(--mls-tap); font-size: 16px; } .form-control-sm, .form-select-sm { min-height: 40px; font-size: 16px; }
-    .input-group-sm > .form-control, .input-group-sm > .form-select, .input-group-sm > .input-group-text { min-height: 40px; font-size: 15px; }
-    .tabs button, .chips button { min-height: 40px; } .form-check-input { width: 1.25em; height: 1.25em; }
-    .cart-line .rm, .line-editor .lx, .adj-line .lx, .cust-chip .x { min-width: 40px; min-height: 40px; }
+    .input-group-sm > .form-control, .input-group-sm > .form-select, .input-group-sm > .input-group-text { min-height: 40px; font-size: 16px; } .cart-line input { font-size: 16px; }  /* 1.37.0: 16 px in every field, so an iPhone does not zoom in when one is tapped (these were 15 and 14 px) */
+    .tabs button, .chips button { min-height: var(--mls-tap); } .form-check-input { width: 1.25em; height: 1.25em; }
+    .cart-line .rm, .line-editor .lx, .adj-line .lx, .cust-chip .x { min-width: var(--mls-tap); min-height: var(--mls-tap); }
     .pos-tiles { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); } .pos-tile { min-height: 80px; }
     .cart-line { grid-template-columns: minmax(0, 1fr) 88px 40px; } .cart-adjust .form-switch { min-height: 40px; }
     .line-editor, .line-editor-head { grid-template-columns: 1fr 70px 90px 40px; } .line-editor .lt, .line-editor-head .lt { display: none; }
@@ -760,7 +761,7 @@
      unit cost (each with its sign), the line total and the remove button share the next; the column heads give way to the signs. */
   .line-editor .le-field { display: block; margin: 0; min-width: 0; } .line-editor .le-tag { display: none; }
   @media (max-width: 575.98px) {
-    .line-editor { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto 40px; row-gap: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--mls-line-soft); margin-bottom: 8px; }
+    .line-editor { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto var(--mls-tap); row-gap: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--mls-line-soft); margin-bottom: 8px; }
     .line-editor > .le-item { grid-column: 1 / -1; }
     .line-editor .le-field { display: flex; align-items: center; gap: 6px; } .line-editor .le-tag { display: inline; font-size: var(--fs-xs); font-weight: 600; color: var(--mls-ink-soft); }
     .line-editor .lt { display: block; min-width: 72px; } .line-editor-head { display: none; }
@@ -769,6 +770,23 @@
     .table-cards.aligned td.lead-cell .max-w-320 { max-width: min(320px, calc(100vw - 96px)); }
     /* 1.32.0 (stage 5, Staff, Reports, Bags): a marked row keeps its mark on a phone as its card's edge (a day to review, a stale pay record, a holiday) */
     .table-cards.aligned tbody tr.table-danger { border-left: 3px solid var(--mls-danger); } .table-cards.aligned tbody tr.table-warning { border-left: 3px solid var(--mls-warning); } .table-cards.aligned tbody tr.table-info { border-left: 3px solid var(--mls-info); }
+    /* 1.37.0 (stage 7, phones).
+       A dialog never stands taller than the screen: its content scrolls between its title and its buttons, so Save and Cancel stay in
+       reach (a form without the scrolling class pushed them under the fold on a short phone).
+       An order's buttons stand two to a row at equal widths, a lone last one across both: three rows where four stood.
+       A card's heading wraps its button under its title rather than pushing it past the card's edge. */
+    .modal-dialog { height: calc(100% - var(--bs-modal-margin) * 2); } .modal-dialog > .modal-content { max-height: 100%; overflow: hidden; } .modal-dialog > .modal-content > .modal-body { overflow-y: auto; }
+    #order-modal-actions > .spacer { display: none; } #order-modal-actions > * { flex: 1 1 calc(50% - .5rem); margin: 0; }
+    #order-modal-actions > .dropdown { display: flex !important; } #order-modal-actions > .dropdown > .btn { flex: 1 1 auto; }
+    #order-modal-actions > .ph-out { display: none; } .dropdown-menu > .ph-more { display: block; }
+    .card-header.d-flex { flex-wrap: wrap; row-gap: .4rem; }
+  }
+  /* 1.37.0: under 400 px the page title keeps its longest word whole (it was cut inside a word, "Dashboar d"): the title is a little
+     smaller, the chip loses its arrow, and the branch's name gives up room before the title does. */
+  @media (max-width: 399.98px) {
+    #topbar { gap: .4rem; } #topbar .page-title { font-size: 1rem; overflow-wrap: break-word; min-width: min-content; }
+    #topbar .topbar-right { min-width: 0; flex: 0 1 auto; gap: .35rem; } #topbar .user-chip { padding: .25rem .3rem; } #topbar .user-chip.dropdown-toggle::after { display: none; }
+    #topbar #branch-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; } #topbar #branch-switch-wrap { min-width: 0; } #topbar #branch-switch { max-width: 112px; }
   }
   /* 1.31.0 (stage 5, Equipment, Incidents, Expenses). The machines' placeholders and their failure state span the grid; an expense's
      locked note takes the room between Close and the actions. */
@@ -960,7 +978,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.36.0';
+  var VERSION = '1.37.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -3907,9 +3925,12 @@ window.MLS = (function () {
     if (can('POS_REFUND') && Number(o.PaidAmount) > 0) danger.push(['refund', '', 'text-danger', 'fa-rotate-left', 'Refund']);
     if (can('ORDER_CANCEL') && t.indexOf('CANCELLED') >= 0) danger.push(['cancel', '', 'text-danger', 'fa-ban', 'Cancel order']);
     var item = function (a) { return '<li><button type="button" class="dropdown-item ' + a[2] + '" data-action="' + a[0] + '" data-arg="' + a[1] + '"><i class="fa-solid ' + a[3] + ' me-2" aria-hidden="true"></i>' + a[4] + '</button></li>'; };
-    var moreMenu = '<div class="dropdown dropup order-more"><button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" id="order-more" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis me-1" aria-hidden="true"></i>More</button><ul class="dropdown-menu">' + more.map(item).join('') + (danger.length ? '<li><hr class="dropdown-divider"></li>' + danger.map(item).join('') : '') + '</ul></div>';
+    // 1.37.0 (stage 7): on a phone Receipt and Add note stand under More (the same data-action, so the same handler), which leaves
+    // three rows of buttons where four stood and gives the order's content the room; wider screens keep them as buttons.
+    var phoneMore = main.filter(function (a) { return a[0] === 'print' || a[0] === 'note'; }).map(function (a) { return item([a[0], a[1], '', a[3], a[4]]).replace('<li>', '<li class="ph-more">'); }).join('') + '<li class="ph-more"><hr class="dropdown-divider"></li>';
+    var moreMenu = '<div class="dropdown dropup order-more"><button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" id="order-more" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis me-1" aria-hidden="true"></i>More</button><ul class="dropdown-menu">' + phoneMore + more.map(item).join('') + (danger.length ? '<li><hr class="dropdown-divider"></li>' + danger.map(item).join('') : '') + '</ul></div>';
     var smsMenu = M.Sms && M.Sms.can(o.Mobile) ? M.Sms.menuHtml({ id: 'order-sms-menu', items: M.Sms.workflowsForOrder(o).map(function (w) { return Object.assign({}, w, { arg: w.code === 'PAYMENT_RECEIVED' && o.Payments.length ? o.Payments.filter(function (p) { return p.Type === 'PAYMENT' && p.Status !== 'VOID'; }).slice(-1).map(function (p) { return p.Id; })[0] || '' : '' }); }) }) : '';
-    UI.html('order-modal-actions', moreMenu + '<span class="spacer"></span>' + smsMenu + main.map(function (a) { return '<button type="button" class="btn btn-sm ' + a[2] + '" data-action="' + a[0] + '" data-arg="' + a[1] + '"><i class="fa-solid ' + a[3] + ' me-1"></i>' + a[4] + '</button>'; }).join(''));
+    UI.html('order-modal-actions', moreMenu + '<span class="spacer"></span>' + smsMenu + main.map(function (a) { return '<button type="button" class="btn btn-sm ' + a[2] + (a[0] === 'print' || a[0] === 'note' ? ' ph-out' : '') + '" data-action="' + a[0] + '" data-arg="' + a[1] + '"><i class="fa-solid ' + a[3] + ' me-1"></i>' + a[4] + '</button>'; }).join(''));
     UI.el('order-modal-actions').querySelectorAll('[data-action]').forEach(function (b) { b.onclick = function () { act(b.getAttribute('data-action'), b.getAttribute('data-arg')); }; });
     if (smsMenu) M.Sms.wireMenu(UI.el('order-modal-actions'), function (arg) { return { orderId: o.Id, paymentId: arg || '' }; }, function () { Api.call('orders.get', { id: o.Id }).then(changed).catch(function () { /* keep the view */ }); });
   }
