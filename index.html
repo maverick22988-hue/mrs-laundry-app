@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '5c6583564b', version: '1.37.0' };</script>
+  <script>window.MLS_PWA = { build: 'ff3d5a0b8b', version: '1.38.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -634,7 +634,21 @@
   }
   /* ---- Touch devices of any size: comfortable targets ---- */
   @media (pointer: coarse) {
-    .btn { min-height: 42px; } .btn-sm { min-height: 38px; } .tabs button, .chips button { min-height: 38px; }
+    /* 1.38.0 (stage 7, tablets): what a finger presses is 44 px on every touch device, not on phones only (buttons were 42, small
+       ones and tabs 38, a line's remove button 32). A tick box is 24 px and its label 44 px tall, and the label ticks it too.
+       The Dashboard's text links stand in a 44 px row. A mouse keeps the compact sizes. */
+    .btn, .btn-sm { min-height: var(--mls-tap); } .tabs button, .chips button { min-height: var(--mls-tap); } .btn-close { min-width: 40px; min-height: 40px; }
+    .cart-line .rm, .line-editor .lx, .adj-line .lx, .cust-chip .x { min-width: var(--mls-tap); min-height: var(--mls-tap); }
+    .cart-line { grid-template-columns: minmax(0, 1fr) 84px var(--mls-tap); }
+    .line-editor, .line-editor-head { grid-template-columns: 1fr 90px 110px 110px var(--mls-tap); } .adj-head, .adj-line { grid-template-columns: 130px 1fr 120px var(--mls-tap); }
+    .mls-toast button { min-width: var(--mls-tap); min-height: var(--mls-tap); margin-top: -8px; margin-bottom: -8px; }
+    .sms-chip { min-height: var(--mls-tap); padding: 6px 12px; }
+    .form-check:not(.form-switch) { padding-left: 34px; margin-bottom: 0; } .form-check:not(.form-switch) > .form-check-input { width: 24px; height: 24px; margin-left: -34px; margin-top: 10px; }
+    .form-check:not(.form-switch) > .form-check-label { display: inline-block; padding: 10px 0; min-height: var(--mls-tap); }
+    .toolbar .form-check:not(.form-switch) > .form-check-input, .perm-module .perm .form-check-input { margin-top: 0; }
+    #view-dashboard a.small, #view-dashboard a.fw-bold { display: inline-flex; align-items: center; min-height: var(--mls-tap); }
+    .form-switch { padding-left: 54px; } .form-switch > .form-check-input { width: 44px; height: 24px; margin-left: -54px; margin-top: 10px; } .form-switch > .form-check-label { display: inline-block; padding: 10px 0; min-height: var(--mls-tap); }
+    .cart-adjust .form-switch { min-height: var(--mls-tap); } .cart-adjust .form-switch .form-check-label { padding: 0; min-height: 0; } #pos-customer-add { min-width: var(--mls-tap); }
   }
   /* ---- Phone (under 576px): cards for tables, scrolling tabs, 44px targets, 16px inputs (no zoom on focus) ---- */
   @media (max-width: 575.98px) {
@@ -678,7 +692,7 @@
     .tabs button, .chips button { min-height: var(--mls-tap); } .form-check-input { width: 1.25em; height: 1.25em; }
     .cart-line .rm, .line-editor .lx, .adj-line .lx, .cust-chip .x { min-width: var(--mls-tap); min-height: var(--mls-tap); }
     .pos-tiles { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); } .pos-tile { min-height: 80px; }
-    .cart-line { grid-template-columns: minmax(0, 1fr) 88px 40px; } .cart-adjust .form-switch { min-height: 40px; }
+    .cart-line { grid-template-columns: minmax(0, 1fr) 88px var(--mls-tap); }
     .line-editor, .line-editor-head { grid-template-columns: 1fr 70px 90px 40px; } .line-editor .lt, .line-editor-head .lt { display: none; }
     .modal-xl .modal-body { max-height: none; }
     .toolbar .form-control, .toolbar .form-select { min-width: 0; flex: 1 1 45%; } .toolbar .search { flex: 1 1 100%; }
@@ -787,6 +801,19 @@
     #topbar { gap: .4rem; } #topbar .page-title { font-size: 1rem; overflow-wrap: break-word; min-width: min-content; }
     #topbar .topbar-right { min-width: 0; flex: 0 1 auto; gap: .35rem; } #topbar .user-chip { padding: .25rem .3rem; } #topbar .user-chip.dropdown-toggle::after { display: none; }
     #topbar #branch-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; } #topbar #branch-switch-wrap { min-width: 0; } #topbar #branch-switch { max-width: 112px; }
+  }
+  /* 1.38.0 (stage 7, a phone on its side). On a screen under 480 px tall and wider than tall, a dialog uses the screen: a large one
+     takes its width, none stands taller than the screen, the content scrolls between a slimmer title and one row of buttons.
+     An order's Receipt and Add note sit under More, as on an upright phone (its content had 90 px under three rows of buttons);
+     its buttons take one row from about 700 px of width and two under that. */
+  @media (max-height: 479.98px) and (orientation: landscape) {
+    .modal { --bs-modal-margin: .5rem; } .modal-dialog.modal-lg, .modal-dialog.modal-xl { max-width: none; margin-left: var(--bs-modal-margin); margin-right: var(--bs-modal-margin); }
+    .modal-dialog { height: calc(100% - var(--bs-modal-margin) * 2); margin-top: var(--bs-modal-margin); margin-bottom: var(--bs-modal-margin); } .modal-dialog > .modal-content { max-height: 100%; overflow: hidden; } .modal-dialog > .modal-content > .modal-body { overflow-y: auto; max-height: none; }
+    .modal-header { padding-top: .5rem; padding-bottom: .5rem; } .modal-footer { padding-top: .35rem; padding-bottom: .35rem; }
+    #order-modal-actions > .spacer { display: none; } #order-modal-actions > * { flex: 1 1 auto; margin: 0; }
+    #order-modal-actions > .dropdown { display: flex !important; } #order-modal-actions > .dropdown > .btn { flex: 1 1 auto; }
+    #order-modal-actions > .ph-out { display: none; } .dropdown-menu > .ph-more { display: block; }
+    .modal .dropdown-menu { max-height: calc(100vh - 150px); overflow-y: auto; }
   }
   /* 1.31.0 (stage 5, Equipment, Incidents, Expenses). The machines' placeholders and their failure state span the grid; an expense's
      locked note takes the room between Close and the actions. */
@@ -978,7 +1005,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.37.0';
+  var VERSION = '1.38.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
