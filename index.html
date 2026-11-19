@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'ada2ae4ae1', version: '1.40.0' };</script>
+  <script>window.MLS_PWA = { build: 'bb476295dd', version: '1.41.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -717,6 +717,9 @@
   #sidebar :focus-visible, #sidebar .nav-link:focus-visible { outline: 2px solid var(--mls-sidebar-ink); outline-offset: -2px; box-shadow: none; }
   /* a row or a card that opens: the ring stands inside it, so a table does not clip it */
   [data-kb="row"]:focus-visible { outline: 2px solid var(--mls-primary); outline-offset: -2px; }
+/* 1.41.0: the company fields of a commercial client, a group inside the customer form */
+  .company-block { border: 1px solid var(--mls-line); border-radius: var(--mls-radius); padding: 10px 12px 12px; margin: 2px 0; min-width: 0; }
+  .company-block legend { float: none; width: auto; margin: 0 0 6px; padding: 0 6px; font-size: inherit; }
   .modal-body[data-kb-scroll]:focus-visible { outline-offset: -2px; }
   @media (max-width: 359.98px) { .denom-grid { grid-template-columns: minmax(0, 1fr) 72px 88px; } }  /* 1.40.0: the count sheet stood 18 px past its card at 320 px */
   @media (prefers-reduced-motion: reduce) {
@@ -888,6 +891,22 @@
     rows.sort(function (a, b) { return priceScore(b) - priceScore(a) || String(b.EffectiveFrom || '').localeCompare(String(a.EffectiveFrom || '')); });
     return rows[0] || null;
   }
+  /**
+   * Release 1.41.0: a client's own price for a service on a date, or null. rows: the client's rows (ClientPrices) — { ServiceId, Price, EffectiveFrom, EffectiveTo, Status }.
+   * A row in force beats every price-list row (priceService); of two in force, the one that started later wins. A row with no price counts as none.
+   */
+  function resolveClientPrice(serviceId, dateIso, rows) {
+    var mine = (rows || []).filter(function (p) {
+      if (!p || p.ServiceId !== serviceId) return false;
+      if (p.Status === 'INACTIVE' || p.Status === 'VOID') return false;
+      if (isBlank(p.Price) || !(Number(p.Price) >= 0)) return false;
+      if (!isBlank(p.EffectiveFrom) && dateIso < String(p.EffectiveFrom)) return false;
+      if (!isBlank(p.EffectiveTo) && dateIso > String(p.EffectiveTo)) return false;
+      return true;
+    });
+    mine.sort(function (a, b) { return String(b.EffectiveFrom || '').localeCompare(String(a.EffectiveFrom || '')) || String(b.Id || '').localeCompare(String(a.Id || '')); });
+    return mine[0] || null;
+  }
   function unitLabel(type) { return { PER_KILO: 'kg', PER_PIECE: 'pc', PER_LOAD: 'load', FLAT: 'flat' }[type] || ''; }
 
   /**
@@ -914,13 +933,14 @@
   };
 
   /**
-   * Prices one service line. line: { serviceId, qty, weightKg }; env: { branchId, customerType, dateIso, express, prices, services (map by id), settings }
-   * → { LineType, ServiceId, Description, Qty, WeightKg, Unit, UnitPrice, LineTotal, surcharge, minimumApplied, priceSource }
+   * Prices one service line. line: { serviceId, qty, weightKg }; env: { branchId, customerType, dateIso, express, prices, clientPrices (1.41.0: the customer's own rows), services (map by id), settings }
+   * → { LineType, ServiceId, Description, Qty, WeightKg, Unit, UnitPrice, LineTotal, surcharge, minimumApplied, priceSource ('client' when the client's own price was used), listPrice (1.41.0: with a client price, what the price list would have charged per unit; null when the list has none) }
    */
   function priceService(line, env) {
     var service = env.services[line.serviceId];
     if (!service || service.Status !== 'ACTIVE') fail('A service in the cart is no longer available', { lines: 'service' });
-    var row = resolvePrice(service.Id, env.branchId, env.customerType, env.dateIso, env.prices);
+    var listRow = resolvePrice(service.Id, env.branchId, env.customerType, env.dateIso, env.prices);
+    var own = resolveClientPrice(service.Id, env.dateIso, env.clientPrices), row = own || listRow;  // 1.41.0: the client's own price first; a service the price list does not price can still be sold to a client who has a price for it
     if (!row) fail(service.Name + ' has no price yet; set one under Services', { lines: 'price' });
     var unit = Money.cents(row.Price), type = service.PricingType, minQty = Number(service.MinimumQty) || 0;
     var qty, weight = '', billable;
@@ -939,7 +959,7 @@
     var surcharge = 0;
     if (env.express) { var pct = Number(service.ExpressSurchargePct); if (!(pct > 0)) pct = Number((env.settings || {}).ExpressSurchargePct) || 0; if (pct > 0) surcharge = Money.pct(total, pct); }
     return { LineType: 'SERVICE', ServiceId: service.Id, ItemId: '', Description: service.Name, Qty: qty, WeightKg: weight, Unit: service.Unit || unitLabel(type), UnitPrice: Money.pesos(unit), LineTotal: Money.pesos(Money.add(total, surcharge)),
-      surcharge: Money.pesos(surcharge), minimumApplied: minimumApplied, priceSource: (isBlank(row.BranchId) && isBlank(row.CustomerType)) ? 'base' : ('list' + (row.CustomerType ? ' · ' + row.CustomerType : '') + (row.BranchId ? ' · branch' : '')), pricingType: type };
+      surcharge: Money.pesos(surcharge), minimumApplied: minimumApplied, listPrice: own ? (listRow ? Money.pesos(Money.cents(listRow.Price)) : null) : undefined, priceSource: own ? 'client' : (isBlank(row.BranchId) && isBlank(row.CustomerType)) ? 'base' : ('list' + (row.CustomerType ? ' · ' + row.CustomerType : '') + (row.BranchId ? ' · branch' : '')), pricingType: type };
   }
   /** Prices one product line from the item's selling price. line: { itemId, qty }; env.items is a map by id. */
   function priceProduct(line, env) {
@@ -980,7 +1000,7 @@
     var lines = Array.isArray(input.lines) ? input.lines : [];
     if (!lines.length) fail('Add at least one service or product', { lines: 'required' });
     var settings = env.settings || {};
-    var e = { branchId: env.branchId, customerType: env.customerType || 'REGULAR', dateIso: env.dateIso, express: !!input.isExpress, prices: env.prices || [], services: env.services || {}, items: env.items || {}, settings: settings };
+    var e = { branchId: env.branchId, customerType: env.customerType || 'REGULAR', dateIso: env.dateIso, express: !!input.isExpress, prices: env.prices || [], clientPrices: env.clientPrices || [], services: env.services || {}, items: env.items || {}, settings: settings };
     var priced = lines.map(function (l) {
       l = l || {}; var type = String(l.lineType || (l.itemId ? 'PRODUCT' : 'SERVICE')).toUpperCase();
       if (type === 'PRODUCT') return priceProduct(l, e);
@@ -1005,7 +1025,7 @@
     var now = env.now instanceof Date ? env.now : new Date();
     return { lines: priced, subtotal: Money.pesos(subtotal), discountAmount: Money.pesos(discount), discountReason: reason, promo: promo, promoDiscount: Money.pesos(promoDiscount), manualDiscount: Money.pesos(manual), deliveryFee: Money.pesos(delivery), otherCharges: Money.pesos(other), total: Money.pesos(total), isExpress: e.express, dueHours: hours, dueAt: new Date(now.getTime() + hours * 3600000), totalWeightKg: Math.round(weight * 100) / 100, customerType: e.customerType };
   }
-  return { Money: Money, Colour: Colour, resolvePrice: resolvePrice, priceService: priceService, priceProduct: priceProduct, priceCart: priceCart, checkPromo: checkPromo, unitLabel: unitLabel, isBlank: isBlank, trim: trim, slug: slug };
+  return { Money: Money, Colour: Colour, resolvePrice: resolvePrice, resolveClientPrice: resolveClientPrice, priceService: priceService, priceProduct: priceProduct, priceCart: priceCart, checkPromo: checkPromo, unitLabel: unitLabel, isBlank: isBlank, trim: trim, slug: slug };
 }
     window.MLS_SHARED = defineShared_({ currencySymbol: '₱' });
   </script>
@@ -1017,7 +1037,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.40.0';
+  var VERSION = '1.41.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -2503,7 +2523,8 @@ window.MLS = (function () {
         return { services: services, prices: prices, items: products, promos: cat.promos || [], settings: cat.pricing || om.pricing || {}, branch: cat.branch, allowNegativeStock: !!om.allowNegativeStock, stockAsOf: r[1] && r[1].asOf ? r[1].asOf : null };
       });
     }
-    function customerType(customerId) { if (!customerId) return Promise.resolve('REGULAR'); return Store.get('customers', String(customerId)).then(function (c) { return c ? c.CustomerType || 'REGULAR' : 'REGULAR'; }).catch(function () { return 'REGULAR'; }); }
+    /** The customer as the copy holds it: the type, and (1.41.0) a commercial client's own prices, which the server sends with a Corporate customer's row and which beat the price list. */
+    function customerType(customerId) { var none = { type: 'REGULAR', prices: [] }; if (!customerId) return Promise.resolve(none); return Store.get('customers', String(customerId)).then(function (c) { return c ? { type: c.CustomerType || 'REGULAR', prices: c.CustomerType === 'CORPORATE' && Array.isArray(c.Prices) ? c.Prices : [] } : none; }).catch(function () { return none; }); }
     /** The quote the server would give (services.quote), computed by the same code over the catalogue the device holds. Rejects as the server rejects. */
     function price(input) {
       var S = window.MLS_SHARED, me = AppState.me;
@@ -2511,7 +2532,7 @@ window.MLS = (function () {
       if (!me || !me.activeBranch || me.activeBranch === 'ALL') return Promise.reject(fail('VALIDATION', 'Choose a branch first', { branchId: 'required' }));
       return Promise.all([catalogue(), customerType(input.customerId)]).then(function (r) {
         var cat = r[0]; if (!cat) throw fail('NETWORK', 'This device has no copy of the catalogue yet; open the POS once while connected.');
-        var env = { branchId: me.activeBranch, customerType: r[1], dateIso: isoLocalDate(), now: new Date(), canDiscount: (me.permissions || []).indexOf('POS_DISCOUNT') >= 0, prices: cat.prices, services: cat.services, items: cat.items, promos: cat.promos, settings: cat.settings };
+        var env = { branchId: me.activeBranch, customerType: r[1].type, clientPrices: r[1].prices, dateIso: isoLocalDate(), now: new Date(), canDiscount: (me.permissions || []).indexOf('POS_DISCOUNT') >= 0, prices: cat.prices, services: cat.services, items: cat.items, promos: cat.promos, settings: cat.settings };
         var q;
         try { q = S.priceCart(input, env); } catch (e) { throw { code: e.code || 'VALIDATION', message: e.message || String(e), fields: e.fields || null }; }
         q.dueAt = q.dueAt instanceof Date ? q.dueAt.toISOString() : q.dueAt;
@@ -3498,6 +3519,8 @@ window.MLS = (function () {
   function cartPayload() {
     return { lines: cart.lines.map(function (l) { return l.lineType === 'PRODUCT' ? { lineType: 'PRODUCT', itemId: l.itemId, qty: l.qty } : { lineType: 'SERVICE', serviceId: l.serviceId, qty: l.qty, weightKg: l.pricingType === 'PER_KILO' ? l.weightKg : '' }; }), isExpress: cart.isExpress, discountAmount: cart.discountAmount || 0, discountReason: cart.discountReason, promoCode: cart.promoCode || '', deliveryFee: cart.deliveryFee || 0, otherCharges: cart.otherCharges || 0, customerId: cart.customer ? cart.customer.Id : '', orderId: editing ? editing.id : '' };
   }
+  /** 1.41.0: says when the client's own price was used, on how many of the service lines (a commercial client's contract prices beat the price list). */
+  function clientPriceNote(q) { var n = (q.lines || []).filter(function (l) { return l.priceSource === 'client'; }).length; return n ? ' · client price on ' + n + ' line' + (n === 1 ? '' : 's') : ''; }
   function signature() { return JSON.stringify(cartPayload()); }
   var serverQuoteSoon = UI.debounce(function () { ensureQuote().catch(function () { /* shown in the note */ }); }, 450);
   /** Every cart change: the exact total at once from the shared pricing core over the catalogue this device holds, then the server's quote (debounced) which replaces it. */
@@ -3546,7 +3569,7 @@ window.MLS = (function () {
     if (fresh) promoNote(quote.promo ? 'Promo ' + quote.promo.Code + ' applied: -' + F.peso(quote.promoDiscount) + (Number(quote.manualDiscount) > 0 ? ' plus a discount of ' + F.peso(quote.manualDiscount) : '') : '', false);
     UI.html('pos-totals', '<span>Subtotal</span><span class="money">' + F.peso(sub) + '</span>' + (disc ? '<span>Discount' + (fresh && quote.promo ? ' <span class="text-soft small">' + UI.esc(quote.promo.Code) + '</span>' : '') + '</span><span class="money">-' + F.peso(disc) + '</span>' : '') + (del ? '<span>Delivery fee</span><span class="money">' + F.peso(del) + '</span>' : '') + (oth ? '<span>Other charges</span><span class="money">' + F.peso(oth) + '</span>' : '') + '<span class="fw-bold">Total</span><span class="grand money" id="pos-total">' + F.peso(total) + '</span>');
     var note = UI.el('pos-quote-note'); note.className = 'small text-faint mt-1';
-    note.textContent = !cart.lines.length ? '' : fresh ? ('Due ' + (quote.dueAt ? F.datetime(quote.dueAt) : 'in ' + quote.dueHours + ' h') + (quote.isExpress ? ' · express' : '') + (quote.customerType && quote.customerType !== 'REGULAR' ? ' · ' + F.status(quote.customerType) + ' price' : '') + (quote._local ? ' · confirming with the server…' : '')) : 'Estimated — confirming price…';
+    note.textContent = !cart.lines.length ? '' : fresh ? ('Due ' + (quote.dueAt ? F.datetime(quote.dueAt) : 'in ' + quote.dueHours + ' h') + (quote.isExpress ? ' · express' : '') + (quote.customerType && quote.customerType !== 'REGULAR' ? ' · ' + F.status(quote.customerType) + ' price' : '') + clientPriceNote(quote) + (quote._local ? ' · confirming with the server…' : '')) : 'Estimated — confirming price…';
     var btn = UI.el('pos-checkout'); btn.disabled = !cart.lines.length || !lensOk(); btn.innerHTML = editing ? '<i class="fa-solid fa-pen-to-square me-2"></i>Save correction · ' + F.peso(total) : '<i class="fa-solid fa-cash-register me-2"></i>' + (cart.lines.length ? 'Charge ' + F.peso(total) : 'Charge');
     // the phone cart bar: the stacked layout puts the cart below the tiles, so the running total and Charge stay within reach
     var on = cart.lines.length > 0 && lensOk() && M.Router.current() === 'pos';
@@ -4113,7 +4136,7 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — CustomersPage.html: the Customers module: list, search, new/edit, the customer page with balance and order history. Release 1.28.0 (Stage 5) brings it to the design system: skeleton rows on a first visit (never the device's empty store), amount columns, phone cards, the customer dialog in titled sections with its footer ordered like the order dialog's, every field of the form tied to its label, and VIP written as such. -->
+        <!-- Mrs Laundry Sys — CustomersPage.html: the Customers module: list, search, new/edit, the customer page with balance and order history. Release 1.28.0 (Stage 5) brings it to the design system: skeleton rows on a first visit (never the device's empty store), amount columns, phone cards, the customer dialog in titled sections with its footer ordered like the order dialog's, every field of the form tied to its label, and VIP written as such. Release 1.41.0: a Corporate customer is a commercial client — the form asks what it is (a hotel, a spa…), which property, who speaks for it, the contract and the billing terms, and its dialog lists the client's own prices (set with CLIENT_PRICE_EDIT), which beat the price list at the counter. -->
 <section id="view-customers" class="view" hidden>
   <div class="view-head">
     <h2>Customers</h2>
@@ -4141,6 +4164,19 @@ window.MLS = (function () {
           <div class="col-12"><label class="form-label" for="cust-f-name">Full name</label><input class="form-control" id="cust-f-name" name="FullName" maxlength="80" required></div>
           <div class="col-6"><label class="form-label" for="cust-f-phone">Mobile</label><input class="form-control" id="cust-f-phone" name="Phone" inputmode="tel" placeholder="09XXXXXXXXX"></div>
           <div class="col-6"><label class="form-label" for="cust-f-type">Type</label><select class="form-select" id="cust-f-type" name="CustomerType"></select></div>
+          <div class="col-12" id="cust-company" hidden>
+            <fieldset class="company-block">
+              <legend class="section-title">Commercial client</legend>
+              <div class="row g-2">
+                <div class="col-6"><label class="form-label" for="cust-f-est">Establishment</label><input class="form-control" id="cust-f-est" name="EstablishmentType" maxlength="40" list="cust-est-list" placeholder="Hotel, spa, clinic…"><datalist id="cust-est-list"><option value="Hotel"><option value="Resort"><option value="Spa"><option value="Hospital"><option value="Clinic"><option value="Condominium"><option value="Airbnb or serviced apartment"><option value="Restaurant"><option value="Salon"><option value="Gym"><option value="Other"></datalist></div>
+                <div class="col-6"><label class="form-label" for="cust-f-prop">Property or branch</label><input class="form-control" id="cust-f-prop" name="PropertyName" maxlength="80"></div>
+                <div class="col-6"><label class="form-label" for="cust-f-rep">Representative</label><input class="form-control" id="cust-f-rep" name="Representative" maxlength="80"></div>
+                <div class="col-6"><label class="form-label" for="cust-f-reppos">Position</label><input class="form-control" id="cust-f-reppos" name="RepresentativePosition" maxlength="60"></div>
+                <div class="col-6"><label class="form-label" for="cust-f-contract">Contract reference</label><input class="form-control" id="cust-f-contract" name="ContractRef" maxlength="40"></div>
+                <div class="col-6"><label class="form-label" for="cust-f-terms">Billing terms</label><input class="form-control" id="cust-f-terms" name="BillingTerms" maxlength="80" placeholder="Per job order, 15 days…"></div>
+              </div>
+            </fieldset>
+          </div>
           <div class="col-12"><label class="form-label" for="cust-f-email">E-mail</label><input class="form-control" id="cust-f-email" name="Email" type="email"></div>
           <div class="col-12"><label class="form-label" for="cust-f-address">Address</label><input class="form-control" id="cust-f-address" name="Address" maxlength="200"></div>
           <div class="col-6"><label class="form-label" for="cust-f-lat">Latitude</label><input class="form-control" id="cust-f-lat" name="Latitude" type="number" inputmode="decimal" step="any"></div>
@@ -4162,6 +4198,28 @@ window.MLS = (function () {
       <div class="modal-body" id="cust-view-body"></div>
       <div class="modal-footer flex-wrap gap-2" id="cust-view-actions"></div>
     </div>
+  </div>
+</div>
+
+<div class="modal fade" id="cust-price-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" id="cust-price-form" autocomplete="off">
+      <div class="modal-header"><h5 class="modal-title" id="cust-price-title">Client price</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <input type="hidden" name="Id"><input type="hidden" name="CustomerId">
+        <p class="small text-soft mb-2" id="cust-price-hint"></p>
+        <div class="row g-2">
+          <div class="col-12"><label class="form-label" for="cust-p-service">Service</label><select class="form-select" id="cust-p-service" name="ServiceId" required></select></div>
+          <div class="col-6"><label class="form-label" for="cust-p-price">Client price</label><input class="form-control" id="cust-p-price" name="Price" type="number" inputmode="decimal" min="0" step="0.01" required></div>
+          <div class="col-6"><div class="form-label">Price list</div><div class="form-control-plaintext money" id="cust-p-list">—</div></div>
+          <div class="col-6"><label class="form-label" for="cust-p-from">First day</label><input class="form-control" id="cust-p-from" name="EffectiveFrom" type="date"></div>
+          <div class="col-6"><label class="form-label" for="cust-p-to">Last day</label><input class="form-control" id="cust-p-to" name="EffectiveTo" type="date"></div>
+          <div class="col-12"><label class="form-label" for="cust-p-notes">Note</label><input class="form-control" id="cust-p-notes" name="Notes" maxlength="200" placeholder="The contract or who agreed it"></div>
+        </div>
+        <div class="alert alert-danger small mt-2 mb-0" id="cust-price-error" hidden role="alert"></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save</button></div>
+    </form>
   </div>
 </div>
 
@@ -4209,21 +4267,31 @@ window.MLS = (function () {
     f.querySelector('[name=CustomerType]').innerHTML = UI.options(types, c ? c.CustomerType : 'REGULAR', typeLabel, function (t) { return t; });
     UI.el('cust-form-title').textContent = c ? 'Edit ' + c.FullName : 'New customer'; UI.el('cust-status-wrap').hidden = !c;
     if (c) Form.write(f, c); else f.querySelector('[name=Id]').value = '';
+    companyBlock();
     M.Modal.open('cust-modal'); setTimeout(function () { if (!f.contains(document.activeElement)) f.querySelector('[name=FullName]').focus(); }, 300);
+  }
+  /** 1.41.0: the company fields show for a Corporate customer only; while hidden they are disabled, so the form does not send them and the server leaves what it holds. */
+  function companyBlock() {
+    var f = UI.el('cust-form'), on = f.querySelector('[name=CustomerType]').value === 'CORPORATE', box = UI.el('cust-company');
+    box.hidden = !on; box.querySelectorAll('input').forEach(function (el) { el.disabled = !on; });
   }
   function open(id) {
     return Api.call('customers.get', { id: id }, { busy: true }).then(function (c) {
       UI.el('cust-view-title').innerHTML = UI.esc(c.FullName) + ' ' + (c.CustomerType !== 'REGULAR' ? '<span class="badge text-bg-light border">' + UI.esc(typeLabel(c.CustomerType)) + '</span> ' : '') + UI.badge(c.Status) + (c.Anonymised ? ' <span class="badge text-bg-secondary" title="The personal data was erased on ' + UI.esc(F.datetime(c.AnonymisedAt)) + '">data erased</span>' : '');
       var grid = [['Mobile', UI.esc(c.Phone || '—') + (c.Phone && !c.Mobile ? ' <span class="badge text-bg-light border" title="Not a mobile number: no SMS">no SMS</span>' : '') + (c.SmsOptOut ? ' <span class="badge text-bg-secondary" title="Opted out of promotional messages">no promos</span>' : '')], ['E-mail', c.Email ? mail(c.Email) : '—'], ['Address', UI.esc(c.Address || '—')], ['Branch', UI.esc(UI.branchName(c.BranchId))], ['Orders', c.OrderCount], ['Total paid', F.peso(c.TotalPaid)], ['Balance', '<span class="' + (Number(c.Balance) > 0 ? 'text-danger' : 'text-success') + '">' + F.peso(c.Balance) + '</span>'], ['Since', F.date(c.CreatedAt)]];
+      // 1.41.0: a commercial client's own facts, only those that are filled
+      if (c.CustomerType === 'CORPORATE') [['Establishment', c.EstablishmentType], ['Property', c.PropertyName], ['Representative', [c.Representative, c.RepresentativePosition].filter(Boolean).join(' · ')], ['Contract', c.ContractRef], ['Billing terms', c.BillingTerms]].forEach(function (g) { if (g[1]) grid.push([g[0], UI.esc(g[1])]); });
       // 1.28.0 (Stage 5): the facts and the notes, then titled sections over a hairline, as the order dialog has them: the order history
       // (on a phone each order one row: the number with the date and status under it, the total on the right with any balance under it)
       // and the messages (skeleton rows while they load)
       var orders = c.Orders.length ? c.Orders.map(function (o) { var owed = Number(o.BalanceAmount) > 0; return '<tr class="pointer" tabindex="0" data-kb="row" data-order="' + UI.esc(o.Id) + '"><td data-label="Order" class="lead-cell"><span class="fw-bold">' + UI.esc(o.OrderNo) + '</span>' + (o.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + '<div class="ph-only sub">' + F.date(o.OrderDate) + ' · ' + UI.badge(o.Status) + '</div></td><td data-label="Date" class="ph-hide text-nowrap">' + F.date(o.OrderDate) + '</td><td data-label="Total" class="text-end num money">' + F.peso(o.OrderTotal) + (owed ? '<span class="ph-only sub text-danger fw-bold">balance ' + F.peso(o.BalanceAmount) + '</span>' : '') + '</td><td data-label="Balance" class="text-end num money ph-hide ' + (owed ? 'text-danger fw-bold' : '') + '">' + F.peso(o.BalanceAmount) + '</td><td data-label="Status" class="ph-hide">' + UI.badge(o.Status) + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="no-label text-soft">No orders yet.</td></tr>';
       UI.html('cust-view-body', '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' + (c.Notes ? '<div class="alert alert-light border small mt-3 mb-0">' + UI.esc(c.Notes) + '</div>' : '') +
+        (c.CustomerType === 'CORPORATE' && !c.Anonymised ? '<section class="od-section" id="cust-prices-section"><h6 class="section-title">Client prices</h6><p class="small text-soft mb-2">This client\'s own prices. Each beats the price list while it is in force; an order already taken keeps the price it was made with.</p><div id="cust-prices">' + UI.skeleton({ kind: 'rows', count: 2, label: 'Loading the client prices' }) + '</div></section>' : '') +
         '<section class="od-section"><h6 class="section-title">Order history</h6><div class="table-wrap"><table class="table table-sm table-cards compact mb-0"><thead><tr><th>Order</th><th>Date</th><th class="text-end num">Total</th><th class="text-end num">Balance</th><th>Status</th></tr></thead><tbody>' + orders + '</tbody></table></div></section>' +
         (M.Auth.can('SMS_VIEW_LOGS') ? '<section class="od-section"><h6 class="section-title">Messages</h6><p class="small text-soft mb-2">What was prepared and what staff reported; never a delivery confirmation.</p><div id="cust-sms-history" class="small text-soft">' + UI.skeleton({ kind: 'rows', count: 2, label: 'Loading the messages' }) + '</div></section>' : ''));
       UI.el('cust-view-body').querySelectorAll('[data-order]').forEach(function (tr) { tr.onclick = function () { M.Modal.closeThen('cust-view-modal', function () { M.OrdersUI.openOrder(tr.getAttribute('data-order')); }); }; });
       if (M.Auth.can('SMS_VIEW_LOGS')) loadHistory(c.Id);
+      if (c.CustomerType === 'CORPORATE' && !c.Anonymised) loadPrices(c);
       // 1.28.0: the footer as the order dialog's (1.25.0): the rare and the destructive actions one tap away under More at the left (Report
       // incident; Erase personal data, 1.12.0, after a divider), then Send SMS and Edit, and New order, the one primary, at the right
       var more = [], danger = [], right = [];
@@ -4250,6 +4318,68 @@ window.MLS = (function () {
         onSubmit: function (d) { return Api.call('customers.anonymise', { id: c.Id, reason: d.reason, confirm: true }, { busy: true }).then(function (r) { Toast.warning('Personal data erased: ' + Object.keys(r.erased.rows).map(function (t) { return r.erased.rows[t] + ' ' + t; }).join(', ') + (r.erased.archives && r.erased.archives.rows ? ', ' + r.erased.archives.rows + ' archived rows' : '')); load(); return r; }); } });
     });
   }
+  // ------------------------------------------------------------------ release 1.41.0: a commercial client's own prices
+  function day(v) { return v ? F.date(v) : ''; }
+  function period(r) { return r.EffectiveFrom && r.EffectiveTo ? day(r.EffectiveFrom) + ' to ' + day(r.EffectiveTo) : r.EffectiveFrom ? 'from ' + day(r.EffectiveFrom) : r.EffectiveTo ? 'until ' + day(r.EffectiveTo) : 'always'; }
+  /** The client's prices under the customer dialog: the service, the client's price beside what the price list would charge, when it holds, who approved it. The actions need CLIENT_PRICE_EDIT. */
+  function loadPrices(c) {
+    var box = UI.el('cust-prices'); if (!box) return;
+    Api.call('customers.prices', { id: c.Id }).then(function (r) {
+      if (!UI.el('cust-prices')) return;
+      var add = r.canEdit && r.eligible && c.Status === 'ACTIVE' ? '<button type="button" class="btn btn-sm btn-outline-primary mt-2" data-price="add"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Add a price</button>' : '';
+      if (!r.rows.length) { box.innerHTML = '<div class="small text-soft">No price of its own yet: this client pays the price list.</div>' + add; }
+      else box.innerHTML = '<div class="table-wrap"><table class="table table-sm table-cards compact mb-0"><thead><tr><th>Service</th><th class="text-end num">Client price</th><th class="text-end num">Price list</th><th>In force</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + r.rows.map(function (x, i) {
+        var state = x.InForce ? '' : (x.EffectiveFrom && x.EffectiveFrom > r.today ? ' <span class="badge text-bg-light border">not yet</span>' : ' <span class="badge text-bg-secondary">ended</span>');
+        var acts = r.canEdit && r.eligible ? '<div class="dropdown"><button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Actions for ' + UI.esc(x.Service) + '"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button><ul class="dropdown-menu dropdown-menu-end">' +
+          (x.InForce ? '<li><button type="button" class="dropdown-item" data-price="replace" data-i="' + i + '">New price from a date</button></li>' : '') +
+          '<li><button type="button" class="dropdown-item" data-price="edit" data-i="' + i + '">' + (x.EffectiveFrom && x.EffectiveFrom >= r.today ? 'Change' : 'Set the last day') + '</button></li><li><hr class="dropdown-divider"></li><li><button type="button" class="dropdown-item text-danger" data-price="remove" data-i="' + i + '">Remove</button></li></ul></div>' : '';
+        // on a phone each price is one row: the service with when it holds under it, the client's price at the right with the list price under it
+        var list = x.ListPrice === null ? 'not set' : F.peso(x.ListPrice);
+        return '<tr><td data-label="Service" class="lead-cell"><span class="fw-bold">' + UI.esc(x.Service) + '</span>' + (x.ServiceStatus && x.ServiceStatus !== 'ACTIVE' ? ' ' + UI.badge(x.ServiceStatus) : '') + '<div class="small text-soft">per ' + UI.esc(x.Unit || 'unit') + (x.Notes ? ' · ' + UI.esc(x.Notes) : '') + '</div><div class="ph-only sub">' + UI.esc(period(x)) + state + '</div></td><td data-label="Client price" class="text-end num money"><span class="fw-bold">' + F.peso(x.Price) + '</span><span class="ph-only sub">list ' + list + '</span></td><td data-label="Price list" class="text-end num money ph-hide">' + (x.ListPrice === null ? '<span class="text-soft">not set</span>' : list) + '</td><td data-label="In force" class="ph-hide"><span class="small">' + UI.esc(period(x)) + '</span>' + state + (x.ApprovedBy ? '<div class="small text-soft">by ' + UI.esc(x.ApprovedBy) + '</div>' : '') + '</td><td class="text-end">' + acts + '</td></tr>';
+      }).join('') + '</tbody></table></div>' + add;
+      box.querySelectorAll('[data-price]').forEach(function (b) { b.onclick = function () {
+        var a = b.getAttribute('data-price'), row = b.hasAttribute('data-i') ? r.rows[Number(b.getAttribute('data-i'))] : null;
+        if (a === 'remove') return removePrice(c, row);
+        M.Modal.closeThen('cust-view-modal', function () { priceForm(c, a, row, r); });
+      }; });
+    }).catch(function (e) { if (UI.el('cust-prices')) UI.el('cust-prices').innerHTML = '<div class="small text-soft">The client prices could not be loaded: ' + UI.esc(UI.error(e)) + '</div>'; });
+  }
+  function removePrice(c, row) {
+    M.Modal.closeThen('cust-view-modal', function () {
+      M.Modal.confirm({ title: 'Remove the price of ' + row.Service, danger: true, okText: 'Remove the price',
+        body: c.FullName + ' pays ' + F.peso(row.Price) + ' per ' + (row.Unit || 'unit') + ' now. Removed, the price list applies again' + (row.ListPrice === null ? ' (it has no price for this service yet)' : ': ' + F.peso(row.ListPrice)) + '. Orders already taken keep their price.' })
+        .then(function (yes) { if (!yes) return open(c.Id); return Api.call('customers.removePrice', { id: row.Id }, { busy: true }).then(function () { Toast.success('Price removed'); refreshCopy(); return open(c.Id); }).catch(function (e) { Toast.danger(UI.error(e)); return open(c.Id); }); });
+    });
+  }
+  /**
+   * The price dialog. add: any active service, from and to optional. replace: a new price for the same service from a date (today unless chosen) — the price
+   * in force ends the day before, in one save. edit: a price not yet in force may change whole; one in force keeps its amount and first day, only its last day and note change.
+   */
+  var priceMode = null;
+  /** After a price changed here: this device refreshes its own copy at once (the others take it at their next refresh), so a sale made offline right after is priced with it. */
+  function refreshCopy() { try { if (M.Sync && M.Sync.pull) M.Sync.pull().catch(function () { /* the next refresh brings it */ }); } catch (e) { /* no copy on this device */ } }
+  function priceForm(c, mode, row, r) {
+    var f = UI.el('cust-price-form'); f.reset(); Form.clearErrors(f); UI.el('cust-price-error').hidden = true;
+    var started = mode === 'edit' && !(row.EffectiveFrom && row.EffectiveFrom >= r.today);
+    priceMode = { mode: mode, customer: c, row: row };
+    UI.el('cust-price-title').textContent = (mode === 'add' ? 'A price for ' : mode === 'replace' ? 'A new price for ' : 'The price of ') + c.FullName;
+    UI.el('cust-price-hint').textContent = mode === 'replace' ? 'The price in force (' + F.peso(row.Price) + ') ends the day before the first day you choose.' : started ? 'This price is in force: its amount and first day stay as they were. Give it a last day, or set a new price from a date.' : 'Leave both days empty for a price that always holds.';
+    f.querySelector('[name=CustomerId]').value = c.Id; f.querySelector('[name=Id]').value = mode === 'edit' ? row.Id : '';
+    var sel = f.querySelector('[name=ServiceId]'), lists = {};
+    var fill = function (services) {
+      sel.innerHTML = (mode === 'add' ? '<option value="">Choose a service</option>' : '') + services.map(function (s) { lists[s.Id] = s; return '<option value="' + UI.esc(s.Id) + '">' + UI.esc(s.Name + (s.Category ? ' · ' + s.Category : '')) + '</option>'; }).join('');
+      if (row) sel.value = row.ServiceId; showList();
+    };
+    var showList = function () { var s = lists[sel.value]; UI.el('cust-p-list').textContent = s ? (s.ListPrice === null || s.ListPrice === undefined ? 'not set' : F.peso(s.ListPrice) + ' per ' + (s.Unit || 'unit')) : '—'; };
+    sel.onchange = showList; sel.disabled = mode !== 'add';
+    if (mode === 'add') Api.call('services.list', { forPos: true }).then(function (cat) { fill((cat.rows || []).map(function (s) { return { Id: s.Id, Name: s.Name, Category: s.Category, Unit: s.Unit, ListPrice: s.HasPrice ? s.Price : null }; })); }).catch(function (e) { UI.el('cust-price-error').textContent = UI.error(e); UI.el('cust-price-error').hidden = false; });
+    else fill([{ Id: row.ServiceId, Name: row.Service, Category: row.Category, Unit: row.Unit, ListPrice: row.ListPrice }]);
+    var price = f.querySelector('[name=Price]'), from = f.querySelector('[name=EffectiveFrom]'), to = f.querySelector('[name=EffectiveTo]');
+    price.disabled = started; from.disabled = started;
+    if (mode === 'edit') { price.value = row.Price; from.value = row.EffectiveFrom || ''; to.value = row.EffectiveTo || ''; f.querySelector('[name=Notes]').value = row.Notes || ''; }
+    if (mode === 'replace') { from.value = r.today; from.min = r.today; from.required = true; } else { from.removeAttribute('min'); from.required = false; }
+    M.Modal.open('cust-price-modal'); setTimeout(function () { var first = mode === 'add' ? sel : started ? to : price; if (!f.contains(document.activeElement)) first.focus(); }, 300);
+  }
   function loadHistory(customerId) {
     var box = UI.el('cust-sms-history'); if (!box) return;
     Api.call('sms.logs', { customerId: customerId, size: 20 }).then(function (r) {
@@ -4266,6 +4396,18 @@ window.MLS = (function () {
     UI.el('cust-status').onchange = function () { state.status = this.value; state.page = 1; load(); };
     UI.el('cust-balance').onchange = function () { state.withBalance = this.checked; state.page = 1; load(); };
     UI.el('cust-inactive').onchange = function () { state.inactive = this.checked; state.page = 1; load(); };
+    UI.el('cust-form').querySelector('[name=CustomerType]').onchange = companyBlock;
+    var pf = UI.el('cust-price-form');
+    pf.onsubmit = function (ev) {
+      ev.preventDefault(); if (!priceMode) return;
+      var m = priceMode, d = Form.read(pf), err = UI.el('cust-price-error'); err.hidden = true;
+      // a field the form holds disabled (a price in force keeps its amount and first day; the service of a row is fixed) is sent as the row has it
+      var p = { CustomerId: m.customer.Id, ServiceId: m.row ? m.row.ServiceId : d.ServiceId, Price: d.Price !== undefined ? d.Price : m.row.Price, EffectiveFrom: d.EffectiveFrom !== undefined ? d.EffectiveFrom : (m.row.EffectiveFrom || ''), EffectiveTo: d.EffectiveTo || '', Notes: d.Notes || '' };
+      if (m.mode === 'edit') p.Id = m.row.Id; if (m.mode === 'replace') p.replace = true;
+      if (!p.ServiceId) { err.textContent = 'Choose a service'; err.hidden = false; return; }
+      Api.call('customers.savePrice', p, { busy: true }).then(function () { Toast.success(m.mode === 'add' ? 'Price set' : m.mode === 'replace' ? 'New price set' : 'Price updated'); priceMode = null; refreshCopy(); M.Modal.closeThen('cust-price-modal', function () { open(m.customer.Id); }); }).catch(function (e) { if (e.fields) Form.errors(pf, e.fields, e.message); err.textContent = UI.error(e); err.hidden = false; });
+    };
+    UI.el('cust-price-modal').addEventListener('hidden.bs.modal', function () { if (priceMode) { var id = priceMode.customer.Id; priceMode = null; open(id); } });  // cancelled: back to the client
     var f = UI.el('cust-form');
     f.onsubmit = function (ev) {
       ev.preventDefault(); if (Form.validate(f, { FullName: ['required'], Phone: ['phone'], Email: ['email'] })) return;
