@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '5150038583', version: '1.39.0' };</script>
+  <script>window.MLS_PWA = { build: 'ada2ae4ae1', version: '1.40.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -237,7 +237,7 @@
   #sidebar .nav-indicator { position: absolute; left: 0; top: 0; width: 3px; height: 0; border-radius: 3px; background: var(--mls-action); opacity: 0; pointer-events: none; z-index: 1; transition: transform 200ms var(--ease-out), height 200ms var(--ease-out), opacity var(--motion-fast) var(--ease-inout); }
   #sidebar .nav-indicator.on { opacity: 1; } #sidebar .nav-indicator.instant { transition: none; }
   #main-nav .nav-link .phase-badge { margin-left: auto; flex: 0 0 auto; white-space: nowrap; font-size: var(--fs-xs); background: rgba(255, 249, 227, .14); color: var(--mls-sidebar-ink); padding: .2em .55em; border-radius: 999px; letter-spacing: .04em; }
-  #sidebar .sidebar-foot { margin-top: auto; padding: 12px 18px 16px; font-size: .75rem; color: rgba(230, 208, 171, .7); border-top: 1px solid var(--mls-sidebar-line); }
+  #sidebar .sidebar-foot { margin-top: auto; padding: 12px 18px 16px; font-size: .75rem; color: var(--mls-sidebar-muted); border-top: 1px solid var(--mls-sidebar-line); }
   #sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(48, 42, 40, .5); z-index: 39; }
   #app-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
   #topbar { height: var(--mls-topbar-h); background: var(--mls-card); border-bottom: 1px solid var(--mls-line); display: flex; align-items: center; gap: .75rem; padding: 0 16px; position: sticky; top: 0; z-index: 30; }
@@ -370,9 +370,10 @@
   .pos-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; } .pos-tiles > .empty-state, .pos-tiles > .skeleton-wrap { grid-column: 1 / -1; }
   .pos-tile { border: 1px solid var(--mls-line); background: var(--mls-card); border-radius: var(--mls-radius-sm); padding: 10px 12px; text-align: left; min-height: 72px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; transition: box-shadow .12s, border-color .12s; }
   .pos-tile:hover, .pos-tile:focus-visible, .pos-tile.hot { border-color: var(--mls-primary); box-shadow: var(--mls-shadow-sm); outline: none; }
+  .pos-tile:focus-visible { outline: 2px solid var(--mls-primary); outline-offset: 2px; }  /* 1.40.0: the keyboard's place is a ring, not only the border a mouse gets */
   .pos-tile.hot { background: var(--mls-primary-soft); } .pos-tile.hot .meta { color: var(--mls-ink-70); }  /* the muted grey reads 4.1:1 on the soft fill, the darker ink 4.8 */
   .pos-tile .name { font-weight: 700; line-height: 1.2; } .pos-tile .price { color: var(--mls-primary-ink); font-weight: 700; }
-  .pos-tile .meta { font-size: var(--fs-xs); color: var(--mls-ink-soft); } .pos-tile.nopr { opacity: .5; }
+  .pos-tile .meta { font-size: var(--fs-xs); color: var(--mls-ink-soft); } .pos-tile.nopr { background: var(--mls-bg); border-style: dashed; } .pos-tile.nopr .name, .pos-tile.nopr .price { color: var(--mls-ink-70); } .pos-tile.nopr .thumb { opacity: .5; }  /* 1.40.0: a tile out of stock or without a price stood at half strength, 2.9:1; it is marked by a dashed edge and a plain fill, and its words stay readable */
   /* 1.36.0 (stage 6): a product with a photo. The thumbnail stands beside the name and the price; the stock line runs under both at the tile's
      full width, as on a tile without a photo. A tile without a photo is as before. */
   .pos-tile.pic { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; row-gap: 4px; align-content: space-between; align-items: start; }
@@ -710,6 +711,14 @@
   /* ---- Accessibility ---- */
   :focus-visible { outline: 2px solid var(--mls-primary); outline-offset: 2px; }
   .form-control:focus-visible, .form-select:focus-visible { outline: none; }
+  /* 1.40.0 (stage 8, accessibility): one focus ring in the brand's burgundy on buttons, links of the menus, the close cross and page links,
+     where Bootstrap drew a faint blue glow; ivory inside the burgundy sidebar, where burgundy and blue could not be seen. */
+  .btn:focus-visible, .btn-check:focus-visible + .btn, .btn-close:focus-visible, .nav-link:focus-visible, .dropdown-item:focus-visible, .page-link:focus-visible { outline: 2px solid var(--mls-primary); outline-offset: 2px; box-shadow: none; }
+  #sidebar :focus-visible, #sidebar .nav-link:focus-visible { outline: 2px solid var(--mls-sidebar-ink); outline-offset: -2px; box-shadow: none; }
+  /* a row or a card that opens: the ring stands inside it, so a table does not clip it */
+  [data-kb="row"]:focus-visible { outline: 2px solid var(--mls-primary); outline-offset: -2px; }
+  .modal-body[data-kb-scroll]:focus-visible { outline-offset: -2px; }
+  @media (max-width: 359.98px) { .denom-grid { grid-template-columns: minmax(0, 1fr) 72px 88px; } }  /* 1.40.0: the count sheet stood 18 px past its card at 320 px */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0s !important; scroll-behavior: auto !important; }
     .skeleton { animation: none !important; } .btn:active:not(:disabled) { transform: none !important; } a.kpi:hover { transform: none !important; }
@@ -1008,7 +1017,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.39.0';
+  var VERSION = '1.40.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -1451,8 +1460,11 @@ window.MLS = (function () {
     /** Opens a modal and, once it has closed, returns the focus to the control that opened it (keyboard users stay where they were). */
     open: function (id, opts) {
       var el = UI.el(id), inst = bootstrap.Modal.getOrCreateInstance(el, opts || {}), from = document.activeElement;
+      // 1.40.0: a row drawn again while its dialog stood open is found again by where it was (its list, its place or its record)
+      var again = null;
+      if (from && from.matches && from.matches('[data-kb="row"]')) { var host = from.parentElement && from.parentElement.closest('[id]'), sel = ['data-index', 'data-open', 'data-order', 'data-staff', 'data-day', 'data-period'].map(function (a) { return from.hasAttribute(a) ? '[data-kb="row"][' + a + '="' + String(from.getAttribute(a)).replace(/["\\]/g, '') + '"]' : ''; }).filter(Boolean)[0]; if (host && sel) again = function () { var h = UI.el(host.id); return h ? h.querySelector(sel) : null; }; }
       if (from && from !== document.body && !el.contains(from)) {
-        el.addEventListener('hidden.bs.modal', function once() { el.removeEventListener('hidden.bs.modal', once); if (from.isConnected && (!document.activeElement || document.activeElement === document.body) && !document.querySelector('.modal.show')) { try { from.focus({ preventScroll: true }); } catch (e) { /* not focusable any more */ } } });
+        el.addEventListener('hidden.bs.modal', function once() { el.removeEventListener('hidden.bs.modal', once); var to = from.isConnected ? from : (again ? again() : null); if (to && (!document.activeElement || document.activeElement === document.body || document.activeElement === UI.el('main-content')) && !document.querySelector('.modal.show')) { try { to.focus({ preventScroll: true }); } catch (e) { /* not focusable any more */ } } });
       }
       // once shown, the first field of the dialog takes the focus unless the page already placed it (Bootstrap's focus trap would otherwise leave it on the dialog itself)
       el.addEventListener('shown.bs.modal', function once() { el.removeEventListener('shown.bs.modal', once); if (document.activeElement === el || document.activeElement === document.body) { var first = el.querySelector('[autofocus], .modal-body input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([disabled]):not([readonly]), .modal-body select:not([disabled]), .modal-body textarea:not([disabled])'); if (first) { try { first.focus(); if (first.select && first.type !== 'date') first.select(); } catch (e) { /* ignore */ } } } });
@@ -1520,12 +1532,13 @@ window.MLS = (function () {
 
   // ------------------------------------------------------------------ forms, tables, formatting
   var Form = {
+    _errSeq: 0,
     read: function (form) { var out = {}; form.querySelectorAll('[name]').forEach(function (el) { if (el.disabled) return; if (el.type === 'checkbox') out[el.name] = el.checked; else if (el.type === 'radio') { if (el.checked) out[el.name] = el.value; } else if (el.type === 'number') out[el.name] = el.value === '' ? '' : Number(el.value); else out[el.name] = el.value; }); return out; },
     write: function (form, obj) { form.querySelectorAll('[name]').forEach(function (el) { var v = obj ? obj[el.name] : undefined; if (v === undefined) return; if (el.type === 'checkbox') el.checked = v === true || v === 'true'; else if (el.type === 'radio') el.checked = String(el.value) === String(v); else el.value = v === null ? '' : v; }); },
-    clearErrors: function (form) { form.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); }); form.querySelectorAll('.invalid-feedback[data-auto]').forEach(function (el) { el.remove(); }); },
+    clearErrors: function (form) { form.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); el.removeAttribute('aria-invalid'); if (el.getAttribute('aria-describedby') === el.getAttribute('data-err')) el.removeAttribute('aria-describedby'); el.removeAttribute('data-err'); }); form.querySelectorAll('.invalid-feedback[data-auto]').forEach(function (el) { el.remove(); }); },
     errors: function (form, fields, message) {
       Form.clearErrors(form); var first = null;
-      Object.keys(fields || {}).forEach(function (name) { var el = form.querySelector('[name="' + name + '"]'); if (!el) return; el.classList.add('is-invalid'); if (!first) first = el; var fb = document.createElement('div'); fb.className = 'invalid-feedback'; fb.setAttribute('data-auto', '1'); fb.textContent = Form.messageFor(fields[name], message); (el.closest('.pw-wrap') || el).insertAdjacentElement('afterend', fb); });
+      Object.keys(fields || {}).forEach(function (name) { var el = form.querySelector('[name="' + name + '"]'); if (!el) return; el.classList.add('is-invalid'); if (!first) first = el; var fb = document.createElement('div'); fb.className = 'invalid-feedback'; fb.setAttribute('data-auto', '1'); fb.textContent = Form.messageFor(fields[name], message); el.setAttribute('aria-invalid', 'true'); if (!el.getAttribute('aria-describedby')) { fb.id = 'err-' + (++Form._errSeq); el.setAttribute('aria-describedby', fb.id); el.setAttribute('data-err', fb.id); } (el.closest('.pw-wrap') || el).insertAdjacentElement('afterend', fb); });
       if (first) first.focus();
     },
     messageFor: function (kind, message) { return { required: 'Required', number: 'Enter a number', min: 'Too small', max: 'Too large', integer: 'Whole numbers only', date: 'Use yyyy-mm-dd', phone: 'Enter a mobile number', email: 'Enter an e-mail address', policy: 'At least 8 characters with letters and digits', mismatch: 'Does not match', wrong: 'Incorrect', same: 'Choose a different value', format: 'Invalid format' }[kind] || (message && message.length < 80 ? message : 'Invalid'); },
@@ -1584,12 +1597,15 @@ window.MLS = (function () {
     render: function (container, spec) {
       var cols = spec.columns, rows = spec.rows || [];
       var thCls = function (c) { return (c.align === 'right' ? 'text-end' : '') + (c.num ? ' num' : ''); }, tdCls = function (c) { return thCls(c) + (c.cls ? ' ' + c.cls : ''); };
-      var html = '<div class="table-wrap"><table class="table table-striped align-middle mb-0' + (spec.cards === false ? '' : ' table-cards') + (spec.cls ? ' ' + spec.cls : '') + '"><thead><tr>' + cols.map(function (c) { return '<th class="' + thCls(c) + '">' + UI.esc(c.label) + '</th>'; }).join('') + '</tr></thead><tbody>';
+      var html = '<div class="table-wrap"><table class="table table-striped align-middle mb-0' + (spec.cards === false ? '' : ' table-cards') + (spec.cls ? ' ' + spec.cls : '') + '"><thead><tr>' + cols.map(function (c) { return '<th class="' + thCls(c) + '">' + (c.label ? UI.esc(c.label) : '<span class="visually-hidden">Actions</span>') + '</th>'; }).join('') + '</tr></thead><tbody>';
       if (!rows.length) html += '<tr><td colspan="' + cols.length + '" class="no-label">' + UI.empty(spec.empty || 'Nothing to show yet.') + '</td></tr>';
-      rows.forEach(function (r, i) { html += '<tr data-index="' + i + '">' + cols.map(function (c) { var v = c.format ? c.format(r[c.key], r) : UI.esc(r[c.key]); return '<td data-label="' + UI.esc(c.label) + '" class="' + tdCls(c) + '">' + v + '</td>'; }).join('') + '</tr>'; });
+      rows.forEach(function (r, i) { html += '<tr data-index="' + i + '"' + (spec.onRow ? ' tabindex="0" data-kb="row"' : '') + '>' + cols.map(function (c) { var v = c.format ? c.format(r[c.key], r) : UI.esc(r[c.key]); return '<td data-label="' + UI.esc(c.label) + '" class="' + tdCls(c) + '">' + v + '</td>'; }).join('') + '</tr>'; });
       html += '</tbody></table></div>';
       if (spec.pages > 1) html += '<div class="d-flex align-items-center gap-2 mt-2 small text-soft"><span>' + spec.total + ' records</span><span class="ms-auto"></span><button type="button" class="btn btn-sm btn-outline-secondary" data-page="' + (spec.page - 1) + '"' + (spec.page <= 1 ? ' disabled' : '') + '>Previous</button><span>Page ' + spec.page + ' of ' + spec.pages + '</span><button type="button" class="btn btn-sm btn-outline-secondary" data-page="' + (spec.page + 1) + '"' + (spec.page >= spec.pages ? ' disabled' : '') + '>Next</button></div>';
+      // 1.40.0: a row that held the keyboard's focus keeps it when the list is drawn again (after its dialog closed, after a refresh)
+      var had = document.activeElement, keep = had && had.matches && had.matches('tr[data-index]') && container.contains(had) ? had.getAttribute('data-index') : null;
       container.innerHTML = html;
+      if (keep !== null) { var again = container.querySelector('tr[data-index="' + keep + '"][tabindex]'); if (again) { try { again.focus({ preventScroll: true }); } catch (e) { /* not focusable */ } } }
       container.querySelectorAll('[data-page]').forEach(function (b) { b.onclick = function () { if (spec.onPage) spec.onPage(Number(b.getAttribute('data-page'))); }; });
       var act = container.querySelector('[data-empty-action]'); if (act && spec.empty && spec.empty.action && spec.empty.action.onClick) act.onclick = spec.empty.action.onClick;
       container.querySelectorAll('tbody tr[data-index]').forEach(function (tr) { tr.onclick = function (ev) { if (spec.onRow && !ev.target.closest('button,a')) spec.onRow(rows[Number(tr.getAttribute('data-index'))]); }; });
@@ -1782,7 +1798,7 @@ window.MLS = (function () {
       ul.querySelectorAll('a[data-route]').forEach(function (a) { a.addEventListener('click', function () { document.body.classList.remove('sidebar-open'); if (a.getAttribute('data-route') === current) go(current); }); });  // a tap on the open module refreshes it
       markActive();
     }
-    function markActive() { var on = (entry(current) || {}).parent || current; document.querySelectorAll('#main-nav .nav-link').forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-route') === on); }); placeBarSoon(false); }
+    function markActive() { var on = (entry(current) || {}).parent || current; document.querySelectorAll('#main-nav .nav-link').forEach(function (a) { var is = a.getAttribute('data-route') === on; a.classList.toggle('active', is); if (is) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }); placeBarSoon(false); }
     /** Release 1.25.0: the 3 px rich-red bar beside the selected item, one element that slides from item to item (200 ms; at once on the
      *  first placement, after the sidebar changes shape, or under reduced motion). It is only a mark: the item's own pill says the same. */
     var barPlaced = false, barFrame = 0;
@@ -2102,6 +2118,25 @@ window.MLS = (function () {
   // ------------------------------------------------------------------ boot
   function wireShell() {
     UI.el('hamburger').addEventListener('click', function () { document.body.classList.toggle('sidebar-open'); });
+    // 1.40.0 (stage 8, accessibility). The menu button says whether the menu is open, wherever it was opened or closed from; Escape closes it.
+    var scrollStop = function (m) { var b = m && m.querySelector && m.querySelector('.modal-body'); if (!b) return; var own = b.hasAttribute('data-kb-scroll'); if (own) b.removeAttribute('tabindex'); if (b.scrollHeight > b.clientHeight + 1 && !b.hasAttribute('tabindex') && !b.querySelector('a[href], button:not([disabled]), input:not([disabled]):not([type=hidden]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')) { b.setAttribute('tabindex', '0'); b.setAttribute('data-kb-scroll', '1'); } else if (own) b.removeAttribute('data-kb-scroll'); };
+    var drawer = function () { var open = document.body.classList.contains('sidebar-open'), b = UI.el('hamburger'); if (b.getAttribute('aria-expanded') !== String(open)) { b.setAttribute('aria-expanded', String(open)); b.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation'); } };
+    drawer(); try { new MutationObserver(drawer).observe(document.body, { attributes: true, attributeFilter: ['class'] }); } catch (e) { /* the label stays as it was */ }
+    document.addEventListener('keydown', function (ev) {
+      // a row or a card that opens on a click opens on Enter or Space when it holds the focus itself (never when a button inside it does)
+      if ((ev.key === 'Enter' || ev.key === ' ') && ev.target && ev.target.matches && ev.target.matches('[data-kb="row"]') && !ev.ctrlKey && !ev.altKey && !ev.metaKey) { ev.preventDefault(); ev.target.click(); return; }
+      if (ev.key === 'Escape' && document.body.classList.contains('sidebar-open') && !document.querySelector('.modal.show')) { document.body.classList.remove('sidebar-open'); try { UI.el('hamburger').focus(); } catch (e) { /* hidden */ } return; }
+      // Tab on the last control of the open dialog goes to its first, never out to the browser's own bar
+      if (ev.key === 'Tab') {
+        var ms = document.querySelectorAll('.modal.show'), m = ms.length ? ms[ms.length - 1] : null; if (!m || document.querySelector('.dropdown-menu.show')) return; scrollStop(m);
+        var stops = Array.prototype.filter.call(m.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]):not([type=hidden]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'), function (x) { return x.offsetParent !== null || x.getClientRects().length; });
+        if (!stops.length) return; var a = document.activeElement, first = stops[0], last = stops[stops.length - 1];
+        if (!ev.shiftKey && (a === last || !m.contains(a))) { ev.preventDefault(); first.focus(); }  // backwards from the first control Bootstrap's own trap already goes to the last
+      }
+    });
+    // every dialog is announced by its title; a dialog whose content scrolls and holds nothing to focus can be scrolled from the keyboard
+    document.addEventListener('show.bs.modal', function (ev) { var m = ev.target; if (!m || !m.classList || !m.classList.contains('modal') || m.getAttribute('aria-labelledby') || m.getAttribute('aria-label')) return; var h = m.querySelector('.modal-title'); if (!h) return; if (!h.id) h.id = (m.id || 'modal') + '-title'; m.setAttribute('aria-labelledby', h.id); });
+    document.addEventListener('shown.bs.modal', function (ev) { scrollStop(ev.target); });
     // a Cancel or × pressed while a dialog is still fading in is not lost: Bootstrap ignores the hide, so it is replayed once the dialog is shown
     document.addEventListener('click', function (ev) { var b = ev.target.closest('[data-bs-dismiss="modal"]'); if (!b) return; var m = b.closest('.modal'); var inst = m && bootstrap.Modal.getInstance(m); if (inst && inst._isTransitioning && inst._isShown) Modal.hide(m, inst); });
     UI.el('sidebar-backdrop').addEventListener('click', function () { document.body.classList.remove('sidebar-open'); });
@@ -3040,7 +3075,7 @@ window.MLS = (function () {
 
   <div id="boot-screen"><div class="spinner-border text-success" role="status"><span class="visually-hidden">Loading</span></div><div class="text-soft">Loading Mrs Laundry Sys…</div></div>
 
-  <section id="auth-screen" hidden>
+  <section id="auth-screen" role="main" aria-label="Sign in" hidden>
     <div class="auth-card">
       <!-- release 1.24.0: the monogram until a logo is uploaded (Settings → Branding); the logo and the tagline come from the settings this device keeps (App.html → Brand) -->
       <div class="brand auth-brand" id="auth-brand"><span class="brand-logo img-frame" id="auth-logo"></span><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" focusable="false"><circle cx="20" cy="20" r="19"/><path d="M12 27V13l8 9 8-9v14" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><span class="brand-name d-block" id="auth-business">Mrs Laundry Sys</span><span class="brand-sub" id="auth-tagline">Laundry management</span></span></div>
@@ -3052,7 +3087,7 @@ window.MLS = (function () {
         <p class="lead-sm">Use the username and password an administrator gave you.</p>
         <div class="mb-3"><label class="form-label" for="login-username">Username or e-mail</label><input class="form-control" id="login-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false"></div>
         <div class="mb-3"><label class="form-label" for="login-password">Password</label><div class="pw-wrap"><input class="form-control" id="login-password" name="password" type="password" autocomplete="current-password"><button type="button" class="pw-toggle" aria-label="Show password"><i class="fa-regular fa-eye"></i></button></div></div>
-        <div class="alert alert-danger py-2 small" id="login-error" hidden></div>
+        <div class="alert alert-danger py-2 small" id="login-error" hidden role="alert"></div>
         <button class="btn btn-primary w-100 py-2" type="submit">Sign in</button>
       </form>
 
@@ -3086,7 +3121,7 @@ window.MLS = (function () {
         <h1>Connect this device</h1>
         <p class="lead-sm">Enter the web-app address of your Mrs Laundry Sys server (Apps Script → Deploy → Manage deployments → Web app URL). It is checked before it is saved.</p>
         <div class="mb-2"><label class="form-label" for="connect-url">Web-app address</label><input class="form-control" id="connect-url" name="apiUrl" inputmode="url" autocapitalize="none" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec"></div>
-        <div class="alert alert-danger py-2 small" id="connect-error" hidden></div>
+        <div class="alert alert-danger py-2 small" id="connect-error" hidden role="alert"></div>
         <button class="btn btn-primary w-100 py-2" type="submit"><i class="fa-solid fa-link me-1"></i>Connect</button>
       </form>
       <div class="auth-footer">Mrs Laundry Sys <span class="text-soft" id="auth-build"></span></div>
@@ -3104,7 +3139,7 @@ window.MLS = (function () {
     <div id="sidebar-backdrop"></div>
     <div id="app-body">
       <header id="topbar">
-        <button class="btn btn-outline-secondary btn-sm" id="hamburger" type="button" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button>
+        <button class="btn btn-outline-secondary btn-sm" id="hamburger" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar"><i class="fa-solid fa-bars"></i></button>
         <span class="topbar-brand img-frame" id="topbar-brand" aria-hidden="true"><span class="brand-mark"><svg viewBox="0 0 40 40" focusable="false"><circle cx="20" cy="20" r="19"/><path d="M12 27V13l8 9 8-9v14" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
         <h1 class="page-title" id="page-title">Dashboard</h1>
         <div class="topbar-right">
@@ -3337,13 +3372,13 @@ window.MLS = (function () {
             <div id="pos-customer-pick">
               <div class="input-group input-group-sm">
                 <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
-                <input class="form-control" id="pos-customer-search" placeholder="Customer name or mobile (optional)" autocomplete="off">
+                <input class="form-control" id="pos-customer-search" placeholder="Customer name or mobile (optional)" autocomplete="off" aria-label="Search customer">
                 <button type="button" class="btn btn-outline-primary" id="pos-customer-add" title="Register a new customer"><i class="fa-solid fa-user-plus"></i></button>
               </div>
               <div class="cust-results" id="pos-customer-results" hidden></div>
             </div>
             <form id="pos-customer-form" class="border rounded p-2 mt-2" autocomplete="off" hidden>
-              <div class="row g-2"><div class="col-12"><input class="form-control form-control-sm" name="FullName" placeholder="Full name" required></div><div class="col-12"><input class="form-control form-control-sm" name="Phone" placeholder="Mobile 09XXXXXXXXX" inputmode="tel"></div></div>
+              <div class="row g-2"><div class="col-12"><input class="form-control form-control-sm" name="FullName" placeholder="Full name" aria-label="Full name" required></div><div class="col-12"><input class="form-control form-control-sm" name="Phone" placeholder="Mobile 09XXXXXXXXX" aria-label="Mobile number" inputmode="tel"></div></div>
               <div class="d-flex gap-2 mt-2"><button type="submit" class="btn btn-outline-primary btn-sm">Save customer</button><button type="button" class="btn btn-outline-secondary btn-sm" id="pos-customer-cancel">Cancel</button></div>
             </form>
           </div>
@@ -3695,7 +3730,7 @@ window.MLS = (function () {
     <button type="button" data-status="ALL">All</button>
   </div>
   <div class="toolbar">
-    <input class="form-control search" id="orders-search" placeholder="Search order no., customer or mobile" autocomplete="off">
+    <input class="form-control search" id="orders-search" placeholder="Search order no., customer or mobile" autocomplete="off" aria-label="Search orders">
     <input class="form-control" type="date" id="orders-from" aria-label="From date">
     <input class="form-control" type="date" id="orders-to" aria-label="To date">
     <label class="form-check ms-1 mb-0"><input class="form-check-input" type="checkbox" id="orders-balance"><span class="form-check-label small">With balance</span></label>
@@ -3730,7 +3765,7 @@ window.MLS = (function () {
           <div class="col-12"><label class="form-label" for="pay-note">Note (optional)</label><input class="form-control" id="pay-note" name="notes" maxlength="200"></div>
           <div class="col-12 small text-soft" id="pay-offline-note" hidden><i class="fa-solid fa-cloud-arrow-down me-1"></i>No connection: this payment is kept on this device as provisional and recorded on the server when the connection returns. Only cash and e-wallets with a reference can be taken now.</div>
         </div>
-        <div class="alert alert-danger py-2 small mt-3" id="pay-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="pay-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -3754,7 +3789,7 @@ window.MLS = (function () {
           <div class="col-12" id="reason-ref-wrap" hidden><label class="form-label" for="reason-ref">Reference number</label><input class="form-control" id="reason-ref" name="referenceNo" maxlength="60" autocomplete="off" placeholder="The e-wallet or transfer reference"></div>
         </div>
         <label class="form-label mt-2" for="reason-text" id="reason-label">Reason</label><textarea class="form-control" id="reason-text" name="reason" rows="2" maxlength="300"></textarea>
-        <div class="alert alert-danger py-2 small mt-3" id="reason-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="reason-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button type="submit" class="btn btn-primary" id="reason-confirm">Confirm</button></div>
     </form>
@@ -3935,7 +3970,7 @@ window.MLS = (function () {
     UI.html('order-modal-body', '<div class="detail-grid">' + head.map(function (h) { return '<div><div class="k">' + h[0] + '</div><div class="v">' + h[1] + '</div></div>'; }).join('') + '</div>' +
       '<section class="od-section"><h6 class="section-title">Items</h6><div class="table-wrap"><table class="table table-sm table-cards compact mb-0"><thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Line total</th></tr></thead><tbody>' + lines + '</tbody></table></div></section>' +
       '<section class="od-section od-money"><div class="od-totals">' + totals + '</div>' +
-      '<div class="od-pays"><h6 class="section-title">Payments</h6><div class="table-wrap"><table class="table table-sm table-cards compact mb-0"><thead><tr><th>When</th><th>Type</th><th>Method</th><th>By</th><th class="num">Amount</th><th></th></tr></thead><tbody>' + pays + '</tbody></table></div></div></section>' +
+      '<div class="od-pays"><h6 class="section-title">Payments</h6><div class="table-wrap"><table class="table table-sm table-cards compact mb-0"><thead><tr><th>When</th><th>Type</th><th>Method</th><th>By</th><th class="num">Amount</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + pays + '</tbody></table></div></div></section>' +
       (o.Notes ? '<div class="alert alert-light border small mt-3 mb-0"><i class="fa-regular fa-note-sticky me-1"></i>' + UI.esc(o.Notes) + '</div>' : '') +
       (o.Bags && M.Bags ? M.Bags.sectionHtml(o) : '') +  // 1.16.0: the order's bags while bag tracking is on
       '<section class="od-section"><h6 class="section-title">Timeline</h6><ul class="timeline">' + tl + '</ul></section>');
@@ -4087,9 +4122,9 @@ window.MLS = (function () {
     <button type="button" class="btn btn-primary btn-sm" id="cust-new" hidden><i class="fa-solid fa-user-plus me-1"></i>New customer</button>
   </div>
   <div class="toolbar">
-    <input class="form-control search" id="cust-search" placeholder="Search name, mobile, e-mail or address" autocomplete="off">
-    <select class="form-select" id="cust-type"><option value="">All types</option></select>
-    <select class="form-select" id="cust-status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option><option value="ALL">All</option></select>
+    <input class="form-control search" id="cust-search" placeholder="Search name, mobile, e-mail or address" autocomplete="off" aria-label="Search customers">
+    <select class="form-select" id="cust-type" aria-label="Customer type"><option value="">All types</option></select>
+    <select class="form-select" id="cust-status" aria-label="Customer status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option><option value="ALL">All</option></select>
     <label class="form-check ms-1 mb-0"><input class="form-check-input" type="checkbox" id="cust-balance"><span class="form-check-label small">With balance</span></label>
     <label class="form-check ms-1 mb-0"><input class="form-check-input" type="checkbox" id="cust-inactive"><span class="form-check-label small" id="cust-inactive-label">Not seen lately</span></label>
   </div>
@@ -4183,7 +4218,7 @@ window.MLS = (function () {
       // 1.28.0 (Stage 5): the facts and the notes, then titled sections over a hairline, as the order dialog has them: the order history
       // (on a phone each order one row: the number with the date and status under it, the total on the right with any balance under it)
       // and the messages (skeleton rows while they load)
-      var orders = c.Orders.length ? c.Orders.map(function (o) { var owed = Number(o.BalanceAmount) > 0; return '<tr class="pointer" data-order="' + UI.esc(o.Id) + '"><td data-label="Order" class="lead-cell"><span class="fw-bold">' + UI.esc(o.OrderNo) + '</span>' + (o.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + '<div class="ph-only sub">' + F.date(o.OrderDate) + ' · ' + UI.badge(o.Status) + '</div></td><td data-label="Date" class="ph-hide text-nowrap">' + F.date(o.OrderDate) + '</td><td data-label="Total" class="text-end num money">' + F.peso(o.OrderTotal) + (owed ? '<span class="ph-only sub text-danger fw-bold">balance ' + F.peso(o.BalanceAmount) + '</span>' : '') + '</td><td data-label="Balance" class="text-end num money ph-hide ' + (owed ? 'text-danger fw-bold' : '') + '">' + F.peso(o.BalanceAmount) + '</td><td data-label="Status" class="ph-hide">' + UI.badge(o.Status) + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="no-label text-soft">No orders yet.</td></tr>';
+      var orders = c.Orders.length ? c.Orders.map(function (o) { var owed = Number(o.BalanceAmount) > 0; return '<tr class="pointer" tabindex="0" data-kb="row" data-order="' + UI.esc(o.Id) + '"><td data-label="Order" class="lead-cell"><span class="fw-bold">' + UI.esc(o.OrderNo) + '</span>' + (o.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + '<div class="ph-only sub">' + F.date(o.OrderDate) + ' · ' + UI.badge(o.Status) + '</div></td><td data-label="Date" class="ph-hide text-nowrap">' + F.date(o.OrderDate) + '</td><td data-label="Total" class="text-end num money">' + F.peso(o.OrderTotal) + (owed ? '<span class="ph-only sub text-danger fw-bold">balance ' + F.peso(o.BalanceAmount) + '</span>' : '') + '</td><td data-label="Balance" class="text-end num money ph-hide ' + (owed ? 'text-danger fw-bold' : '') + '">' + F.peso(o.BalanceAmount) + '</td><td data-label="Status" class="ph-hide">' + UI.badge(o.Status) + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="no-label text-soft">No orders yet.</td></tr>';
       UI.html('cust-view-body', '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' + (c.Notes ? '<div class="alert alert-light border small mt-3 mb-0">' + UI.esc(c.Notes) + '</div>' : '') +
         '<section class="od-section"><h6 class="section-title">Order history</h6><div class="table-wrap"><table class="table table-sm table-cards compact mb-0"><thead><tr><th>Order</th><th>Date</th><th class="text-end num">Total</th><th class="text-end num">Balance</th><th>Status</th></tr></thead><tbody>' + orders + '</tbody></table></div></section>' +
         (M.Auth.can('SMS_VIEW_LOGS') ? '<section class="od-section"><h6 class="section-title">Messages</h6><p class="small text-soft mb-2">What was prepared and what staff reported; never a delivery confirmation.</p><div id="cust-sms-history" class="small text-soft">' + UI.skeleton({ kind: 'rows', count: 2, label: 'Loading the messages' }) + '</div></section>' : ''));
@@ -4284,7 +4319,7 @@ window.MLS = (function () {
           <div class="col-6"><label class="form-label" for="promo-f-ctype">Customer type</label><select class="form-select" id="promo-f-ctype" name="CustomerType"><option value="">All types</option></select></div>
           <div class="col-6" id="promo-status-wrap" hidden><label class="form-label" for="promo-f-status">Status</label><select class="form-select" id="promo-f-status" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
         </div>
-        <div class="alert alert-danger py-2 small mt-3" id="promo-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="promo-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save code</button></div>
     </form>
@@ -4324,7 +4359,7 @@ window.MLS = (function () {
         <div class="detail-grid mb-3" id="svc-view-grid"></div>
         <div class="tabs" id="svc-view-tabs"><button type="button" data-tab="prices" class="active">Price list</button><button type="button" data-tab="recipe">Materials used</button></div>
         <div id="svc-tab-prices">
-          <div class="table-wrap"><table class="table table-sm table-cards aligned mb-2"><thead><tr><th>Branch</th><th>Customer type</th><th>Effective</th><th class="num">Price</th><th></th></tr></thead><tbody id="svc-prices"></tbody></table></div>
+          <div class="table-wrap"><table class="table table-sm table-cards aligned mb-2"><thead><tr><th>Branch</th><th>Customer type</th><th>Effective</th><th class="num">Price</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody id="svc-prices"></tbody></table></div>
           <form class="row g-2 align-items-end" id="svc-price-form" autocomplete="off" hidden>
             <div class="col-md-3"><label class="form-label small" for="svc-p-branch">Branch</label><select class="form-select form-select-sm" id="svc-p-branch" name="BranchId"><option value="">All branches</option></select></div>
             <div class="col-md-3"><label class="form-label small" for="svc-p-ctype">Customer type</label><select class="form-select form-select-sm" id="svc-p-ctype" name="CustomerType"><option value="">All types</option></select></div>
@@ -4335,7 +4370,7 @@ window.MLS = (function () {
         </div>
         <div id="svc-tab-recipe" hidden>
           <p class="small text-soft">Quantity of each material consumed per billable unit of this service (per kg, per piece, per load or per order). Consumed from stock when an order reaches the configured production stage.</p>
-          <div class="table-wrap"><table class="table table-sm table-cards aligned mb-2"><thead><tr><th>Material</th><th class="num">Per unit</th><th></th></tr></thead><tbody id="svc-recipe"></tbody></table></div>
+          <div class="table-wrap"><table class="table table-sm table-cards aligned mb-2"><thead><tr><th>Material</th><th class="num">Per unit</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody id="svc-recipe"></tbody></table></div>
           <form class="row g-2 align-items-end" id="svc-recipe-form" autocomplete="off" hidden>
             <div class="col-md-6"><label class="form-label small" for="svc-r-item">Material</label><select class="form-select form-select-sm" id="svc-r-item" name="ItemId" required></select></div>
             <div class="col-md-4"><label class="form-label small" for="svc-r-qty">Quantity per unit</label><div class="input-group input-group-sm"><input class="form-control" id="svc-r-qty" name="QtyPerUnit" type="number" step="any" min="0" inputmode="decimal" required><span class="input-group-text" id="svc-recipe-unit"></span><button class="btn btn-primary" type="submit">Add</button></div></div>
@@ -4477,8 +4512,8 @@ window.MLS = (function () {
   <div class="tabs" id="inv-tabs"><button type="button" data-tab="items" class="active">Items<span class="count" id="inv-count-items">0</span></button><button type="button" data-tab="moves">Movements<span class="count" id="inv-count-moves">0</span></button><button type="button" data-tab="reorder">Reorder<span class="count" id="inv-count-reorder"></span></button></div>
   <div id="inv-tab-items">
     <div class="toolbar">
-      <input class="form-control search" id="inv-search" placeholder="Search code, name or category" autocomplete="off">
-      <select class="form-select" id="inv-type"><option value="">Products and materials</option><option value="PRODUCT">Products</option><option value="MATERIAL">Materials</option></select>
+      <input class="form-control search" id="inv-search" placeholder="Search code, name or category" autocomplete="off" aria-label="Search items">
+      <select class="form-select" id="inv-type" aria-label="Products or materials"><option value="">Products and materials</option><option value="PRODUCT">Products</option><option value="MATERIAL">Materials</option></select>
       <label class="form-check mb-0"><input class="form-check-input" type="checkbox" id="inv-low"><span class="form-check-label small">Low stock only</span></label>
       <label class="form-check mb-0"><input class="form-check-input" type="checkbox" id="inv-inactive"><span class="form-check-label small">Show inactive</span></label>
     </div>
@@ -4487,8 +4522,8 @@ window.MLS = (function () {
   <div id="inv-tab-moves" hidden>
     <p class="small text-soft mb-2" id="inv-moves-window" hidden>The last 30 days. Set a date for older movements.</p>
     <div class="toolbar">
-      <input class="form-control search" id="mv-search" placeholder="Search item, reference or notes" autocomplete="off">
-      <select class="form-select" id="mv-type"><option value="">All movement types</option></select>
+      <input class="form-control search" id="mv-search" placeholder="Search item, reference or notes" autocomplete="off" aria-label="Search movements">
+      <select class="form-select" id="mv-type" aria-label="Movement type"><option value="">All movement types</option></select>
       <input class="form-control" id="mv-from" type="date" aria-label="From date">
       <input class="form-control" id="mv-to" type="date" aria-label="To date">
     </div>
@@ -4876,8 +4911,8 @@ window.MLS = (function () {
     <button type="button" class="btn btn-primary btn-sm" id="po-new" hidden><i class="fa-solid fa-plus me-1"></i>New purchase</button>
   </div>
   <div class="toolbar">
-    <input class="form-control search" id="po-search" placeholder="Search purchase no., supplier or notes" autocomplete="off">
-    <select class="form-select" id="po-status"><option value="">All payment statuses</option><option value="UNPAID">Unpaid</option><option value="PARTIAL">Partially paid</option><option value="PAID">Paid</option></select>
+    <input class="form-control search" id="po-search" placeholder="Search purchase no., supplier or notes" autocomplete="off" aria-label="Search purchases">
+    <select class="form-select" id="po-status" aria-label="Payment status"><option value="">All payment statuses</option><option value="UNPAID">Unpaid</option><option value="PARTIAL">Partially paid</option><option value="PAID">Paid</option></select>
     <input class="form-control" id="po-from" type="date" aria-label="From date">
     <input class="form-control" id="po-to" type="date" aria-label="To date">
   </div>
@@ -4904,7 +4939,7 @@ window.MLS = (function () {
           <div class="col-md-4"><label class="form-label" for="po-f-notes">Notes</label><input class="form-control" id="po-f-notes" name="notes" maxlength="300" placeholder="Invoice no., remarks"></div>
         </div>
         <div class="totals mt-3" id="po-totals"></div>
-        <div class="alert alert-danger py-2 small mt-2" id="po-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-2" id="po-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" id="po-submit"><i class="fa-solid fa-truck-ramp-box me-1"></i>Post purchase</button></div>
     </form>
@@ -4926,7 +4961,7 @@ window.MLS = (function () {
     <div class="modal-content">
       <div class="modal-header"><h5 class="modal-title">Suppliers</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
-        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Supplier</th><th>Contact</th><th>Terms</th><th>Status</th><th></th></tr></thead><tbody id="sup-rows"></tbody></table></div>
+        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Supplier</th><th>Contact</th><th>Terms</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody id="sup-rows"></tbody></table></div>
         <form id="sup-form" class="border rounded p-3" autocomplete="off" hidden>
           <h6 class="fw-bold" id="sup-form-title">New supplier</h6>
           <input type="hidden" name="Id">
@@ -5147,7 +5182,7 @@ window.MLS = (function () {
         <div id="prod-start-pick-wrap" hidden><div class="form-label" id="prod-start-pick-label">Machine</div><div class="machine-pick" id="prod-start-pick" role="radiogroup" aria-labelledby="prod-start-pick-label"></div></div>
         <div class="mb-2" id="prod-start-free-wrap"><label class="form-label" for="prod-start-machine">Machine (optional)</label><input class="form-control" id="prod-start-machine" name="machineNo" maxlength="20" placeholder="W1, D2…"></div>
         <div><label class="form-label" for="prod-start-notes">Notes (optional)</label><input class="form-control" id="prod-start-notes" name="notes" maxlength="300"></div>
-        <div class="alert alert-danger py-2 small mt-3 mb-0" id="prod-start-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3 mb-0" id="prod-start-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" id="prod-start-submit">Start</button></div>
     </form>
@@ -5221,7 +5256,7 @@ window.MLS = (function () {
     // 1.27.0 (Stage 5): the order number always whole (it breaks after a hyphen on a narrow card, never cut to MAIN-20261107-0…); the tags
     // beside it while they fit, on the next line when they do not; the due time said short, on one line (Due tomorrow 7:14 PM)
     var tags = (c._pending ? (M.Net && M.Net.state && M.Net.state() !== 'online' ? '<span class="pending-tag" title="Kept on this device; sent when the connection returns">not synced</span>' : '<span class="pending-tag sending" title="Sent to the server; the move stands here until the server has applied it"><i class="fa-solid fa-rotate fa-spin me-1" aria-hidden="true"></i>sending</span>') : '') + (c.IsExpress ? '<span class="badge text-bg-warning">Express</span>' : '') + (c.ServiceType === 'DELIVERY' ? '<i class="fa-solid fa-motorcycle text-soft" role="img" aria-label="For delivery" title="For delivery"></i>' : '') + bagChip(c, col);
-    return '<div class="kcard' + (c.IsExpress ? ' express' : '') + (overdue && col !== 'READY' ? ' overdue' : '') + '" data-open="' + UI.esc(c.Id) + '">' +
+    return '<div class="kcard' + (c.IsExpress ? ' express' : '') + (overdue && col !== 'READY' ? ' overdue' : '') + '" tabindex="0" data-kb="row" data-open="' + UI.esc(c.Id) + '">' +
       '<div class="khead"><span class="no">' + orderNo(c.OrderNo) + '</span>' + tags + '</div>' +
       '<div class="small">' + UI.esc(c.CustomerName) + '</div>' +
       '<div class="meta">' + UI.esc((c.Lines && c.Lines.length ? c.Lines.join(' · ') : F.qty(c.TotalWeightKg, 'kg'))) + (c.BagCount ? ' · ' + c.BagCount + ' bag' + (c.BagCount === 1 ? '' : 's') : '') + (c.MachineNo ? ' · machine ' + UI.esc(c.MachineNo) : '') + '</div>' +
@@ -5384,7 +5419,7 @@ window.MLS = (function () {
     <div class="toolbar">
       <input class="form-control" id="eq-hist-from" type="date" aria-label="From">
       <input class="form-control" id="eq-hist-to" type="date" aria-label="To">
-      <select class="form-select" id="eq-hist-type"><option value="">Every kind of entry</option><option value="BREAKDOWN">Breakdowns</option><option value="MAINTENANCE">Maintenance</option><option value="REPAIR">Repairs</option></select>
+      <select class="form-select" id="eq-hist-type" aria-label="Kind of entry"><option value="">Every kind of entry</option><option value="BREAKDOWN">Breakdowns</option><option value="MAINTENANCE">Maintenance</option><option value="REPAIR">Repairs</option></select>
     </div>
     <div class="sum-grid mb-3" id="eq-hist-tiles"></div>
     <div class="card"><div class="card-body p-0" id="eq-hist-table"></div></div>
@@ -5425,7 +5460,7 @@ window.MLS = (function () {
           <div class="col-md-4" id="eq-f-status-wrap" hidden><label class="form-label" for="eq-f-status">Status</label><select class="form-select" id="eq-f-status" name="Status"><option value="ACTIVE">In use</option><option value="RETIRED">Retired</option></select></div>
           <div class="col-12"><label class="form-label" for="eq-f-notes">Notes</label><input class="form-control" id="eq-f-notes" name="Notes" maxlength="300" placeholder="Supplier, technician's number, quirks"></div>
         </div>
-        <div class="alert alert-danger py-2 small mt-3" id="eq-form-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="eq-form-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" id="eq-form-submit">Save</button></div>
     </form>
@@ -5441,7 +5476,7 @@ window.MLS = (function () {
         <label class="form-label" for="eq-down-problem" id="eq-down-label">What is wrong</label>
         <textarea class="form-control" id="eq-down-problem" name="problem" rows="3" maxlength="500" placeholder="Will not drain, leaking at the door, error E21…" required></textarea>
         <p class="small text-soft mt-2 mb-0">The machine is taken off the production board until a manager returns it to service with what was done.</p>
-        <div class="alert alert-danger py-2 small mt-3" id="eq-down-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="eq-down-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger" id="eq-down-submit"><i class="fa-solid fa-power-off me-1"></i>Take out of service</button></div>
     </form>
@@ -5473,7 +5508,7 @@ window.MLS = (function () {
             <div class="col-md-4"><label class="form-label small" for="eq-work-ref">Receipt / reference</label><input class="form-control form-control-sm" id="eq-work-ref" name="receiptRef" maxlength="60"></div>
           </div>
         </div>
-        <div class="alert alert-danger py-2 small mt-3" id="eq-work-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="eq-work-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-success" id="eq-work-submit"><i class="fa-solid fa-check me-1"></i>Save</button></div>
     </form>
@@ -5549,14 +5584,14 @@ window.MLS = (function () {
       '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
       '<section class="od-section"><h6 class="section-title">The last 30 days</h6><div class="sum-grid mb-0">' + [['Loads', u.Loads || 0], ['In use', hours(u.BusyMinutes)], ['Out of service', hours(u.DowntimeMinutes)], ['Could run', hours(u.AvailableMinutes)], ['Used', (u.UtilisationPct || 0) + '%']].map(function (t) { return '<div class="tile"><div class="k">' + t[0] + '</div><div class="v">' + t[1] + '</div></div>'; }).join('') + '</div></section>' +
       (m.Notes ? '<p class="small mt-3 mb-0"><i class="fa-regular fa-note-sticky me-1"></i>' + UI.esc(m.Notes) + '</p>' : '') +
-      '<section class="od-section"><h6 class="section-title">History</h6>' + (logs.length ? '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>When</th><th>What</th><th class="num">Stopped</th><th class="num">Cost</th><th></th></tr></thead><tbody>' + logs.map(function (l) {
+      '<section class="od-section"><h6 class="section-title">History</h6>' + (logs.length ? '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>When</th><th>What</th><th class="num">Stopped</th><th class="num">Cost</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + logs.map(function (l) {
         return '<tr' + (l.Status === 'VOID' ? ' class="text-faint"' : '') + '><td data-label="When" class="lead-cell">' + F.datetime(l.StartedAt) + '<div class="small text-soft">' + UI.esc(l.By) + '</div></td><td data-label="What"><span class="fw-bold">' + UI.esc(LOG_LABEL[l.LogType] || l.LogType) + '</span> ' + UI.badge(l.Status) + (l.IsService === true ? ' <span class="badge text-bg-light border">service</span>' : '') +
           (l.Problem ? '<div class="small">' + UI.esc(l.Problem) + '</div>' : '') + (l.WorkDone ? '<div class="small text-soft">Done: ' + UI.esc(l.WorkDone) + (l.Technician ? ' · ' + UI.esc(l.Technician) : '') + '</div>' : '') + (l.Status === 'VOID' && l.Notes ? '<div class="small text-soft">' + UI.esc(l.Notes) + '</div>' : '') + '</td>' +
           '<td data-label="Stopped" class="num">' + (l.Status === 'OPEN' ? '<span class="text-danger small">still down</span>' : (Number(l.DowntimeMinutes) ? F.minutes(l.DowntimeMinutes) : '—')) + '</td>' +
           '<td data-label="Cost" class="num money">' + (Number(l.Cost) > 0 ? F.peso(l.Cost) : '—') + (l.Expense ? '<div class="small text-soft">' + UI.esc(l.Expense.Id) + (l.Expense.Status === 'VOID' ? ' (void)' : (l.Expense.Status === 'ARCHIVED' ? ' (archived)' : '')) + '</div>' : '') + '</td>' +
           '<td class="text-end no-label">' + (m.canEdit && l.Status !== 'VOID' ? '<button type="button" class="btn btn-sm btn-link px-2 py-0" data-void="' + UI.esc(l.Id) + '">Void</button>' : '') + '</td></tr>';
       }).join('') + '</tbody></table></div>' : '<p class="small text-soft mb-0">Nothing recorded yet: breakdowns, maintenance and repairs appear here with their downtime and cost.</p>') + '</section>' +
-      '<section class="od-section"><h6 class="section-title">Latest loads</h6>' + ((m.Recent || []).length ? '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Started</th><th>Order</th><th>Stage</th><th class="num">Time</th></tr></thead><tbody>' + m.Recent.map(function (l) { return '<tr class="pointer" data-order="' + UI.esc(l.OrderId) + '"><td data-label="Started" class="lead-cell">' + F.datetime(l.StartedAt) + '<div class="small text-soft">' + UI.esc(l.By) + '</div></td><td data-label="Order" class="fw-bold">' + UI.esc(l.OrderNo) + (Number(l.WeightKg) > 0 ? ' <span class="small text-soft fw-normal">' + F.qty(l.WeightKg, 'kg') + '</span>' : '') + '</td><td data-label="Stage">' + UI.badge(l.Stage) + '</td><td data-label="Time" class="num">' + (l.EndedAt ? F.minutes(l.Minutes) : '<span class="small">running</span>') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="small text-soft mb-0">No production stage has named this machine yet.</p>') + '</section>');
+      '<section class="od-section"><h6 class="section-title">Latest loads</h6>' + ((m.Recent || []).length ? '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Started</th><th>Order</th><th>Stage</th><th class="num">Time</th></tr></thead><tbody>' + m.Recent.map(function (l) { return '<tr class="pointer" tabindex="0" data-kb="row" data-order="' + UI.esc(l.OrderId) + '"><td data-label="Started" class="lead-cell">' + F.datetime(l.StartedAt) + '<div class="small text-soft">' + UI.esc(l.By) + '</div></td><td data-label="Order" class="fw-bold">' + UI.esc(l.OrderNo) + (Number(l.WeightKg) > 0 ? ' <span class="small text-soft fw-normal">' + F.qty(l.WeightKg, 'kg') + '</span>' : '') + '</td><td data-label="Stage">' + UI.badge(l.Stage) + '</td><td data-label="Time" class="num">' + (l.EndedAt ? F.minutes(l.Minutes) : '<span class="small">running</span>') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="small text-soft mb-0">No production stage has named this machine yet.</p>') + '</section>');
     var body = UI.el('eq-machine-body');
     body.querySelectorAll('[data-void]').forEach(function (b) { b.onclick = function () { voidEntry(b.getAttribute('data-void')); }; });
     body.querySelectorAll('[data-order]').forEach(function (tr) { tr.onclick = function () { Modal.closeThen('eq-machine-modal', function () { M.OrdersUI.openOrder(tr.getAttribute('data-order')); }); }; });
@@ -5713,9 +5748,9 @@ window.MLS = (function () {
   </div>
   <div class="tabs" id="dsp-tabs"><button type="button" data-status="OPEN" class="active">Open<span class="count" id="dsp-count-open"></span></button><button type="button" data-status="DONE">Finished</button></div>
   <div class="toolbar">
-    <input class="form-control search" id="dsp-search" placeholder="Search customer, address or rider" autocomplete="off">
-    <select class="form-select" id="dsp-rider"><option value="">All riders</option></select>
-    <select class="form-select" id="dsp-type"><option value="">Deliveries and pickups</option><option value="DELIVERY">Deliveries</option><option value="PICKUP">Pickups</option></select>
+    <input class="form-control search" id="dsp-search" placeholder="Search customer, address or rider" autocomplete="off" aria-label="Search jobs">
+    <select class="form-select" id="dsp-rider" aria-label="Rider"><option value="">All riders</option></select>
+    <select class="form-select" id="dsp-type" aria-label="Delivery or pickup"><option value="">Deliveries and pickups</option><option value="DELIVERY">Deliveries</option><option value="PICKUP">Pickups</option></select>
     <input class="form-control" id="dsp-date" type="date" aria-label="Date">
   </div>
   <div class="card"><div class="card-body p-0" id="dsp-table"></div></div>
@@ -5759,7 +5794,7 @@ window.MLS = (function () {
             <div class="col-md-8"><label class="form-label" for="dsp-job-notes">Notes for the rider</label><input class="form-control" id="dsp-job-notes" name="notes" maxlength="300" placeholder="Gate code, landmarks"></div>
           </div>
         </section>
-        <div class="alert alert-danger py-2 small mt-3" id="dsp-job-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="dsp-job-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" id="dsp-job-submit"><i class="fa-solid fa-paper-plane me-1"></i>Create job</button></div>
     </form>
@@ -5787,7 +5822,7 @@ window.MLS = (function () {
           <div class="form-check mt-2" id="dsp-rs-over-wrap" hidden><input class="form-check-input" type="checkbox" id="dsp-rs-over"><label class="form-check-label" for="dsp-rs-over">This window is full — book it anyway</label></div>
         </div>
         <div class="mt-3" id="dsp-rs-exact-wrap"><label class="form-label" for="dsp-rs-exact">Exact time <span class="text-soft small">— leave blank for any time</span></label><input class="form-control" id="dsp-rs-exact" type="datetime-local"></div>
-        <div class="alert alert-danger py-2 small mt-3 mb-0" id="dsp-rs-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3 mb-0" id="dsp-rs-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" id="dsp-rs-submit"><i class="fa-regular fa-calendar-check me-1"></i>Reschedule</button></div>
     </form>
@@ -5800,7 +5835,7 @@ window.MLS = (function () {
       <div class="modal-header"><h5 class="modal-title">Delivery windows</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
         <p class="small text-soft">The windows a delivery or pickup is booked into: the customer's text message and tracking page show the window, and a full window refuses more jobs unless you book it anyway. Places 0 means no limit.</p>
-        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Window</th><th>Days</th><th>Zone</th><th>For</th><th class="text-end num">Places</th><th>Status</th><th></th></tr></thead><tbody id="dsp-slot-rows"></tbody></table></div>
+        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Window</th><th>Days</th><th>Zone</th><th>For</th><th class="text-end num">Places</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody id="dsp-slot-rows"></tbody></table></div>
         <form class="row g-2 align-items-end" id="dsp-slot-form" autocomplete="off">
           <input type="hidden" name="Id">
           <div class="col-md-4"><label class="form-label small" for="dsp-slot-name">Name</label><input class="form-control form-control-sm" id="dsp-slot-name" name="Name" maxlength="40" placeholder="Morning" required></div>
@@ -5812,7 +5847,7 @@ window.MLS = (function () {
           <div class="col-md-3"><label class="form-label small" for="dsp-slot-cap">Places (0 = no limit)</label><input class="form-control form-control-sm" id="dsp-slot-cap" name="Capacity" type="number" inputmode="numeric" step="1" min="0" value="0"></div>
           <div class="col-md-3"><label class="form-label small" for="dsp-slot-status">Status</label><select class="form-select form-select-sm" id="dsp-slot-status" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
           <div class="col-md-3 d-grid"><button type="submit" class="btn btn-sm btn-primary">Save window</button></div>
-          <div class="col-12"><div class="alert alert-danger py-2 small mb-0" id="dsp-slot-error" hidden></div></div>
+          <div class="col-12"><div class="alert alert-danger py-2 small mb-0" id="dsp-slot-error" hidden role="alert"></div></div>
         </form>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button></div>
@@ -5825,7 +5860,7 @@ window.MLS = (function () {
     <div class="modal-content">
       <div class="modal-header"><h5 class="modal-title">Delivery zones</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
-        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Zone</th><th class="text-end num">Fee</th><th>Status</th><th></th></tr></thead><tbody id="dsp-zone-rows"></tbody></table></div>
+        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Zone</th><th class="text-end num">Fee</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody id="dsp-zone-rows"></tbody></table></div>
         <form class="row g-2 align-items-end" id="dsp-zone-form" autocomplete="off">
           <input type="hidden" name="Id">
           <div class="col-sm-5"><label class="form-label small" for="dsp-zone-name">Name</label><input class="form-control form-control-sm" id="dsp-zone-name" name="Name" maxlength="60" required></div>
@@ -5896,7 +5931,7 @@ window.MLS = (function () {
     UI.html('dsp-view-body', '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
       '<section class="od-section"><h6 class="section-title">Stop</h6>' + M.DeliveriesUI.jobCard(j, { readOnly: !canAssign() }) + '</section>' +
       (j.Items.length ? '<section class="od-section"><h6 class="section-title">Orders</h6><div class="table-wrap"><table class="table table-sm table-cards compact mb-0"><thead><tr><th>Order</th><th>Status</th><th>Confirmation</th><th class="text-end num">To collect</th><th class="text-end num">Collected</th></tr></thead><tbody>' + j.Items.map(function (i) {
-        return '<tr class="pointer" data-order="' + UI.esc(i.OrderId) + '"><td data-label="Order" class="lead-cell"><span class="fw-bold">' + UI.esc(i.OrderNo) + '</span> <span class="small text-soft">' + UI.esc(i.CustomerName) + '</span><div class="ph-only sub">' + UI.badge(i.OrderStatus, i.OrderStatusLabel) + (i.ReceiptConfirmedAt || i.ProblemReportedAt ? receiptCell(i) : '') + '</div></td><td data-label="Status" class="ph-hide">' + UI.badge(i.OrderStatus, i.OrderStatusLabel) + '</td><td data-label="Confirmation" class="ph-hide">' + receiptCell(i) + '</td><td data-label="To collect" class="text-end num money fw-bold">' + F.peso(i.AmountToCollect) + (Number(i.CollectedAmount) > 0 ? '<span class="ph-only sub">collected ' + F.peso(i.CollectedAmount) + '</span>' : '') + '</td><td data-label="Collected" class="text-end num money ph-hide">' + F.peso(i.CollectedAmount) + '</td></tr>';
+        return '<tr class="pointer" tabindex="0" data-kb="row" data-order="' + UI.esc(i.OrderId) + '"><td data-label="Order" class="lead-cell"><span class="fw-bold">' + UI.esc(i.OrderNo) + '</span> <span class="small text-soft">' + UI.esc(i.CustomerName) + '</span><div class="ph-only sub">' + UI.badge(i.OrderStatus, i.OrderStatusLabel) + (i.ReceiptConfirmedAt || i.ProblemReportedAt ? receiptCell(i) : '') + '</div></td><td data-label="Status" class="ph-hide">' + UI.badge(i.OrderStatus, i.OrderStatusLabel) + '</td><td data-label="Confirmation" class="ph-hide">' + receiptCell(i) + '</td><td data-label="To collect" class="text-end num money fw-bold">' + F.peso(i.AmountToCollect) + (Number(i.CollectedAmount) > 0 ? '<span class="ph-only sub">collected ' + F.peso(i.CollectedAmount) + '</span>' : '') + '</td><td data-label="Collected" class="text-end num money ph-hide">' + F.peso(i.CollectedAmount) + '</td></tr>';
       }).join('') + '</tbody></table></div></section>' : ''));
     var body = UI.el('dsp-view-body');
     M.DeliveriesUI.wireCard(body, function () { open(j.Id); load(); });
@@ -6106,7 +6141,7 @@ window.MLS = (function () {
           <div class="mt-2" id="dlv-proof-sig-wrap"><div class="d-flex align-items-center"><span class="form-label small mb-1" id="dlv-proof-sig-label"><i class="fa-solid fa-signature me-1"></i>Customer's signature</span><button type="button" class="btn btn-link btn-sm ms-auto p-0" id="dlv-proof-sig-clear">Clear</button></div><canvas class="sig-pad" id="dlv-proof-sig" role="img" aria-labelledby="dlv-proof-sig-label"></canvas></div>
           <div class="mt-2"><label class="form-label small mb-1" for="dlv-proof-received">Received by</label><input class="form-control" id="dlv-proof-received" maxlength="80" placeholder="Name of the person who took the laundry"></div>
         </section>
-        <div class="alert alert-danger py-2 small mt-3" id="dlv-complete-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="dlv-complete-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button type="submit" class="btn btn-success" id="dlv-complete-ok"><i class="fa-solid fa-check me-1"></i>Confirm</button></div>
     </form>
@@ -6383,8 +6418,8 @@ window.MLS = (function () {
     <button type="button" data-status="ALL">All</button>
   </div>
   <div class="toolbar">
-    <input class="form-control search" id="inc-search" placeholder="Search order, customer or description" autocomplete="off">
-    <select class="form-select" id="inc-type"><option value="">All types</option></select>
+    <input class="form-control search" id="inc-search" placeholder="Search order, customer or description" autocomplete="off" aria-label="Search incidents">
+    <select class="form-select" id="inc-type" aria-label="Incident type"><option value="">All types</option></select>
   </div>
   <div class="card"><div class="card-body p-0" id="inc-table"></div></div>
 </section>
@@ -6400,7 +6435,7 @@ window.MLS = (function () {
           <div class="col-12"><label class="form-label" for="inc-report-type">What happened</label><select class="form-select" id="inc-report-type" name="type"></select></div>
           <div class="col-12"><label class="form-label" for="inc-report-desc">Details</label><textarea class="form-control" id="inc-report-desc" name="description" rows="4" maxlength="1000" placeholder="What was affected, when it was noticed, what the customer said…" required></textarea></div>
         </div>
-        <div class="alert alert-danger py-2 small mt-3" id="inc-report-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="inc-report-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-warning" id="inc-report-submit"><i class="fa-solid fa-triangle-exclamation me-1"></i>Report</button></div>
     </form>
@@ -6427,7 +6462,7 @@ window.MLS = (function () {
         <p class="small text-soft mb-2" id="inc-resolve-hint"></p>
         <label class="form-label" for="inc-resolution">Resolution</label><textarea class="form-control" id="inc-resolution" name="resolution" rows="4" maxlength="1000"></textarea>
         <div class="row g-2 mt-1" id="inc-comp-wrap"><div class="col-6"><label class="form-label" for="inc-comp">Compensation (₱, if any)</label><input class="form-control money" id="inc-comp" name="compensationAmount" type="number" step="0.01" min="0" inputmode="decimal"></div><div class="col-6 small text-soft pt-4">A refund is still recorded on the order; this notes the amount agreed.</div></div>
-        <div class="alert alert-danger py-2 small mt-3" id="inc-resolve-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="inc-resolve-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button type="submit" class="btn btn-primary" id="inc-resolve-submit">Save</button></div>
     </form>
@@ -6683,7 +6718,7 @@ window.MLS = (function () {
     UI.el('tc-m-add').disabled = false; var box = UI.el('tc-m-logs');
     if (!box.querySelector('table')) box.innerHTML = UI.skeleton({ kind: 'rows', count: 3, label: 'Loading the punches' });
     return Api.call('timeclock.logs', { staffId: mstate.staffId, from: mstate.from, to: mstate.to, includeVoid: true }).then(function (r) {
-      UI.html('tc-m-logs', '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>When</th><th>Punch</th><th>How</th><th>Edited</th><th></th></tr></thead><tbody>' + (r.rows.length ? r.rows.map(function (l) { return '<tr' + (l.LogType === 'VOID' ? ' class="text-soft text-decoration-line-through"' : '') + '><td data-label="When" class="lead-cell"><span class="ph-only lead-status">' + UI.badge(l.LogType) + '</span><span class="fw-bold">' + F.date(l.Date) + ' ' + F.clock(l.Time) + '</span></td><td data-label="Punch" class="ph-hide">' + UI.badge(l.LogType) + '</td><td data-label="How">' + F.status(l.Method) + (l.DeviceLabel ? ' <span class="text-soft">' + UI.esc(l.DeviceLabel) + '</span>' : '') + '</td><td data-label="Edited" class="small' + (l.EditReason ? '' : ' ph-hide') + '">' + (l.EditReason ? UI.esc(l.EditedByName || '') + ': ' + UI.esc(l.EditReason) : '') + '</td><td class="text-end">' + (l.LogType !== 'VOID' ? '<button type="button" class="btn btn-sm btn-link p-0" data-edit="' + UI.esc(l.Id) + '">edit</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="no-label text-soft text-start">No punches in this range.</td></tr>') + '</tbody></table></div>');
+      UI.html('tc-m-logs', '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>When</th><th>Punch</th><th>How</th><th>Edited</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + (r.rows.length ? r.rows.map(function (l) { return '<tr' + (l.LogType === 'VOID' ? ' class="text-soft text-decoration-line-through"' : '') + '><td data-label="When" class="lead-cell"><span class="ph-only lead-status">' + UI.badge(l.LogType) + '</span><span class="fw-bold">' + F.date(l.Date) + ' ' + F.clock(l.Time) + '</span></td><td data-label="Punch" class="ph-hide">' + UI.badge(l.LogType) + '</td><td data-label="How">' + F.status(l.Method) + (l.DeviceLabel ? ' <span class="text-soft">' + UI.esc(l.DeviceLabel) + '</span>' : '') + '</td><td data-label="Edited" class="small' + (l.EditReason ? '' : ' ph-hide') + '">' + (l.EditReason ? UI.esc(l.EditedByName || '') + ': ' + UI.esc(l.EditReason) : '') + '</td><td class="text-end">' + (l.LogType !== 'VOID' ? '<button type="button" class="btn btn-sm btn-link p-0" data-edit="' + UI.esc(l.Id) + '">edit</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="no-label text-soft text-start">No punches in this range.</td></tr>') + '</tbody></table></div>');
       UI.el('tc-m-logs').querySelectorAll('[data-edit]').forEach(function (b) { b.onclick = function () { var l = r.rows.filter(function (x) { return x.Id === b.getAttribute('data-edit'); })[0]; openCorrection(mstate.staffId, l, loadLogs); }; });
     }).catch(function (e) {
       if (box.querySelector('table')) { Toast.danger(UI.error(e)); return; }
@@ -6831,7 +6866,7 @@ window.MLS = (function () {
           <form class="d-flex gap-2 align-items-end" id="st-gen-form" autocomplete="off"><div><label class="form-label small" for="st-gen-f-year">Year</label><input id="st-gen-f-year" class="form-control form-control-sm col-w-90" name="year" type="number" inputmode="numeric" min="2000" max="2100"></div><div><label class="form-label small" for="st-gen-f-month">Month</label><input id="st-gen-f-month" class="form-control form-control-sm col-w-70" name="month" type="number" inputmode="numeric" min="1" max="12"></div><button type="submit" class="btn btn-sm btn-outline-primary">Generate</button></form>
           <form class="d-flex flex-wrap gap-2 align-items-end" id="st-period-form" autocomplete="off"><input type="hidden" name="id"><div><label class="form-label small" for="st-period-f-code">Code</label><input id="st-period-f-code" class="form-control form-control-sm col-w-110" name="code" maxlength="20" placeholder="auto"></div><div><label class="form-label small" for="st-period-f-fromDate">From</label><input id="st-period-f-fromDate" class="form-control form-control-sm" name="fromDate" type="date" required></div><div><label class="form-label small" for="st-period-f-toDate">To</label><input id="st-period-f-toDate" class="form-control form-control-sm" name="toDate" type="date" required></div><div><label class="form-label small" for="st-period-f-payDate">Pay date</label><input id="st-period-f-payDate" class="form-control form-control-sm" name="payDate" type="date"></div><button type="submit" class="btn btn-sm btn-primary">Save period</button></form>
         </div>
-        <div class="table-wrap"><table class="table table-sm table-cards aligned mb-3"><thead><tr><th>Period</th><th>Dates</th><th>Pay date</th><th>Status</th><th>Snapshots</th><th></th></tr></thead><tbody id="st-period-rows"></tbody></table></div>
+        <div class="table-wrap"><table class="table table-sm table-cards aligned mb-3"><thead><tr><th>Period</th><th>Dates</th><th>Pay date</th><th>Status</th><th>Snapshots</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody id="st-period-rows"></tbody></table></div>
         <div id="st-period-summary"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button></div>
@@ -6859,7 +6894,7 @@ window.MLS = (function () {
         <div id="st-adj-lines"></div>
         <button type="button" class="btn btn-sm btn-outline-primary" id="st-adj-add"><i class="fa-solid fa-plus me-1"></i>Add line</button>
         <datalist id="st-adj-labels"></datalist>
-        <div class="alert alert-danger py-2 small mt-3" id="st-adj-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="st-adj-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save and reprice</button></div>
     </form>
@@ -6869,9 +6904,9 @@ window.MLS = (function () {
 <div class="modal fade" id="st-holidays-modal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">Holidays <select class="form-select form-select-sm d-inline-block ms-2 col-w-100" id="st-hol-year"></select></h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-header"><h5 class="modal-title">Holidays <select class="form-select form-select-sm d-inline-block ms-2 col-w-100" id="st-hol-year" aria-label="Year"></select></h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
-        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Date</th><th>Holiday</th><th>Type</th><th>Branch</th><th></th></tr></thead><tbody id="st-hol-rows"></tbody></table></div>
+        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Date</th><th>Holiday</th><th>Type</th><th>Branch</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody id="st-hol-rows"></tbody></table></div>
         <form class="row g-2 align-items-end" id="st-hol-form" autocomplete="off" hidden>
           <input type="hidden" name="id">
           <div class="col-4"><label class="form-label small" for="st-hol-f-holidayDate">Date</label><input id="st-hol-f-holidayDate" class="form-control form-control-sm" name="holidayDate" type="date" required></div>
@@ -6952,7 +6987,7 @@ window.MLS = (function () {
     var r = rangeInputs('schedule', mon, addDays(mon, 13), function () { tabSchedule(body); });
     Api.call('schedule.list', { staffId: current.Id, from: ranges.schedule.from, to: ranges.schedule.to }).then(function (d) {
       body.innerHTML = r.html + (can('SCHEDULE_EDIT') ? '<div class="mb-2"><button type="button" class="btn btn-sm btn-outline-primary" id="st-pattern"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Apply weekly pattern</button> <span class="small text-soft">or click a day to edit it</span></div>' : '') +
-        '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>Date</th><th>Day</th><th>Shift</th><th>Break</th><th class="text-end num">Hours</th><th>Notes</th></tr></thead><tbody>' + d.days.map(function (x) { var s = x.Schedule; return '<tr class="' + (can('SCHEDULE_EDIT') ? 'pointer' : '') + (x.Holiday ? ' table-info' : '') + '" data-day="' + x.Date + '"><td data-label="Date" class="lead-cell">' + F.date(x.Date) + '</td><td data-label="Day">' + x.Weekday + (x.Holiday ? '<div class="small text-soft">' + UI.esc(x.Holiday.Name) + '</div>' : '') + '</td><td data-label="Shift">' + (!s ? '<span class="text-soft">no schedule</span>' : (s.IsRestDay ? UI.badge('REST_DAY', 'Rest day') : F.clock(s.ShiftStart) + ' – ' + F.clock(s.ShiftEnd))) + '</td><td data-label="Break">' + (s && !s.IsRestDay ? s.BreakMinutes + ' min' : '—') + '</td><td data-label="Hours" class="text-end num">' + (s ? F.hours(s.ScheduledMinutes / 60) : '—') + '</td><td data-label="Notes" class="small text-soft">' + UI.esc(s ? s.Notes : '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+        '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>Date</th><th>Day</th><th>Shift</th><th>Break</th><th class="text-end num">Hours</th><th>Notes</th></tr></thead><tbody>' + d.days.map(function (x) { var s = x.Schedule; return '<tr' + (can('SCHEDULE_EDIT') ? ' tabindex="0" data-kb="row"' : '') + ' class="' + (can('SCHEDULE_EDIT') ? 'pointer' : '') + (x.Holiday ? ' table-info' : '') + '" data-day="' + x.Date + '"><td data-label="Date" class="lead-cell">' + F.date(x.Date) + '</td><td data-label="Day">' + x.Weekday + (x.Holiday ? '<div class="small text-soft">' + UI.esc(x.Holiday.Name) + '</div>' : '') + '</td><td data-label="Shift">' + (!s ? '<span class="text-soft">no schedule</span>' : (s.IsRestDay ? UI.badge('REST_DAY', 'Rest day') : F.clock(s.ShiftStart) + ' – ' + F.clock(s.ShiftEnd))) + '</td><td data-label="Break">' + (s && !s.IsRestDay ? s.BreakMinutes + ' min' : '—') + '</td><td data-label="Hours" class="text-end num">' + (s ? F.hours(s.ScheduledMinutes / 60) : '—') + '</td><td data-label="Notes" class="small text-soft">' + UI.esc(s ? s.Notes : '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
       r.wire(body);
       if (can('SCHEDULE_EDIT')) { UI.el('st-pattern').onclick = openPattern; body.querySelectorAll('[data-day]').forEach(function (tr) { tr.onclick = function () { var day = d.days.filter(function (x) { return x.Date === tr.getAttribute('data-day'); })[0]; openDay(day); }; }); }
     }).catch(function (e) { tabFailed(body, e); });
@@ -6964,7 +6999,7 @@ window.MLS = (function () {
   }
   function openPattern() {
     var f = UI.el('st-pattern-form'); f.reset(); f.querySelector('[name=from]').value = ranges.schedule.from; f.querySelector('[name=to]').value = addDays(ranges.schedule.from, 27);
-    UI.html('st-pattern-rows', ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (d, i) { var wd = (i + 1) % 7, rest = wd === 0; return '<div class="pattern-grid" data-wd="' + wd + '"><label class="form-check mb-0"><input class="form-check-input" type="checkbox" data-work ' + (rest ? '' : 'checked') + '><span class="form-check-label">' + d + '</span></label><input class="form-control form-control-sm" type="time" data-start value="08:00"' + (rest ? ' disabled' : '') + '><input class="form-control form-control-sm" type="time" data-end value="17:00"' + (rest ? ' disabled' : '') + '><input class="form-control form-control-sm" type="number" inputmode="numeric" min="0" step="5" data-break value="60"' + (rest ? ' disabled' : '') + '></div>'; }).join(''));
+    UI.html('st-pattern-rows', ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (d, i) { var wd = (i + 1) % 7, rest = wd === 0; return '<div class="pattern-grid" data-wd="' + wd + '"><label class="form-check mb-0"><input class="form-check-input" type="checkbox" data-work ' + (rest ? '' : 'checked') + '><span class="form-check-label">' + d + '</span></label><input class="form-control form-control-sm" type="time" data-start aria-label="' + d + ' start" value="08:00"' + (rest ? ' disabled' : '') + '><input class="form-control form-control-sm" type="time" data-end aria-label="' + d + ' end" value="17:00"' + (rest ? ' disabled' : '') + '><input class="form-control form-control-sm" type="number" inputmode="numeric" min="0" step="5" data-break aria-label="' + d + ' break, minutes" value="60"' + (rest ? ' disabled' : '') + '></div>'; }).join(''));
     UI.el('st-pattern-rows').querySelectorAll('[data-work]').forEach(function (cb) { cb.onchange = function () { cb.closest('[data-wd]').querySelectorAll('input:not([data-work])').forEach(function (i) { i.disabled = !cb.checked; }); }; });
     M.Modal.open('st-pattern-modal');
   }
@@ -6989,7 +7024,7 @@ window.MLS = (function () {
     var today = isoLocal(new Date()); var r = rangeInputs('timelogs', addDays(today, -13), today, function () { tabTimeLogs(body); });
     Api.call('timeclock.logs', { staffId: current.Id, from: ranges.timelogs.from, to: ranges.timelogs.to, includeVoid: true }).then(function (d) {
       body.innerHTML = r.html + (d.canManage ? '<div class="mb-2"><button type="button" class="btn btn-sm btn-outline-primary" id="st-add-punch"><i class="fa-solid fa-plus me-1"></i>Add punch</button></div>' : '') +
-        '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>When</th><th>Punch</th><th>How</th><th>Correction</th><th></th></tr></thead><tbody>' + (d.rows.length ? d.rows.map(function (l) { return '<tr' + (l.LogType === 'VOID' ? ' class="text-soft text-decoration-line-through"' : '') + '><td data-label="When" class="lead-cell">' + F.date(l.Date) + ' ' + F.clock(l.Time) + '</td><td data-label="Punch">' + UI.badge(l.LogType) + '</td><td data-label="How">' + F.status(l.Method) + (l.DeviceLabel ? ' <span class="text-soft">' + UI.esc(l.DeviceLabel) + '</span>' : '') + '</td><td data-label="Correction" class="small">' + (l.EditReason ? UI.esc(l.EditedByName || '') + ': ' + UI.esc(l.EditReason) : '') + '</td><td class="text-end">' + (d.canManage && l.LogType !== 'VOID' ? '<button type="button" class="btn btn-sm btn-link p-0" data-edit="' + UI.esc(l.Id) + '">edit</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="text-soft">No punches in this range.</td></tr>') + '</tbody></table></div>';
+        '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>When</th><th>Punch</th><th>How</th><th>Correction</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + (d.rows.length ? d.rows.map(function (l) { return '<tr' + (l.LogType === 'VOID' ? ' class="text-soft text-decoration-line-through"' : '') + '><td data-label="When" class="lead-cell">' + F.date(l.Date) + ' ' + F.clock(l.Time) + '</td><td data-label="Punch">' + UI.badge(l.LogType) + '</td><td data-label="How">' + F.status(l.Method) + (l.DeviceLabel ? ' <span class="text-soft">' + UI.esc(l.DeviceLabel) + '</span>' : '') + '</td><td data-label="Correction" class="small">' + (l.EditReason ? UI.esc(l.EditedByName || '') + ': ' + UI.esc(l.EditReason) : '') + '</td><td class="text-end">' + (d.canManage && l.LogType !== 'VOID' ? '<button type="button" class="btn btn-sm btn-link p-0" data-edit="' + UI.esc(l.Id) + '">edit</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="text-soft">No punches in this range.</td></tr>') + '</tbody></table></div>';
       r.wire(body); var add = UI.el('st-add-punch'); if (add) add.onclick = function () { M.TimeClockUI.openCorrection(current.Id, null, function () { showTab('timelogs'); }, ranges.timelogs.from === ranges.timelogs.to ? ranges.timelogs.from : ranges.timelogs.to); };
       body.querySelectorAll('[data-edit]').forEach(function (b) { b.onclick = function () { var l = d.rows.filter(function (x) { return x.Id === b.getAttribute('data-edit'); })[0]; M.TimeClockUI.openCorrection(current.Id, l, function () { showTab('timelogs'); }); }; });
     }).catch(function (e) { tabFailed(body, e); });
@@ -6998,7 +7033,7 @@ window.MLS = (function () {
     Api.call('leave.list', { staffId: current.Id }).then(function (d) {
       var mayRequest = isSelf() || d.canApprove, mayDecide = d.canApprove && !isSelf();
       body.innerHTML = (mayRequest ? '<div class="mb-2"><button type="button" class="btn btn-sm btn-outline-primary" id="st-req-leave-btn"><i class="fa-solid fa-plus me-1"></i>Request leave</button></div>' : '') +
-        '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>Dates</th><th>Type</th><th>Days</th><th>Reason</th><th>Status</th><th></th></tr></thead><tbody>' + (d.rows.length ? d.rows.map(function (l) { return '<tr><td data-label="Dates" class="lead-cell">' + F.date(l.FromDate) + (l.ToDate !== l.FromDate ? ' – ' + F.date(l.ToDate) : '') + '</td><td data-label="Type">' + F.status(l.LeaveType) + (l.IsPaid ? ' <span class="small text-success">paid</span>' : ' <span class="small text-soft">unpaid</span>') + '</td><td data-label="Days">' + l.Days + '</td><td data-label="Reason" class="small">' + UI.esc(l.Reason || '') + '</td><td data-label="Status">' + UI.badge(l.Status) + (l.ApprovedByName ? '<div class="small text-soft">' + UI.esc(l.ApprovedByName) + '</div>' : '') + '</td><td class="text-end text-nowrap">' + (l.Status === 'PENDING' && mayDecide ? '<button type="button" class="btn btn-sm btn-success" data-decide="APPROVED" data-id="' + UI.esc(l.Id) + '">Approve</button> <button type="button" class="btn btn-sm btn-outline-danger" data-decide="REJECTED" data-id="' + UI.esc(l.Id) + '">Reject</button> ' : '') + (['PENDING', 'APPROVED'].indexOf(l.Status) >= 0 && (isSelf() || d.canApprove) ? '<button type="button" class="btn btn-sm btn-link p-0" data-cancel="' + UI.esc(l.Id) + '">cancel</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="6" class="text-soft">No leave requests.</td></tr>') + '</tbody></table></div>';
+        '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>Dates</th><th>Type</th><th>Days</th><th>Reason</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + (d.rows.length ? d.rows.map(function (l) { return '<tr><td data-label="Dates" class="lead-cell">' + F.date(l.FromDate) + (l.ToDate !== l.FromDate ? ' – ' + F.date(l.ToDate) : '') + '</td><td data-label="Type">' + F.status(l.LeaveType) + (l.IsPaid ? ' <span class="small text-success">paid</span>' : ' <span class="small text-soft">unpaid</span>') + '</td><td data-label="Days">' + l.Days + '</td><td data-label="Reason" class="small">' + UI.esc(l.Reason || '') + '</td><td data-label="Status">' + UI.badge(l.Status) + (l.ApprovedByName ? '<div class="small text-soft">' + UI.esc(l.ApprovedByName) + '</div>' : '') + '</td><td class="text-end text-nowrap">' + (l.Status === 'PENDING' && mayDecide ? '<button type="button" class="btn btn-sm btn-success" data-decide="APPROVED" data-id="' + UI.esc(l.Id) + '">Approve</button> <button type="button" class="btn btn-sm btn-outline-danger" data-decide="REJECTED" data-id="' + UI.esc(l.Id) + '">Reject</button> ' : '') + (['PENDING', 'APPROVED'].indexOf(l.Status) >= 0 && (isSelf() || d.canApprove) ? '<button type="button" class="btn btn-sm btn-link p-0" data-cancel="' + UI.esc(l.Id) + '">cancel</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="6" class="text-soft">No leave requests.</td></tr>') + '</tbody></table></div>';
       var rb = UI.el('st-req-leave-btn'); if (rb) rb.onclick = function () { openRequest('leave', d.leaveTypes); };
       body.querySelectorAll('[data-decide]').forEach(function (b) { b.onclick = function () { Api.call('leave.decide', { id: b.getAttribute('data-id'), status: b.getAttribute('data-decide') }, { busy: true }).then(function () { Toast.success('Leave ' + b.getAttribute('data-decide').toLowerCase()); showTab('leave'); }).catch(function (e) { Toast.danger(UI.error(e)); }); }; });
       body.querySelectorAll('[data-cancel]').forEach(function (b) { b.onclick = function () { M.Modal.confirm({ title: 'Cancel leave request', body: 'Withdraw this request?', okText: 'Withdraw', danger: true }).then(function (yes) { if (!yes) return; Api.call('leave.cancel', { id: b.getAttribute('data-cancel') }, { busy: true }).then(function () { Toast.success('Request cancelled'); showTab('leave'); }).catch(function (e) { Toast.danger(UI.error(e)); }); }); }; });
@@ -7008,7 +7043,7 @@ window.MLS = (function () {
     Api.call('overtime.list', { staffId: current.Id }).then(function (d) {
       var mayRequest = isSelf() || d.canApprove, mayDecide = d.canApprove && !isSelf();
       body.innerHTML = (mayRequest ? '<div class="mb-2"><button type="button" class="btn btn-sm btn-outline-primary" id="st-req-ot-btn"><i class="fa-solid fa-plus me-1"></i>Request overtime</button> <span class="small text-soft">Only approved hours count in payroll.</span></div>' : '') +
-        '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>Date</th><th class="text-end num">Requested</th><th class="text-end num">Approved</th><th>Reason</th><th>Status</th><th></th></tr></thead><tbody>' + (d.rows.length ? d.rows.map(function (o) { return '<tr><td data-label="Date" class="lead-cell">' + F.date(o.OtDate) + '</td><td data-label="Requested" class="text-end num">' + F.hours(o.RequestedHours) + ' h</td><td data-label="Approved" class="text-end num fw-bold">' + (o.Status === 'APPROVED' ? F.hours(o.ApprovedHours) + ' h' : '—') + '</td><td data-label="Reason" class="small">' + UI.esc(o.Reason || '') + '</td><td data-label="Status">' + UI.badge(o.Status) + (o.ApprovedByName ? '<div class="small text-soft">' + UI.esc(o.ApprovedByName) + '</div>' : '') + '</td><td class="text-end text-nowrap">' + (o.Status === 'PENDING' && mayDecide ? '<div class="input-group input-group-sm col-w-190 d-inline-flex align-middle me-2"><input class="form-control" type="number" inputmode="decimal" step="0.25" min="0.25" max="16" value="' + Number(o.RequestedHours) + '" data-hours aria-label="Hours"><button type="button" class="btn btn-success" data-decide="APPROVED" data-id="' + UI.esc(o.Id) + '">OK</button><button type="button" class="btn btn-outline-danger" data-decide="REJECTED" data-id="' + UI.esc(o.Id) + '">No</button></div>' : '') + (['PENDING', 'APPROVED'].indexOf(o.Status) >= 0 && (isSelf() || d.canApprove) ? '<button type="button" class="btn btn-sm btn-link p-0" data-cancel="' + UI.esc(o.Id) + '">cancel</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="6" class="text-soft">No overtime requests.</td></tr>') + '</tbody></table></div>';
+        '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>Date</th><th class="text-end num">Requested</th><th class="text-end num">Approved</th><th>Reason</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + (d.rows.length ? d.rows.map(function (o) { return '<tr><td data-label="Date" class="lead-cell">' + F.date(o.OtDate) + '</td><td data-label="Requested" class="text-end num">' + F.hours(o.RequestedHours) + ' h</td><td data-label="Approved" class="text-end num fw-bold">' + (o.Status === 'APPROVED' ? F.hours(o.ApprovedHours) + ' h' : '—') + '</td><td data-label="Reason" class="small">' + UI.esc(o.Reason || '') + '</td><td data-label="Status">' + UI.badge(o.Status) + (o.ApprovedByName ? '<div class="small text-soft">' + UI.esc(o.ApprovedByName) + '</div>' : '') + '</td><td class="text-end text-nowrap">' + (o.Status === 'PENDING' && mayDecide ? '<div class="input-group input-group-sm col-w-190 d-inline-flex align-middle me-2"><input class="form-control" type="number" inputmode="decimal" step="0.25" min="0.25" max="16" value="' + Number(o.RequestedHours) + '" data-hours aria-label="Hours"><button type="button" class="btn btn-success" data-decide="APPROVED" data-id="' + UI.esc(o.Id) + '">OK</button><button type="button" class="btn btn-outline-danger" data-decide="REJECTED" data-id="' + UI.esc(o.Id) + '">No</button></div>' : '') + (['PENDING', 'APPROVED'].indexOf(o.Status) >= 0 && (isSelf() || d.canApprove) ? '<button type="button" class="btn btn-sm btn-link p-0" data-cancel="' + UI.esc(o.Id) + '">cancel</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="6" class="text-soft">No overtime requests.</td></tr>') + '</tbody></table></div>';
       var rb = UI.el('st-req-ot-btn'); if (rb) rb.onclick = function () { openRequest('overtime'); };
       body.querySelectorAll('[data-decide]').forEach(function (b) { b.onclick = function () { var hrs = b.closest('.input-group').querySelector('[data-hours]').value; Api.call('overtime.decide', { id: b.getAttribute('data-id'), status: b.getAttribute('data-decide'), approvedHours: hrs }, { busy: true }).then(function () { Toast.success('Overtime ' + b.getAttribute('data-decide').toLowerCase()); showTab('overtime'); }).catch(function (e) { Toast.danger(UI.error(e)); }); }; });
       body.querySelectorAll('[data-cancel]').forEach(function (b) { b.onclick = function () { Api.call('overtime.cancel', { id: b.getAttribute('data-cancel') }, { busy: true }).then(function () { Toast.success('Request cancelled'); showTab('overtime'); }).catch(function (e) { Toast.danger(UI.error(e)); }); }; });
@@ -7042,7 +7077,7 @@ window.MLS = (function () {
   function tabPayroll(body) {
     loadPeriods().then(function (ps) {
       if (!payrollSel) { var cur = ps.filter(function (p) { return p.IsCurrent; })[0] || ps[0]; payrollSel = cur ? { periodId: cur.Id } : { from: addDays(isoLocal(new Date()), -14), to: isoLocal(new Date()) }; }
-      var selHtml = '<div class="toolbar"><select class="form-select" id="st-pr-period">' + UI.options(ps, payrollSel.periodId || '', function (p) { return p.Code + ' · ' + F.date(p.FromDate) + ' – ' + F.date(p.ToDate) + ' · ' + F.status(p.Status); }) + '<option value="__range"' + (payrollSel.periodId ? '' : ' selected') + '>Custom range (view only)</option></select><span id="st-pr-range"' + (payrollSel.periodId ? ' hidden' : '') + '><input class="form-control d-inline-block w-auto-field" type="date" id="st-pr-from" value="' + (payrollSel.from || '') + '"> <input class="form-control d-inline-block w-auto-field" type="date" id="st-pr-to" value="' + (payrollSel.to || '') + '"></span></div>';
+      var selHtml = '<div class="toolbar"><select class="form-select" id="st-pr-period" aria-label="Pay period">' + UI.options(ps, payrollSel.periodId || '', function (p) { return p.Code + ' · ' + F.date(p.FromDate) + ' – ' + F.date(p.ToDate) + ' · ' + F.status(p.Status); }) + '<option value="__range"' + (payrollSel.periodId ? '' : ' selected') + '>Custom range (view only)</option></select><span id="st-pr-range"' + (payrollSel.periodId ? ' hidden' : '') + '><input class="form-control d-inline-block w-auto-field" type="date" id="st-pr-from" value="' + (payrollSel.from || '') + '" aria-label="From date"> <input class="form-control d-inline-block w-auto-field" type="date" id="st-pr-to" value="' + (payrollSel.to || '') + '" aria-label="To date"></span></div>';
       body.innerHTML = selHtml + '<div id="st-pr-body">' + UI.skeleton({ kind: 'rows', count: 6, label: 'Loading the payroll hours' }) + '</div>';
       var apply = function () { var v = UI.el('st-pr-period').value; if (v === '__range') { UI.el('st-pr-range').hidden = false; var from = UI.el('st-pr-from').value, to = UI.el('st-pr-to').value; if (!from || !to) return; payrollSel = { from: from, to: to }; } else { UI.el('st-pr-range').hidden = true; payrollSel = { periodId: v }; } loadHours(); };
       UI.el('st-pr-period').onchange = apply; UI.el('st-pr-from').onchange = apply; UI.el('st-pr-to').onchange = apply;
@@ -7075,7 +7110,7 @@ window.MLS = (function () {
   function tabHistory(body) {
     Api.call('payroll.history', { staffId: current.Id }).then(function (d) {
       var slipOk = function (r) { return r.Pay && (r.Pay.Status !== 'DRAFT' || can('STAFF_PAYROLL_ADMIN') || can('STAFF_PAYROLL_HOURS_PRINT')); };
-      body.innerHTML = '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Period</th><th>Dates</th><th>Pay date</th><th>Hours</th><th class="text-end num">Present</th><th class="text-end num">Regular</th><th class="text-end num">OT</th><th class="text-end num">Total h</th><th class="text-end num">Gross</th><th class="text-end num">Net pay</th><th></th></tr></thead><tbody>' + (d.rows.length ? d.rows.map(function (r) { return '<tr data-period="' + UI.esc(r.PeriodId) + '" class="pointer"><td data-label="Period" class="lead-cell"><span class="lead-status ph-only">' + UI.badge(r.Status) + '</span><span class="fw-bold">' + UI.esc(r.Code) + '</span></td><td data-label="Dates">' + F.date(r.FromDate) + ' – ' + F.date(r.ToDate) + '</td><td data-label="Pay date">' + (r.PayDate ? F.date(r.PayDate) : '—') + '</td><td data-label="Hours" class="ph-hide">' + UI.badge(r.Status) + '</td><td data-label="Present" class="text-end num">' + r.Summary.DaysPresent + '</td><td data-label="Regular" class="text-end num">' + F.hours(r.Summary.RegularHours) + '</td><td data-label="OT" class="text-end num">' + F.hours(r.Summary.OvertimeHours) + '</td><td data-label="Total" class="text-end num fw-bold">' + F.hours(r.Summary.TotalHours) + '</td><td data-label="Gross" class="text-end num money">' + (r.Pay ? F.peso(r.Pay.GrossPay) : '—') + '</td><td data-label="Net pay" class="text-end num money fw-bold">' + (r.Pay ? F.peso(r.Pay.NetPay) + ' ' + UI.badge(r.Pay.Status) : '<span class="text-soft">not computed</span>') + '</td><td class="text-end">' + (slipOk(r) ? '<button type="button" class="btn btn-sm btn-outline-primary" data-slip="' + UI.esc(r.PeriodId) + '"><i class="fa-solid fa-print me-1"></i>Payslip</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="11" class="text-soft">No finalized periods yet.</td></tr>') + '</tbody></table></div>';
+      body.innerHTML = '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Period</th><th>Dates</th><th>Pay date</th><th>Hours</th><th class="text-end num">Present</th><th class="text-end num">Regular</th><th class="text-end num">OT</th><th class="text-end num">Total h</th><th class="text-end num">Gross</th><th class="text-end num">Net pay</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + (d.rows.length ? d.rows.map(function (r) { return '<tr data-period="' + UI.esc(r.PeriodId) + '" class="pointer" tabindex="0" data-kb="row"><td data-label="Period" class="lead-cell"><span class="lead-status ph-only">' + UI.badge(r.Status) + '</span><span class="fw-bold">' + UI.esc(r.Code) + '</span></td><td data-label="Dates">' + F.date(r.FromDate) + ' – ' + F.date(r.ToDate) + '</td><td data-label="Pay date">' + (r.PayDate ? F.date(r.PayDate) : '—') + '</td><td data-label="Hours" class="ph-hide">' + UI.badge(r.Status) + '</td><td data-label="Present" class="text-end num">' + r.Summary.DaysPresent + '</td><td data-label="Regular" class="text-end num">' + F.hours(r.Summary.RegularHours) + '</td><td data-label="OT" class="text-end num">' + F.hours(r.Summary.OvertimeHours) + '</td><td data-label="Total" class="text-end num fw-bold">' + F.hours(r.Summary.TotalHours) + '</td><td data-label="Gross" class="text-end num money">' + (r.Pay ? F.peso(r.Pay.GrossPay) : '—') + '</td><td data-label="Net pay" class="text-end num money fw-bold">' + (r.Pay ? F.peso(r.Pay.NetPay) + ' ' + UI.badge(r.Pay.Status) : '<span class="text-soft">not computed</span>') + '</td><td class="text-end">' + (slipOk(r) ? '<button type="button" class="btn btn-sm btn-outline-primary" data-slip="' + UI.esc(r.PeriodId) + '"><i class="fa-solid fa-print me-1"></i>Payslip</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="11" class="text-soft">No finalized periods yet.</td></tr>') + '</tbody></table></div>';
       body.querySelectorAll('[data-period]').forEach(function (tr) { tr.onclick = function () { payrollSel = { periodId: tr.getAttribute('data-period') }; showTab('payroll'); }; });
       body.querySelectorAll('[data-slip]').forEach(function (b) { b.onclick = function (ev) { ev.stopPropagation(); printPayslip(current.Id, b.getAttribute('data-slip')); }; });
     }).catch(function (e) { tabFailed(body, e); });
@@ -7105,7 +7140,7 @@ window.MLS = (function () {
       return '<tr' + (r.Stale ? ' class="table-warning"' : '') + '><td data-label="Staff" class="lead-cell"><span class="fw-bold">' + UI.esc(r.FullName) + '</span><div class="small text-soft">' + UI.esc(r.StaffNo) + ' · ' + F.status(r.PayBasis) + ' ' + F.peso(r.BaseRate) + (r.Detail && r.Detail.noRate ? ' · <span class="text-danger">no rate</span>' : '') + (r.Stale ? ' · <span class="text-danger">recompute</span>' : '') + '</div></td><td data-label="Hours" class="text-end num small">' + (r.Hours ? F.hours(r.Hours.TotalHours) + ' h<div class="text-soft">' + r.Hours.DaysPresent + ' d · OT ' + F.hours(r.Hours.OvertimeHours) + '</div>' : '—') + '</td><td data-label="Regular" class="text-end num money">' + F.peso(r.RegularPay) + '</td><td data-label="OT" class="text-end num money">' + F.peso(r.OvertimePay) + '</td><td data-label="Holiday" class="text-end num money">' + F.peso(r.HolidayPay) + '</td><td data-label="Rest day" class="text-end num money">' + F.peso(r.RestDayPay) + '</td><td data-label="Allowances" class="text-end num money">' + F.peso(r.Allowances) + '</td><td data-label="Late/UT" class="text-end num money text-danger">' + (Number(r.AttendanceDeductions) ? '−' + F.peso(r.AttendanceDeductions) : '—') + '</td><td data-label="Deductions" class="text-end num money text-danger">' + (Number(r.Deductions) ? '−' + F.peso(r.Deductions) : '—') + (Number(r.StatutoryDeductions) || Number(r.WithholdingTax) ? '<div class="small text-soft" title="SSS, PhilHealth and Pag-IBIG (employee share) · withholding tax">stat. −' + F.peso(r.StatutoryDeductions) + (Number(r.WithholdingTax) ? ' · tax −' + F.peso(r.WithholdingTax) : '') + '</div>' : '') + (r.Detail && r.Detail.belowMinimumWage ? '<div class="small text-danger">below minimum wage</div>' : '') + '</td><td data-label="Gross" class="text-end num money">' + F.peso(r.GrossPay) + (Number(r.NightDiffPay) ? '<div class="small text-soft">night ' + F.peso(r.NightDiffPay) + '</div>' : '') + '</td><td data-label="Net" class="text-end num money fw-bold">' + F.peso(r.NetPay) + '</td><td data-label="Status">' + UI.badge(r.Status) + (r.ApprovedByName ? '<div class="small text-soft">' + UI.esc(r.ApprovedByName) + '</div>' : '') + (r.PaidAt ? '<div class="small text-soft">' + F.date(r.PaidAt) + '</div>' : '') + '</td><td class="text-end text-nowrap">' + acts + '</td></tr>';
     }).join('');
     var missing = d.missing.map(function (m) { return '<tr class="text-soft"><td data-label="Staff" class="lead-cell"><span class="fw-bold">' + UI.esc(m.FullName) + '</span><div class="small">' + UI.esc(m.StaffNo) + ' · ' + F.status(m.PayBasis) + ' ' + F.peso(m.BaseRate) + '</div></td><td data-label="Hours" class="text-end num small">' + F.hours(m.TotalHours) + ' h</td><td colspan="10" class="small">Not computed yet</td><td></td></tr>'; }).join('');
-    UI.html('st-pay-body', banner + statBanner + tiles + '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>Staff</th><th class="text-end num">Hours</th><th class="text-end num">Regular</th><th class="text-end num">OT</th><th class="text-end num">Holiday</th><th class="text-end num">Rest</th><th class="text-end num">Allow.</th><th class="text-end num">Late/UT</th><th class="text-end num">Deduct.</th><th class="text-end num">Gross</th><th class="text-end num">Net</th><th>Status</th><th></th></tr></thead><tbody>' + (rows || missing ? rows + missing : '<tr><td colspan="13" class="text-soft">No finalized hours in this period.</td></tr>') + '</tbody></table></div>' +
+    UI.html('st-pay-body', banner + statBanner + tiles + '<div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>Staff</th><th class="text-end num">Hours</th><th class="text-end num">Regular</th><th class="text-end num">OT</th><th class="text-end num">Holiday</th><th class="text-end num">Rest</th><th class="text-end num">Allow.</th><th class="text-end num">Late/UT</th><th class="text-end num">Deduct.</th><th class="text-end num">Gross</th><th class="text-end num">Net</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + (rows || missing ? rows + missing : '<tr><td colspan="13" class="text-soft">No finalized hours in this period.</td></tr>') + '</tbody></table></div>' +
       '<p class="small text-soft mt-2 mb-0">Rates: ' + F.status(d.rules.periodType) + ' periods · OT × ' + d.rules.overtimeMultiplier + ' · rest day × ' + d.rules.restDayMultiplier + ' · regular holiday × ' + d.rules.regularHolidayMultiplier + ' (' + d.rules.regularHolidayUnworkedPct + '% unworked) · special holiday × ' + d.rules.specialHolidayMultiplier + ' (' + d.rules.specialHolidayUnworkedPct + '% unworked) · monthly ÷ ' + d.rules.monthlyDivisor + ' · late deducted: ' + (d.rules.deductLateMinutes ? 'yes' : 'no') + ' · absences deducted (monthly): ' + (d.rules.deductAbsencesMonthly ? 'yes' : 'no') + '. Change them under Settings → Payroll.</p>');
     var body = UI.el('st-pay-body');
     body.querySelectorAll('[data-adj]').forEach(function (b) { b.onclick = function () { openAdjust(d.records.filter(function (r) { return r.Id === b.getAttribute('data-adj'); })[0]); }; });
@@ -7131,7 +7166,7 @@ window.MLS = (function () {
     M.Modal.open('st-adj-modal');
   }
   function paintAdjLines(lines) {
-    UI.html('st-adj-lines', lines.map(function (l, i) { return '<div class="adj-line" data-i="' + i + '"><select class="form-select form-select-sm" data-f="type">' + UI.options(['ALLOWANCE', 'DEDUCTION'], l.type, function (t) { return t === 'ALLOWANCE' ? 'Allowance' : 'Deduction'; }, function (t) { return t; }) + '</select><input class="form-control form-control-sm" data-f="label" list="st-adj-labels" maxlength="40" placeholder="Meal, SSS, cash advance…" value="' + UI.esc(l.label) + '"><input class="form-control form-control-sm text-end" data-f="amount" type="number" step="0.01" min="0.01" inputmode="decimal" value="' + UI.esc(l.amount) + '" aria-label="Amount"><button type="button" class="lx" data-rm="' + i + '" aria-label="Remove"><i class="fa-solid fa-xmark"></i></button></div>'; }).join(''));
+    UI.html('st-adj-lines', lines.map(function (l, i) { return '<div class="adj-line" data-i="' + i + '"><select class="form-select form-select-sm" data-f="type" aria-label="Allowance or deduction">' + UI.options(['ALLOWANCE', 'DEDUCTION'], l.type, function (t) { return t === 'ALLOWANCE' ? 'Allowance' : 'Deduction'; }, function (t) { return t; }) + '</select><input class="form-control form-control-sm" data-f="label" list="st-adj-labels" maxlength="40" aria-label="What it is for" placeholder="Meal, SSS, cash advance…" value="' + UI.esc(l.label) + '"><input class="form-control form-control-sm text-end" data-f="amount" type="number" step="0.01" min="0.01" inputmode="decimal" value="' + UI.esc(l.amount) + '" aria-label="Amount"><button type="button" class="lx" data-rm="' + i + '" aria-label="Remove"><i class="fa-solid fa-xmark"></i></button></div>'; }).join(''));
     UI.el('st-adj-lines').querySelectorAll('[data-rm]').forEach(function (b) { b.onclick = function () { var ls = readAdjLines(); ls.splice(Number(b.getAttribute('data-rm')), 1); paintAdjLines(ls.length ? ls : [{ type: 'ALLOWANCE', label: '', amount: '' }]); }; });
   }
   function readAdjLines() { return Array.prototype.map.call(UI.el('st-adj-lines').querySelectorAll('.adj-line'), function (row) { return { type: row.querySelector('[data-f=type]').value, label: row.querySelector('[data-f=label]').value, amount: row.querySelector('[data-f=amount]').value }; }); }
@@ -7226,7 +7261,7 @@ window.MLS = (function () {
   function periodSummary(periodId) {
     var box = UI.el('st-period-summary'); box.innerHTML = UI.skeleton({ kind: 'rows', count: 4, label: 'Loading the summary' });
     Api.call('payroll.summary', { periodId: periodId }).then(function (d) {
-      box.innerHTML = '<h6 class="fw-bold">' + UI.esc(d.period ? d.period.Code : '') + ' · ' + d.rows.length + ' staff · ' + F.hours(d.totalHours) + ' h' + (d.reviewDays ? ' · <span class="text-danger">' + d.reviewDays + ' day' + (d.reviewDays === 1 ? '' : 's') + ' to review</span>' : '') + ' <span class="small text-soft fw-normal">(' + (d.status === 'FINALIZED' ? 'snapshot' : 'live') + ')</span></h6><div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>Staff</th><th class="text-end num">Present</th><th class="text-end num">Absent</th><th class="text-end num">Leave</th><th class="text-end num">Late</th><th class="text-end num">Regular</th><th class="text-end num">OT</th><th class="text-end num">Holiday</th><th class="text-end num">Total h</th><th class="text-end num">Review</th></tr></thead><tbody>' + d.rows.map(function (r) { var s = r.Summary; return '<tr class="pointer' + (s.ReviewDays ? ' table-danger' : '') + '" data-staff="' + UI.esc(r.StaffId) + '"><td data-label="Staff" class="lead-cell"><span class="fw-bold">' + UI.esc(r.FullName) + '</span> <span class="small text-soft">' + UI.esc(r.StaffNo) + '</span></td><td data-label="Present" class="text-end num">' + s.DaysPresent + '</td><td data-label="Absent" class="text-end num">' + s.DaysAbsent + '</td><td data-label="Leave" class="text-end num">' + s.DaysOnLeave + '</td><td data-label="Late" class="text-end num">' + s.LateCount + '</td><td data-label="Regular" class="text-end num">' + F.hours(s.RegularHours) + '</td><td data-label="OT" class="text-end num">' + F.hours(s.OvertimeHours) + '</td><td data-label="Holiday" class="text-end num">' + F.hours(s.HolidayHours) + '</td><td data-label="Total" class="text-end num fw-bold">' + F.hours(s.TotalHours) + '</td><td data-label="Review" class="text-end num">' + (s.ReviewDays || '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      box.innerHTML = '<h6 class="fw-bold">' + UI.esc(d.period ? d.period.Code : '') + ' · ' + d.rows.length + ' staff · ' + F.hours(d.totalHours) + ' h' + (d.reviewDays ? ' · <span class="text-danger">' + d.reviewDays + ' day' + (d.reviewDays === 1 ? '' : 's') + ' to review</span>' : '') + ' <span class="small text-soft fw-normal">(' + (d.status === 'FINALIZED' ? 'snapshot' : 'live') + ')</span></h6><div class="table-wrap"><table class="table table-sm table-xs table-cards aligned mb-0"><thead><tr><th>Staff</th><th class="text-end num">Present</th><th class="text-end num">Absent</th><th class="text-end num">Leave</th><th class="text-end num">Late</th><th class="text-end num">Regular</th><th class="text-end num">OT</th><th class="text-end num">Holiday</th><th class="text-end num">Total h</th><th class="text-end num">Review</th></tr></thead><tbody>' + d.rows.map(function (r) { var s = r.Summary; return '<tr tabindex="0" data-kb="row" class="pointer' + (s.ReviewDays ? ' table-danger' : '') + '" data-staff="' + UI.esc(r.StaffId) + '"><td data-label="Staff" class="lead-cell"><span class="fw-bold">' + UI.esc(r.FullName) + '</span> <span class="small text-soft">' + UI.esc(r.StaffNo) + '</span></td><td data-label="Present" class="text-end num">' + s.DaysPresent + '</td><td data-label="Absent" class="text-end num">' + s.DaysAbsent + '</td><td data-label="Leave" class="text-end num">' + s.DaysOnLeave + '</td><td data-label="Late" class="text-end num">' + s.LateCount + '</td><td data-label="Regular" class="text-end num">' + F.hours(s.RegularHours) + '</td><td data-label="OT" class="text-end num">' + F.hours(s.OvertimeHours) + '</td><td data-label="Holiday" class="text-end num">' + F.hours(s.HolidayHours) + '</td><td data-label="Total" class="text-end num fw-bold">' + F.hours(s.TotalHours) + '</td><td data-label="Review" class="text-end num">' + (s.ReviewDays || '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
       box.querySelectorAll('[data-staff]').forEach(function (tr) { tr.onclick = function () { payrollSel = { periodId: periodId }; M.Modal.closeThen('st-periods-modal', function () { open(tr.getAttribute('data-staff'), 'payroll'); }); }; });
     }).catch(function (e) { failed(box, 'The summary could not be loaded', e, function () { periodSummary(periodId); }); });
   }
@@ -7285,10 +7320,10 @@ window.MLS = (function () {
     <button type="button" class="btn btn-primary btn-sm" id="exp-new" hidden><i class="fa-solid fa-plus me-1"></i>New expense</button>
   </div>
   <div class="toolbar">
-    <input class="form-control search" id="exp-search" placeholder="Search payee, description, receipt" autocomplete="off">
-    <select class="form-select" id="exp-category"><option value="">All categories</option></select>
-    <select class="form-select" id="exp-method"><option value="">All methods</option></select>
-    <select class="form-select" id="exp-status"><option value="ACTIVE">Active</option><option value="VOID">Voided</option><option value="ALL">All</option></select>
+    <input class="form-control search" id="exp-search" placeholder="Search payee, description, receipt" autocomplete="off" aria-label="Search expenses">
+    <select class="form-select" id="exp-category" aria-label="Category"><option value="">All categories</option></select>
+    <select class="form-select" id="exp-method" aria-label="Payment method"><option value="">All methods</option></select>
+    <select class="form-select" id="exp-status" aria-label="Expense status"><option value="ACTIVE">Active</option><option value="VOID">Voided</option><option value="ALL">All</option></select>
     <input class="form-control" id="exp-from" type="date" aria-label="From date">
     <input class="form-control" id="exp-to" type="date" aria-label="To date">
   </div>
@@ -7314,7 +7349,7 @@ window.MLS = (function () {
           <div class="col-6"><label class="form-label" for="exp-f-notes">Notes</label><input class="form-control" id="exp-f-notes" name="notes" maxlength="300"></div>
         </div>
         <p class="small text-soft mt-3 mb-0"><i class="fa-solid fa-circle-info me-1"></i>A cash expense reduces the cash the end-of-day count expects in the drawer. Once the day is submitted the expense is locked.</p>
-        <div class="alert alert-danger py-2 small mt-2" id="exp-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-2" id="exp-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" id="exp-submit"><i class="fa-solid fa-receipt me-1"></i>Save expense</button></div>
     </form>
@@ -7336,7 +7371,7 @@ window.MLS = (function () {
     <div class="modal-content">
       <div class="modal-header"><h5 class="modal-title">Expense categories</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
-        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Category</th><th>Description</th><th>Status</th><th></th></tr></thead><tbody id="exp-cat-rows"></tbody></table></div>
+        <div class="table-wrap mb-3"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Category</th><th>Description</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody id="exp-cat-rows"></tbody></table></div>
         <form id="exp-cat-form" class="border rounded p-3" autocomplete="off" hidden>
           <h6 class="fw-bold" id="exp-cat-form-title">New category</h6>
           <input type="hidden" name="Id">
@@ -7739,11 +7774,11 @@ window.MLS = (function () {
   <div class="toolbar">
     <input class="form-control" id="rp-from" type="date" aria-label="From date">
     <input class="form-control" id="rp-to" type="date" aria-label="To date">
-    <select class="form-select" id="rp-group" hidden><option value="day">By day</option><option value="service">By service</option><option value="cashier">By cashier</option><option value="branch">By branch</option></select>
-    <select class="form-select" id="rp-year" hidden></select>
-    <select class="form-select" id="rp-module" hidden><option value="">All modules</option></select>
-    <select class="form-select" id="rp-action" hidden><option value="">All actions</option></select>
-    <input class="form-control search" id="rp-search" placeholder="Search user, record, values" autocomplete="off" hidden>
+    <select class="form-select" id="rp-group" hidden aria-label="Group by"><option value="day">By day</option><option value="service">By service</option><option value="cashier">By cashier</option><option value="branch">By branch</option></select>
+    <select class="form-select" id="rp-year" hidden aria-label="Year"></select>
+    <select class="form-select" id="rp-module" hidden aria-label="Module"><option value="">All modules</option></select>
+    <select class="form-select" id="rp-action" hidden aria-label="Action"><option value="">All actions</option></select>
+    <input class="form-control search" id="rp-search" placeholder="Search user, record, values" autocomplete="off" hidden aria-label="Search the report">
   </div>
   <div class="sum-grid" id="rp-kpis"></div>
   <p class="small text-soft mb-2" id="rp-covers" hidden></p>
@@ -8025,7 +8060,7 @@ window.MLS = (function () {
           <div class="col-6" id="set-user-status-wrap"><label class="form-label" for="set-user-f-Status">Status</label><select id="set-user-f-Status" class="form-select" name="Status"><option value="ACTIVE">Active</option><option value="DISABLED">Disabled</option></select></div>
           <div class="col-6" id="set-user-pw-wrap"><label class="form-label" for="set-user-f-password">Temporary password</label><input id="set-user-f-password" class="form-control" name="password" autocomplete="new-password" placeholder="leave blank to generate"><div class="form-text">Must be changed at first sign-in.</div></div>
         </div>
-        <div class="alert alert-danger py-2 small mt-3" id="set-user-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="set-user-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save user</button></div>
     </form>
@@ -8071,7 +8106,7 @@ window.MLS = (function () {
           <div class="col-12"><label class="form-label" for="set-branch-f-ReceiptHeader">Receipt header (this branch)</label><input id="set-branch-f-ReceiptHeader" class="form-control" name="ReceiptHeader" maxlength="200"></div>
           <div class="col-12"><label class="form-label" for="set-branch-f-ReceiptFooter">Receipt footer (this branch)</label><input id="set-branch-f-ReceiptFooter" class="form-control" name="ReceiptFooter" maxlength="200"></div>
         </div>
-        <div class="alert alert-danger py-2 small mt-3" id="set-branch-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="set-branch-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save branch</button></div>
     </form>
@@ -8090,7 +8125,7 @@ window.MLS = (function () {
           <div class="col-12"><label class="form-label" for="set-role-f-Description">Description</label><input id="set-role-f-Description" class="form-control" name="Description" maxlength="200"></div>
           <div class="col-6" id="set-role-status-wrap"><label class="form-label" for="set-role-f-Status">Status</label><select id="set-role-f-Status" class="form-select" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>
         </div>
-        <div class="alert alert-danger py-2 small mt-3" id="set-role-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="set-role-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save role</button></div>
     </form>
@@ -8114,7 +8149,7 @@ window.MLS = (function () {
           <div class="col-12"><div class="small text-soft mb-1">Insert a variable (only the ones this workflow supports):</div><div class="sms-vars" id="set-tpl-vars"></div></div>
           <div class="col-12"><div class="small text-soft mb-1">Preview with sample values</div><div class="tpl-preview" id="set-tpl-preview"></div></div>
         </div>
-        <div class="alert alert-danger py-2 small mt-3" id="set-tpl-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="set-tpl-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save template</button></div>
     </form>
@@ -8164,7 +8199,7 @@ window.MLS = (function () {
   function loadSessions() {
     Api.call('auth.sessions').then(function (d) {
       var box = UI.el('set-sessions'); if (!box) return;
-      box.innerHTML = '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Device</th><th>Signed in</th><th>Last seen</th><th>Expires</th><th></th></tr></thead><tbody>' + d.rows.map(function (s) { return '<tr' + (s.Current ? ' class="table-active"' : '') + '><td data-label="Device" class="lead-cell">' + (s.Current ? '<span class="lead-status ph-only"><span class="status-badge s-paid">This device</span></span>' : '') + '<span class="fw-bold">' + UI.esc(s.Device || 'Unlabelled device') + '</span>' + (s.UserAgent ? '<div class="small text-soft text-truncate max-w-320">' + UI.esc(s.UserAgent) + '</div>' : '') + '</td><td data-label="Signed in">' + F.datetime(s.IssuedAt) + '</td><td data-label="Last seen">' + F.relative(s.LastSeenAt) + '</td><td data-label="Expires">' + F.datetime(s.ExpiresAt) + '</td><td class="text-end ph-hide">' + (s.Current ? '<span class="status-badge s-paid">This device</span>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div><p class="small text-soft mt-2 mb-0">Sessions end after ' + Math.round(d.idleMinutes / 60) + ' h without activity and ' + d.maxHours + ' h at most.</p>';
+      box.innerHTML = '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr><th>Device</th><th>Signed in</th><th>Last seen</th><th>Expires</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + d.rows.map(function (s) { return '<tr' + (s.Current ? ' class="table-active"' : '') + '><td data-label="Device" class="lead-cell">' + (s.Current ? '<span class="lead-status ph-only"><span class="status-badge s-paid">This device</span></span>' : '') + '<span class="fw-bold">' + UI.esc(s.Device || 'Unlabelled device') + '</span>' + (s.UserAgent ? '<div class="small text-soft text-truncate max-w-320">' + UI.esc(s.UserAgent) + '</div>' : '') + '</td><td data-label="Signed in">' + F.datetime(s.IssuedAt) + '</td><td data-label="Last seen">' + F.relative(s.LastSeenAt) + '</td><td data-label="Expires">' + F.datetime(s.ExpiresAt) + '</td><td class="text-end ph-hide">' + (s.Current ? '<span class="status-badge s-paid">This device</span>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div><p class="small text-soft mt-2 mb-0">Sessions end after ' + Math.round(d.idleMinutes / 60) + ' h without activity and ' + d.maxHours + ' h at most.</p>';
       var b = UI.el('set-signout-others'); if (b) { b.hidden = d.rows.length < 2; b.onclick = function () { M.Modal.confirm({ title: 'Sign out other devices', body: 'Every other session of your account ends now; this device stays signed in.', okText: 'Sign out others', danger: true }).then(function (yes) { if (!yes) return; Api.call('auth.signOutOthers', {}, { busy: true }).then(function (r) { Toast.success(r.revoked + ' other session' + (r.revoked === 1 ? '' : 's') + ' signed out'); loadSessions(); }).catch(fail); }); }; }
     }).catch(function (e) { var box = UI.el('set-sessions'); if (box) failed(box, 'Your signed-in devices could not be loaded', e, function () { box.innerHTML = skel(3, 'Loading your signed-in devices'); loadSessions(); }); });
   }
@@ -8180,8 +8215,8 @@ window.MLS = (function () {
     else if (r.kind === 'managed') return '<div class="col-md-6 set-field" data-key="' + s.Key + '">' + label + '<div class="form-control-plaintext small">' + (s.IsSet ? '<span class="status-badge s-paid">set</span> ' + UI.esc((s.Value && s.Value.w ? s.Value.w + ' × ' + s.Value.h + ' px · ' : '') + (s.Value && s.Value.bytes ? Math.round(s.Value.bytes / 1024) + ' KB' : '')) : '<span class="status-badge">not set</span>') + ' · maintained under <a href="#/settings" data-go-tab="' + UI.esc(r.managedIn.toLowerCase()) + '">' + UI.esc(r.managedIn) + '</a></div>' + help + '</div>';  // 1.24.0
     else if (s.ValueType === 'JSON') {
       if (r.kind === 'codes' || r.kind === 'list' || r.kind === 'numbers') input = '<input class="form-control" id="' + name + '" data-key="' + s.Key + '" data-kind="list" value="' + UI.esc((Array.isArray(s.Value) ? s.Value : []).join(', ')) + '"' + dis + ' placeholder="comma-separated">';
-      else if (r.kind === 'labels') input = '<div class="label-grid" data-key="' + s.Key + '" data-kind="labels">' + (r.keys || []).map(function (k) { return '<span class="small text-soft">' + UI.esc(F.status(k)) + '</span><input class="form-control form-control-sm" data-label="' + k + '" value="' + UI.esc((s.Value || {})[k] || '') + '"' + dis + '>'; }).join('') + '</div>';
-      else if (r.kind === 'signatories') input = '<div class="row g-2" data-key="' + s.Key + '" data-kind="signatories">' + ['prepared', 'checked', 'approved'].map(function (k) { return '<div class="col-4"><input class="form-control form-control-sm" data-sig="' + k + '" placeholder="' + F.status(k) + ' by" value="' + UI.esc((s.Value || {})[k] || '') + '"' + dis + '></div>'; }).join('') + '</div>';
+      else if (r.kind === 'labels') input = '<div class="label-grid" data-key="' + s.Key + '" data-kind="labels">' + (r.keys || []).map(function (k) { return '<span class="small text-soft">' + UI.esc(F.status(k)) + '</span><input class="form-control form-control-sm" data-label="' + k + '" aria-label="' + UI.esc(F.status(k)) + '" value="' + UI.esc((s.Value || {})[k] || '') + '"' + dis + '>'; }).join('') + '</div>';
+      else if (r.kind === 'signatories') input = '<div class="row g-2" data-key="' + s.Key + '" data-kind="signatories">' + ['prepared', 'checked', 'approved'].map(function (k) { return '<div class="col-4"><input class="form-control form-control-sm" data-sig="' + k + '" placeholder="' + F.status(k) + ' by" aria-label="' + F.status(k) + ' by" value="' + UI.esc((s.Value || {})[k] || '') + '"' + dis + '></div>'; }).join('') + '</div>';
       else input = '<textarea class="form-control font-monospace small" rows="3" id="' + name + '" data-key="' + s.Key + '" data-kind="json"' + dis + '>' + UI.esc(JSON.stringify(s.Value)) + '</textarea>';
     } else if (r.options) input = '<select class="form-select" id="' + name + '" data-key="' + s.Key + '"' + dis + '>' + UI.options(r.options, s.Value, function (o) { return o === '' ? '— none —' : F.status(o); }, function (o) { return o; }) + '</select>';
     else input = '<input class="form-control" id="' + name + '" data-key="' + s.Key + '" value="' + UI.esc(s.Value) + '"' + (r.max ? ' maxlength="' + r.max + '"' : '') + dis + '>';
@@ -8400,7 +8435,7 @@ window.MLS = (function () {
     Api.call('branches.list').then(function (d) {
       if (state.tab !== 'branches') return;
       cache.branches = d;
-      body().innerHTML = card('Branches', '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0" id="set-branch-table"><thead><tr><th>Branch</th><th>Address</th><th>Phone</th><th class="text-end num">Users</th><th class="text-end num">Staff</th><th>Status</th><th></th></tr></thead><tbody>' + d.rows.map(function (b) { return '<tr data-id="' + UI.esc(b.Id) + '"><td data-label="Branch" class="lead-cell"><span class="lead-status ph-only">' + UI.badge(b.Status) + '</span><span class="fw-bold">' + UI.esc(b.Name) + '</span> <span class="small text-soft">' + UI.esc(b.Code) + '</span>' + (b.ReceiptHeader ? '<div class="small text-soft">' + UI.esc(b.ReceiptHeader) + '</div>' : '') + '</td><td data-label="Address" class="small">' + UI.esc(b.Address || '—') + '</td><td data-label="Phone" class="small">' + UI.esc(b.Phone || '—') + '</td><td data-label="Users" class="text-end num">' + b.Users + '</td><td data-label="Staff" class="text-end num">' + b.Staff + '</td><td data-label="Status" class="ph-hide">' + UI.badge(b.Status) + '</td><td class="text-end no-label">' + (d.canEdit ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-edit="' + UI.esc(b.Id) + '"><i class="fa-solid fa-pen me-1"></i>Edit</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>', d.canEdit && me().canSeeAllBranches ? '<button type="button" class="btn btn-sm btn-primary ms-auto" id="set-branch-new"><i class="fa-solid fa-plus me-1"></i>New branch</button>' : '');
+      body().innerHTML = card('Branches', '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0" id="set-branch-table"><thead><tr><th>Branch</th><th>Address</th><th>Phone</th><th class="text-end num">Users</th><th class="text-end num">Staff</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + d.rows.map(function (b) { return '<tr data-id="' + UI.esc(b.Id) + '"><td data-label="Branch" class="lead-cell"><span class="lead-status ph-only">' + UI.badge(b.Status) + '</span><span class="fw-bold">' + UI.esc(b.Name) + '</span> <span class="small text-soft">' + UI.esc(b.Code) + '</span>' + (b.ReceiptHeader ? '<div class="small text-soft">' + UI.esc(b.ReceiptHeader) + '</div>' : '') + '</td><td data-label="Address" class="small">' + UI.esc(b.Address || '—') + '</td><td data-label="Phone" class="small">' + UI.esc(b.Phone || '—') + '</td><td data-label="Users" class="text-end num">' + b.Users + '</td><td data-label="Staff" class="text-end num">' + b.Staff + '</td><td data-label="Status" class="ph-hide">' + UI.badge(b.Status) + '</td><td class="text-end no-label">' + (d.canEdit ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-edit="' + UI.esc(b.Id) + '"><i class="fa-solid fa-pen me-1"></i>Edit</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>', d.canEdit && me().canSeeAllBranches ? '<button type="button" class="btn btn-sm btn-primary ms-auto" id="set-branch-new"><i class="fa-solid fa-plus me-1"></i>New branch</button>' : '');
       var nb = UI.el('set-branch-new'); if (nb) nb.onclick = function () { openBranch(null); };
       body().querySelectorAll('[data-edit]').forEach(function (b) { b.onclick = function () { openBranch(d.rows.filter(function (x) { return x.Id === b.getAttribute('data-edit'); })[0]); }; });
     }).catch(function (e) { tabFailed(e); });
@@ -8417,7 +8452,7 @@ window.MLS = (function () {
 
   // ---------------------------------------------------------------- users
   function tabUsers() {
-    body().innerHTML = '<div class="toolbar"><input class="form-control search" id="set-user-search" placeholder="Search name, username, e-mail" value="' + UI.esc(state.usersSearch) + '" autocomplete="off"><select class="form-select" id="set-user-status">' + UI.options(['ALL', 'ACTIVE', 'DISABLED'], state.usersStatus, function (s) { return s === 'ALL' ? 'All users' : F.status(s); }, function (s) { return s; }) + '</select><span class="spacer"></span><button type="button" class="btn btn-primary btn-sm" id="set-user-new"><i class="fa-solid fa-user-plus me-1"></i>New user</button></div><div class="card"><div class="card-body p-0" id="set-user-table">' + skel(6, 'Loading the users') + '</div></div>';
+    body().innerHTML = '<div class="toolbar"><input class="form-control search" id="set-user-search" placeholder="Search name, username, e-mail" value="' + UI.esc(state.usersSearch) + '" autocomplete="off" aria-label="Search users"><select class="form-select" id="set-user-status" aria-label="User status">' + UI.options(['ALL', 'ACTIVE', 'DISABLED'], state.usersStatus, function (s) { return s === 'ALL' ? 'All users' : F.status(s); }, function (s) { return s; }) + '</select><span class="spacer"></span><button type="button" class="btn btn-primary btn-sm" id="set-user-new"><i class="fa-solid fa-user-plus me-1"></i>New user</button></div><div class="card"><div class="card-body p-0" id="set-user-table">' + skel(6, 'Loading the users') + '</div></div>';
     UI.el('set-user-search').oninput = UI.debounce(function () { state.usersSearch = UI.el('set-user-search').value.trim(); loadUsers(); }, 350); UI.el('set-user-status').onchange = function () { state.usersStatus = this.value; loadUsers(); }; UI.el('set-user-new').onclick = function () { openUser(null); };
     loadUsers();
   }
@@ -8591,7 +8626,7 @@ window.MLS = (function () {
       if (UI.el('set-health-details')) UI.el('set-health-details').onclick = function () { Api.call('maintenance.health', {}, { busy: true }).then(function (h) { UI.html('set-health-panel', healthPanelHtml(h)); UI.html('set-health-level', h.level === 'ok' ? UI.badge('OK', 'All good') : h.level === 'warn' ? UI.badge('PENDING', 'Needs attention') : UI.badge('REJECTED', 'Action needed')); }).catch(fail); };
       // backups (release 1.9.0)
       var bkOut = function (html) { UI.html('set-bk-out', html); };
-      var bkRows = function (rows, keepDays) { return '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Started</th><th>Kind</th><th>Status</th><th>Files</th><th class="text-end">Pruned</th><th>Notes</th><th></th></tr></thead><tbody>' + (rows.length ? rows.map(function (b) { return '<tr><td class="text-nowrap">' + UI.esc(F.datetime(b.StartedAt)) + (b.Seconds !== null ? ' <span class="text-soft">(' + b.Seconds + ' s)</span>' : '') + '</td><td>' + UI.esc(F.status(b.Kind)) + '</td><td>' + UI.badge(b.Status, b.Status === 'OK' ? 'OK' : F.status(b.Status)) + '</td><td class="small">' + (b.Files || []).map(function (f) { return f.pruned ? '<span class="text-soft text-decoration-line-through">' + UI.esc(f.name) + '</span> <span class="text-soft">pruned</span>' : '<a href="' + UI.esc(f.url) + '" target="_blank" rel="noopener">' + UI.esc(f.name) + '</a>' + (f.kept ? ' <span class="badge text-bg-light">kept: the newest copy of this archive</span>' : ''); }).join('<br>') + '</td><td class="text-end">' + (b.Pruned || 0) + '</td><td class="small text-soft">' + UI.esc(b.Error || b.Notes || '') + '</td><td class="text-end">' + (b.Status === 'OK' ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-bk-verify="' + UI.esc(b.Id) + '">Verify</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="7" class="text-soft">No backup yet.</td></tr>') + '</tbody></table></div><div class="small text-soft mt-1">Copies older than ' + keepDays + ' days are moved to the Drive trash by the next run — except the newest copy of each archive file, which stays until a newer one exists (an archive of a past year never changes, so its one copy is its backup).</div>'; };
+      var bkRows = function (rows, keepDays) { return '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Started</th><th>Kind</th><th>Status</th><th>Files</th><th class="text-end">Pruned</th><th>Notes</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + (rows.length ? rows.map(function (b) { return '<tr><td class="text-nowrap">' + UI.esc(F.datetime(b.StartedAt)) + (b.Seconds !== null ? ' <span class="text-soft">(' + b.Seconds + ' s)</span>' : '') + '</td><td>' + UI.esc(F.status(b.Kind)) + '</td><td>' + UI.badge(b.Status, b.Status === 'OK' ? 'OK' : F.status(b.Status)) + '</td><td class="small">' + (b.Files || []).map(function (f) { return f.pruned ? '<span class="text-soft text-decoration-line-through">' + UI.esc(f.name) + '</span> <span class="text-soft">pruned</span>' : '<a href="' + UI.esc(f.url) + '" target="_blank" rel="noopener">' + UI.esc(f.name) + '</a>' + (f.kept ? ' <span class="badge text-bg-light">kept: the newest copy of this archive</span>' : ''); }).join('<br>') + '</td><td class="text-end">' + (b.Pruned || 0) + '</td><td class="small text-soft">' + UI.esc(b.Error || b.Notes || '') + '</td><td class="text-end">' + (b.Status === 'OK' ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-bk-verify="' + UI.esc(b.Id) + '">Verify</button>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="7" class="text-soft">No backup yet.</td></tr>') + '</tbody></table></div><div class="small text-soft mt-1">Copies older than ' + keepDays + ' days are moved to the Drive trash by the next run — except the newest copy of each archive file, which stays until a newer one exists (an archive of a past year never changes, so its one copy is its backup).</div>'; };
       var verifyHtml = function (v) { var bad = v.checks.filter(function (c) { return c.status !== 'OK'; }); return '<div class="alert ' + (v.ok ? 'alert-success' : 'alert-danger') + ' py-2 small">' + (v.ok ? 'The copy is complete: ' + v.tables + ' tables, every column present and every row count as recorded' : v.problems + ' problem' + (v.problems === 1 ? '' : 's') + ' in the copy') + ' · <a href="' + UI.esc(v.file.url) + '" target="_blank" rel="noopener">' + UI.esc(v.file.name) + '</a> · checked ' + F.datetime(v.verifiedAt) + '</div>' + (bad.length ? '<div class="table-wrap"><table class="table table-sm table-xs mb-0"><thead><tr><th>Table</th><th>Problem</th><th class="text-end">Expected</th><th class="text-end">In the copy</th></tr></thead><tbody>' + bad.map(function (c) { return '<tr><td>' + UI.esc(c.table) + '</td><td>' + UI.esc(c.status === 'ROWS' ? 'row count differs' : c.status === 'COLUMNS' ? c.note : c.status === 'MISSING' ? (c.note || 'sheet missing') : c.status) + '</td><td class="text-end">' + (c.expected === undefined || c.expected === null ? '—' : c.expected) + '</td><td class="text-end">' + (c.actual === undefined || c.actual === null ? '—' : c.actual) + '</td></tr>'; }).join('') + '</tbody></table></div>' : ''); };
       var verifyOne = function (id) { Api.call('maintenance.verifyBackup', { backupId: id }, { busy: true }).then(function (v) { bkOut(verifyHtml(v)); }).catch(fail); };
       var listBackups = function () { Api.call('maintenance.backups', { limit: 20 }, { busy: true }).then(function (l) { UI.html('set-bk-status', backupStatusHtml(l.status, null, l)); UI.html('set-bk-rows', bkRows(l.rows, l.keepDays)); r.backup = l.status; UI.el('set-bk-verify').disabled = !l.status.lastOkId; UI.el('set-bk-rows').querySelectorAll('[data-bk-verify]').forEach(function (btn) { btn.onclick = function () { verifyOne(btn.getAttribute('data-bk-verify')); }; }); }).catch(fail); };
@@ -9254,7 +9289,7 @@ window.MLS = (function () {
           <img class="proof-thumb" id="bags-photo-preview" alt="The photo taken" hidden>
         </div>
         <p class="small text-soft mt-3 mb-0" id="bags-photo-privacy"></p>
-        <div class="alert alert-danger py-2 small mt-3" id="bags-photo-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="bags-photo-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button><button type="button" class="btn btn-primary" id="bags-photo-save" disabled><i class="fa-solid fa-cloud-arrow-up me-1"></i>Keep this photo</button></div>
     </div>
@@ -9295,7 +9330,7 @@ window.MLS = (function () {
           <label class="form-label small" for="bags-hand-reason" id="bags-hand-reason-label">Why do they leave without these bags?</label>
           <textarea class="form-control" id="bags-hand-reason" rows="2" maxlength="150"></textarea>
         </div>
-        <div class="alert alert-danger py-2 small mt-3" id="bags-hand-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="bags-hand-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer flex-wrap gap-2"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="bags-hand-cancel">Cancel</button><span class="spacer"></span><button type="button" class="btn btn-outline-danger" id="bags-hand-skip" hidden></button><button type="button" class="btn btn-success" id="bags-hand-ok"></button></div>
     </div>
@@ -9310,7 +9345,7 @@ window.MLS = (function () {
       <div class="modal-body">
         <p class="small text-soft mb-2" id="bags-note-hint"></p>
         <label class="form-label" for="bags-note-text" id="bags-note-label">Note</label><textarea class="form-control" id="bags-note-text" rows="2" maxlength="200"></textarea>
-        <div class="alert alert-danger py-2 small mt-3" id="bags-note-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3" id="bags-note-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button type="submit" class="btn btn-primary" id="bags-note-ok">Confirm</button></div>
     </form>
@@ -9923,9 +9958,9 @@ window.MLS = (function () {
             <button type="button" class="btn btn-link btn-sm" data-outcome="UNKNOWN">Not sure — leave it as unknown</button>
           </div>
           <p class="small text-soft mb-0">Until you answer, the log says the Messages app was requested — never that the text was sent or delivered. Nothing in this app can confirm delivery.</p>
-          <div class="sms-fallback mt-3" id="sms-report-fallback" hidden><div class="small text-soft mb-1">If the app did not open, copy the text and send it from the Messages app yourself:</div><textarea class="form-control sms-body" id="sms-report-body" rows="4" readonly></textarea></div>
+          <div class="sms-fallback mt-3" id="sms-report-fallback" hidden><div class="small text-soft mb-1">If the app did not open, copy the text and send it from the Messages app yourself:</div><textarea class="form-control sms-body" id="sms-report-body" rows="4" readonly aria-label="Message text"></textarea></div>
         </div>
-        <div class="alert alert-danger py-2 small mt-3 mb-0" id="sms-error" hidden></div>
+        <div class="alert alert-danger py-2 small mt-3 mb-0" id="sms-error" hidden role="alert"></div>
       </div>
       <div class="modal-footer flex-wrap gap-2" id="sms-footer">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="sms-cancel">Cancel</button>
