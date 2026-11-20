@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'ce039f6035', version: '1.42.0' };</script>
+  <script>window.MLS_PWA = { build: 'a12944a892', version: '1.43.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -475,6 +475,10 @@
   .jo-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 20px; }
   .jo-fact { display: flex; gap: 8px; min-width: 0; } .jo-fact .k { flex: 0 0 7.5rem; color: var(--mls-ink-soft); font-size: var(--fs-sm); } .jo-fact .v { min-width: 0; overflow-wrap: anywhere; }
   .jo-price-tag { display: inline-block; font-size: var(--fs-xs); font-weight: 700; border: 1px solid var(--mls-line); border-radius: 999px; padding: 0 .5rem; white-space: nowrap; } .jo-price-tag.manual { border-color: var(--mls-ink-soft); }
+  .jo-rline { border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px 12px; margin-bottom: 8px; } .jo-rline.differs { border-color: var(--mls-ink-soft); }
+  .jo-rline-main { display: grid; grid-template-columns: minmax(0, 1fr) 8rem; gap: 10px; align-items: end; } .jo-rline-name { min-width: 0; overflow-wrap: anywhere; align-self: center; } .jo-rline-reason { margin-top: 8px; }
+  .jo-diff { font-weight: 700; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+  .jo-log { list-style: none; padding: 0; margin: 0; } .jo-log li { padding: 4px 0; border-bottom: 1px solid var(--mls-line); overflow-wrap: anywhere; } .jo-log li:last-child { border-bottom: 0; }
   .jo-paper { width: auto; } .jo-narrow { display: none; } .jo-lines td.num, .jo-lines th.num { text-align: right; white-space: nowrap; }
   @media (max-width: 575.98px) { .jo-wide { display: none !important; } .jo-narrow { display: block; } .jo-facts { grid-template-columns: minmax(0, 1fr); } .jo-line-main { grid-template-columns: minmax(0, 1fr) 6rem auto; } .jo-line-more:has(.jo-line-price) { grid-template-columns: minmax(0, 1fr); } }
   .collect-row { border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 10px 12px; margin-bottom: 10px; }
@@ -1054,7 +1058,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.42.0';
+  var VERSION = '1.43.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -1074,6 +1078,7 @@ window.MLS = (function () {
     { route: 'purchases', title: 'Purchases', icon: 'fa-truck-ramp-box', section: 'Catalog', permission: 'PURCHASE_VIEW', phase: 4 },
     { route: 'dispatch', title: 'Dispatch', icon: 'fa-map-location-dot', section: 'Operations', permission: 'DISPATCH_VIEW', phase: 5 },
     { route: 'deliveries', title: 'My Deliveries', icon: 'fa-motorcycle', section: 'Operations', permission: 'DELIVERY_SELF', phase: 5 },
+    { route: 'joborders', title: 'Job Orders', icon: 'fa-clipboard-list', section: 'Operations', permission: 'JOB_ORDER_VIEW', phase: 11 },  // 1.43.0: commercial job orders — receiving at the shop
     { route: 'production', title: 'Production', icon: 'fa-soap', section: 'Operations', permission: 'PRODUCTION_VIEW', phase: 5 },
     { route: 'equipment', title: 'Equipment', icon: 'fa-screwdriver-wrench', section: 'Operations', permission: 'EQUIPMENT_VIEW', phase: 11 },
     { route: 'bags', title: 'Bags', icon: 'fa-tags', section: 'Operations', phase: 11 },  // 1.16.0: BAG_SCAN while BagTracking is on (the module says, allowed())
@@ -6572,6 +6577,530 @@ window.MLS = (function () {
 })();
 </script>
 
+        <!-- Mrs Laundry Sys — JobOrdersPage.html: the Job Orders module (release 1.43.0: the list by where each job order stands, receiving at the shop, a manager's review of a difference) and the commercial job order's shared dialogs and M.JobOrders (release 1.42.0: the linen count on a pickup job, the job order itself, a manual price on a line, the Job Order document on A4 or an 80 mm roll). Delivery quantities come in 1.44.0. -->
+<section id="view-joborders" class="view" hidden>
+  <div class="view-head">
+    <h2>Job Orders</h2>
+    <span class="text-soft small" id="jobs-scope"></span>
+    <span class="spacer"></span>
+    <button type="button" class="btn btn-outline-primary btn-sm" id="jobs-refresh"><i class="fa-solid fa-rotate me-1" aria-hidden="true"></i>Refresh</button>
+  </div>
+  <div class="tabs" id="jobs-tabs">
+    <button type="button" data-tab="AWAITING" class="active">Awaiting receiving<span class="count" data-count="AWAITING"></span></button>
+    <button type="button" data-tab="REVIEW">To review<span class="count" data-count="REVIEW"></span></button>
+    <button type="button" data-tab="PRODUCTION">In production<span class="count" data-count="PRODUCTION"></span></button>
+    <button type="button" data-tab="READY">Ready<span class="count" data-count="READY"></span></button>
+    <button type="button" data-tab="ALL">All</button>
+  </div>
+  <div class="toolbar">
+    <input class="form-control search" id="jobs-search" placeholder="Search job order no. or client" autocomplete="off" aria-label="Search job orders">
+  </div>
+  <div class="card"><div class="card-body p-0" id="jobs-table"></div></div>
+</section>
+
+<div class="modal fade" id="jo-receive-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <form class="modal-content" id="jo-receive-form" autocomplete="off" novalidate>
+      <div class="modal-header"><h5 class="modal-title" id="jo-receive-title">Receive</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p class="small text-soft mb-2" id="jo-receive-hint"></p>
+        <div class="d-flex mb-2"><button type="button" class="btn btn-outline-secondary btn-sm" id="jo-receive-same"><i class="fa-solid fa-equals me-1" aria-hidden="true"></i>All as picked up</button></div>
+        <div id="jo-receive-lines"></div>
+        <div class="jo-rline">
+          <div class="jo-rline-main"><div class="jo-rline-name"><span class="fw-bold">Bags</span><div class="small text-soft" id="jo-receive-bags-was"></div></div>
+            <div class="jo-rline-qty"><label class="form-label" for="jo-receive-bags">Received</label><input class="form-control" id="jo-receive-bags" type="number" inputmode="numeric" min="0" step="1"></div></div>
+          <div class="jo-rline-reason" id="jo-receive-bags-why" hidden><label class="form-label" for="jo-receive-bags-reason">Why the bags differ</label><input class="form-control" id="jo-receive-bags-reason" maxlength="160"></div>
+        </div>
+        <div class="mt-2"><label class="form-label" for="jo-receive-remarks">Remarks <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-receive-remarks" maxlength="300" placeholder="Anything the manager should know"></div>
+        <div class="jo-totals mt-3" id="jo-receive-totals" aria-live="polite"></div>
+        <div class="alert alert-danger py-2 small mt-3 mb-0" id="jo-receive-error" hidden role="alert"></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button type="submit" class="btn btn-success" id="jo-receive-ok"><i class="fa-solid fa-check me-1" aria-hidden="true"></i>Confirm receiving</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" id="jo-review-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <form class="modal-content" id="jo-review-form" autocomplete="off" novalidate>
+      <div class="modal-header"><h5 class="modal-title" id="jo-review-title">Review the difference</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <div id="jo-review-diffs"></div>
+        <fieldset class="jo-sign mt-3">
+          <legend class="form-label">The client is billed for</legend>
+          <div class="form-check"><input class="form-check-input" type="radio" name="billBasis" id="jo-review-received" value="RECEIVED"><label class="form-check-label" for="jo-review-received">The count received at the shop</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="billBasis" id="jo-review-pickup" value="PICKUP"><label class="form-check-label" for="jo-review-pickup">The pickup count <span class="text-soft small">— when the contract bills what was signed for</span></label></div>
+        </fieldset>
+        <p class="small text-soft mt-1 mb-0" id="jo-review-locked" hidden></p>
+        <div class="mt-3"><label class="form-label" for="jo-review-note">What was found and decided</label><textarea class="form-control" id="jo-review-note" rows="3" maxlength="300"></textarea></div>
+        <div class="alert alert-danger py-2 small mt-3 mb-0" id="jo-review-error" hidden role="alert"></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" id="jo-review-ok">Close the review</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" id="jo-count-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <form class="modal-content" id="jo-count-form" autocomplete="off" novalidate>
+      <div class="modal-header"><h5 class="modal-title" id="jo-count-title">Count linens</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <div class="jo-client" id="jo-count-client"></div>
+        <h6 class="section-title mt-3">Linens counted</h6>
+        <div id="jo-count-lines"></div>
+        <button type="button" class="btn btn-outline-primary btn-sm mt-1" id="jo-count-add"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Add a linen</button>
+        <div class="jo-totals mt-3" id="jo-count-totals" aria-live="polite"></div>
+        <div class="row g-2 mt-1">
+          <div class="col-4 col-md-3"><label class="form-label" for="jo-count-bags">Bags</label><input class="form-control" id="jo-count-bags" type="number" inputmode="numeric" min="0" step="1" required></div>
+          <div class="col-8 col-md-4"><label class="form-label" for="jo-count-dept">Department <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-count-dept" maxlength="60" placeholder="Housekeeping, Spa…"></div>
+          <div class="col-12 col-md-5"><label class="form-label" for="jo-count-notes">Special instructions <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-count-notes" maxlength="300" placeholder="Fold in threes, separate the spa towels…"></div>
+        </div>
+        <h6 class="section-title mt-3">Surrendered by</h6>
+        <div class="row g-2">
+          <div class="col-12 col-md-6"><label class="form-label" for="jo-count-signer">Name of the client's representative</label><input class="form-control" id="jo-count-signer" maxlength="80" required></div>
+          <div class="col-12 col-md-6"><label class="form-label" for="jo-count-position">Position <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-count-position" maxlength="60"></div>
+        </div>
+        <fieldset class="jo-sign mt-3">
+          <legend class="form-label">How the client signs</legend>
+          <div class="form-check"><input class="form-check-input" type="radio" name="signedOn" id="jo-sign-phone" value="PHONE" checked><label class="form-check-label" for="jo-sign-phone">On this phone <span class="text-soft small">— the copy can be printed now or later</span></label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="signedOn" id="jo-sign-paper" value="PAPER"><label class="form-check-label" for="jo-sign-paper">On the printed copy, or on a paper form <span class="text-soft small">— signed with a pen</span></label></div>
+        </fieldset>
+        <div class="mt-2" id="jo-sign-phone-wrap"><div class="d-flex align-items-center"><span class="form-label small mb-1" id="jo-sig-label"><i class="fa-solid fa-signature me-1" aria-hidden="true"></i>Client's signature</span><button type="button" class="btn btn-link btn-sm ms-auto p-0" id="jo-sig-clear">Clear</button></div><canvas class="sig-pad" id="jo-sig" role="img" aria-labelledby="jo-sig-label"></canvas></div>
+        <div class="row g-2 mt-1" id="jo-sign-paper-wrap" hidden>
+          <div class="col-6 col-md-4"><label class="form-label" for="jo-count-formno">Paper form no. <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-count-formno" maxlength="40"></div>
+          <div class="col-6 col-md-4"><label class="form-label" for="jo-count-at">Counted at <span class="text-soft small">(if earlier)</span></label><input class="form-control" id="jo-count-at" type="datetime-local"></div>
+          <div class="col-12 col-md-4"><label class="form-label" for="jo-count-photo">Photo of the signed copy <span class="text-soft small">(optional)</span></label><input class="form-control" type="file" id="jo-count-photo" accept="image/jpeg,image/png,image/*" capture="environment"><div class="small text-soft mt-1" id="jo-count-photo-note" hidden></div></div>
+        </div>
+        <div class="alert alert-danger py-2 small mt-3 mb-0" id="jo-count-error" hidden role="alert"></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button type="submit" class="btn btn-success" id="jo-count-ok"><i class="fa-solid fa-check me-1" aria-hidden="true"></i>Save job order</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" id="jo-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="jo-title">Job Order</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body" id="jo-body"></div>
+      <div class="modal-footer flex-wrap gap-2" id="jo-actions"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="jo-price-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" id="jo-price-form" autocomplete="off" novalidate>
+      <div class="modal-header"><h5 class="modal-title" id="jo-price-title">Manual price</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p class="small text-soft mb-2" id="jo-price-hint"></p>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label" for="jo-price-value">Price for this job order</label><input class="form-control" id="jo-price-value" type="number" inputmode="decimal" min="0" step="0.01"></div>
+          <div class="col-6"><div class="form-label">Standard price</div><div class="form-control-plaintext money" id="jo-price-standard">—</div></div>
+          <div class="col-12"><label class="form-label" for="jo-price-reason">Reason</label><input class="form-control" id="jo-price-reason" maxlength="160" placeholder="Who agreed it and why"></div>
+        </div>
+        <div class="alert alert-danger small mt-2 mb-0" id="jo-price-error" hidden role="alert"></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-danger me-auto" id="jo-price-remove" hidden>Take the manual price away</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Modal = M.Modal;
+  var count = null, pad = null, shown = null, pricing = null, sub = null;
+  var PAPER_KEY = 'mls.jobOrder.paper', COMPACT_MAX = 12;
+  function can(code) { return M.Auth.can(code); }
+  function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+  function qtyText(l) { return l.ByWeight ? num(l.PickupWeightKg) + ' kg' : num(l.PickupQty) + ' ' + (l.Unit || 'pc'); }
+  function piecesText(pieces, kg, bags) { return [pieces ? pieces + ' piece' + (pieces === 1 ? '' : 's') : '', kg ? Math.round(kg * 100) / 100 + ' kg by weight' : '', bags !== undefined && bags !== '' ? bags + ' bag' + (Number(bags) === 1 ? '' : 's') : ''].filter(Boolean).join(' · '); }
+  function paper() { var p = ''; try { p = localStorage.getItem(PAPER_KEY) || ''; } catch (e) { /* private mode */ } return p === '80mm' ? '80mm' : 'A4'; }
+  function setPaper(p) { try { localStorage.setItem(PAPER_KEY, p); } catch (e) { /* private mode */ } }
+
+  // ---------------------------------------------------------------- the count on a pickup job
+  function serviceOf(id) { return count.services.filter(function (s) { return s.Id === id; })[0] || null; }
+  function lineHtml(i) {
+    var groups = {}, order = []; count.services.forEach(function (s) { var g = s.Category || 'Other'; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(s); });
+    var opts = '<option value="">Choose a linen…</option>' + order.map(function (g) { return '<optgroup label="' + UI.esc(g) + '">' + groups[g].map(function (s) { return '<option value="' + UI.esc(s.Id) + '">' + UI.esc(s.Name) + (s.Price === null ? ' — no price' : ' — ' + F.peso(s.Price) + '/' + UI.esc(s.Unit)) + '</option>'; }).join('') + '</optgroup>'; }).join('');
+    return '<div class="jo-line" data-line="' + i + '">' +
+      '<div class="jo-line-main"><div class="jo-line-linen"><label class="form-label" for="jo-l-svc-' + i + '">Linen</label><select class="form-select" id="jo-l-svc-' + i + '" data-f="service">' + opts + '</select></div>' +
+      '<div class="jo-line-qty"><label class="form-label" for="jo-l-qty-' + i + '" data-qty-label>Quantity</label><input class="form-control" id="jo-l-qty-' + i + '" data-f="qty" type="number" inputmode="numeric" min="1" step="1"></div>' +
+      '<button type="button" class="btn btn-outline-secondary btn-sm jo-line-x" data-remove aria-label="Remove this linen"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>' +
+      '<div class="jo-line-more"><div class="jo-line-note"><label class="form-label" for="jo-l-cond-' + i + '">Stains, damage or remarks <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-l-cond-' + i + '" data-f="condition" maxlength="160" placeholder="1 torn, 2 stained…"></div>' +
+      (count.canOverride ? '<div class="jo-line-price"><label class="form-label" for="jo-l-price-' + i + '">Manual price</label><input class="form-control" id="jo-l-price-' + i + '" data-f="price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="standard"></div><div class="jo-line-reason" hidden><label class="form-label" for="jo-l-reason-' + i + '">Reason for the price</label><input class="form-control" id="jo-l-reason-' + i + '" data-f="reason" maxlength="160"></div>' : '') +
+      '</div><div class="jo-line-sum small text-soft" data-sum></div></div>';
+  }
+  function lineRows() { return Array.prototype.slice.call(UI.el('jo-count-lines').querySelectorAll('.jo-line')); }
+  function readLine(row) {
+    var get = function (f) { var el = row.querySelector('[data-f=' + f + ']'); return el ? el.value : ''; }, s = serviceOf(get('service'));
+    return { service: s, raw: get('qty'), qty: num(get('qty')), condition: get('condition').trim(), price: get('price'), reason: get('reason').trim() };
+  }
+  /** One linen once: a linen chosen on a line is no longer offered on the others; a weight asks for kilograms. */
+  function syncLines() {
+    var rows = lineRows(), taken = {}; rows.forEach(function (r) { var v = r.querySelector('[data-f=service]').value; if (v) taken[v] = r; });
+    var pieces = 0, kg = 0, est = 0, counted = 0;
+    rows.forEach(function (r) {
+      var sel = r.querySelector('[data-f=service]'), l = readLine(r), s = l.service, qty = r.querySelector('[data-f=qty]'), kilo = s && s.PricingType === 'PER_KILO', flat = s && s.PricingType === 'FLAT';
+      Array.prototype.forEach.call(sel.options, function (o) { o.disabled = !!(o.value && taken[o.value] && taken[o.value] !== r); });
+      r.querySelector('[data-qty-label]').textContent = kilo ? 'Weight (kg)' : 'Quantity';
+      qty.step = kilo ? '0.01' : '1'; qty.min = kilo ? '0.01' : '1'; qty.setAttribute('inputmode', kilo ? 'decimal' : 'numeric'); qty.disabled = !!flat; if (flat) qty.value = '1';
+      var reason = r.querySelector('.jo-line-reason'); if (reason) reason.hidden = l.price === '';
+      var unit = l.price !== '' ? num(l.price) : (s && s.Price !== null ? num(s.Price) : null), q = flat ? 1 : l.qty, sum = r.querySelector('[data-sum]');
+      if (s && q > 0) { counted++; if (kilo) kg += q; else pieces += q; if (unit !== null) est += Math.round(unit * q * 100) / 100; }
+      sum.textContent = s ? (unit === null ? 'No price yet: set a manual price' : F.peso(unit) + ' per ' + s.Unit + (l.price !== '' ? ' (manual)' : s.Source === 'client' ? ' (client price)' : '') + (q > 0 ? ' · ' + F.peso(Math.round(unit * q * 100) / 100) : '')) : '';
+    });
+    UI.html('jo-count-totals', counted ? '<span><b>' + UI.esc(piecesText(pieces, kg) || '0 pieces') + '</b> on ' + counted + ' line' + (counted === 1 ? '' : 's') + '</span><span>Estimated charges <b class="money">' + F.peso(est) + '</b> <span class="text-soft small">— final after the shop receives and verifies</span></span>' : '<span class="text-soft">Nothing counted yet.</span>');
+    UI.el('jo-count-add').disabled = rows.length >= Math.min(count.maxLines, count.services.length);
+  }
+  function addLine(focus) {
+    var box = UI.el('jo-count-lines'), i = count.nextLine++, holder = document.createElement('div'); holder.innerHTML = lineHtml(i); var row = holder.firstChild; box.appendChild(row);
+    row.querySelector('[data-remove]').onclick = function () { if (lineRows().length > 1) row.remove(); else { row.querySelectorAll('input, select').forEach(function (el) { el.value = ''; }); } syncLines(); };
+    row.querySelectorAll('input, select').forEach(function (el) { el.addEventListener('input', syncLines); el.addEventListener('change', syncLines); });
+    syncLines(); if (focus) row.querySelector('[data-f=service]').focus();
+  }
+  function signMode() { return UI.el('jo-sign-paper').checked ? 'PAPER' : 'PHONE'; }
+  function syncSign() { var paperMode = signMode() === 'PAPER'; UI.el('jo-sign-phone-wrap').hidden = paperMode; UI.el('jo-sign-paper-wrap').hidden = !paperMode; if (!paperMode && pad) setTimeout(function () { pad.reset(); }, 30); }
+  function countError(msg, focusEl) { var box = UI.el('jo-count-error'); box.textContent = msg; box.hidden = false; if (focusEl) { try { focusEl.focus(); } catch (e) { /* gone */ } } }
+  /** The count as it will be sent, or the first thing that is missing (said in the dialog, the field focused). */
+  function gather() {
+    var rows = lineRows().filter(function (r) { return r.querySelector('[data-f=service]').value || r.querySelector('[data-f=qty]').value; }), lines = [], bad = null;
+    rows.forEach(function (r) {
+      if (bad) return; var l = readLine(r), s = l.service, qtyEl = r.querySelector('[data-f=qty]');
+      if (!s) { bad = ['Choose the linen for every line, or remove the empty line.', r.querySelector('[data-f=service]')]; return; }
+      var kilo = s.PricingType === 'PER_KILO', flat = s.PricingType === 'FLAT';
+      if (!flat && !(l.qty > 0)) { bad = [s.Name + ': enter the ' + (kilo ? 'weight in kg' : 'quantity') + '.', qtyEl]; return; }
+      if (!kilo && !flat && l.qty !== Math.round(l.qty)) { bad = [s.Name + ': the quantity is a whole number.', qtyEl]; return; }
+      if (l.price === '' && s.Price === null) { bad = [s.Name + ' has no price yet: set a manual price.', r.querySelector('[data-f=price]')]; return; }
+      if (l.price !== '' && l.reason.length < 3) { bad = ['Say why ' + s.Name + ' has a manual price.', r.querySelector('[data-f=reason]')]; return; }
+      var line = kilo ? { serviceId: s.Id, weightKg: l.qty } : { serviceId: s.Id, qty: flat ? 1 : l.qty }; if (l.condition) line.condition = l.condition;
+      if (l.price !== '') { line.price = num(l.price); line.priceReason = l.reason; }
+      lines.push(line);
+    });
+    if (bad) return { error: bad };
+    if (!lines.length) return { error: ['Count at least one linen.', (lineRows()[0] || document).querySelector('[data-f=service]')] };
+    var bags = UI.el('jo-count-bags'), signer = UI.el('jo-count-signer'), mode = signMode();
+    if (bags.value === '' || num(bags.value) < 0 || num(bags.value) !== Math.round(num(bags.value))) return { error: ['Enter how many bags were taken (0 when none).', bags] };
+    if (signer.value.trim().length < 2) return { error: ['Write the name of the person who surrendered the linens.', signer] };
+    if (mode === 'PHONE' && !(pad && pad.signed())) return { error: ['Have the client sign on the phone, or choose "On the printed copy, or on a paper form".', UI.el('jo-sig')] };
+    var p = { deliveryId: count.job.Id, requestId: count.requestId, lines: lines, bags: num(bags.value), signerName: signer.value.trim(), signerPosition: UI.el('jo-count-position').value.trim(), signedOn: mode, department: UI.el('jo-count-dept').value.trim(), specialInstructions: UI.el('jo-count-notes').value.trim() };
+    if (mode === 'PHONE') p.signature = pad.dataUrl();
+    else { p.paperFormNo = UI.el('jo-count-formno').value.trim(); var at = UI.el('jo-count-at').value; if (at) { var d = new Date(at); if (isNaN(d.getTime())) return { error: ['The time counted is not a date and time.', UI.el('jo-count-at')] }; p.pickupAt = d.toISOString(); } if (count.photo.data) p.photo = count.photo.data; }
+    return { payload: p };
+  }
+  /**
+   * Opens the count for a pickup job (JOB_ORDER_PICKUP). The server answers the client and the linens with the price this client pays;
+   * a job whose customer is not a commercial client is refused there, in words. onDone(jobOrder) once it is saved.
+   */
+  function openCount(jobId, onDone) {
+    if (M.Net && M.Net.state && M.Net.state() !== 'online') { Toast.warning('Counting linens needs a connection for now. Use a paper form and type it in once you are connected.'); return Promise.resolve(null); }
+    return Api.call('jobOrders.start', { deliveryId: jobId }, { busy: true }).then(function (r) {
+      count = { job: r.job, client: r.client, services: r.services, canOverride: !!r.canOverride, maxLines: r.maxLines || 60, backdateDays: r.backdateDays || 7, requestId: UI.uuid(), nextLine: 0, photo: { data: '', job: null }, onDone: onDone };
+      var c = r.client;
+      UI.el('jo-count-title').textContent = 'Count linens · ' + (c.Company || r.job.CustomerName || r.job.Id);
+      UI.html('jo-count-client', '<div class="fw-bold">' + UI.esc(c.Company) + (c.EstablishmentType ? ' <span class="badge text-bg-light">' + UI.esc(c.EstablishmentType) + '</span>' : '') + '</div>' + [c.PropertyName, c.Address, c.ContractRef ? 'Contract ' + c.ContractRef : ''].filter(Boolean).map(function (t) { return '<div class="small text-soft">' + UI.esc(t) + '</div>'; }).join(''));
+      UI.el('jo-count-form').reset(); UI.el('jo-count-lines').innerHTML = ''; UI.el('jo-count-error').hidden = true; UI.el('jo-count-photo-note').hidden = true;
+      UI.el('jo-count-signer').value = c.Representative || ''; UI.el('jo-count-position').value = c.RepresentativePosition || '';
+      var at = UI.el('jo-count-at'), iso = function (d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }; at.max = iso(new Date()); at.min = iso(new Date(Date.now() - count.backdateDays * 86400000));
+      addLine(false);
+      if (!r.services.length) countError('No linen has a price yet. Add the linens under Services first.');
+      var modal = UI.el('jo-count-modal'), canvas = UI.el('jo-sig'); if (!pad) pad = M.DeliveriesUI.signaturePad(canvas);
+      modal.addEventListener('shown.bs.modal', function once() { modal.removeEventListener('shown.bs.modal', once); pad.reset(); });
+      syncSign(); Modal.open('jo-count-modal');
+      return r;
+    }).catch(function (e) { Toast.danger(UI.error(e)); return null; });
+  }
+  UI.el('jo-count-add').onclick = function () { addLine(true); };
+  UI.el('jo-sig-clear').onclick = function () { if (pad) pad.reset(); };
+  UI.el('jo-sign-phone').onchange = syncSign; UI.el('jo-sign-paper').onchange = syncSign;
+  UI.el('jo-sig').addEventListener('pointerdown', function () { UI.el('jo-count-error').hidden = true; });
+  UI.el('jo-count-photo').onchange = function () {
+    var input = UI.el('jo-count-photo'), note = UI.el('jo-count-photo-note'), file = input.files && input.files[0]; if (!count) return; count.photo.data = ''; if (!file) { count.photo.job = null; note.hidden = true; return; }
+    note.textContent = 'Preparing the photo…'; note.hidden = false;
+    var job = count.photo.job = M.Photo.shrink(file, { maxBytes: 2 * 1024 * 1024 }).then(function (url) { if (!count || count.photo.job !== job) return ''; count.photo.data = url; note.textContent = 'Photo ready · ' + Math.round(url.length * 3 / 4 / 1024) + ' KB'; return url; })
+      .catch(function (e) { if (count && count.photo.job === job) { count.photo.data = ''; input.value = ''; note.textContent = UI.error(e); } return ''; });
+  };
+  UI.el('jo-count-form').onsubmit = function (ev) {
+    ev.preventDefault(); if (!count) return; var box = UI.el('jo-count-error'), btn = UI.el('jo-count-ok'); box.hidden = true; btn.disabled = true;
+    Promise.resolve(count.photo.job).then(function () {
+      var g = gather(); if (g.error) { var e = new Error(g.error[0]); e.local = g.error[1]; throw e; }
+      var loc = M.DeliveriesUI && M.DeliveriesUI.locate && navigator.geolocation ? M.DeliveriesUI.locate(4000) : Promise.resolve(null);
+      return loc.then(function (pos) { if (pos) g.payload.location = { lat: pos.lat, lng: pos.lng }; return Api.call('jobOrders.pickup', g.payload, { busy: true, timeoutMs: 120000 }); });
+    }).then(function (jo) {
+      btn.disabled = false; var done = count.onDone; count = null;
+      Modal.closeThen('jo-count-modal', function () { Toast.success('Job order ' + jo.OrderNo + ' created · ' + piecesText(num(jo.PiecesPickup), num(jo.WeightPickupKg), jo.BagsAtPickup)); if (done) done(jo); show(jo, { onChange: done, justCreated: true }); });
+    }).catch(function (e) { btn.disabled = false; countError(UI.error(e), e && e.local && e.local.focus ? e.local : null); });
+  };
+
+  // ---------------------------------------------------------------- the job order
+  function signedText(j) {
+    var who = UI.esc(j.ClientSignerName || '') + (j.ClientSignerPosition ? ' <span class="text-soft">(' + UI.esc(j.ClientSignerPosition) + ')</span>' : '');
+    return j.SignedOn === 'PHONE' ? who + ' · signed on the phone' + (j.SignedAt ? ' ' + UI.esc(F.datetime(j.SignedAt)) : '') : who + ' · signs the printed copy' + (j.PaperFormNo ? ' · paper form ' + UI.esc(j.PaperFormNo) : '');
+  }
+  function priceNote(l) {
+    if (l.PriceSource === 'override') return '<span class="jo-price-tag manual">manual price</span>' + (num(l.ListPrice) > 0 ? ' <span class="text-soft small">standard ' + F.peso(l.ListPrice) + '</span>' : '') + (l.PriceReason ? '<div class="small text-soft">' + UI.esc(l.PriceReason) + (l.PriceApprovedBy ? ' · ' + UI.esc(l.PriceApprovedBy) : '') + '</div>' : '');
+    if (l.PriceSource === 'client') return '<span class="jo-price-tag">client price</span>' + (num(l.ListPrice) > 0 ? ' <span class="text-soft small">list ' + F.peso(l.ListPrice) + '</span>' : '');
+    return '';
+  }
+  var RECEIVING = { PENDING: 'Awaiting receiving', VERIFIED: 'Verified', DISCREPANCY: 'To review', REVIEWED: 'Reviewed' };
+  function gotText(l) { return l.ByWeight ? num(l.ReceivedWeightKg) + ' kg' : num(l.ReceivedQty) + ' ' + (l.Unit || 'pc'); }
+  function differs(l) { return l.ByWeight ? num(l.ReceivedWeightKg) !== num(l.PickupWeightKg) : num(l.ReceivedQty) !== num(l.PickupQty); }
+  function signed(n) { return (n > 0 ? '+' : '') + n; }
+  function logWhat(g) { return g.Type === 'ADJUSTMENT' ? 'Review' : (g.LineId ? g.Line + ' ' + (num(g.WeightKg) ? signed(num(g.WeightKg)) + ' kg' : signed(num(g.Qty))) : 'Bags ' + signed(num(g.Qty))); }
+  function fact(k, v) { return v ? '<div class="jo-fact"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>' : ''; }
+  function render(j, opts) {
+    shown = { job: j, opts: opts || {} };
+    var c = j.Client || {};
+    UI.el('jo-title').innerHTML = 'Job Order ' + UI.esc(j.OrderNo) + ' ' + UI.badge(j.Status, j.StatusLabel) + (j.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '');
+    var got = j.ReceivingStatus && j.ReceivingStatus !== 'PENDING';
+    var rows = j.Lines.map(function (l, i) {
+      var note = priceNote(l);
+      return '<tr><td class="num jo-wide">' + (i + 1) + '</td><td><span class="fw-bold">' + UI.esc(l.Description) + '</span>' + (l.Category ? ' <span class="small text-soft jo-wide">' + UI.esc(l.Category) + '</span>' : '') + (l.ConditionAtPickup ? '<div class="small">' + UI.esc(l.ConditionAtPickup) + '</div>' : '') + '<div class="jo-narrow small text-soft">' + UI.esc(qtyText(l)) + (got ? ' picked up · <span class="' + (differs(l) ? 'jo-diff' : '') + '">' + UI.esc(gotText(l)) + ' received</span>' : '') + ' × ' + F.peso(l.UnitPrice) + '</div>' + (note ? '<div class="jo-narrow">' + note + '</div>' : '') + '</td>' +
+        '<td class="num jo-wide">' + UI.esc(qtyText(l)) + '</td>' + (got ? '<td class="num jo-wide' + (differs(l) ? ' jo-diff' : '') + '">' + UI.esc(gotText(l)) + '</td>' : '') + '<td class="num jo-wide">' + F.peso(l.UnitPrice) + '</td><td class="num money">' + F.peso(l.Amount) + '</td><td class="jo-wide">' + note + '</td>' +
+        (j.canOverride ? '<td class="text-end"><button type="button" class="btn btn-sm btn-outline-secondary" data-price="' + UI.esc(l.Id) + '" aria-label="Set a manual price for ' + UI.esc(l.Description) + '"><i class="fa-solid fa-tag" aria-hidden="true"></i><span class="jo-wide ms-1">Price</span></button></td>' : '') + '</tr>';
+    }).join('');
+    UI.html('jo-body',
+      (opts && opts.justCreated ? '<div class="alert alert-success py-2 small"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Saved. Print the Job Order now, or later from this job or from Orders.</div>' : '') +
+      '<div class="jo-facts">' + fact('Client', UI.esc(c.Company || '') + (c.EstablishmentType ? ' <span class="text-soft">· ' + UI.esc(c.EstablishmentType) + '</span>' : '')) + fact('Property', UI.esc(c.PropertyName || '')) + fact('Department', UI.esc(c.Department || '')) + fact('Address', UI.esc(c.Address || '')) + fact('Contract', UI.esc(c.ContractRef || '')) +
+      fact('Picked up', UI.esc(F.datetime(j.PickupAt)) + (j.PickupBy ? ' · ' + UI.esc(j.PickupBy) : '')) + fact('Surrendered by', signedText(j)) + fact('Counted', UI.esc(piecesText(num(j.PiecesPickup), num(j.WeightPickupKg), j.BagsAtPickup))) +
+      (got ? fact('Received', UI.esc(piecesText(num(j.PiecesReceived), num(j.WeightReceivedKg), j.BagsReceived) || '0 pieces') + ' ' + UI.badge(j.ReceivingStatus, RECEIVING[j.ReceivingStatus]) + '<div class="small text-soft">' + UI.esc(F.datetime(j.ReceivedAt)) + (j.ReceivedBy ? ' · ' + UI.esc(j.ReceivedBy) : '') + (j.ReceivingRemarks ? ' · ' + UI.esc(j.ReceivingRemarks) : '') + '</div>') : '') +
+      (got && j.ReviewedAt ? fact('Reviewed', UI.esc(F.datetime(j.ReviewedAt)) + (j.ReviewedBy ? ' · ' + UI.esc(j.ReviewedBy) : '') + (j.ReviewNote ? '<div class="small">' + UI.esc(j.ReviewNote) + '</div>' : '')) : '') + fact('Instructions', UI.esc(j.SpecialInstructions || '')) + fact('Printed', num(j.PrintCount) ? num(j.PrintCount) + ' time' + (num(j.PrintCount) === 1 ? '' : 's') + (j.LastPrintedAt ? ' · last ' + UI.esc(F.datetime(j.LastPrintedAt)) : '') : 'not yet') + '</div>' +
+      '<div class="table-responsive mt-3"><table class="table table-sm align-middle mb-0 jo-lines" id="jo-lines"><thead><tr><th class="num jo-wide">No.</th><th>Linen</th><th class="num jo-wide">' + (got ? 'Picked up' : 'Counted') + '</th>' + (got ? '<th class="num jo-wide">Received</th>' : '') + '<th class="num jo-wide">Unit price</th><th class="num">Amount</th><th class="jo-wide">Price</th>' + (j.canOverride ? '<th><span class="visually-hidden">Actions</span></th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<div class="jo-totals mt-2"><span>' + (num(j.DiscountAmount) > 0 ? 'Discount ' + F.peso(j.DiscountAmount) + ' · ' : '') + (num(j.DeliveryFee) > 0 ? 'Delivery fee ' + F.peso(j.DeliveryFee) + ' · ' : '') + (num(j.OtherCharges) > 0 ? 'Other charges ' + F.peso(j.OtherCharges) : '') + '</span><span>' + (got ? 'Charges' : 'Estimated charges') + ' <b class="money" id="jo-total">' + F.peso(j.OrderTotal) + '</b> <span class="text-soft small" id="jo-basis">' + (got ? '— billed for the ' + (j.BillBasis === 'PICKUP' ? 'pickup count' : 'count received') : '— final after receiving') + '</span></span></div>' +
+      (got && (j.Log || []).length ? '<h6 class="section-title mt-3">Differences and decisions</h6><ul class="jo-log" id="jo-log">' + j.Log.map(function (g) { return '<li><span class="fw-bold">' + UI.esc(logWhat(g)) + '</span> <span class="text-soft small">' + UI.esc(g.Reason || '') + ' · ' + UI.esc(g.By || '') + ' · ' + UI.esc(F.datetime(g.At)) + '</span></li>'; }).join('') + '</ul>' : '') +
+      '<div class="mt-3" id="jo-files"><button type="button" class="btn btn-link btn-sm p-0" id="jo-files-show"><i class="fa-solid fa-image me-1" aria-hidden="true"></i>' + (j.SignedOn === 'PHONE' ? 'View the signature' : 'View the photos of the signed copy') + '</button></div>');
+    var paperNow = paper();
+    UI.html('jo-actions', (j.canReceive ? '<button type="button" class="btn btn-sm btn-success" id="jo-receive"><i class="fa-solid fa-box-open me-1" aria-hidden="true"></i>Receive</button>' : '') + (j.canReview ? '<button type="button" class="btn btn-sm btn-warning" id="jo-review"><i class="fa-solid fa-scale-balanced me-1" aria-hidden="true"></i>Review the difference</button>' : '') + (j.canAttach ? '<label class="btn btn-sm btn-outline-secondary mb-0" for="jo-attach-input"><i class="fa-solid fa-camera me-1" aria-hidden="true"></i>Add photo of the signed copy</label><input class="visually-hidden" type="file" id="jo-attach-input" accept="image/jpeg,image/png,image/*" capture="environment">' : '') + '<span class="spacer"></span>' +
+      '<label class="visually-hidden" for="jo-paper">Paper</label><select class="form-select form-select-sm jo-paper" id="jo-paper"><option value="A4"' + (paperNow === 'A4' ? ' selected' : '') + '>A4 sheet</option><option value="80mm"' + (paperNow === '80mm' ? ' selected' : '') + '>80 mm roll</option></select>' +
+      '<div class="dropdown dropup"><button type="button" class="btn btn-sm btn-primary dropdown-toggle" id="jo-print" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>Print Job Order</button><ul class="dropdown-menu dropdown-menu-end">' +
+      [['BOTH', 'Both copies'], ['CLIENT', 'Client copy'], ['SHOP', 'Laundry shop copy']].map(function (x) { return '<li><button type="button" class="dropdown-item" data-copy="' + x[0] + '">' + x[1] + '</button></li>'; }).join('') + '</ul></div>');
+    UI.el('jo-paper').onchange = function () { setPaper(UI.el('jo-paper').value); };
+    UI.el('jo-actions').querySelectorAll('[data-copy]').forEach(function (b) { b.onclick = function () { print(j.OrderId, b.getAttribute('data-copy'), UI.el('jo-paper').value); }; });
+    UI.el('jo-body').querySelectorAll('[data-price]').forEach(function (b) { b.onclick = function () { openPrice(j, j.Lines.filter(function (l) { return l.Id === b.getAttribute('data-price'); })[0]); }; });
+    UI.el('jo-files-show').onclick = function () { showFiles(j.OrderId); };
+    var rc = UI.el('jo-receive'); if (rc) rc.onclick = function () { openReceive(j); };
+    var rv = UI.el('jo-review'); if (rv) rv.onclick = function () { openReview(j); };
+    var input = UI.el('jo-attach-input'); if (input) input.onchange = function () { var file = input.files && input.files[0]; if (!file) return; attach(j.OrderId, file); input.value = ''; };
+  }
+  function showFiles(orderId) {
+    var box = UI.el('jo-files'); box.innerHTML = '<span class="small text-soft">Loading…</span>';
+    Api.call('jobOrders.get', { orderId: orderId, files: true }).then(function (r) {
+      var figs = [];
+      if (r.Signature) figs.push('<figure><img src="' + UI.esc(r.Signature) + '" alt="The client\'s signature"><figcaption>Signature of ' + UI.esc(r.ClientSignerName || 'the client') + '</figcaption></figure>');
+      (r.Photos || []).forEach(function (p, i) { figs.push('<figure><img src="' + UI.esc(p.Data) + '" alt="Photo ' + (i + 1) + ' of the signed copy"><figcaption>Signed copy · ' + UI.esc(F.datetime(p.At)) + '</figcaption></figure>'); });
+      box.innerHTML = figs.length ? '<div class="proof-view">' + figs.join('') + '</div>' + (r.keepDays ? '<p class="small text-soft mt-2 mb-0">Kept privately for ' + r.keepDays + ' days (the setting ProofKeepDays), then removed.</p>' : '') : '<p class="small text-soft mb-0">' + (r.SignatureRemoved ? 'The signature image was removed after its keep days; that it was signed, by whom and when is kept.' : (r.SignedOn === 'PHONE' ? 'No signature image is kept.' : 'No photo of the signed copy yet.')) + '</p>';
+    }).catch(function (e) { box.innerHTML = '<p class="small text-danger mb-0">' + UI.esc(UI.error(e)) + '</p>'; });
+  }
+  function attach(orderId, file) {
+    M.Photo.shrink(file, { maxBytes: 2 * 1024 * 1024 }).then(function (url) { return Api.call('jobOrders.attach', { orderId: orderId, photo: url }, { busy: true, timeoutMs: 120000 }); })
+      .then(function (r) { Toast.success('Photo of the signed copy kept'); render(r, shown ? shown.opts : {}); showFiles(orderId); }).catch(function (e) { Toast.danger(UI.error(e)); });
+  }
+  /** Shows a job order already in hand (the answer of the count, or of jobOrders.get). opts: { onChange, back, justCreated } */
+  function show(j, opts) { render(j, opts); Modal.open('jo-modal'); }
+  /** Opens the job order of an order (JOB_ORDER_VIEW). opts.back runs when the dialog closes (the order's dialog opens again). */
+  function open(orderId, opts) { return Api.call('jobOrders.get', { orderId: orderId }, { busy: true }).then(function (j) { show(j, opts); return j; }).catch(function (e) { Toast.danger(UI.error(e)); if (opts && opts.back) opts.back(); return null; }); }
+  UI.el('jo-modal').addEventListener('hidden.bs.modal', function () { if (pricing || sub) return; var s = shown; shown = null; if (s && s.opts && s.opts.back) s.opts.back(); });
+
+  // ---------------------------------------------------------------- a manual price on one line
+  function openPrice(j, line) {
+    if (!line) return; var back = shown ? shown.opts : {}; pricing = { job: j, line: line, opts: back, saved: null, requestId: UI.uuid() };
+    Modal.closeThen('jo-modal', function () {
+      var manual = line.PriceSource === 'override';
+      UI.el('jo-price-title').textContent = 'Manual price · ' + line.Description; UI.el('jo-price-form').reset(); UI.el('jo-price-error').hidden = true;
+      UI.el('jo-price-hint').textContent = 'For job order ' + j.OrderNo + ' only, until the shop has received it. ' + qtyText(line) + ' counted.';
+      UI.el('jo-price-value').value = manual ? num(line.UnitPrice) : ''; UI.el('jo-price-standard').textContent = manual ? (num(line.ListPrice) > 0 ? F.peso(line.ListPrice) : 'none') : F.peso(line.UnitPrice);
+      UI.el('jo-price-reason').value = ''; UI.el('jo-price-remove').hidden = !manual;
+      Modal.open('jo-price-modal');
+    });
+  }
+  function savePrice(remove) {
+    var m = pricing; if (!m) return; var box = UI.el('jo-price-error'), value = UI.el('jo-price-value'), reason = UI.el('jo-price-reason'); box.hidden = true;
+    var say = function (msg, el) { box.textContent = msg; box.hidden = false; if (el) el.focus(); };
+    if (!remove && (value.value === '' || num(value.value) < 0)) return say('Enter the price for this job order (0 for free of charge).', value);
+    if (reason.value.trim().length < 3) return say(remove ? 'Say why the manual price is taken away.' : 'Say who agreed the price and why.', reason);
+    Api.call('jobOrders.overridePrice', { orderId: m.job.OrderId, lineId: m.line.Id, price: remove ? '' : num(value.value), reason: reason.value.trim(), requestId: m.requestId }, { busy: true }).then(function (r) {
+      Toast.success(remove ? 'Manual price taken away' : 'Manual price set'); m.saved = r; if (m.opts && m.opts.onChange) m.opts.onChange(r); Modal.close('jo-price-modal');
+    }).catch(function (e) { say(UI.error(e)); });
+  }
+  UI.el('jo-price-form').onsubmit = function (ev) { ev.preventDefault(); savePrice(false); };
+  UI.el('jo-price-remove').onclick = function () { savePrice(true); };
+  UI.el('jo-price-modal').addEventListener('hidden.bs.modal', function () { var m = pricing; pricing = null; if (m) show(m.saved || m.job, m.opts); });  // saved or cancelled: back to the job order
+
+  // ---------------------------------------------------------------- the Job Order document
+  var DOC_CSS = '.jo-doc{page-break-after:always}.jo-doc:last-child{page-break-after:auto}.jo-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.jo-top .doc-head{flex:1;margin-bottom:6px}' +
+    '.jo-copy{border:2px solid #111;padding:4px 10px;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}.jo-reprint{border:1px solid #111;padding:2px 8px;font-weight:700;font-size:10.5px;letter-spacing:.1em;margin-top:4px;text-align:center}' +
+    '.jo-no{display:flex;justify-content:space-between;gap:12px;font-size:13px;margin:6px 0}.jo-no b{font-size:15px}.jo-doc .blk{margin:6px 0 8px}.jo-doc th.r,.jo-doc td.r{text-align:right}' +
+    '.jo-sum{display:flex;justify-content:space-between;gap:12px;margin:6px 0;font-size:12.5px}.jo-est{font-weight:800;font-size:14px}.jo-doc .ack{margin:10px 0 6px}' +
+    '.jo-signs{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:8px;font-size:11.5px;page-break-inside:avoid}.jo-sign-box{text-align:center}.jo-sign-space{height:58px;display:flex;align-items:flex-end;justify-content:center}.jo-sign-space img{max-height:56px;max-width:100%}' +
+    '.jo-sign-line{border-top:1px solid #333;padding-top:3px;font-weight:700;letter-spacing:.04em}.jo-sign-box .small{color:#444}.jo-notice{font-size:10.5px;color:#444;margin-top:10px;text-align:center}' +
+    '.jo-half{page-break-inside:avoid;break-inside:avoid}.jo-half.first{border-bottom:1px dashed #555;margin-bottom:4mm;padding-bottom:4mm}.jo-compact{font-size:10px;line-height:1.25}.jo-compact table{margin:2px 0}.jo-compact th,.jo-compact td{padding:1px 5px;font-size:9.5px;line-height:1.2}.jo-compact p{margin:2px 0}.jo-compact .doc-head{padding-bottom:3px;margin-bottom:3px}.jo-compact .doc-logo{max-height:24px;margin-bottom:2px}.jo-compact .doc-biz{font-size:13px}.jo-compact .doc-biz-sub{font-size:9.5px}.jo-compact .doc-title{font-size:11px;margin-top:1px}.jo-compact .jo-copy{font-size:10.5px;padding:3px 8px}' +
+    '.jo-compact .blk{font-size:10px;gap:0 18px;margin:2px 0 3px}.jo-compact .jo-no{font-size:10.5px;margin:2px 0}.jo-compact .jo-no b{font-size:12px}.jo-compact .ack{font-size:9px;margin:3px 0 0}.jo-compact .jo-sign-space{height:26px}.jo-compact .jo-sign-space img{max-height:25px}.jo-compact .jo-signs{font-size:9px;margin-top:0}.jo-compact .jo-sign-box .small{font-size:8.5px}.jo-compact .jo-notice{font-size:8.5px;margin-top:2px}.jo-compact .doc-foot{margin-top:3px;padding-top:2px;font-size:8.5px}.jo-compact .jo-sum{font-size:10px;margin:2px 0}.jo-compact .jo-est{font-size:11.5px}' +
+    '.jo-roll .jo-copy{display:block;text-align:center;margin:4px 0}.jo-roll .jo-sign-space{height:52px}.jo-roll .jo-sign-line{margin-top:2px}.jo-roll .cut{border-top:1px dashed #555;margin:10px 0}';
+  var ACK = 'I acknowledge that the laundry items listed above were surrendered to the authorized personnel of {biz} for laundry service, subject to receiving verification at the shop.';
+  var NOTICE = 'This is an operational document, not an official receipt or sales invoice.';
+  function copyLabel(copy) { return copy === 'CLIENT' ? 'Client copy' : 'Laundry shop copy'; }
+  function signBoxes(d) {
+    var esc = UI.esc, client;
+    if (d.SignedOn === 'PHONE') client = '<div class="jo-sign-space">' + (d.Signature ? '<img src="' + esc(d.Signature) + '" alt="Signature">' : '') + '</div><div class="jo-sign-line">' + esc(d.ClientSignerName || '') + '</div><div class="small">' + (d.ClientSignerPosition ? esc(d.ClientSignerPosition) + ' · ' : '') + 'Client representative</div><div class="small">Signed electronically on ' + esc(F.datetime(d.SignedAt || d.PickupAt)) + (d.Signature ? '' : ' (image no longer kept)') + '</div>';
+    else client = '<div class="jo-sign-space"></div><div class="jo-sign-line">' + esc(d.ClientSignerName || '') + '</div><div class="small">' + (d.ClientSignerPosition ? esc(d.ClientSignerPosition) + ' · ' : '') + 'Client representative</div><div class="small">Signature over printed name · date and time</div>';
+    return '<div class="jo-signs"><div class="jo-sign-box">' + client + '</div><div class="jo-sign-box"><div class="jo-sign-space"></div><div class="jo-sign-line">' + esc(d.PickupBy || '') + '</div><div class="small">Pickup personnel</div><div class="small">' + esc(F.datetime(d.PickupAt)) + '</div></div></div>';
+  }
+  function conditions(d) { return d.Lines.map(function (l, i) { return l.ConditionAtPickup ? 'line ' + (i + 1) + ': ' + l.ConditionAtPickup : ''; }).filter(Boolean).join('; '); }
+  /** One copy on a full page (or half a page, compact): the same job order, only the copy label differs. */
+  function pageCopy(d, copy, compact) {
+    var esc = UI.esc, c = d.Client || {}, biz = d.Business || {};
+    var rows = d.Lines.map(function (l, i) { return '<tr><td class="r">' + (i + 1) + '</td><td>' + esc(l.Description) + '</td><td>' + esc(l.ByWeight ? 'By weight' : (l.Category || '')) + '</td><td class="r num">' + (l.ByWeight ? num(l.PickupWeightKg) : num(l.PickupQty)) + '</td><td>' + esc(l.ByWeight ? 'kg' : (l.Unit || 'pc')) + '</td><td class="r num">' + esc(F.peso(l.UnitPrice)) + '</td><td class="r num">' + esc(F.peso(l.Amount)) + '</td><td>' + esc(l.ConditionAtPickup || '') + '</td></tr>'; }).join('');
+    var cond = conditions(d), blk = function (k, v) { return v ? '<div><b>' + k + '</b>' + esc(v) + '</div>' : ''; };
+    return '<div class="jo-top">' + M.Print.header({ title: 'Commercial laundry pickup job order', business: biz }) + '<div><div class="jo-copy">' + copyLabel(copy) + '</div>' + (d.Reprint ? '<div class="jo-reprint">REPRINT</div>' : '') + '</div></div>' +
+      '<div class="jo-no"><span>Job Order No. <b>' + esc(d.OrderNo) + '</b></span><span>Pickup ' + esc(F.datetime(d.PickupAt)) + '</span></div>' +
+      '<div class="blk">' + blk('Client', c.Company) + blk('Establishment', c.EstablishmentType) + blk('Property', c.PropertyName) + blk('Department', c.Department) + blk('Address', c.Address) + blk('Contract ref.', c.ContractRef) + blk('Representative', c.Representative) + blk('Contact', c.Phone) + '</div>' +
+      '<table><thead><tr><th class="r">No.</th><th>Linen</th><th>Category</th><th class="r">Qty</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount</th><th>Remarks</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="jo-sum"><span>' + esc(piecesText(num(d.PiecesPickup), num(d.WeightPickupKg), d.BagsAtPickup)) + (d.IsExpress ? ' · EXPRESS' : '') + '</span><span>Estimated charges <span class="jo-est">' + esc(F.peso(d.OrderTotal)) + '</span> <span class="small">(final after receiving verification)</span></span></div>' +
+      (d.SpecialInstructions ? '<p><b>Special instructions:</b> ' + esc(d.SpecialInstructions) + '</p>' : '') + (cond ? '<p><b>Stains or damage noted at pickup:</b> ' + esc(cond) + '</p>' : '') +
+      '<p class="ack">' + esc(ACK.replace('{biz}', biz.name || 'the laundry shop')) + '</p>' + signBoxes(d) +
+      '<div class="jo-notice">' + NOTICE + (d.SignedOn === 'PAPER' && d.PaperFormNo ? ' Paper form ' + esc(d.PaperFormNo) + '.' : '') + '</div>' + M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: (d.Reprint ? 'REPRINT · ' : '') + 'print ' + num(d.PrintCount) + ' · ' + d.OrderNo });
+  }
+  /** One copy on an 80 mm roll (a portable printer): the same facts, one linen a row. */
+  function rollCopy(d, copy) {
+    var esc = UI.esc, c = d.Client || {}, biz = d.Business || {}, row = function (a, b, cls) { return '<div class="row' + (cls ? ' ' + cls : '') + '"><span>' + a + '</span><span>' + b + '</span></div>'; };
+    var logo = M.Brand && M.Brand.pictures ? M.Brand.pictures().logo : '', cond = conditions(d);
+    return '<div class="receipt-paper jo-roll">' + (logo ? '<div class="c logo"><img src="' + logo + '" alt=""></div>' : '') + '<div class="c strong">' + esc(biz.name || '') + '</div>' + [biz.branch, biz.address, biz.phone].filter(Boolean).map(function (t) { return '<div class="c muted">' + esc(t) + '</div>'; }).join('') +
+      '<hr><div class="c strong">COMMERCIAL LAUNDRY PICKUP JOB ORDER</div><div class="jo-copy">' + copyLabel(copy) + (d.Reprint ? ' · REPRINT' : '') + '</div>' +
+      row('Job Order No.', '<span class="strong">' + esc(d.OrderNo) + '</span>') + row('Pickup', esc(F.datetime(d.PickupAt))) + '<hr>' +
+      '<div class="strong">' + esc(c.Company || '') + '</div>' + [c.EstablishmentType, c.PropertyName, c.Department, c.Address, c.ContractRef ? 'Contract ' + c.ContractRef : '', c.Representative ? 'Rep. ' + c.Representative : '', c.Phone].filter(Boolean).map(function (t) { return '<div>' + esc(t) + '</div>'; }).join('') + '<hr>' +
+      d.Lines.map(function (l, i) { return '<div>' + (i + 1) + '. ' + esc(l.Description) + '</div>' + row(esc(qtyText(l)) + ' × ' + esc(F.peso(l.UnitPrice)), esc(F.peso(l.Amount))) + (l.ConditionAtPickup ? '<div class="muted">' + esc(l.ConditionAtPickup) + '</div>' : ''); }).join('') + '<hr>' +
+      '<div>' + esc(piecesText(num(d.PiecesPickup), num(d.WeightPickupKg), d.BagsAtPickup)) + (d.IsExpress ? ' · EXPRESS' : '') + '</div>' + row('Estimated charges', esc(F.peso(d.OrderTotal)), 'big') + '<div class="muted">Final after receiving verification.</div>' +
+      (d.SpecialInstructions ? '<div>Instructions: ' + esc(d.SpecialInstructions) + '</div>' : '') + (cond ? '<div>Noted at pickup: ' + esc(cond) + '</div>' : '') + '<hr><div>' + esc(ACK.replace('{biz}', biz.name || 'the laundry shop')) + '</div>' +
+      signBoxes(d).replace('jo-signs', 'jo-signs one') + '<div class="foot c">' + NOTICE + '</div><div class="foot c">Printed ' + esc(F.datetime(d.PrintedAt)) + (d.PrintedBy ? ' by ' + esc(d.PrintedBy) : '') + ' · print ' + num(d.PrintCount) + '</div></div>';
+  }
+  /** The document's HTML. copy: CLIENT | SHOP | BOTH; paper: A4 | 80mm. Both copies of a short count (COMPACT_MAX lines or fewer) share one A4 sheet, two halves with a cut line. */
+  function documentHtml(d, copy, paperSize) {
+    var copies = copy === 'BOTH' ? ['CLIENT', 'SHOP'] : [copy], css = '<style>' + DOC_CSS + (paperSize === '80mm' ? '.jo-signs.one{grid-template-columns:1fr;gap:6px}' : '') + '</style>';
+    if (paperSize === '80mm') return css + copies.map(function (c, i) { return (i ? '<div class="jo-roll"><div class="cut"></div></div>' : '') + rollCopy(d, c); }).join('');
+    if (copies.length === 2 && d.Lines.length <= COMPACT_MAX) return css + '<div class="jo-doc jo-compact"><div class="jo-half first">' + pageCopy(d, 'CLIENT', true) + '</div><div class="jo-half">' + pageCopy(d, 'SHOP', true) + '</div></div>';
+    return css + copies.map(function (c) { return '<div class="jo-doc">' + pageCopy(d, c, false) + '</div>'; }).join('');
+  }
+  /** Prints the Job Order (JOB_ORDER_VIEW). The server counts the print and says whether it is a reprint; the page only lays it out. */
+  function print(orderId, copy, paperSize) {
+    paperSize = paperSize === '80mm' ? '80mm' : 'A4';
+    return Api.call('jobOrders.document', { orderId: orderId, copy: copy || 'BOTH', paper: paperSize }, { busy: true, timeoutMs: 60000 }).then(function (d) {
+      M.Print.open(documentHtml(d, d.Copy, paperSize), { title: 'Job Order ' + d.OrderNo, size: paperSize, margin: paperSize === 'A4' && d.Copy === 'BOTH' && d.Lines.length <= COMPACT_MAX ? '8mm' : undefined });
+      if (shown && shown.job && shown.job.OrderId === orderId) { shown.job.PrintCount = d.PrintCount; shown.job.LastPrintedAt = d.PrintedAt; }
+      return d;
+    }).catch(function (e) { Toast.danger(UI.error(e)); return null; });
+  }
+
+  // ---------------------------------------------------------------- release 1.43.0: receiving at the shop, and a manager's review
+  /** Leaves the job order for one of its two dialogs; closing that dialog (saved or not) returns to the job order. */
+  function leaveFor(j, modalId, prepare) { sub = { job: j, opts: shown ? shown.opts : {}, saved: null, requestId: UI.uuid() }; Modal.closeThen('jo-modal', function () { prepare(); Modal.open(modalId); }); }
+  ['jo-receive-modal', 'jo-review-modal'].forEach(function (id) { UI.el(id).addEventListener('hidden.bs.modal', function () { var s = sub; sub = null; if (s) show(s.saved || s.job, s.opts); }); });
+  function rlines() { return Array.prototype.slice.call(UI.el('jo-receive-lines').querySelectorAll('.jo-rline')); }
+  function rline(l) {
+    var was = l.ByWeight ? num(l.PickupWeightKg) : num(l.PickupQty), id = UI.esc(l.Id);
+    return '<div class="jo-rline" data-line="' + id + '" data-was="' + was + '" data-kilo="' + (l.ByWeight ? 1 : 0) + '"><div class="jo-rline-main"><div class="jo-rline-name"><span class="fw-bold">' + UI.esc(l.Description) + '</span><div class="small text-soft">picked up ' + UI.esc(qtyText(l)) + (l.ConditionAtPickup ? ' · ' + UI.esc(l.ConditionAtPickup) : '') + '</div></div>' +
+      '<div class="jo-rline-qty"><label class="form-label" for="jo-r-' + id + '">Received' + (l.ByWeight ? ' (kg)' : '') + '</label><input class="form-control" id="jo-r-' + id + '" data-f="got" type="number" inputmode="' + (l.ByWeight ? 'decimal' : 'numeric') + '" min="0" step="' + (l.ByWeight ? '0.01' : '1') + '"></div></div>' +
+      '<div class="jo-rline-reason" hidden><label class="form-label" for="jo-rr-' + id + '">Why it differs</label><input class="form-control" id="jo-rr-' + id + '" data-f="why" maxlength="160" placeholder="Fewer than written, found in another bag…"></div></div>';
+  }
+  function syncReceive() {
+    if (!sub) return; var j = sub.job, pieces = 0, kg = 0, diffs = 0, done = 0, rows = rlines();
+    rows.forEach(function (r) {
+      var v = r.querySelector('[data-f=got]').value, was = num(r.getAttribute('data-was')), differ = v !== '' && num(v) !== was;
+      r.querySelector('.jo-rline-reason').hidden = !differ; r.classList.toggle('differs', differ);
+      if (v !== '') { done++; if (r.getAttribute('data-kilo') === '1') kg += num(v); else pieces += num(v); if (differ) diffs++; }
+    });
+    var bags = UI.el('jo-receive-bags').value, bagDiff = bags !== '' && num(bags) !== num(j.BagsAtPickup); UI.el('jo-receive-bags-why').hidden = !bagDiff; if (bagDiff) diffs++;
+    UI.html('jo-receive-totals', '<span><b>' + done + ' of ' + rows.length + '</b> linen' + (rows.length === 1 ? '' : 's') + ' counted · ' + UI.esc(piecesText(pieces, kg) || '0 pieces') + '</span><span>' + (diffs ? '<b class="jo-diff">' + diffs + ' difference' + (diffs === 1 ? '' : 's') + '</b> <span class="text-soft small">— a manager reviews; the bill follows this count</span>' : (done === rows.length && bags !== '' ? '<b>As picked up</b>' : '')) + '</span>');
+  }
+  function openReceive(j) {
+    leaveFor(j, 'jo-receive-modal', function () {
+      UI.el('jo-receive-form').reset(); UI.el('jo-receive-error').hidden = true;
+      UI.el('jo-receive-title').textContent = 'Receive · ' + j.OrderNo; UI.el('jo-receive-hint').textContent = ((j.Client || {}).Company || '') + ' · picked up ' + F.datetime(j.PickupAt) + (j.PickupBy ? ' by ' + j.PickupBy : '') + '. Count what arrived and type it for every linen; 0 when none arrived. The count is saved once and is not edited afterwards.';
+      UI.html('jo-receive-lines', j.Lines.map(rline).join('')); UI.el('jo-receive-bags-was').textContent = 'picked up ' + num(j.BagsAtPickup);
+      rlines().forEach(function (r) { r.querySelectorAll('input').forEach(function (el) { el.addEventListener('input', syncReceive); }); });
+      syncReceive();
+    });
+  }
+  UI.el('jo-receive-bags').addEventListener('input', syncReceive);
+  UI.el('jo-receive-same').onclick = function () { if (!sub) return; rlines().forEach(function (r) { var el = r.querySelector('[data-f=got]'); if (el.value === '') el.value = r.getAttribute('data-was'); }); var b = UI.el('jo-receive-bags'); if (b.value === '') b.value = num(sub.job.BagsAtPickup); syncReceive(); };
+  UI.el('jo-receive-form').onsubmit = function (ev) {
+    ev.preventDefault(); var s = sub; if (!s) return; var box = UI.el('jo-receive-error'), btn = UI.el('jo-receive-ok'), bad = null, lines = []; box.hidden = true;
+    var say = function (msg, el) { box.textContent = msg; box.hidden = false; if (el) el.focus(); };
+    rlines().forEach(function (r) {
+      if (bad) return; var el = r.querySelector('[data-f=got]'), why = r.querySelector('[data-f=why]'), kilo = r.getAttribute('data-kilo') === '1', name = r.querySelector('.fw-bold').textContent, v = el.value;
+      if (v === '' || num(v) < 0) { bad = [name + ': type what was received (0 when none arrived).', el]; return; }
+      if (!kilo && num(v) !== Math.round(num(v))) { bad = [name + ': the count is a whole number.', el]; return; }
+      if (num(v) !== num(r.getAttribute('data-was')) && why.value.trim().length < 3) { bad = ['Say why ' + name + ' differs from the pickup count.', why]; return; }
+      var line = { lineId: r.getAttribute('data-line') }; if (kilo) line.weightKg = num(v); else line.qty = num(v); if (why.value.trim() && num(v) !== num(r.getAttribute('data-was'))) line.reason = why.value.trim(); lines.push(line);
+    });
+    if (bad) return say(bad[0], bad[1]);
+    var bags = UI.el('jo-receive-bags'), bagsWhy = UI.el('jo-receive-bags-reason');
+    if (bags.value === '' || num(bags.value) < 0 || num(bags.value) !== Math.round(num(bags.value))) return say('Type how many bags arrived (0 when none).', bags);
+    if (num(bags.value) !== num(s.job.BagsAtPickup) && bagsWhy.value.trim().length < 3) return say('Say why the bags differ from the ' + num(s.job.BagsAtPickup) + ' counted at pickup.', bagsWhy);
+    btn.disabled = true;
+    Api.call('jobOrders.receive', { orderId: s.job.OrderId, requestId: s.requestId, bags: num(bags.value), bagsReason: bagsWhy.value.trim(), remarks: UI.el('jo-receive-remarks').value.trim(), lines: lines }, { busy: true, timeoutMs: 120000 }).then(function (r) {
+      btn.disabled = false; s.saved = r; Toast.success(r.ReceivingStatus === 'VERIFIED' ? 'Job order ' + r.OrderNo + ' received as picked up' : 'Job order ' + r.OrderNo + ' received · the differences go to a manager'); if (s.opts && s.opts.onChange) s.opts.onChange(r); Modal.close('jo-receive-modal');
+    }).catch(function (e) { btn.disabled = false; say(UI.error(e)); });
+  };
+  function openReview(j) {
+    leaveFor(j, 'jo-review-modal', function () {
+      UI.el('jo-review-form').reset(); UI.el('jo-review-error').hidden = true; UI.el('jo-review-title').textContent = 'Review the difference · ' + j.OrderNo;
+      UI.html('jo-review-diffs', '<p class="small text-soft mb-2">Received ' + UI.esc(F.datetime(j.ReceivedAt)) + (j.ReceivedBy ? ' by ' + UI.esc(j.ReceivedBy) : '') + (j.ReceivingRemarks ? ' · ' + UI.esc(j.ReceivingRemarks) : '') + '. The counts are not changed here.</p><ul class="jo-log mb-0">' + (j.Log || []).filter(function (g) { return g.Type !== 'ADJUSTMENT'; }).map(function (g) { return '<li><span class="fw-bold">' + UI.esc(logWhat(g)) + '</span> <span class="text-soft small">' + UI.esc(g.Reason || '') + '</span></li>'; }).join('') + '</ul>' +
+        '<p class="small mt-2 mb-0">Charges now <b class="money">' + F.peso(j.OrderTotal) + '</b>, billed for the ' + (j.BillBasis === 'PICKUP' ? 'pickup count' : 'count received') + (num(j.PaidAmount) > 0 ? ' · paid ' + F.peso(j.PaidAmount) : '') + '.</p>');
+      UI.el(j.BillBasis === 'PICKUP' ? 'jo-review-pickup' : 'jo-review-received').checked = true;
+      var locked = !j.Correctable, other = UI.el(j.BillBasis === 'PICKUP' ? 'jo-review-received' : 'jo-review-pickup'); other.disabled = locked;
+      UI.el('jo-review-locked').hidden = !locked; UI.el('jo-review-locked').textContent = locked ? 'The order is ' + String(j.StatusLabel || '').toLowerCase() + ': what it bills can no longer change. You can still close the review.' : '';
+    });
+  }
+  UI.el('jo-review-form').onsubmit = function (ev) {
+    ev.preventDefault(); var s = sub; if (!s) return; var box = UI.el('jo-review-error'), note = UI.el('jo-review-note'), btn = UI.el('jo-review-ok'); box.hidden = true;
+    if (note.value.trim().length < 3) { box.textContent = 'Write what was found and decided.'; box.hidden = false; note.focus(); return; }
+    btn.disabled = true;
+    Api.call('jobOrders.review', { orderId: s.job.OrderId, billBasis: UI.el('jo-review-pickup').checked ? 'PICKUP' : 'RECEIVED', note: note.value.trim(), requestId: s.requestId }, { busy: true, timeoutMs: 120000 }).then(function (r) {
+      btn.disabled = false; s.saved = r; Toast.success('Review closed · billed for the ' + (r.BillBasis === 'PICKUP' ? 'pickup count' : 'count received')); if (s.opts && s.opts.onChange) s.opts.onChange(r); Modal.close('jo-review-modal');
+    }).catch(function (e) { btn.disabled = false; box.textContent = UI.error(e); box.hidden = false; });
+  };
+
+  // ---------------------------------------------------------------- release 1.43.0: the Job Orders screen
+  var state = { tab: 'AWAITING', q: '', page: 1 }, asked = 0;
+  function received(row) { return row.ReceivingStatus === 'PENDING' ? '<span class="text-soft">—</span>' : UI.esc(piecesText(num(row.PiecesReceived), num(row.WeightReceivedKg), row.BagsReceived) || '0 pieces') + (row.ReceivingStatus !== 'VERIFIED' ? ' ' + UI.badge(row.ReceivingStatus, RECEIVING[row.ReceivingStatus]) : ''); }
+  /** The list of the tab in view. A reply for a tab, page or search the user has since left is dropped. */
+  function load() {
+    var box = UI.el('jobs-table'), mine = ++asked; if (!box.innerHTML) setTimeout(function () { if (!box.innerHTML) box.innerHTML = UI.skeleton({ kind: 'rows', count: 5, label: 'Loading the job orders' }); }, 160);
+    return Api.call('jobOrders.list', { tab: state.tab, q: state.q, page: state.page }).then(function (r) {
+      if (mine !== asked) return;
+      ['AWAITING', 'REVIEW', 'PRODUCTION', 'READY'].forEach(function (k) { var el = document.querySelector('#jobs-tabs [data-count="' + k + '"]'); if (el) el.textContent = r.counts[k] || ''; });
+      M.Table.render(box, {
+        columns: [
+          { key: 'OrderNo', label: 'Job order', cls: 'lead-cell', format: function (v, row) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (row.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + '<span class="ph-only lead-status">' + UI.badge(row.Status, row.StatusLabel) + '</span>'; } },
+          { key: 'Client', label: 'Client', format: function (v) { return UI.esc(v || ''); } },
+          { key: 'PickupAt', label: 'Picked up', format: function (v, row) { return UI.esc(F.datetime(v)) + '<div class="small text-soft">' + UI.esc(piecesText(num(row.PiecesPickup), num(row.WeightPickupKg), row.BagsAtPickup)) + '</div>'; } },
+          { key: 'ReceivingStatus', label: 'Received', format: function (v, row) { return received(row); } },
+          { key: 'OrderTotal', label: 'Charges', num: true, format: function (v, row) { return '<span class="money">' + F.peso(v) + '</span>' + (row.ReceivingStatus === 'PENDING' ? '<div class="small text-soft">estimate</div>' : ''); } },
+          { key: 'Status', label: 'Status', cls: 'ph-hide', format: function (v, row) { return UI.badge(v, row.StatusLabel); } }
+        ],
+        cls: 'aligned', rows: r.rows, total: r.total, page: r.page, pages: r.pages,
+        empty: { icon: 'fa-clipboard-list', title: state.q ? 'No job orders match' : (state.tab === 'AWAITING' ? 'Nothing is waiting to be received' : state.tab === 'REVIEW' ? 'No difference is waiting for a review' : 'No job orders here'), hint: state.q ? 'Change the search.' : (state.tab === 'AWAITING' ? 'A job order appears here when a rider has counted the linens at a commercial client.' : '') },
+        onPage: function (p) { state.page = p; load(); }, onRow: function (row) { open(row.OrderId, { onChange: function () { load(); } }); }
+      });
+      UI.el('jobs-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + r.total + ' job order' + (r.total === 1 ? '' : 's');
+    }).catch(function (e) {
+      if (mine !== asked) return; Toast.danger('Job orders: ' + UI.error(e));
+      if (!box.querySelector('table')) { box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The job orders could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }); var again = box.querySelector('[data-empty-action]'); if (again) again.onclick = function () { box.innerHTML = ''; load(); }; }
+    });
+  }
+  function wire() {
+    UI.el('jobs-refresh').onclick = load;
+    UI.el('jobs-tabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { UI.el('jobs-tabs').querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); }); state.tab = b.getAttribute('data-tab'); state.page = 1; load(); }; });
+    UI.el('jobs-search').oninput = UI.debounce(function () { state.q = UI.el('jobs-search').value.trim(); state.page = 1; load(); }, 350);
+  }
+  var wired = false;
+  M.Router.register('joborders', { title: 'Job orders', render: function () { if (!wired) { wired = true; wire(); } load(); }, refresh: load });
+
+  M.JobOrders = { count: openCount, open: open, show: show, print: print, documentHtml: documentHtml, canCount: function () { return can('JOB_ORDER_PICKUP'); }, canView: function () { return can('JOB_ORDER_VIEW'); }, COMPACT_MAX: COMPACT_MAX };
+})();
+</script>
+
         <!-- Mrs Laundry Sys — IncidentsPage.html: the Incidents module (damage, loss, complaints, delays): the list under the lens, the report dialog every module shares (M.Incidents.report), and the review page for managers.
      1.31.0 (stage 5): grey rows and Try again, a card per incident on a phone with its status beside its number, the incident's parts titled and its footer ordered (the next step at the right). -->
 <section id="view-incidents" class="view" hidden>
@@ -10307,351 +10836,6 @@ window.MLS = (function () {
   function statusBadge(s) { return UI.badge({ GATEWAY_QUEUED: 'PENDING', GATEWAY_SENT: 'ASSIGNED', GATEWAY_DELIVERED: 'COMPLETED', GATEWAY_FAILED: 'REJECTED' }[s] || s, { PREPARED: 'Prepared', COMPOSER_OPEN_REQUESTED: 'Composer opened', USER_CONFIRMED_SENT: 'Confirmed sent', NOT_SENT: 'Not sent', FAILED_TO_OPEN: 'Failed to open', UNKNOWN: 'Unknown', GATEWAY_QUEUED: 'Queued (gateway)', GATEWAY_SENT: 'Accepted by provider', GATEWAY_DELIVERED: 'Delivered (provider report)', GATEWAY_FAILED: 'Failed (gateway)' }[s] || F.status(s)); }
   wire();
   M.Sms = { open: open, link: link, segments: segments, workflowsForOrder: workflowsForOrder, menuHtml: menuHtml, wireMenu: wireMenu, can: can, statusBadge: statusBadge, WORKFLOWS: WORKFLOWS, isIos: isIos };
-})();
-</script>
-
-  <!-- Mrs Laundry Sys — JobOrdersPage.html (release 1.42.0): the commercial job order's shared dialogs and M.JobOrders — the linen count on a pickup job (My Deliveries, Dispatch), the job order itself (opened from the job or from the order), a manual price on a line, and the Job Order document: client copy, laundry shop copy or both, on A4 (both copies on one sheet when the count is short) or on an 80 mm roll for a portable printer. The Job Orders screen comes with receiving in 1.43.0. -->
-<div class="modal fade" id="jo-count-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-    <form class="modal-content" id="jo-count-form" autocomplete="off" novalidate>
-      <div class="modal-header"><h5 class="modal-title" id="jo-count-title">Count linens</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
-      <div class="modal-body">
-        <div class="jo-client" id="jo-count-client"></div>
-        <h6 class="section-title mt-3">Linens counted</h6>
-        <div id="jo-count-lines"></div>
-        <button type="button" class="btn btn-outline-primary btn-sm mt-1" id="jo-count-add"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Add a linen</button>
-        <div class="jo-totals mt-3" id="jo-count-totals" aria-live="polite"></div>
-        <div class="row g-2 mt-1">
-          <div class="col-4 col-md-3"><label class="form-label" for="jo-count-bags">Bags</label><input class="form-control" id="jo-count-bags" type="number" inputmode="numeric" min="0" step="1" required></div>
-          <div class="col-8 col-md-4"><label class="form-label" for="jo-count-dept">Department <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-count-dept" maxlength="60" placeholder="Housekeeping, Spa…"></div>
-          <div class="col-12 col-md-5"><label class="form-label" for="jo-count-notes">Special instructions <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-count-notes" maxlength="300" placeholder="Fold in threes, separate the spa towels…"></div>
-        </div>
-        <h6 class="section-title mt-3">Surrendered by</h6>
-        <div class="row g-2">
-          <div class="col-12 col-md-6"><label class="form-label" for="jo-count-signer">Name of the client's representative</label><input class="form-control" id="jo-count-signer" maxlength="80" required></div>
-          <div class="col-12 col-md-6"><label class="form-label" for="jo-count-position">Position <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-count-position" maxlength="60"></div>
-        </div>
-        <fieldset class="jo-sign mt-3">
-          <legend class="form-label">How the client signs</legend>
-          <div class="form-check"><input class="form-check-input" type="radio" name="signedOn" id="jo-sign-phone" value="PHONE" checked><label class="form-check-label" for="jo-sign-phone">On this phone <span class="text-soft small">— the copy can be printed now or later</span></label></div>
-          <div class="form-check"><input class="form-check-input" type="radio" name="signedOn" id="jo-sign-paper" value="PAPER"><label class="form-check-label" for="jo-sign-paper">On the printed copy, or on a paper form <span class="text-soft small">— signed with a pen</span></label></div>
-        </fieldset>
-        <div class="mt-2" id="jo-sign-phone-wrap"><div class="d-flex align-items-center"><span class="form-label small mb-1" id="jo-sig-label"><i class="fa-solid fa-signature me-1" aria-hidden="true"></i>Client's signature</span><button type="button" class="btn btn-link btn-sm ms-auto p-0" id="jo-sig-clear">Clear</button></div><canvas class="sig-pad" id="jo-sig" role="img" aria-labelledby="jo-sig-label"></canvas></div>
-        <div class="row g-2 mt-1" id="jo-sign-paper-wrap" hidden>
-          <div class="col-6 col-md-4"><label class="form-label" for="jo-count-formno">Paper form no. <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-count-formno" maxlength="40"></div>
-          <div class="col-6 col-md-4"><label class="form-label" for="jo-count-at">Counted at <span class="text-soft small">(if earlier)</span></label><input class="form-control" id="jo-count-at" type="datetime-local"></div>
-          <div class="col-12 col-md-4"><label class="form-label" for="jo-count-photo">Photo of the signed copy <span class="text-soft small">(optional)</span></label><input class="form-control" type="file" id="jo-count-photo" accept="image/jpeg,image/png,image/*" capture="environment"><div class="small text-soft mt-1" id="jo-count-photo-note" hidden></div></div>
-        </div>
-        <div class="alert alert-danger py-2 small mt-3 mb-0" id="jo-count-error" hidden role="alert"></div>
-      </div>
-      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button type="submit" class="btn btn-success" id="jo-count-ok"><i class="fa-solid fa-check me-1" aria-hidden="true"></i>Save job order</button></div>
-    </form>
-  </div>
-</div>
-
-<div class="modal fade" id="jo-modal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title" id="jo-title">Job Order</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
-      <div class="modal-body" id="jo-body"></div>
-      <div class="modal-footer flex-wrap gap-2" id="jo-actions"></div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="jo-price-modal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <form class="modal-content" id="jo-price-form" autocomplete="off" novalidate>
-      <div class="modal-header"><h5 class="modal-title" id="jo-price-title">Manual price</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
-      <div class="modal-body">
-        <p class="small text-soft mb-2" id="jo-price-hint"></p>
-        <div class="row g-2">
-          <div class="col-6"><label class="form-label" for="jo-price-value">Price for this job order</label><input class="form-control" id="jo-price-value" type="number" inputmode="decimal" min="0" step="0.01"></div>
-          <div class="col-6"><div class="form-label">Standard price</div><div class="form-control-plaintext money" id="jo-price-standard">—</div></div>
-          <div class="col-12"><label class="form-label" for="jo-price-reason">Reason</label><input class="form-control" id="jo-price-reason" maxlength="160" placeholder="Who agreed it and why"></div>
-        </div>
-        <div class="alert alert-danger small mt-2 mb-0" id="jo-price-error" hidden role="alert"></div>
-      </div>
-      <div class="modal-footer"><button type="button" class="btn btn-outline-danger me-auto" id="jo-price-remove" hidden>Take the manual price away</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save</button></div>
-    </form>
-  </div>
-</div>
-
-<script>
-(function () {
-  'use strict';
-  var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Modal = M.Modal;
-  var count = null, pad = null, shown = null, pricing = null;
-  var PAPER_KEY = 'mls.jobOrder.paper', COMPACT_MAX = 12;
-  function can(code) { return M.Auth.can(code); }
-  function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
-  function qtyText(l) { return l.ByWeight ? num(l.PickupWeightKg) + ' kg' : num(l.PickupQty) + ' ' + (l.Unit || 'pc'); }
-  function piecesText(pieces, kg, bags) { return [pieces ? pieces + ' piece' + (pieces === 1 ? '' : 's') : '', kg ? Math.round(kg * 100) / 100 + ' kg by weight' : '', bags !== undefined && bags !== '' ? bags + ' bag' + (Number(bags) === 1 ? '' : 's') : ''].filter(Boolean).join(' · '); }
-  function paper() { var p = ''; try { p = localStorage.getItem(PAPER_KEY) || ''; } catch (e) { /* private mode */ } return p === '80mm' ? '80mm' : 'A4'; }
-  function setPaper(p) { try { localStorage.setItem(PAPER_KEY, p); } catch (e) { /* private mode */ } }
-
-  // ---------------------------------------------------------------- the count on a pickup job
-  function serviceOf(id) { return count.services.filter(function (s) { return s.Id === id; })[0] || null; }
-  function lineHtml(i) {
-    var groups = {}, order = []; count.services.forEach(function (s) { var g = s.Category || 'Other'; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(s); });
-    var opts = '<option value="">Choose a linen…</option>' + order.map(function (g) { return '<optgroup label="' + UI.esc(g) + '">' + groups[g].map(function (s) { return '<option value="' + UI.esc(s.Id) + '">' + UI.esc(s.Name) + (s.Price === null ? ' — no price' : ' — ' + F.peso(s.Price) + '/' + UI.esc(s.Unit)) + '</option>'; }).join('') + '</optgroup>'; }).join('');
-    return '<div class="jo-line" data-line="' + i + '">' +
-      '<div class="jo-line-main"><div class="jo-line-linen"><label class="form-label" for="jo-l-svc-' + i + '">Linen</label><select class="form-select" id="jo-l-svc-' + i + '" data-f="service">' + opts + '</select></div>' +
-      '<div class="jo-line-qty"><label class="form-label" for="jo-l-qty-' + i + '" data-qty-label>Quantity</label><input class="form-control" id="jo-l-qty-' + i + '" data-f="qty" type="number" inputmode="numeric" min="1" step="1"></div>' +
-      '<button type="button" class="btn btn-outline-secondary btn-sm jo-line-x" data-remove aria-label="Remove this linen"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>' +
-      '<div class="jo-line-more"><div class="jo-line-note"><label class="form-label" for="jo-l-cond-' + i + '">Stains, damage or remarks <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-l-cond-' + i + '" data-f="condition" maxlength="160" placeholder="1 torn, 2 stained…"></div>' +
-      (count.canOverride ? '<div class="jo-line-price"><label class="form-label" for="jo-l-price-' + i + '">Manual price</label><input class="form-control" id="jo-l-price-' + i + '" data-f="price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="standard"></div><div class="jo-line-reason" hidden><label class="form-label" for="jo-l-reason-' + i + '">Reason for the price</label><input class="form-control" id="jo-l-reason-' + i + '" data-f="reason" maxlength="160"></div>' : '') +
-      '</div><div class="jo-line-sum small text-soft" data-sum></div></div>';
-  }
-  function lineRows() { return Array.prototype.slice.call(UI.el('jo-count-lines').querySelectorAll('.jo-line')); }
-  function readLine(row) {
-    var get = function (f) { var el = row.querySelector('[data-f=' + f + ']'); return el ? el.value : ''; }, s = serviceOf(get('service'));
-    return { service: s, raw: get('qty'), qty: num(get('qty')), condition: get('condition').trim(), price: get('price'), reason: get('reason').trim() };
-  }
-  /** One linen once: a linen chosen on a line is no longer offered on the others; a weight asks for kilograms. */
-  function syncLines() {
-    var rows = lineRows(), taken = {}; rows.forEach(function (r) { var v = r.querySelector('[data-f=service]').value; if (v) taken[v] = r; });
-    var pieces = 0, kg = 0, est = 0, counted = 0;
-    rows.forEach(function (r) {
-      var sel = r.querySelector('[data-f=service]'), l = readLine(r), s = l.service, qty = r.querySelector('[data-f=qty]'), kilo = s && s.PricingType === 'PER_KILO', flat = s && s.PricingType === 'FLAT';
-      Array.prototype.forEach.call(sel.options, function (o) { o.disabled = !!(o.value && taken[o.value] && taken[o.value] !== r); });
-      r.querySelector('[data-qty-label]').textContent = kilo ? 'Weight (kg)' : 'Quantity';
-      qty.step = kilo ? '0.01' : '1'; qty.min = kilo ? '0.01' : '1'; qty.setAttribute('inputmode', kilo ? 'decimal' : 'numeric'); qty.disabled = !!flat; if (flat) qty.value = '1';
-      var reason = r.querySelector('.jo-line-reason'); if (reason) reason.hidden = l.price === '';
-      var unit = l.price !== '' ? num(l.price) : (s && s.Price !== null ? num(s.Price) : null), q = flat ? 1 : l.qty, sum = r.querySelector('[data-sum]');
-      if (s && q > 0) { counted++; if (kilo) kg += q; else pieces += q; if (unit !== null) est += Math.round(unit * q * 100) / 100; }
-      sum.textContent = s ? (unit === null ? 'No price yet: set a manual price' : F.peso(unit) + ' per ' + s.Unit + (l.price !== '' ? ' (manual)' : s.Source === 'client' ? ' (client price)' : '') + (q > 0 ? ' · ' + F.peso(Math.round(unit * q * 100) / 100) : '')) : '';
-    });
-    UI.html('jo-count-totals', counted ? '<span><b>' + UI.esc(piecesText(pieces, kg) || '0 pieces') + '</b> on ' + counted + ' line' + (counted === 1 ? '' : 's') + '</span><span>Estimated charges <b class="money">' + F.peso(est) + '</b> <span class="text-soft small">— final after the shop receives and verifies</span></span>' : '<span class="text-soft">Nothing counted yet.</span>');
-    UI.el('jo-count-add').disabled = rows.length >= Math.min(count.maxLines, count.services.length);
-  }
-  function addLine(focus) {
-    var box = UI.el('jo-count-lines'), i = count.nextLine++, holder = document.createElement('div'); holder.innerHTML = lineHtml(i); var row = holder.firstChild; box.appendChild(row);
-    row.querySelector('[data-remove]').onclick = function () { if (lineRows().length > 1) row.remove(); else { row.querySelectorAll('input, select').forEach(function (el) { el.value = ''; }); } syncLines(); };
-    row.querySelectorAll('input, select').forEach(function (el) { el.addEventListener('input', syncLines); el.addEventListener('change', syncLines); });
-    syncLines(); if (focus) row.querySelector('[data-f=service]').focus();
-  }
-  function signMode() { return UI.el('jo-sign-paper').checked ? 'PAPER' : 'PHONE'; }
-  function syncSign() { var paperMode = signMode() === 'PAPER'; UI.el('jo-sign-phone-wrap').hidden = paperMode; UI.el('jo-sign-paper-wrap').hidden = !paperMode; if (!paperMode && pad) setTimeout(function () { pad.reset(); }, 30); }
-  function countError(msg, focusEl) { var box = UI.el('jo-count-error'); box.textContent = msg; box.hidden = false; if (focusEl) { try { focusEl.focus(); } catch (e) { /* gone */ } } }
-  /** The count as it will be sent, or the first thing that is missing (said in the dialog, the field focused). */
-  function gather() {
-    var rows = lineRows().filter(function (r) { return r.querySelector('[data-f=service]').value || r.querySelector('[data-f=qty]').value; }), lines = [], bad = null;
-    rows.forEach(function (r) {
-      if (bad) return; var l = readLine(r), s = l.service, qtyEl = r.querySelector('[data-f=qty]');
-      if (!s) { bad = ['Choose the linen for every line, or remove the empty line.', r.querySelector('[data-f=service]')]; return; }
-      var kilo = s.PricingType === 'PER_KILO', flat = s.PricingType === 'FLAT';
-      if (!flat && !(l.qty > 0)) { bad = [s.Name + ': enter the ' + (kilo ? 'weight in kg' : 'quantity') + '.', qtyEl]; return; }
-      if (!kilo && !flat && l.qty !== Math.round(l.qty)) { bad = [s.Name + ': the quantity is a whole number.', qtyEl]; return; }
-      if (l.price === '' && s.Price === null) { bad = [s.Name + ' has no price yet: set a manual price.', r.querySelector('[data-f=price]')]; return; }
-      if (l.price !== '' && l.reason.length < 3) { bad = ['Say why ' + s.Name + ' has a manual price.', r.querySelector('[data-f=reason]')]; return; }
-      var line = kilo ? { serviceId: s.Id, weightKg: l.qty } : { serviceId: s.Id, qty: flat ? 1 : l.qty }; if (l.condition) line.condition = l.condition;
-      if (l.price !== '') { line.price = num(l.price); line.priceReason = l.reason; }
-      lines.push(line);
-    });
-    if (bad) return { error: bad };
-    if (!lines.length) return { error: ['Count at least one linen.', (lineRows()[0] || document).querySelector('[data-f=service]')] };
-    var bags = UI.el('jo-count-bags'), signer = UI.el('jo-count-signer'), mode = signMode();
-    if (bags.value === '' || num(bags.value) < 0 || num(bags.value) !== Math.round(num(bags.value))) return { error: ['Enter how many bags were taken (0 when none).', bags] };
-    if (signer.value.trim().length < 2) return { error: ['Write the name of the person who surrendered the linens.', signer] };
-    if (mode === 'PHONE' && !(pad && pad.signed())) return { error: ['Have the client sign on the phone, or choose "On the printed copy, or on a paper form".', UI.el('jo-sig')] };
-    var p = { deliveryId: count.job.Id, requestId: count.requestId, lines: lines, bags: num(bags.value), signerName: signer.value.trim(), signerPosition: UI.el('jo-count-position').value.trim(), signedOn: mode, department: UI.el('jo-count-dept').value.trim(), specialInstructions: UI.el('jo-count-notes').value.trim() };
-    if (mode === 'PHONE') p.signature = pad.dataUrl();
-    else { p.paperFormNo = UI.el('jo-count-formno').value.trim(); var at = UI.el('jo-count-at').value; if (at) { var d = new Date(at); if (isNaN(d.getTime())) return { error: ['The time counted is not a date and time.', UI.el('jo-count-at')] }; p.pickupAt = d.toISOString(); } if (count.photo.data) p.photo = count.photo.data; }
-    return { payload: p };
-  }
-  /**
-   * Opens the count for a pickup job (JOB_ORDER_PICKUP). The server answers the client and the linens with the price this client pays;
-   * a job whose customer is not a commercial client is refused there, in words. onDone(jobOrder) once it is saved.
-   */
-  function openCount(jobId, onDone) {
-    if (M.Net && M.Net.state && M.Net.state() !== 'online') { Toast.warning('Counting linens needs a connection for now. Use a paper form and type it in once you are connected.'); return Promise.resolve(null); }
-    return Api.call('jobOrders.start', { deliveryId: jobId }, { busy: true }).then(function (r) {
-      count = { job: r.job, client: r.client, services: r.services, canOverride: !!r.canOverride, maxLines: r.maxLines || 60, backdateDays: r.backdateDays || 7, requestId: UI.uuid(), nextLine: 0, photo: { data: '', job: null }, onDone: onDone };
-      var c = r.client;
-      UI.el('jo-count-title').textContent = 'Count linens · ' + (c.Company || r.job.CustomerName || r.job.Id);
-      UI.html('jo-count-client', '<div class="fw-bold">' + UI.esc(c.Company) + (c.EstablishmentType ? ' <span class="badge text-bg-light">' + UI.esc(c.EstablishmentType) + '</span>' : '') + '</div>' + [c.PropertyName, c.Address, c.ContractRef ? 'Contract ' + c.ContractRef : ''].filter(Boolean).map(function (t) { return '<div class="small text-soft">' + UI.esc(t) + '</div>'; }).join(''));
-      UI.el('jo-count-form').reset(); UI.el('jo-count-lines').innerHTML = ''; UI.el('jo-count-error').hidden = true; UI.el('jo-count-photo-note').hidden = true;
-      UI.el('jo-count-signer').value = c.Representative || ''; UI.el('jo-count-position').value = c.RepresentativePosition || '';
-      var at = UI.el('jo-count-at'), iso = function (d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }; at.max = iso(new Date()); at.min = iso(new Date(Date.now() - count.backdateDays * 86400000));
-      addLine(false);
-      if (!r.services.length) countError('No linen has a price yet. Add the linens under Services first.');
-      var modal = UI.el('jo-count-modal'), canvas = UI.el('jo-sig'); if (!pad) pad = M.DeliveriesUI.signaturePad(canvas);
-      modal.addEventListener('shown.bs.modal', function once() { modal.removeEventListener('shown.bs.modal', once); pad.reset(); });
-      syncSign(); Modal.open('jo-count-modal');
-      return r;
-    }).catch(function (e) { Toast.danger(UI.error(e)); return null; });
-  }
-  UI.el('jo-count-add').onclick = function () { addLine(true); };
-  UI.el('jo-sig-clear').onclick = function () { if (pad) pad.reset(); };
-  UI.el('jo-sign-phone').onchange = syncSign; UI.el('jo-sign-paper').onchange = syncSign;
-  UI.el('jo-sig').addEventListener('pointerdown', function () { UI.el('jo-count-error').hidden = true; });
-  UI.el('jo-count-photo').onchange = function () {
-    var input = UI.el('jo-count-photo'), note = UI.el('jo-count-photo-note'), file = input.files && input.files[0]; if (!count) return; count.photo.data = ''; if (!file) { count.photo.job = null; note.hidden = true; return; }
-    note.textContent = 'Preparing the photo…'; note.hidden = false;
-    var job = count.photo.job = M.Photo.shrink(file, { maxBytes: 2 * 1024 * 1024 }).then(function (url) { if (!count || count.photo.job !== job) return ''; count.photo.data = url; note.textContent = 'Photo ready · ' + Math.round(url.length * 3 / 4 / 1024) + ' KB'; return url; })
-      .catch(function (e) { if (count && count.photo.job === job) { count.photo.data = ''; input.value = ''; note.textContent = UI.error(e); } return ''; });
-  };
-  UI.el('jo-count-form').onsubmit = function (ev) {
-    ev.preventDefault(); if (!count) return; var box = UI.el('jo-count-error'), btn = UI.el('jo-count-ok'); box.hidden = true; btn.disabled = true;
-    Promise.resolve(count.photo.job).then(function () {
-      var g = gather(); if (g.error) { var e = new Error(g.error[0]); e.local = g.error[1]; throw e; }
-      var loc = M.DeliveriesUI && M.DeliveriesUI.locate && navigator.geolocation ? M.DeliveriesUI.locate(4000) : Promise.resolve(null);
-      return loc.then(function (pos) { if (pos) g.payload.location = { lat: pos.lat, lng: pos.lng }; return Api.call('jobOrders.pickup', g.payload, { busy: true, timeoutMs: 120000 }); });
-    }).then(function (jo) {
-      btn.disabled = false; var done = count.onDone; count = null;
-      Modal.closeThen('jo-count-modal', function () { Toast.success('Job order ' + jo.OrderNo + ' created · ' + piecesText(num(jo.PiecesPickup), num(jo.WeightPickupKg), jo.BagsAtPickup)); if (done) done(jo); show(jo, { onChange: done, justCreated: true }); });
-    }).catch(function (e) { btn.disabled = false; countError(UI.error(e), e && e.local && e.local.focus ? e.local : null); });
-  };
-
-  // ---------------------------------------------------------------- the job order
-  function signedText(j) {
-    var who = UI.esc(j.ClientSignerName || '') + (j.ClientSignerPosition ? ' <span class="text-soft">(' + UI.esc(j.ClientSignerPosition) + ')</span>' : '');
-    return j.SignedOn === 'PHONE' ? who + ' · signed on the phone' + (j.SignedAt ? ' ' + UI.esc(F.datetime(j.SignedAt)) : '') : who + ' · signs the printed copy' + (j.PaperFormNo ? ' · paper form ' + UI.esc(j.PaperFormNo) : '');
-  }
-  function priceNote(l) {
-    if (l.PriceSource === 'override') return '<span class="jo-price-tag manual">manual price</span>' + (num(l.ListPrice) > 0 ? ' <span class="text-soft small">standard ' + F.peso(l.ListPrice) + '</span>' : '') + (l.PriceReason ? '<div class="small text-soft">' + UI.esc(l.PriceReason) + (l.PriceApprovedBy ? ' · ' + UI.esc(l.PriceApprovedBy) : '') + '</div>' : '');
-    if (l.PriceSource === 'client') return '<span class="jo-price-tag">client price</span>' + (num(l.ListPrice) > 0 ? ' <span class="text-soft small">list ' + F.peso(l.ListPrice) + '</span>' : '');
-    return '';
-  }
-  function fact(k, v) { return v ? '<div class="jo-fact"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>' : ''; }
-  function render(j, opts) {
-    shown = { job: j, opts: opts || {} };
-    var c = j.Client || {};
-    UI.el('jo-title').innerHTML = 'Job Order ' + UI.esc(j.OrderNo) + ' ' + UI.badge(j.Status, j.StatusLabel) + (j.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '');
-    var rows = j.Lines.map(function (l, i) {
-      var note = priceNote(l);
-      return '<tr><td class="num jo-wide">' + (i + 1) + '</td><td><span class="fw-bold">' + UI.esc(l.Description) + '</span>' + (l.Category ? ' <span class="small text-soft jo-wide">' + UI.esc(l.Category) + '</span>' : '') + (l.ConditionAtPickup ? '<div class="small">' + UI.esc(l.ConditionAtPickup) + '</div>' : '') + '<div class="jo-narrow small text-soft">' + UI.esc(qtyText(l)) + ' × ' + F.peso(l.UnitPrice) + '</div>' + (note ? '<div class="jo-narrow">' + note + '</div>' : '') + '</td>' +
-        '<td class="num jo-wide">' + UI.esc(qtyText(l)) + '</td><td class="num jo-wide">' + F.peso(l.UnitPrice) + '</td><td class="num money">' + F.peso(l.Amount) + '</td><td class="jo-wide">' + note + '</td>' +
-        (j.canOverride ? '<td class="text-end"><button type="button" class="btn btn-sm btn-outline-secondary" data-price="' + UI.esc(l.Id) + '" aria-label="Set a manual price for ' + UI.esc(l.Description) + '"><i class="fa-solid fa-tag" aria-hidden="true"></i><span class="jo-wide ms-1">Price</span></button></td>' : '') + '</tr>';
-    }).join('');
-    UI.html('jo-body',
-      (opts && opts.justCreated ? '<div class="alert alert-success py-2 small"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Saved. Print the Job Order now, or later from this job or from Orders.</div>' : '') +
-      '<div class="jo-facts">' + fact('Client', UI.esc(c.Company || '') + (c.EstablishmentType ? ' <span class="text-soft">· ' + UI.esc(c.EstablishmentType) + '</span>' : '')) + fact('Property', UI.esc(c.PropertyName || '')) + fact('Department', UI.esc(c.Department || '')) + fact('Address', UI.esc(c.Address || '')) + fact('Contract', UI.esc(c.ContractRef || '')) +
-      fact('Picked up', UI.esc(F.datetime(j.PickupAt)) + (j.PickupBy ? ' · ' + UI.esc(j.PickupBy) : '')) + fact('Surrendered by', signedText(j)) + fact('Counted', UI.esc(piecesText(num(j.PiecesPickup), num(j.WeightPickupKg), j.BagsAtPickup))) + fact('Instructions', UI.esc(j.SpecialInstructions || '')) + fact('Printed', num(j.PrintCount) ? num(j.PrintCount) + ' time' + (num(j.PrintCount) === 1 ? '' : 's') + (j.LastPrintedAt ? ' · last ' + UI.esc(F.datetime(j.LastPrintedAt)) : '') : 'not yet') + '</div>' +
-      '<div class="table-responsive mt-3"><table class="table table-sm align-middle mb-0 jo-lines" id="jo-lines"><thead><tr><th class="num jo-wide">No.</th><th>Linen</th><th class="num jo-wide">Counted</th><th class="num jo-wide">Unit price</th><th class="num">Amount</th><th class="jo-wide">Price</th>' + (j.canOverride ? '<th><span class="visually-hidden">Actions</span></th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      '<div class="jo-totals mt-2"><span>' + (num(j.DiscountAmount) > 0 ? 'Discount ' + F.peso(j.DiscountAmount) + ' · ' : '') + (num(j.DeliveryFee) > 0 ? 'Delivery fee ' + F.peso(j.DeliveryFee) + ' · ' : '') + (num(j.OtherCharges) > 0 ? 'Other charges ' + F.peso(j.OtherCharges) : '') + '</span><span>Estimated charges <b class="money" id="jo-total">' + F.peso(j.OrderTotal) + '</b> <span class="text-soft small">— final after receiving</span></span></div>' +
-      '<div class="mt-3" id="jo-files"><button type="button" class="btn btn-link btn-sm p-0" id="jo-files-show"><i class="fa-solid fa-image me-1" aria-hidden="true"></i>' + (j.SignedOn === 'PHONE' ? 'View the signature' : 'View the photos of the signed copy') + '</button></div>');
-    var paperNow = paper();
-    UI.html('jo-actions', (j.canAttach ? '<label class="btn btn-sm btn-outline-secondary mb-0" for="jo-attach-input"><i class="fa-solid fa-camera me-1" aria-hidden="true"></i>Add photo of the signed copy</label><input class="visually-hidden" type="file" id="jo-attach-input" accept="image/jpeg,image/png,image/*" capture="environment">' : '') + '<span class="spacer"></span>' +
-      '<label class="visually-hidden" for="jo-paper">Paper</label><select class="form-select form-select-sm jo-paper" id="jo-paper"><option value="A4"' + (paperNow === 'A4' ? ' selected' : '') + '>A4 sheet</option><option value="80mm"' + (paperNow === '80mm' ? ' selected' : '') + '>80 mm roll</option></select>' +
-      '<div class="dropdown dropup"><button type="button" class="btn btn-sm btn-primary dropdown-toggle" id="jo-print" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>Print Job Order</button><ul class="dropdown-menu dropdown-menu-end">' +
-      [['BOTH', 'Both copies'], ['CLIENT', 'Client copy'], ['SHOP', 'Laundry shop copy']].map(function (x) { return '<li><button type="button" class="dropdown-item" data-copy="' + x[0] + '">' + x[1] + '</button></li>'; }).join('') + '</ul></div>');
-    UI.el('jo-paper').onchange = function () { setPaper(UI.el('jo-paper').value); };
-    UI.el('jo-actions').querySelectorAll('[data-copy]').forEach(function (b) { b.onclick = function () { print(j.OrderId, b.getAttribute('data-copy'), UI.el('jo-paper').value); }; });
-    UI.el('jo-body').querySelectorAll('[data-price]').forEach(function (b) { b.onclick = function () { openPrice(j, j.Lines.filter(function (l) { return l.Id === b.getAttribute('data-price'); })[0]); }; });
-    UI.el('jo-files-show').onclick = function () { showFiles(j.OrderId); };
-    var input = UI.el('jo-attach-input'); if (input) input.onchange = function () { var file = input.files && input.files[0]; if (!file) return; attach(j.OrderId, file); input.value = ''; };
-  }
-  function showFiles(orderId) {
-    var box = UI.el('jo-files'); box.innerHTML = '<span class="small text-soft">Loading…</span>';
-    Api.call('jobOrders.get', { orderId: orderId, files: true }).then(function (r) {
-      var figs = [];
-      if (r.Signature) figs.push('<figure><img src="' + UI.esc(r.Signature) + '" alt="The client\'s signature"><figcaption>Signature of ' + UI.esc(r.ClientSignerName || 'the client') + '</figcaption></figure>');
-      (r.Photos || []).forEach(function (p, i) { figs.push('<figure><img src="' + UI.esc(p.Data) + '" alt="Photo ' + (i + 1) + ' of the signed copy"><figcaption>Signed copy · ' + UI.esc(F.datetime(p.At)) + '</figcaption></figure>'); });
-      box.innerHTML = figs.length ? '<div class="proof-view">' + figs.join('') + '</div>' + (r.keepDays ? '<p class="small text-soft mt-2 mb-0">Kept privately for ' + r.keepDays + ' days (the setting ProofKeepDays), then removed.</p>' : '') : '<p class="small text-soft mb-0">' + (r.SignatureRemoved ? 'The signature image was removed after its keep days; that it was signed, by whom and when is kept.' : (r.SignedOn === 'PHONE' ? 'No signature image is kept.' : 'No photo of the signed copy yet.')) + '</p>';
-    }).catch(function (e) { box.innerHTML = '<p class="small text-danger mb-0">' + UI.esc(UI.error(e)) + '</p>'; });
-  }
-  function attach(orderId, file) {
-    M.Photo.shrink(file, { maxBytes: 2 * 1024 * 1024 }).then(function (url) { return Api.call('jobOrders.attach', { orderId: orderId, photo: url }, { busy: true, timeoutMs: 120000 }); })
-      .then(function (r) { Toast.success('Photo of the signed copy kept'); render(r, shown ? shown.opts : {}); showFiles(orderId); }).catch(function (e) { Toast.danger(UI.error(e)); });
-  }
-  /** Shows a job order already in hand (the answer of the count, or of jobOrders.get). opts: { onChange, back, justCreated } */
-  function show(j, opts) { render(j, opts); Modal.open('jo-modal'); }
-  /** Opens the job order of an order (JOB_ORDER_VIEW). opts.back runs when the dialog closes (the order's dialog opens again). */
-  function open(orderId, opts) { return Api.call('jobOrders.get', { orderId: orderId }, { busy: true }).then(function (j) { show(j, opts); return j; }).catch(function (e) { Toast.danger(UI.error(e)); if (opts && opts.back) opts.back(); return null; }); }
-  UI.el('jo-modal').addEventListener('hidden.bs.modal', function () { if (pricing) return; var s = shown; shown = null; if (s && s.opts && s.opts.back) s.opts.back(); });
-
-  // ---------------------------------------------------------------- a manual price on one line
-  function openPrice(j, line) {
-    if (!line) return; var back = shown ? shown.opts : {}; pricing = { job: j, line: line, opts: back, saved: null, requestId: UI.uuid() };
-    Modal.closeThen('jo-modal', function () {
-      var manual = line.PriceSource === 'override';
-      UI.el('jo-price-title').textContent = 'Manual price · ' + line.Description; UI.el('jo-price-form').reset(); UI.el('jo-price-error').hidden = true;
-      UI.el('jo-price-hint').textContent = 'For job order ' + j.OrderNo + ' only, until the shop has received it. ' + qtyText(line) + ' counted.';
-      UI.el('jo-price-value').value = manual ? num(line.UnitPrice) : ''; UI.el('jo-price-standard').textContent = manual ? (num(line.ListPrice) > 0 ? F.peso(line.ListPrice) : 'none') : F.peso(line.UnitPrice);
-      UI.el('jo-price-reason').value = ''; UI.el('jo-price-remove').hidden = !manual;
-      Modal.open('jo-price-modal');
-    });
-  }
-  function savePrice(remove) {
-    var m = pricing; if (!m) return; var box = UI.el('jo-price-error'), value = UI.el('jo-price-value'), reason = UI.el('jo-price-reason'); box.hidden = true;
-    var say = function (msg, el) { box.textContent = msg; box.hidden = false; if (el) el.focus(); };
-    if (!remove && (value.value === '' || num(value.value) < 0)) return say('Enter the price for this job order (0 for free of charge).', value);
-    if (reason.value.trim().length < 3) return say(remove ? 'Say why the manual price is taken away.' : 'Say who agreed the price and why.', reason);
-    Api.call('jobOrders.overridePrice', { orderId: m.job.OrderId, lineId: m.line.Id, price: remove ? '' : num(value.value), reason: reason.value.trim(), requestId: m.requestId }, { busy: true }).then(function (r) {
-      Toast.success(remove ? 'Manual price taken away' : 'Manual price set'); m.saved = r; if (m.opts && m.opts.onChange) m.opts.onChange(r); Modal.close('jo-price-modal');
-    }).catch(function (e) { say(UI.error(e)); });
-  }
-  UI.el('jo-price-form').onsubmit = function (ev) { ev.preventDefault(); savePrice(false); };
-  UI.el('jo-price-remove').onclick = function () { savePrice(true); };
-  UI.el('jo-price-modal').addEventListener('hidden.bs.modal', function () { var m = pricing; pricing = null; if (m) show(m.saved || m.job, m.opts); });  // saved or cancelled: back to the job order
-
-  // ---------------------------------------------------------------- the Job Order document
-  var DOC_CSS = '.jo-doc{page-break-after:always}.jo-doc:last-child{page-break-after:auto}.jo-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.jo-top .doc-head{flex:1;margin-bottom:6px}' +
-    '.jo-copy{border:2px solid #111;padding:4px 10px;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}.jo-reprint{border:1px solid #111;padding:2px 8px;font-weight:700;font-size:10.5px;letter-spacing:.1em;margin-top:4px;text-align:center}' +
-    '.jo-no{display:flex;justify-content:space-between;gap:12px;font-size:13px;margin:6px 0}.jo-no b{font-size:15px}.jo-doc .blk{margin:6px 0 8px}.jo-doc th.r,.jo-doc td.r{text-align:right}' +
-    '.jo-sum{display:flex;justify-content:space-between;gap:12px;margin:6px 0;font-size:12.5px}.jo-est{font-weight:800;font-size:14px}.jo-doc .ack{margin:10px 0 6px}' +
-    '.jo-signs{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:8px;font-size:11.5px;page-break-inside:avoid}.jo-sign-box{text-align:center}.jo-sign-space{height:58px;display:flex;align-items:flex-end;justify-content:center}.jo-sign-space img{max-height:56px;max-width:100%}' +
-    '.jo-sign-line{border-top:1px solid #333;padding-top:3px;font-weight:700;letter-spacing:.04em}.jo-sign-box .small{color:#444}.jo-notice{font-size:10.5px;color:#444;margin-top:10px;text-align:center}' +
-    '.jo-half{page-break-inside:avoid;break-inside:avoid}.jo-half.first{border-bottom:1px dashed #555;margin-bottom:4mm;padding-bottom:4mm}.jo-compact{font-size:10px;line-height:1.25}.jo-compact table{margin:2px 0}.jo-compact th,.jo-compact td{padding:1px 5px;font-size:9.5px;line-height:1.2}.jo-compact p{margin:2px 0}.jo-compact .doc-head{padding-bottom:3px;margin-bottom:3px}.jo-compact .doc-logo{max-height:24px;margin-bottom:2px}.jo-compact .doc-biz{font-size:13px}.jo-compact .doc-biz-sub{font-size:9.5px}.jo-compact .doc-title{font-size:11px;margin-top:1px}.jo-compact .jo-copy{font-size:10.5px;padding:3px 8px}' +
-    '.jo-compact .blk{font-size:10px;gap:0 18px;margin:2px 0 3px}.jo-compact .jo-no{font-size:10.5px;margin:2px 0}.jo-compact .jo-no b{font-size:12px}.jo-compact .ack{font-size:9px;margin:3px 0 0}.jo-compact .jo-sign-space{height:26px}.jo-compact .jo-sign-space img{max-height:25px}.jo-compact .jo-signs{font-size:9px;margin-top:0}.jo-compact .jo-sign-box .small{font-size:8.5px}.jo-compact .jo-notice{font-size:8.5px;margin-top:2px}.jo-compact .doc-foot{margin-top:3px;padding-top:2px;font-size:8.5px}.jo-compact .jo-sum{font-size:10px;margin:2px 0}.jo-compact .jo-est{font-size:11.5px}' +
-    '.jo-roll .jo-copy{display:block;text-align:center;margin:4px 0}.jo-roll .jo-sign-space{height:52px}.jo-roll .jo-sign-line{margin-top:2px}.jo-roll .cut{border-top:1px dashed #555;margin:10px 0}';
-  var ACK = 'I acknowledge that the laundry items listed above were surrendered to the authorized personnel of {biz} for laundry service, subject to receiving verification at the shop.';
-  var NOTICE = 'This is an operational document, not an official receipt or sales invoice.';
-  function copyLabel(copy) { return copy === 'CLIENT' ? 'Client copy' : 'Laundry shop copy'; }
-  function signBoxes(d) {
-    var esc = UI.esc, client;
-    if (d.SignedOn === 'PHONE') client = '<div class="jo-sign-space">' + (d.Signature ? '<img src="' + esc(d.Signature) + '" alt="Signature">' : '') + '</div><div class="jo-sign-line">' + esc(d.ClientSignerName || '') + '</div><div class="small">' + (d.ClientSignerPosition ? esc(d.ClientSignerPosition) + ' · ' : '') + 'Client representative</div><div class="small">Signed electronically on ' + esc(F.datetime(d.SignedAt || d.PickupAt)) + (d.Signature ? '' : ' (image no longer kept)') + '</div>';
-    else client = '<div class="jo-sign-space"></div><div class="jo-sign-line">' + esc(d.ClientSignerName || '') + '</div><div class="small">' + (d.ClientSignerPosition ? esc(d.ClientSignerPosition) + ' · ' : '') + 'Client representative</div><div class="small">Signature over printed name · date and time</div>';
-    return '<div class="jo-signs"><div class="jo-sign-box">' + client + '</div><div class="jo-sign-box"><div class="jo-sign-space"></div><div class="jo-sign-line">' + esc(d.PickupBy || '') + '</div><div class="small">Pickup personnel</div><div class="small">' + esc(F.datetime(d.PickupAt)) + '</div></div></div>';
-  }
-  function conditions(d) { return d.Lines.map(function (l, i) { return l.ConditionAtPickup ? 'line ' + (i + 1) + ': ' + l.ConditionAtPickup : ''; }).filter(Boolean).join('; '); }
-  /** One copy on a full page (or half a page, compact): the same job order, only the copy label differs. */
-  function pageCopy(d, copy, compact) {
-    var esc = UI.esc, c = d.Client || {}, biz = d.Business || {};
-    var rows = d.Lines.map(function (l, i) { return '<tr><td class="r">' + (i + 1) + '</td><td>' + esc(l.Description) + '</td><td>' + esc(l.ByWeight ? 'By weight' : (l.Category || '')) + '</td><td class="r num">' + (l.ByWeight ? num(l.PickupWeightKg) : num(l.PickupQty)) + '</td><td>' + esc(l.ByWeight ? 'kg' : (l.Unit || 'pc')) + '</td><td class="r num">' + esc(F.peso(l.UnitPrice)) + '</td><td class="r num">' + esc(F.peso(l.Amount)) + '</td><td>' + esc(l.ConditionAtPickup || '') + '</td></tr>'; }).join('');
-    var cond = conditions(d), blk = function (k, v) { return v ? '<div><b>' + k + '</b>' + esc(v) + '</div>' : ''; };
-    return '<div class="jo-top">' + M.Print.header({ title: 'Commercial laundry pickup job order', business: biz }) + '<div><div class="jo-copy">' + copyLabel(copy) + '</div>' + (d.Reprint ? '<div class="jo-reprint">REPRINT</div>' : '') + '</div></div>' +
-      '<div class="jo-no"><span>Job Order No. <b>' + esc(d.OrderNo) + '</b></span><span>Pickup ' + esc(F.datetime(d.PickupAt)) + '</span></div>' +
-      '<div class="blk">' + blk('Client', c.Company) + blk('Establishment', c.EstablishmentType) + blk('Property', c.PropertyName) + blk('Department', c.Department) + blk('Address', c.Address) + blk('Contract ref.', c.ContractRef) + blk('Representative', c.Representative) + blk('Contact', c.Phone) + '</div>' +
-      '<table><thead><tr><th class="r">No.</th><th>Linen</th><th>Category</th><th class="r">Qty</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount</th><th>Remarks</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-      '<div class="jo-sum"><span>' + esc(piecesText(num(d.PiecesPickup), num(d.WeightPickupKg), d.BagsAtPickup)) + (d.IsExpress ? ' · EXPRESS' : '') + '</span><span>Estimated charges <span class="jo-est">' + esc(F.peso(d.OrderTotal)) + '</span> <span class="small">(final after receiving verification)</span></span></div>' +
-      (d.SpecialInstructions ? '<p><b>Special instructions:</b> ' + esc(d.SpecialInstructions) + '</p>' : '') + (cond ? '<p><b>Stains or damage noted at pickup:</b> ' + esc(cond) + '</p>' : '') +
-      '<p class="ack">' + esc(ACK.replace('{biz}', biz.name || 'the laundry shop')) + '</p>' + signBoxes(d) +
-      '<div class="jo-notice">' + NOTICE + (d.SignedOn === 'PAPER' && d.PaperFormNo ? ' Paper form ' + esc(d.PaperFormNo) + '.' : '') + '</div>' + M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: (d.Reprint ? 'REPRINT · ' : '') + 'print ' + num(d.PrintCount) + ' · ' + d.OrderNo });
-  }
-  /** One copy on an 80 mm roll (a portable printer): the same facts, one linen a row. */
-  function rollCopy(d, copy) {
-    var esc = UI.esc, c = d.Client || {}, biz = d.Business || {}, row = function (a, b, cls) { return '<div class="row' + (cls ? ' ' + cls : '') + '"><span>' + a + '</span><span>' + b + '</span></div>'; };
-    var logo = M.Brand && M.Brand.pictures ? M.Brand.pictures().logo : '', cond = conditions(d);
-    return '<div class="receipt-paper jo-roll">' + (logo ? '<div class="c logo"><img src="' + logo + '" alt=""></div>' : '') + '<div class="c strong">' + esc(biz.name || '') + '</div>' + [biz.branch, biz.address, biz.phone].filter(Boolean).map(function (t) { return '<div class="c muted">' + esc(t) + '</div>'; }).join('') +
-      '<hr><div class="c strong">COMMERCIAL LAUNDRY PICKUP JOB ORDER</div><div class="jo-copy">' + copyLabel(copy) + (d.Reprint ? ' · REPRINT' : '') + '</div>' +
-      row('Job Order No.', '<span class="strong">' + esc(d.OrderNo) + '</span>') + row('Pickup', esc(F.datetime(d.PickupAt))) + '<hr>' +
-      '<div class="strong">' + esc(c.Company || '') + '</div>' + [c.EstablishmentType, c.PropertyName, c.Department, c.Address, c.ContractRef ? 'Contract ' + c.ContractRef : '', c.Representative ? 'Rep. ' + c.Representative : '', c.Phone].filter(Boolean).map(function (t) { return '<div>' + esc(t) + '</div>'; }).join('') + '<hr>' +
-      d.Lines.map(function (l, i) { return '<div>' + (i + 1) + '. ' + esc(l.Description) + '</div>' + row(esc(qtyText(l)) + ' × ' + esc(F.peso(l.UnitPrice)), esc(F.peso(l.Amount))) + (l.ConditionAtPickup ? '<div class="muted">' + esc(l.ConditionAtPickup) + '</div>' : ''); }).join('') + '<hr>' +
-      '<div>' + esc(piecesText(num(d.PiecesPickup), num(d.WeightPickupKg), d.BagsAtPickup)) + (d.IsExpress ? ' · EXPRESS' : '') + '</div>' + row('Estimated charges', esc(F.peso(d.OrderTotal)), 'big') + '<div class="muted">Final after receiving verification.</div>' +
-      (d.SpecialInstructions ? '<div>Instructions: ' + esc(d.SpecialInstructions) + '</div>' : '') + (cond ? '<div>Noted at pickup: ' + esc(cond) + '</div>' : '') + '<hr><div>' + esc(ACK.replace('{biz}', biz.name || 'the laundry shop')) + '</div>' +
-      signBoxes(d).replace('jo-signs', 'jo-signs one') + '<div class="foot c">' + NOTICE + '</div><div class="foot c">Printed ' + esc(F.datetime(d.PrintedAt)) + (d.PrintedBy ? ' by ' + esc(d.PrintedBy) : '') + ' · print ' + num(d.PrintCount) + '</div></div>';
-  }
-  /** The document's HTML. copy: CLIENT | SHOP | BOTH; paper: A4 | 80mm. Both copies of a short count (COMPACT_MAX lines or fewer) share one A4 sheet, two halves with a cut line. */
-  function documentHtml(d, copy, paperSize) {
-    var copies = copy === 'BOTH' ? ['CLIENT', 'SHOP'] : [copy], css = '<style>' + DOC_CSS + (paperSize === '80mm' ? '.jo-signs.one{grid-template-columns:1fr;gap:6px}' : '') + '</style>';
-    if (paperSize === '80mm') return css + copies.map(function (c, i) { return (i ? '<div class="jo-roll"><div class="cut"></div></div>' : '') + rollCopy(d, c); }).join('');
-    if (copies.length === 2 && d.Lines.length <= COMPACT_MAX) return css + '<div class="jo-doc jo-compact"><div class="jo-half first">' + pageCopy(d, 'CLIENT', true) + '</div><div class="jo-half">' + pageCopy(d, 'SHOP', true) + '</div></div>';
-    return css + copies.map(function (c) { return '<div class="jo-doc">' + pageCopy(d, c, false) + '</div>'; }).join('');
-  }
-  /** Prints the Job Order (JOB_ORDER_VIEW). The server counts the print and says whether it is a reprint; the page only lays it out. */
-  function print(orderId, copy, paperSize) {
-    paperSize = paperSize === '80mm' ? '80mm' : 'A4';
-    return Api.call('jobOrders.document', { orderId: orderId, copy: copy || 'BOTH', paper: paperSize }, { busy: true, timeoutMs: 60000 }).then(function (d) {
-      M.Print.open(documentHtml(d, d.Copy, paperSize), { title: 'Job Order ' + d.OrderNo, size: paperSize, margin: paperSize === 'A4' && d.Copy === 'BOTH' && d.Lines.length <= COMPACT_MAX ? '8mm' : undefined });
-      if (shown && shown.job && shown.job.OrderId === orderId) { shown.job.PrintCount = d.PrintCount; shown.job.LastPrintedAt = d.PrintedAt; }
-      return d;
-    }).catch(function (e) { Toast.danger(UI.error(e)); return null; });
-  }
-
-  M.JobOrders = { count: openCount, open: open, show: show, print: print, documentHtml: documentHtml, canCount: function () { return can('JOB_ORDER_PICKUP'); }, canView: function () { return can('JOB_ORDER_VIEW'); }, COMPACT_MAX: COMPACT_MAX };
 })();
 </script>
 
