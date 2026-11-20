@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'bb476295dd', version: '1.41.0' };</script>
+  <script>window.MLS_PWA = { build: 'ce039f6035', version: '1.42.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -299,9 +299,9 @@
      done (completed, released, closed) on the soft burgundy; history (inactive, void, archived, retired) as an outlined pill */
   .status-badge.s-new, .status-badge.s-received, .status-badge.s-leave, .status-badge.s-holiday, .status-badge.s-unassigned, .status-badge.s-draft, .status-badge.s-not_started, .status-badge.s-scheduled, .status-badge.s-prepared, .status-badge.s-unknown, .status-badge.s-sample, .status-badge.s-planned, .status-badge.s-backed_up { background: var(--mls-well); color: var(--mls-ink); }
   .status-badge.s-processing, .status-badge.s-washing, .status-badge.s-drying, .status-badge.s-folding, .status-badge.s-qc, .status-badge.s-packed, .status-badge.s-assigned, .status-badge.s-accepted, .status-badge.s-open, .status-badge.s-in_progress, .status-badge.s-out_for_delivery, .status-badge.s-for_pickup, .status-badge.s-computed, .status-badge.s-gateway_queued, .status-badge.s-running { background: var(--mls-info-soft); color: var(--mls-info); }
-  .status-badge.s-ready, .status-badge.s-applied, .status-badge.s-active, .status-badge.s-paid, .status-badge.s-present, .status-badge.s-approved, .status-badge.s-finalized, .status-badge.s-delivered, .status-badge.s-picked_up, .status-badge.s-in, .status-badge.s-pass, .status-badge.s-ok, .status-badge.s-on_time, .status-badge.s-user_confirmed_sent, .status-badge.s-resolved, .status-badge.s-gateway_delivered, .status-badge.s-attached, .status-badge.s-production { background: var(--mls-success-soft); color: var(--mls-success); }
-  .status-badge.s-partial, .status-badge.s-late, .status-badge.s-undertime, .status-badge.s-pending, .status-badge.s-reopened, .status-badge.s-submitted, .status-badge.s-stale, .status-badge.s-unpaid, .status-badge.s-warning, .status-badge.s-composer_open_requested, .status-badge.s-in_review, .status-badge.s-gateway_sent, .status-badge.s-soon, .status-badge.s-stopped, .status-badge.s-skipped { background: var(--mls-warning-soft); color: var(--mls-warning); }
-  .status-badge.s-cancelled, .status-badge.s-refunded, .status-badge.s-absent, .status-badge.s-review, .status-badge.s-rejected, .status-badge.s-failed, .status-badge.s-fail, .status-badge.s-locked, .status-badge.s-disabled, .status-badge.s-error, .status-badge.s-overdue, .status-badge.s-not_sent, .status-badge.s-failed_to_open, .status-badge.s-gateway_failed, .status-badge.s-down, .status-badge.s-due, .status-badge.s-missing, .status-badge.s-test, .status-badge.s-demo, .status-badge.s-deleted { background: var(--mls-danger-soft); color: var(--mls-danger); }
+  .status-badge.s-ready, .status-badge.s-verified, .status-badge.s-applied, .status-badge.s-active, .status-badge.s-paid, .status-badge.s-present, .status-badge.s-approved, .status-badge.s-finalized, .status-badge.s-delivered, .status-badge.s-picked_up, .status-badge.s-in, .status-badge.s-pass, .status-badge.s-ok, .status-badge.s-on_time, .status-badge.s-user_confirmed_sent, .status-badge.s-resolved, .status-badge.s-gateway_delivered, .status-badge.s-attached, .status-badge.s-production { background: var(--mls-success-soft); color: var(--mls-success); }
+  .status-badge.s-partial, .status-badge.s-reviewed, .status-badge.s-late, .status-badge.s-undertime, .status-badge.s-pending, .status-badge.s-reopened, .status-badge.s-submitted, .status-badge.s-stale, .status-badge.s-unpaid, .status-badge.s-warning, .status-badge.s-composer_open_requested, .status-badge.s-in_review, .status-badge.s-gateway_sent, .status-badge.s-soon, .status-badge.s-stopped, .status-badge.s-skipped { background: var(--mls-warning-soft); color: var(--mls-warning); }
+  .status-badge.s-cancelled, .status-badge.s-discrepancy, .status-badge.s-refunded, .status-badge.s-absent, .status-badge.s-review, .status-badge.s-rejected, .status-badge.s-failed, .status-badge.s-fail, .status-badge.s-locked, .status-badge.s-disabled, .status-badge.s-error, .status-badge.s-overdue, .status-badge.s-not_sent, .status-badge.s-failed_to_open, .status-badge.s-gateway_failed, .status-badge.s-down, .status-badge.s-due, .status-badge.s-missing, .status-badge.s-test, .status-badge.s-demo, .status-badge.s-deleted { background: var(--mls-danger-soft); color: var(--mls-danger); }
   .status-badge.s-completed, .status-badge.s-released, .status-badge.s-closed { background: var(--mls-primary-soft); color: var(--mls-primary); }
   .status-badge.s-inactive, .status-badge.s-void, .status-badge.s-rest_day, .status-badge.s-unscheduled, .status-badge.s-upcoming, .status-badge.s-out, .status-badge.s-archived, .status-badge.s-retired, .status-badge.s-removed { background: transparent; color: var(--mls-ink); border-color: var(--mls-line); }
   .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 12px; }
@@ -463,6 +463,20 @@
   .job-card .acts > .dropdown > .btn { width: 100%; }
   .section-title .count { margin-left: 6px; background: var(--mls-well); border: 1px solid var(--mls-line); border-radius: 999px; padding: .05em .55em; font-size: var(--fs-xs); font-weight: 600; color: var(--mls-ink); vertical-align: middle; }
   .dlv-done { margin: 22px 0 10px; }
+  /* release 1.42.0: the linen count and the job order (JobOrdersPage.html) */
+  .jo-client { border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 10px 12px; background: var(--mls-card); }
+  .jo-line { border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 10px 12px; margin-bottom: 10px; }
+  .jo-line-main { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem auto; gap: 10px; align-items: end; }
+  .jo-line-more { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 8px; }
+  .jo-line-more:has(.jo-line-price) { grid-template-columns: minmax(0, 1fr) 8rem; } .jo-line-reason { grid-column: 1 / -1; }
+  .jo-line-x { height: calc(1.5em + .75rem + 2px); min-width: 2.75rem; } .jo-line-sum:empty { display: none; } .jo-line-sum { margin-top: 6px; }
+  .jo-totals { display: flex; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; align-items: baseline; }
+  .jo-sign { border: 0; padding: 0; margin: 0; } .jo-sign legend { float: none; width: auto; font-size: inherit; margin-bottom: 4px; }
+  .jo-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 20px; }
+  .jo-fact { display: flex; gap: 8px; min-width: 0; } .jo-fact .k { flex: 0 0 7.5rem; color: var(--mls-ink-soft); font-size: var(--fs-sm); } .jo-fact .v { min-width: 0; overflow-wrap: anywhere; }
+  .jo-price-tag { display: inline-block; font-size: var(--fs-xs); font-weight: 700; border: 1px solid var(--mls-line); border-radius: 999px; padding: 0 .5rem; white-space: nowrap; } .jo-price-tag.manual { border-color: var(--mls-ink-soft); }
+  .jo-paper { width: auto; } .jo-narrow { display: none; } .jo-lines td.num, .jo-lines th.num { text-align: right; white-space: nowrap; }
+  @media (max-width: 575.98px) { .jo-wide { display: none !important; } .jo-narrow { display: block; } .jo-facts { grid-template-columns: minmax(0, 1fr); } .jo-line-main { grid-template-columns: minmax(0, 1fr) 6rem auto; } .jo-line-more:has(.jo-line-price) { grid-template-columns: minmax(0, 1fr); } }
   .collect-row { border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 10px 12px; margin-bottom: 10px; }
   /* ---- Equipment, delivery windows and proof of delivery (release 1.15.0) ---- */
   .machine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
@@ -941,8 +955,11 @@
     if (!service || service.Status !== 'ACTIVE') fail('A service in the cart is no longer available', { lines: 'service' });
     var listRow = resolvePrice(service.Id, env.branchId, env.customerType, env.dateIso, env.prices);
     var own = resolveClientPrice(service.Id, env.dateIso, env.clientPrices), row = own || listRow;  // 1.41.0: the client's own price first; a service the price list does not price can still be sold to a client who has a price for it
-    if (!row) fail(service.Name + ' has no price yet; set one under Services', { lines: 'price' });
-    var unit = Money.cents(row.Price), type = service.PricingType, minQty = Number(service.MinimumQty) || 0;
+    // 1.42.0: a manual price on one line of a job order (env.overrides, a map by service id). Only the server fills it, from a user who holds PRICE_OVERRIDE; the price it replaces is kept beside it.
+    var over = env.overrides && Object.prototype.hasOwnProperty.call(env.overrides, service.Id) ? env.overrides[service.Id] : null;
+    if (!row && over === null) fail(service.Name + ' has no price yet; set one under Services', { lines: 'price' });
+    var standard = row ? Money.cents(row.Price) : null;
+    var unit = over !== null ? Money.cents(over) : standard, type = service.PricingType, minQty = Number(service.MinimumQty) || 0;
     var qty, weight = '', billable;
     if (type === 'PER_KILO') {
       var actual = num(line.weightKg !== undefined && line.weightKg !== '' ? line.weightKg : line.qty, service.Name + ' weight', { min: 0 });
@@ -959,7 +976,7 @@
     var surcharge = 0;
     if (env.express) { var pct = Number(service.ExpressSurchargePct); if (!(pct > 0)) pct = Number((env.settings || {}).ExpressSurchargePct) || 0; if (pct > 0) surcharge = Money.pct(total, pct); }
     return { LineType: 'SERVICE', ServiceId: service.Id, ItemId: '', Description: service.Name, Qty: qty, WeightKg: weight, Unit: service.Unit || unitLabel(type), UnitPrice: Money.pesos(unit), LineTotal: Money.pesos(Money.add(total, surcharge)),
-      surcharge: Money.pesos(surcharge), minimumApplied: minimumApplied, listPrice: own ? (listRow ? Money.pesos(Money.cents(listRow.Price)) : null) : undefined, priceSource: own ? 'client' : (isBlank(row.BranchId) && isBlank(row.CustomerType)) ? 'base' : ('list' + (row.CustomerType ? ' · ' + row.CustomerType : '') + (row.BranchId ? ' · branch' : '')), pricingType: type };
+      surcharge: Money.pesos(surcharge), minimumApplied: minimumApplied, listPrice: over !== null ? (standard === null ? null : Money.pesos(standard)) : own ? (listRow ? Money.pesos(Money.cents(listRow.Price)) : null) : undefined, priceSource: over !== null ? 'override' : own ? 'client' : (isBlank(row.BranchId) && isBlank(row.CustomerType)) ? 'base' : ('list' + (row.CustomerType ? ' · ' + row.CustomerType : '') + (row.BranchId ? ' · branch' : '')), pricingType: type };
   }
   /** Prices one product line from the item's selling price. line: { itemId, qty }; env.items is a map by id. */
   function priceProduct(line, env) {
@@ -1000,7 +1017,7 @@
     var lines = Array.isArray(input.lines) ? input.lines : [];
     if (!lines.length) fail('Add at least one service or product', { lines: 'required' });
     var settings = env.settings || {};
-    var e = { branchId: env.branchId, customerType: env.customerType || 'REGULAR', dateIso: env.dateIso, express: !!input.isExpress, prices: env.prices || [], clientPrices: env.clientPrices || [], services: env.services || {}, items: env.items || {}, settings: settings };
+    var e = { branchId: env.branchId, customerType: env.customerType || 'REGULAR', dateIso: env.dateIso, express: !!input.isExpress, prices: env.prices || [], clientPrices: env.clientPrices || [], overrides: env.overrides || null, services: env.services || {}, items: env.items || {}, settings: settings };
     var priced = lines.map(function (l) {
       l = l || {}; var type = String(l.lineType || (l.itemId ? 'PRODUCT' : 'SERVICE')).toUpperCase();
       if (type === 'PRODUCT') return priceProduct(l, e);
@@ -1037,7 +1054,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.41.0';
+  var VERSION = '1.42.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -3975,7 +3992,7 @@ window.MLS = (function () {
   function lineQty(i) { return i.LineType === 'SERVICE' && i.WeightKg ? F.qty(i.WeightKg, 'kg') + (Number(i.Qty) !== Number(i.WeightKg) ? ' <span class="text-soft">(billed ' + F.qty(i.Qty, i.Unit) + ')</span>' : '') : F.qty(i.Qty, i.Unit); }
   function renderOrder(o) {
     current = o;
-    UI.el('order-modal-title').innerHTML = UI.esc(o.OrderNo) + ' ' + UI.badge(o.Status, o.StatusLabel) + (o.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + (o.ReceiptConfirmedAt ? ' <span class="badge text-bg-success" title="Confirmed on the tracking link ' + UI.esc(F.datetime(o.ReceiptConfirmedAt)) + '">customer confirmed receipt</span>' : '') + (o.ProblemReportedAt ? ' <span class="badge text-bg-danger" title="Reported on the tracking link ' + UI.esc(F.datetime(o.ProblemReportedAt)) + '; see Incidents">problem reported</span>' : '') + (o._pending ? ' <span class="pending-tag" title="Taken offline on this device; the server has not received it yet">not synced</span>' : (o.ProvisionalRef ? ' <span class="small text-soft">offline ref ' + UI.esc(o.ProvisionalRef) + '</span>' : ''));
+    UI.el('order-modal-title').innerHTML = UI.esc(o.OrderNo) + ' ' + UI.badge(o.Status, o.StatusLabel) + (o.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + (o.IsCommercial ? ' <span class="badge text-bg-info">Job order</span>' : '') + (o.ReceiptConfirmedAt ? ' <span class="badge text-bg-success" title="Confirmed on the tracking link ' + UI.esc(F.datetime(o.ReceiptConfirmedAt)) + '">customer confirmed receipt</span>' : '') + (o.ProblemReportedAt ? ' <span class="badge text-bg-danger" title="Reported on the tracking link ' + UI.esc(F.datetime(o.ProblemReportedAt)) + '; see Incidents">problem reported</span>' : '') + (o._pending ? ' <span class="pending-tag" title="Taken offline on this device; the server has not received it yet">not synced</span>' : (o.ProvisionalRef ? ' <span class="small text-soft">offline ref ' + UI.esc(o.ProvisionalRef) + '</span>' : ''));
     var head = [['Customer', UI.esc(o.CustomerName) + (o.CustomerPhone ? '<div class="small text-soft">' + UI.esc(o.CustomerPhone) + (o.Mobile ? '' : ' <span class="badge text-bg-light border" title="Not a mobile number: no SMS">no SMS</span>') + (o.Customer && o.Customer.SmsOptOut ? ' <span class="badge text-bg-secondary" title="Opted out of promotional messages">no promos</span>' : '') + '</div>' : '')], ['Received', F.datetime(o.CreatedAt)], ['Due', o.DueAt ? F.datetime(o.DueAt) : '—'], ['Branch', UI.esc(o.Branch)], ['Cashier', UI.esc(o.Cashier)], ['Type', F.status(o.ServiceType)], ['Bags · weight', (o.BagCount || 0) + ' · ' + F.qty(o.TotalWeightKg, 'kg')], ['Released', o.ReleasedAt ? F.datetime(o.ReleasedAt) + (o.ReleasedByName ? ' by ' + UI.esc(o.ReleasedByName) : '') : '—']];
     // 1.26.0 (Stage 5): the facts, then three sections with their titles — the items with the totals, the payments, the timeline. Every
     // amount right-aligned in tabular figures. On a phone each item and each payment is one row (what it is, its detail under it, the
@@ -4009,7 +4026,9 @@ window.MLS = (function () {
     if (can('ORDER_STATUS') && t.indexOf('READY') >= 0) main.push(['status', 'READY', 'btn-outline-primary', 'fa-bag-shopping', 'Mark ready']);
     if (canRelease) main.push(['release', '', canPay ? 'btn-outline-primary' : 'btn-primary', 'fa-circle-check', 'Release to customer']);
     if (canPay) main.push(['pay', '', 'btn-primary', 'fa-hand-holding-dollar', 'Add payment']);
-    if (can('POS_EDIT') && o.Correctable && !o._pending && M.Router.allowed('pos')) more.push(['correct', '', '', 'fa-pen-to-square', 'Correct order']);  // 1.12.0: lines, weights, express, fees, discount — before production
+    // 1.42.0: a commercial job order opens its Job Order (the counts, the documents, a manual price); its lines follow its counts, so it is not corrected at the POS
+    if (o.IsCommercial && !o._pending && M.JobOrders && M.JobOrders.canView()) main.push(['joborder', '', 'btn-outline-primary', 'fa-clipboard-list', 'Job Order']);
+    if (can('POS_EDIT') && o.Correctable && !o.IsCommercial && !o._pending && M.Router.allowed('pos')) more.push(['correct', '', '', 'fa-pen-to-square', 'Correct order']);  // 1.12.0: lines, weights, express, fees, discount — before production
     more.push(['labels', '', '', 'fa-tags', 'Labels']);
     if (can('INCIDENT_CREATE')) more.push(['incident', '', '', 'fa-triangle-exclamation', 'Report incident']);
     var danger = [];
@@ -4042,6 +4061,7 @@ window.MLS = (function () {
     if (action === 'cancel') return openReason({ title: 'Cancel ' + o.OrderNo, hint: 'Products go back to stock. ' + (Number(o.PaidAmount) > 0 ? F.peso(o.PaidAmount) + ' has been paid and will need a refund.' : ''), confirmText: 'Cancel order', danger: true, onSubmit: function (d) { return Api.call('orders.cancel', { id: o.Id, reason: d.reason }).then(function (r) { Toast.warning(o.OrderNo + ' cancelled'); changed(r); return r; }); } });
     if (action === 'note') return openReason({ title: 'Note on ' + o.OrderNo, label: 'Note', confirmText: 'Add note', onSubmit: function (d) { return Api.call('orders.addNote', { id: o.Id, note: d.reason }).then(function (r) { changed(r); return r; }); } });
     if (action === 'correct') { Modal.get('order-modal').hide(); M.Router.go('pos', { edit: o.Id }); return; }
+    if (action === 'joborder') { var reopen = function () { openOrder(o.Id); }; return Modal.closeThen('order-modal', function () { M.JobOrders.open(o.Id, { back: reopen }); }); }
     if (action === 'print') return printReceipt(o.Id);
     if (action === 'labels') return printLabels(o.Id).then(function (d) { if (d && d.bags && d.bags.length && !o.Bags) Api.call('orders.get', { id: o.Id }).then(changed).catch(function () { /* keep the view */ }); });  // labels printed for an order taken before tracking: its bags now exist
     if (action === 'incident') return M.Incidents.report({ orderId: o.Id, orderNo: o.OrderNo }, function () { Api.call('orders.get', { id: o.Id }).then(changed).catch(fail); });
@@ -4104,7 +4124,7 @@ window.MLS = (function () {
       ['OPEN', 'READY'].forEach(function (k) { var el = document.querySelector('#orders-tabs [data-count="' + k + '"]'); if (el) { var n = k === 'OPEN' ? Object.keys(r.counts).reduce(function (t, s) { return t + (['NEW', 'RECEIVED', 'PROCESSING', 'WASHING', 'DRYING', 'FOLDING', 'QC', 'READY', 'OUT_FOR_DELIVERY'].indexOf(s) >= 0 ? r.counts[s] : 0); }, 0) : (r.counts.READY || 0); el.textContent = n || ''; } });
       M.Table.render(box, {
         columns: [
-          { key: 'OrderNo', label: 'Order', cls: 'lead-cell', format: function (v, row) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (row.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + (row._pending ? ' <span class="pending-tag" title="Taken offline on this device; the server has not received it yet">not synced</span>' : '') + '<span class="ph-only lead-status">' + UI.badge(row.Status, row.StatusLabel) + '</span>'; } },
+          { key: 'OrderNo', label: 'Order', cls: 'lead-cell', format: function (v, row) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (row.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + (row.IsCommercial ? ' <span class="badge text-bg-info">Job order</span>' : '') + (row._pending ? ' <span class="pending-tag" title="Taken offline on this device; the server has not received it yet">not synced</span>' : '') + '<span class="ph-only lead-status">' + UI.badge(row.Status, row.StatusLabel) + '</span>'; } },
           { key: 'OrderDate', label: 'Date', format: function (v, row) { return F.date(v) + (row.DueAt ? '<div class="small text-soft">due ' + F.datetime(row.DueAt) + '</div>' : ''); } },
           { key: 'CustomerName', label: 'Customer', format: function (v, row) { return UI.esc(v) + (row.CustomerPhone ? '<div class="small text-soft">' + UI.esc(row.CustomerPhone) + '</div>' : ''); } },
           { key: 'OrderTotal', label: 'Total', num: true, format: function (v) { return '<span class="money">' + F.peso(v) + '</span>'; } },
@@ -5397,7 +5417,7 @@ window.MLS = (function () {
     var now = Date.now(), overdue = c.DueAt ? new Date(c.DueAt).getTime() < now : !!c.Overdue, minutes = c.StageSince ? Math.max(0, Math.round((now - new Date(c.StageSince).getTime()) / 60000)) : c.MinutesInStage;
     // 1.27.0 (Stage 5): the order number always whole (it breaks after a hyphen on a narrow card, never cut to MAIN-20261107-0…); the tags
     // beside it while they fit, on the next line when they do not; the due time said short, on one line (Due tomorrow 7:14 PM)
-    var tags = (c._pending ? (M.Net && M.Net.state && M.Net.state() !== 'online' ? '<span class="pending-tag" title="Kept on this device; sent when the connection returns">not synced</span>' : '<span class="pending-tag sending" title="Sent to the server; the move stands here until the server has applied it"><i class="fa-solid fa-rotate fa-spin me-1" aria-hidden="true"></i>sending</span>') : '') + (c.IsExpress ? '<span class="badge text-bg-warning">Express</span>' : '') + (c.ServiceType === 'DELIVERY' ? '<i class="fa-solid fa-motorcycle text-soft" role="img" aria-label="For delivery" title="For delivery"></i>' : '') + bagChip(c, col);
+    var tags = (c._pending ? (M.Net && M.Net.state && M.Net.state() !== 'online' ? '<span class="pending-tag" title="Kept on this device; sent when the connection returns">not synced</span>' : '<span class="pending-tag sending" title="Sent to the server; the move stands here until the server has applied it"><i class="fa-solid fa-rotate fa-spin me-1" aria-hidden="true"></i>sending</span>') : '') + (c.IsExpress ? '<span class="badge text-bg-warning">Express</span>' : '') + (c.JobOrder ? '<span class="badge text-bg-info">Job order</span>' : '') + (c.ServiceType === 'DELIVERY' ? '<i class="fa-solid fa-motorcycle text-soft" role="img" aria-label="For delivery" title="For delivery"></i>' : '') + bagChip(c, col);
     return '<div class="kcard' + (c.IsExpress ? ' express' : '') + (overdue && col !== 'READY' ? ' overdue' : '') + '" tabindex="0" data-kb="row" data-open="' + UI.esc(c.Id) + '">' +
       '<div class="khead"><span class="no">' + orderNo(c.OrderNo) + '</span>' + tags + '</div>' +
       '<div class="small">' + UI.esc(c.CustomerName) + '</div>' +
@@ -6354,16 +6374,22 @@ window.MLS = (function () {
     var open = !!j.IsOpen;
     var orders = j.Items.length ? '<ul class="orders list-unstyled mb-0 mt-2">' + j.Items.map(function (i) {
       var owed = Number(i.AmountToCollect) > 0, bags = i.Bags && i.Bags.n ? bagsText(i.Bags) : (i.BagCount ? i.BagCount + ' bag' + (i.BagCount === 1 ? '' : 's') : ''), sub = [String(i.CustomerName || '') !== String(j.CustomerName || '') ? UI.esc(i.CustomerName) : '', bags].filter(Boolean).join(' · ');
-      return '<li><span><span class="fw-bold">' + UI.esc(i.OrderNo) + '</span>' + (sub ? ' <span class="small text-soft">' + sub + '</span>' : '') + '</span><span class="amt small' + (owed ? ' fw-bold' + (open ? ' text-danger' : '') : ' text-soft') + '">' + (owed ? 'collect ' + F.peso(i.AmountToCollect) : 'paid') + (Number(i.CollectedAmount) > 0 ? '<span class="got">got ' + F.peso(i.CollectedAmount) + '</span>' : '') + '</span></li>';
+      return '<li><span><span class="fw-bold">' + UI.esc(i.OrderNo) + '</span>' + (sub ? ' <span class="small text-soft">' + sub + '</span>' : '') + '</span><span class="amt small' + (owed ? ' fw-bold' + (open ? ' text-danger' : '') : ' text-soft') + '">' + (owed ? 'collect ' + F.peso(i.AmountToCollect) : (i.JobOrder && j.JobType === 'PICKUP' ? 'job order' : 'paid')) + (Number(i.CollectedAmount) > 0 ? '<span class="got">got ' + F.peso(i.CollectedAmount) + '</span>' : '') + '</span></li>';
     }).join('') + '</ul>' : '';
     var money = Number(j.ToCollect) > 0 ? '<div class="totals job-money"><span>To collect</span><span class="fw-bold' + (open ? ' text-danger' : '') + '">' + F.peso(j.ToCollect) + '</span>' + (Number(j.Collected) > 0 ? '<span>Collected</span><span class="fw-bold text-success">' + F.peso(j.Collected) + '</span>' : '') + '</div>' : '';
     var acts = (j.Actions || []).filter(function (a) { return ['accept', 'start', 'complete', 'fail'].indexOf(a) >= 0; }).map(function (a) {
       var spec = { accept: ['btn-primary', 'fa-hand', 'Accept'], start: ['btn-primary', 'fa-motorcycle', j.JobType === 'PICKUP' ? 'On my way' : 'Start delivery'], complete: ['btn-success', 'fa-check', j.JobType === 'PICKUP' ? 'Picked up' : 'Delivered'], fail: ['btn-outline-danger', 'fa-xmark', 'Could not ' + (j.JobType === 'PICKUP' ? 'pick up' : 'deliver')] }[a];
       return '<button type="button" class="btn ' + spec[0] + '" data-act="' + a + '" data-id="' + UI.esc(j.Id) + '"><i class="fa-solid ' + spec[1] + ' me-1"></i>' + spec[2] + '</button>';
     }).join('');
+    // 1.42.0: a commercial client's pickup offers the linen count, which creates the job order (also once the job was closed with Picked up: a paper form typed in afterwards); a job that carries a job order opens it
+    var canCount = !!(j.Commercial && !j._pending && M.JobOrders && M.JobOrders.canCount() && (j.Status === 'PICKED_UP' || (j.Actions || []).indexOf('start') >= 0 || (j.Actions || []).indexOf('complete') >= 0));
+    if (canCount && j.IsOpen && !opts.readOnly) acts = '<button type="button" class="btn btn-primary" data-count="' + UI.esc(j.Id) + '"><i class="fa-solid fa-clipboard-list me-1"></i>Count linens</button>' + acts;
+    var jobOrders = M.JobOrders && M.JobOrders.canView() ? j.Items.filter(function (i) { return i.JobOrder; }) : [];
     var link = mapLink(j), nav = navLink(j);
     var extra = (M.Sms && M.Sms.can(j.Mobile) ? M.Sms.menuHtml({ id: 'job-sms-' + j.Id, items: smsItems(j), cls: 'btn-outline-primary' }) : '') + (M.Auth.can('INCIDENT_CREATE') ? '<button type="button" class="btn btn-sm btn-outline-warning" data-incident="' + UI.esc(j.Id) + '"><i class="fa-solid fa-triangle-exclamation me-1"></i>Report incident</button>' : '') +
-      (canScanBags(j) && !opts.readOnly ? '<button type="button" class="btn btn-sm btn-outline-primary" data-bagscan="' + UI.esc(j.Id) + '"><i class="fa-solid fa-tags me-1"></i>Scan bags</button>' : '');
+      (canScanBags(j) && !opts.readOnly ? '<button type="button" class="btn btn-sm btn-outline-primary" data-bagscan="' + UI.esc(j.Id) + '"><i class="fa-solid fa-tags me-1"></i>Scan bags</button>' : '') +
+      (canCount && !j.IsOpen ? '<button type="button" class="btn btn-sm btn-primary" data-count="' + UI.esc(j.Id) + '"><i class="fa-solid fa-clipboard-list me-1"></i>Count linens</button>' : '') +
+      jobOrders.map(function (i) { return '<button type="button" class="btn btn-sm btn-outline-primary" data-joborder="' + UI.esc(i.OrderId) + '"><i class="fa-solid fa-clipboard-list me-1"></i>Job Order</button>'; }).join('');
     return '<div class="job-card' + (j.IsOpen ? '' : ' done') + '" data-job="' + UI.esc(j.Id) + '">' +
       '<div class="d-flex align-items-center gap-2 flex-wrap"><span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>' + UI.badge(j.Status, statusLabel(j.Status)) + (j._pending ? '<span class="pending-tag" title="Recorded on this phone; the server has not received it yet">not synced</span>' : '') + windowTag(j) + '<span class="ms-auto small text-soft">' + UI.esc(j.Id) + '</span></div>' +
       '<div class="who mt-1">' + UI.esc(j.CustomerName || 'Customer') + '</div>' +
@@ -6383,6 +6409,8 @@ window.MLS = (function () {
       var inc = card.querySelector('[data-incident]'); if (inc) inc.onclick = function () { M.Incidents.report({ deliveryId: id, customerName: (card.querySelector('.who') || {}).textContent }); };
       var pr = card.querySelector('[data-proof]'); if (pr) pr.onclick = function () { openProof(id); };
       var bs = card.querySelector('[data-bagscan]'); if (bs) bs.onclick = function () { scanBags(id, onChange); };
+      var cn = card.querySelector('[data-count]'); if (cn) cn.onclick = function () { M.JobOrders.count(id, onChange); };
+      card.querySelectorAll('[data-joborder]').forEach(function (b) { b.onclick = function () { M.JobOrders.open(b.getAttribute('data-joborder'), { onChange: onChange }); }; });
     });
   }
   function act(id, action, onChange) {
@@ -6540,7 +6568,7 @@ window.MLS = (function () {
     });
   }
   M.Router.register('deliveries', { title: 'My deliveries', render: function () { UI.el('dlv-refresh').onclick = load; load(); }, refresh: load });
-  M.DeliveriesUI = { jobCard: jobCard, wireCard: wireCard, act: act, openComplete: openComplete, openProof: openProof, windowTag: windowTag, proofLine: proofLine, mapLink: mapLink, navLink: navLink, routeLink: routeLink, locate: locate };
+  M.DeliveriesUI = { signaturePad: signaturePad, jobCard: jobCard, wireCard: wireCard, act: act, openComplete: openComplete, openProof: openProof, windowTag: windowTag, proofLine: proofLine, mapLink: mapLink, navLink: navLink, routeLink: routeLink, locate: locate };
 })();
 </script>
 
@@ -10279,6 +10307,351 @@ window.MLS = (function () {
   function statusBadge(s) { return UI.badge({ GATEWAY_QUEUED: 'PENDING', GATEWAY_SENT: 'ASSIGNED', GATEWAY_DELIVERED: 'COMPLETED', GATEWAY_FAILED: 'REJECTED' }[s] || s, { PREPARED: 'Prepared', COMPOSER_OPEN_REQUESTED: 'Composer opened', USER_CONFIRMED_SENT: 'Confirmed sent', NOT_SENT: 'Not sent', FAILED_TO_OPEN: 'Failed to open', UNKNOWN: 'Unknown', GATEWAY_QUEUED: 'Queued (gateway)', GATEWAY_SENT: 'Accepted by provider', GATEWAY_DELIVERED: 'Delivered (provider report)', GATEWAY_FAILED: 'Failed (gateway)' }[s] || F.status(s)); }
   wire();
   M.Sms = { open: open, link: link, segments: segments, workflowsForOrder: workflowsForOrder, menuHtml: menuHtml, wireMenu: wireMenu, can: can, statusBadge: statusBadge, WORKFLOWS: WORKFLOWS, isIos: isIos };
+})();
+</script>
+
+  <!-- Mrs Laundry Sys — JobOrdersPage.html (release 1.42.0): the commercial job order's shared dialogs and M.JobOrders — the linen count on a pickup job (My Deliveries, Dispatch), the job order itself (opened from the job or from the order), a manual price on a line, and the Job Order document: client copy, laundry shop copy or both, on A4 (both copies on one sheet when the count is short) or on an 80 mm roll for a portable printer. The Job Orders screen comes with receiving in 1.43.0. -->
+<div class="modal fade" id="jo-count-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <form class="modal-content" id="jo-count-form" autocomplete="off" novalidate>
+      <div class="modal-header"><h5 class="modal-title" id="jo-count-title">Count linens</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <div class="jo-client" id="jo-count-client"></div>
+        <h6 class="section-title mt-3">Linens counted</h6>
+        <div id="jo-count-lines"></div>
+        <button type="button" class="btn btn-outline-primary btn-sm mt-1" id="jo-count-add"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Add a linen</button>
+        <div class="jo-totals mt-3" id="jo-count-totals" aria-live="polite"></div>
+        <div class="row g-2 mt-1">
+          <div class="col-4 col-md-3"><label class="form-label" for="jo-count-bags">Bags</label><input class="form-control" id="jo-count-bags" type="number" inputmode="numeric" min="0" step="1" required></div>
+          <div class="col-8 col-md-4"><label class="form-label" for="jo-count-dept">Department <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-count-dept" maxlength="60" placeholder="Housekeeping, Spa…"></div>
+          <div class="col-12 col-md-5"><label class="form-label" for="jo-count-notes">Special instructions <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-count-notes" maxlength="300" placeholder="Fold in threes, separate the spa towels…"></div>
+        </div>
+        <h6 class="section-title mt-3">Surrendered by</h6>
+        <div class="row g-2">
+          <div class="col-12 col-md-6"><label class="form-label" for="jo-count-signer">Name of the client's representative</label><input class="form-control" id="jo-count-signer" maxlength="80" required></div>
+          <div class="col-12 col-md-6"><label class="form-label" for="jo-count-position">Position <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-count-position" maxlength="60"></div>
+        </div>
+        <fieldset class="jo-sign mt-3">
+          <legend class="form-label">How the client signs</legend>
+          <div class="form-check"><input class="form-check-input" type="radio" name="signedOn" id="jo-sign-phone" value="PHONE" checked><label class="form-check-label" for="jo-sign-phone">On this phone <span class="text-soft small">— the copy can be printed now or later</span></label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="signedOn" id="jo-sign-paper" value="PAPER"><label class="form-check-label" for="jo-sign-paper">On the printed copy, or on a paper form <span class="text-soft small">— signed with a pen</span></label></div>
+        </fieldset>
+        <div class="mt-2" id="jo-sign-phone-wrap"><div class="d-flex align-items-center"><span class="form-label small mb-1" id="jo-sig-label"><i class="fa-solid fa-signature me-1" aria-hidden="true"></i>Client's signature</span><button type="button" class="btn btn-link btn-sm ms-auto p-0" id="jo-sig-clear">Clear</button></div><canvas class="sig-pad" id="jo-sig" role="img" aria-labelledby="jo-sig-label"></canvas></div>
+        <div class="row g-2 mt-1" id="jo-sign-paper-wrap" hidden>
+          <div class="col-6 col-md-4"><label class="form-label" for="jo-count-formno">Paper form no. <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-count-formno" maxlength="40"></div>
+          <div class="col-6 col-md-4"><label class="form-label" for="jo-count-at">Counted at <span class="text-soft small">(if earlier)</span></label><input class="form-control" id="jo-count-at" type="datetime-local"></div>
+          <div class="col-12 col-md-4"><label class="form-label" for="jo-count-photo">Photo of the signed copy <span class="text-soft small">(optional)</span></label><input class="form-control" type="file" id="jo-count-photo" accept="image/jpeg,image/png,image/*" capture="environment"><div class="small text-soft mt-1" id="jo-count-photo-note" hidden></div></div>
+        </div>
+        <div class="alert alert-danger py-2 small mt-3 mb-0" id="jo-count-error" hidden role="alert"></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button type="submit" class="btn btn-success" id="jo-count-ok"><i class="fa-solid fa-check me-1" aria-hidden="true"></i>Save job order</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" id="jo-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="jo-title">Job Order</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body" id="jo-body"></div>
+      <div class="modal-footer flex-wrap gap-2" id="jo-actions"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="jo-price-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" id="jo-price-form" autocomplete="off" novalidate>
+      <div class="modal-header"><h5 class="modal-title" id="jo-price-title">Manual price</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p class="small text-soft mb-2" id="jo-price-hint"></p>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label" for="jo-price-value">Price for this job order</label><input class="form-control" id="jo-price-value" type="number" inputmode="decimal" min="0" step="0.01"></div>
+          <div class="col-6"><div class="form-label">Standard price</div><div class="form-control-plaintext money" id="jo-price-standard">—</div></div>
+          <div class="col-12"><label class="form-label" for="jo-price-reason">Reason</label><input class="form-control" id="jo-price-reason" maxlength="160" placeholder="Who agreed it and why"></div>
+        </div>
+        <div class="alert alert-danger small mt-2 mb-0" id="jo-price-error" hidden role="alert"></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-danger me-auto" id="jo-price-remove" hidden>Take the manual price away</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Modal = M.Modal;
+  var count = null, pad = null, shown = null, pricing = null;
+  var PAPER_KEY = 'mls.jobOrder.paper', COMPACT_MAX = 12;
+  function can(code) { return M.Auth.can(code); }
+  function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+  function qtyText(l) { return l.ByWeight ? num(l.PickupWeightKg) + ' kg' : num(l.PickupQty) + ' ' + (l.Unit || 'pc'); }
+  function piecesText(pieces, kg, bags) { return [pieces ? pieces + ' piece' + (pieces === 1 ? '' : 's') : '', kg ? Math.round(kg * 100) / 100 + ' kg by weight' : '', bags !== undefined && bags !== '' ? bags + ' bag' + (Number(bags) === 1 ? '' : 's') : ''].filter(Boolean).join(' · '); }
+  function paper() { var p = ''; try { p = localStorage.getItem(PAPER_KEY) || ''; } catch (e) { /* private mode */ } return p === '80mm' ? '80mm' : 'A4'; }
+  function setPaper(p) { try { localStorage.setItem(PAPER_KEY, p); } catch (e) { /* private mode */ } }
+
+  // ---------------------------------------------------------------- the count on a pickup job
+  function serviceOf(id) { return count.services.filter(function (s) { return s.Id === id; })[0] || null; }
+  function lineHtml(i) {
+    var groups = {}, order = []; count.services.forEach(function (s) { var g = s.Category || 'Other'; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(s); });
+    var opts = '<option value="">Choose a linen…</option>' + order.map(function (g) { return '<optgroup label="' + UI.esc(g) + '">' + groups[g].map(function (s) { return '<option value="' + UI.esc(s.Id) + '">' + UI.esc(s.Name) + (s.Price === null ? ' — no price' : ' — ' + F.peso(s.Price) + '/' + UI.esc(s.Unit)) + '</option>'; }).join('') + '</optgroup>'; }).join('');
+    return '<div class="jo-line" data-line="' + i + '">' +
+      '<div class="jo-line-main"><div class="jo-line-linen"><label class="form-label" for="jo-l-svc-' + i + '">Linen</label><select class="form-select" id="jo-l-svc-' + i + '" data-f="service">' + opts + '</select></div>' +
+      '<div class="jo-line-qty"><label class="form-label" for="jo-l-qty-' + i + '" data-qty-label>Quantity</label><input class="form-control" id="jo-l-qty-' + i + '" data-f="qty" type="number" inputmode="numeric" min="1" step="1"></div>' +
+      '<button type="button" class="btn btn-outline-secondary btn-sm jo-line-x" data-remove aria-label="Remove this linen"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>' +
+      '<div class="jo-line-more"><div class="jo-line-note"><label class="form-label" for="jo-l-cond-' + i + '">Stains, damage or remarks <span class="text-soft small">(optional)</span></label><input class="form-control" id="jo-l-cond-' + i + '" data-f="condition" maxlength="160" placeholder="1 torn, 2 stained…"></div>' +
+      (count.canOverride ? '<div class="jo-line-price"><label class="form-label" for="jo-l-price-' + i + '">Manual price</label><input class="form-control" id="jo-l-price-' + i + '" data-f="price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="standard"></div><div class="jo-line-reason" hidden><label class="form-label" for="jo-l-reason-' + i + '">Reason for the price</label><input class="form-control" id="jo-l-reason-' + i + '" data-f="reason" maxlength="160"></div>' : '') +
+      '</div><div class="jo-line-sum small text-soft" data-sum></div></div>';
+  }
+  function lineRows() { return Array.prototype.slice.call(UI.el('jo-count-lines').querySelectorAll('.jo-line')); }
+  function readLine(row) {
+    var get = function (f) { var el = row.querySelector('[data-f=' + f + ']'); return el ? el.value : ''; }, s = serviceOf(get('service'));
+    return { service: s, raw: get('qty'), qty: num(get('qty')), condition: get('condition').trim(), price: get('price'), reason: get('reason').trim() };
+  }
+  /** One linen once: a linen chosen on a line is no longer offered on the others; a weight asks for kilograms. */
+  function syncLines() {
+    var rows = lineRows(), taken = {}; rows.forEach(function (r) { var v = r.querySelector('[data-f=service]').value; if (v) taken[v] = r; });
+    var pieces = 0, kg = 0, est = 0, counted = 0;
+    rows.forEach(function (r) {
+      var sel = r.querySelector('[data-f=service]'), l = readLine(r), s = l.service, qty = r.querySelector('[data-f=qty]'), kilo = s && s.PricingType === 'PER_KILO', flat = s && s.PricingType === 'FLAT';
+      Array.prototype.forEach.call(sel.options, function (o) { o.disabled = !!(o.value && taken[o.value] && taken[o.value] !== r); });
+      r.querySelector('[data-qty-label]').textContent = kilo ? 'Weight (kg)' : 'Quantity';
+      qty.step = kilo ? '0.01' : '1'; qty.min = kilo ? '0.01' : '1'; qty.setAttribute('inputmode', kilo ? 'decimal' : 'numeric'); qty.disabled = !!flat; if (flat) qty.value = '1';
+      var reason = r.querySelector('.jo-line-reason'); if (reason) reason.hidden = l.price === '';
+      var unit = l.price !== '' ? num(l.price) : (s && s.Price !== null ? num(s.Price) : null), q = flat ? 1 : l.qty, sum = r.querySelector('[data-sum]');
+      if (s && q > 0) { counted++; if (kilo) kg += q; else pieces += q; if (unit !== null) est += Math.round(unit * q * 100) / 100; }
+      sum.textContent = s ? (unit === null ? 'No price yet: set a manual price' : F.peso(unit) + ' per ' + s.Unit + (l.price !== '' ? ' (manual)' : s.Source === 'client' ? ' (client price)' : '') + (q > 0 ? ' · ' + F.peso(Math.round(unit * q * 100) / 100) : '')) : '';
+    });
+    UI.html('jo-count-totals', counted ? '<span><b>' + UI.esc(piecesText(pieces, kg) || '0 pieces') + '</b> on ' + counted + ' line' + (counted === 1 ? '' : 's') + '</span><span>Estimated charges <b class="money">' + F.peso(est) + '</b> <span class="text-soft small">— final after the shop receives and verifies</span></span>' : '<span class="text-soft">Nothing counted yet.</span>');
+    UI.el('jo-count-add').disabled = rows.length >= Math.min(count.maxLines, count.services.length);
+  }
+  function addLine(focus) {
+    var box = UI.el('jo-count-lines'), i = count.nextLine++, holder = document.createElement('div'); holder.innerHTML = lineHtml(i); var row = holder.firstChild; box.appendChild(row);
+    row.querySelector('[data-remove]').onclick = function () { if (lineRows().length > 1) row.remove(); else { row.querySelectorAll('input, select').forEach(function (el) { el.value = ''; }); } syncLines(); };
+    row.querySelectorAll('input, select').forEach(function (el) { el.addEventListener('input', syncLines); el.addEventListener('change', syncLines); });
+    syncLines(); if (focus) row.querySelector('[data-f=service]').focus();
+  }
+  function signMode() { return UI.el('jo-sign-paper').checked ? 'PAPER' : 'PHONE'; }
+  function syncSign() { var paperMode = signMode() === 'PAPER'; UI.el('jo-sign-phone-wrap').hidden = paperMode; UI.el('jo-sign-paper-wrap').hidden = !paperMode; if (!paperMode && pad) setTimeout(function () { pad.reset(); }, 30); }
+  function countError(msg, focusEl) { var box = UI.el('jo-count-error'); box.textContent = msg; box.hidden = false; if (focusEl) { try { focusEl.focus(); } catch (e) { /* gone */ } } }
+  /** The count as it will be sent, or the first thing that is missing (said in the dialog, the field focused). */
+  function gather() {
+    var rows = lineRows().filter(function (r) { return r.querySelector('[data-f=service]').value || r.querySelector('[data-f=qty]').value; }), lines = [], bad = null;
+    rows.forEach(function (r) {
+      if (bad) return; var l = readLine(r), s = l.service, qtyEl = r.querySelector('[data-f=qty]');
+      if (!s) { bad = ['Choose the linen for every line, or remove the empty line.', r.querySelector('[data-f=service]')]; return; }
+      var kilo = s.PricingType === 'PER_KILO', flat = s.PricingType === 'FLAT';
+      if (!flat && !(l.qty > 0)) { bad = [s.Name + ': enter the ' + (kilo ? 'weight in kg' : 'quantity') + '.', qtyEl]; return; }
+      if (!kilo && !flat && l.qty !== Math.round(l.qty)) { bad = [s.Name + ': the quantity is a whole number.', qtyEl]; return; }
+      if (l.price === '' && s.Price === null) { bad = [s.Name + ' has no price yet: set a manual price.', r.querySelector('[data-f=price]')]; return; }
+      if (l.price !== '' && l.reason.length < 3) { bad = ['Say why ' + s.Name + ' has a manual price.', r.querySelector('[data-f=reason]')]; return; }
+      var line = kilo ? { serviceId: s.Id, weightKg: l.qty } : { serviceId: s.Id, qty: flat ? 1 : l.qty }; if (l.condition) line.condition = l.condition;
+      if (l.price !== '') { line.price = num(l.price); line.priceReason = l.reason; }
+      lines.push(line);
+    });
+    if (bad) return { error: bad };
+    if (!lines.length) return { error: ['Count at least one linen.', (lineRows()[0] || document).querySelector('[data-f=service]')] };
+    var bags = UI.el('jo-count-bags'), signer = UI.el('jo-count-signer'), mode = signMode();
+    if (bags.value === '' || num(bags.value) < 0 || num(bags.value) !== Math.round(num(bags.value))) return { error: ['Enter how many bags were taken (0 when none).', bags] };
+    if (signer.value.trim().length < 2) return { error: ['Write the name of the person who surrendered the linens.', signer] };
+    if (mode === 'PHONE' && !(pad && pad.signed())) return { error: ['Have the client sign on the phone, or choose "On the printed copy, or on a paper form".', UI.el('jo-sig')] };
+    var p = { deliveryId: count.job.Id, requestId: count.requestId, lines: lines, bags: num(bags.value), signerName: signer.value.trim(), signerPosition: UI.el('jo-count-position').value.trim(), signedOn: mode, department: UI.el('jo-count-dept').value.trim(), specialInstructions: UI.el('jo-count-notes').value.trim() };
+    if (mode === 'PHONE') p.signature = pad.dataUrl();
+    else { p.paperFormNo = UI.el('jo-count-formno').value.trim(); var at = UI.el('jo-count-at').value; if (at) { var d = new Date(at); if (isNaN(d.getTime())) return { error: ['The time counted is not a date and time.', UI.el('jo-count-at')] }; p.pickupAt = d.toISOString(); } if (count.photo.data) p.photo = count.photo.data; }
+    return { payload: p };
+  }
+  /**
+   * Opens the count for a pickup job (JOB_ORDER_PICKUP). The server answers the client and the linens with the price this client pays;
+   * a job whose customer is not a commercial client is refused there, in words. onDone(jobOrder) once it is saved.
+   */
+  function openCount(jobId, onDone) {
+    if (M.Net && M.Net.state && M.Net.state() !== 'online') { Toast.warning('Counting linens needs a connection for now. Use a paper form and type it in once you are connected.'); return Promise.resolve(null); }
+    return Api.call('jobOrders.start', { deliveryId: jobId }, { busy: true }).then(function (r) {
+      count = { job: r.job, client: r.client, services: r.services, canOverride: !!r.canOverride, maxLines: r.maxLines || 60, backdateDays: r.backdateDays || 7, requestId: UI.uuid(), nextLine: 0, photo: { data: '', job: null }, onDone: onDone };
+      var c = r.client;
+      UI.el('jo-count-title').textContent = 'Count linens · ' + (c.Company || r.job.CustomerName || r.job.Id);
+      UI.html('jo-count-client', '<div class="fw-bold">' + UI.esc(c.Company) + (c.EstablishmentType ? ' <span class="badge text-bg-light">' + UI.esc(c.EstablishmentType) + '</span>' : '') + '</div>' + [c.PropertyName, c.Address, c.ContractRef ? 'Contract ' + c.ContractRef : ''].filter(Boolean).map(function (t) { return '<div class="small text-soft">' + UI.esc(t) + '</div>'; }).join(''));
+      UI.el('jo-count-form').reset(); UI.el('jo-count-lines').innerHTML = ''; UI.el('jo-count-error').hidden = true; UI.el('jo-count-photo-note').hidden = true;
+      UI.el('jo-count-signer').value = c.Representative || ''; UI.el('jo-count-position').value = c.RepresentativePosition || '';
+      var at = UI.el('jo-count-at'), iso = function (d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }; at.max = iso(new Date()); at.min = iso(new Date(Date.now() - count.backdateDays * 86400000));
+      addLine(false);
+      if (!r.services.length) countError('No linen has a price yet. Add the linens under Services first.');
+      var modal = UI.el('jo-count-modal'), canvas = UI.el('jo-sig'); if (!pad) pad = M.DeliveriesUI.signaturePad(canvas);
+      modal.addEventListener('shown.bs.modal', function once() { modal.removeEventListener('shown.bs.modal', once); pad.reset(); });
+      syncSign(); Modal.open('jo-count-modal');
+      return r;
+    }).catch(function (e) { Toast.danger(UI.error(e)); return null; });
+  }
+  UI.el('jo-count-add').onclick = function () { addLine(true); };
+  UI.el('jo-sig-clear').onclick = function () { if (pad) pad.reset(); };
+  UI.el('jo-sign-phone').onchange = syncSign; UI.el('jo-sign-paper').onchange = syncSign;
+  UI.el('jo-sig').addEventListener('pointerdown', function () { UI.el('jo-count-error').hidden = true; });
+  UI.el('jo-count-photo').onchange = function () {
+    var input = UI.el('jo-count-photo'), note = UI.el('jo-count-photo-note'), file = input.files && input.files[0]; if (!count) return; count.photo.data = ''; if (!file) { count.photo.job = null; note.hidden = true; return; }
+    note.textContent = 'Preparing the photo…'; note.hidden = false;
+    var job = count.photo.job = M.Photo.shrink(file, { maxBytes: 2 * 1024 * 1024 }).then(function (url) { if (!count || count.photo.job !== job) return ''; count.photo.data = url; note.textContent = 'Photo ready · ' + Math.round(url.length * 3 / 4 / 1024) + ' KB'; return url; })
+      .catch(function (e) { if (count && count.photo.job === job) { count.photo.data = ''; input.value = ''; note.textContent = UI.error(e); } return ''; });
+  };
+  UI.el('jo-count-form').onsubmit = function (ev) {
+    ev.preventDefault(); if (!count) return; var box = UI.el('jo-count-error'), btn = UI.el('jo-count-ok'); box.hidden = true; btn.disabled = true;
+    Promise.resolve(count.photo.job).then(function () {
+      var g = gather(); if (g.error) { var e = new Error(g.error[0]); e.local = g.error[1]; throw e; }
+      var loc = M.DeliveriesUI && M.DeliveriesUI.locate && navigator.geolocation ? M.DeliveriesUI.locate(4000) : Promise.resolve(null);
+      return loc.then(function (pos) { if (pos) g.payload.location = { lat: pos.lat, lng: pos.lng }; return Api.call('jobOrders.pickup', g.payload, { busy: true, timeoutMs: 120000 }); });
+    }).then(function (jo) {
+      btn.disabled = false; var done = count.onDone; count = null;
+      Modal.closeThen('jo-count-modal', function () { Toast.success('Job order ' + jo.OrderNo + ' created · ' + piecesText(num(jo.PiecesPickup), num(jo.WeightPickupKg), jo.BagsAtPickup)); if (done) done(jo); show(jo, { onChange: done, justCreated: true }); });
+    }).catch(function (e) { btn.disabled = false; countError(UI.error(e), e && e.local && e.local.focus ? e.local : null); });
+  };
+
+  // ---------------------------------------------------------------- the job order
+  function signedText(j) {
+    var who = UI.esc(j.ClientSignerName || '') + (j.ClientSignerPosition ? ' <span class="text-soft">(' + UI.esc(j.ClientSignerPosition) + ')</span>' : '');
+    return j.SignedOn === 'PHONE' ? who + ' · signed on the phone' + (j.SignedAt ? ' ' + UI.esc(F.datetime(j.SignedAt)) : '') : who + ' · signs the printed copy' + (j.PaperFormNo ? ' · paper form ' + UI.esc(j.PaperFormNo) : '');
+  }
+  function priceNote(l) {
+    if (l.PriceSource === 'override') return '<span class="jo-price-tag manual">manual price</span>' + (num(l.ListPrice) > 0 ? ' <span class="text-soft small">standard ' + F.peso(l.ListPrice) + '</span>' : '') + (l.PriceReason ? '<div class="small text-soft">' + UI.esc(l.PriceReason) + (l.PriceApprovedBy ? ' · ' + UI.esc(l.PriceApprovedBy) : '') + '</div>' : '');
+    if (l.PriceSource === 'client') return '<span class="jo-price-tag">client price</span>' + (num(l.ListPrice) > 0 ? ' <span class="text-soft small">list ' + F.peso(l.ListPrice) + '</span>' : '');
+    return '';
+  }
+  function fact(k, v) { return v ? '<div class="jo-fact"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>' : ''; }
+  function render(j, opts) {
+    shown = { job: j, opts: opts || {} };
+    var c = j.Client || {};
+    UI.el('jo-title').innerHTML = 'Job Order ' + UI.esc(j.OrderNo) + ' ' + UI.badge(j.Status, j.StatusLabel) + (j.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '');
+    var rows = j.Lines.map(function (l, i) {
+      var note = priceNote(l);
+      return '<tr><td class="num jo-wide">' + (i + 1) + '</td><td><span class="fw-bold">' + UI.esc(l.Description) + '</span>' + (l.Category ? ' <span class="small text-soft jo-wide">' + UI.esc(l.Category) + '</span>' : '') + (l.ConditionAtPickup ? '<div class="small">' + UI.esc(l.ConditionAtPickup) + '</div>' : '') + '<div class="jo-narrow small text-soft">' + UI.esc(qtyText(l)) + ' × ' + F.peso(l.UnitPrice) + '</div>' + (note ? '<div class="jo-narrow">' + note + '</div>' : '') + '</td>' +
+        '<td class="num jo-wide">' + UI.esc(qtyText(l)) + '</td><td class="num jo-wide">' + F.peso(l.UnitPrice) + '</td><td class="num money">' + F.peso(l.Amount) + '</td><td class="jo-wide">' + note + '</td>' +
+        (j.canOverride ? '<td class="text-end"><button type="button" class="btn btn-sm btn-outline-secondary" data-price="' + UI.esc(l.Id) + '" aria-label="Set a manual price for ' + UI.esc(l.Description) + '"><i class="fa-solid fa-tag" aria-hidden="true"></i><span class="jo-wide ms-1">Price</span></button></td>' : '') + '</tr>';
+    }).join('');
+    UI.html('jo-body',
+      (opts && opts.justCreated ? '<div class="alert alert-success py-2 small"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Saved. Print the Job Order now, or later from this job or from Orders.</div>' : '') +
+      '<div class="jo-facts">' + fact('Client', UI.esc(c.Company || '') + (c.EstablishmentType ? ' <span class="text-soft">· ' + UI.esc(c.EstablishmentType) + '</span>' : '')) + fact('Property', UI.esc(c.PropertyName || '')) + fact('Department', UI.esc(c.Department || '')) + fact('Address', UI.esc(c.Address || '')) + fact('Contract', UI.esc(c.ContractRef || '')) +
+      fact('Picked up', UI.esc(F.datetime(j.PickupAt)) + (j.PickupBy ? ' · ' + UI.esc(j.PickupBy) : '')) + fact('Surrendered by', signedText(j)) + fact('Counted', UI.esc(piecesText(num(j.PiecesPickup), num(j.WeightPickupKg), j.BagsAtPickup))) + fact('Instructions', UI.esc(j.SpecialInstructions || '')) + fact('Printed', num(j.PrintCount) ? num(j.PrintCount) + ' time' + (num(j.PrintCount) === 1 ? '' : 's') + (j.LastPrintedAt ? ' · last ' + UI.esc(F.datetime(j.LastPrintedAt)) : '') : 'not yet') + '</div>' +
+      '<div class="table-responsive mt-3"><table class="table table-sm align-middle mb-0 jo-lines" id="jo-lines"><thead><tr><th class="num jo-wide">No.</th><th>Linen</th><th class="num jo-wide">Counted</th><th class="num jo-wide">Unit price</th><th class="num">Amount</th><th class="jo-wide">Price</th>' + (j.canOverride ? '<th><span class="visually-hidden">Actions</span></th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<div class="jo-totals mt-2"><span>' + (num(j.DiscountAmount) > 0 ? 'Discount ' + F.peso(j.DiscountAmount) + ' · ' : '') + (num(j.DeliveryFee) > 0 ? 'Delivery fee ' + F.peso(j.DeliveryFee) + ' · ' : '') + (num(j.OtherCharges) > 0 ? 'Other charges ' + F.peso(j.OtherCharges) : '') + '</span><span>Estimated charges <b class="money" id="jo-total">' + F.peso(j.OrderTotal) + '</b> <span class="text-soft small">— final after receiving</span></span></div>' +
+      '<div class="mt-3" id="jo-files"><button type="button" class="btn btn-link btn-sm p-0" id="jo-files-show"><i class="fa-solid fa-image me-1" aria-hidden="true"></i>' + (j.SignedOn === 'PHONE' ? 'View the signature' : 'View the photos of the signed copy') + '</button></div>');
+    var paperNow = paper();
+    UI.html('jo-actions', (j.canAttach ? '<label class="btn btn-sm btn-outline-secondary mb-0" for="jo-attach-input"><i class="fa-solid fa-camera me-1" aria-hidden="true"></i>Add photo of the signed copy</label><input class="visually-hidden" type="file" id="jo-attach-input" accept="image/jpeg,image/png,image/*" capture="environment">' : '') + '<span class="spacer"></span>' +
+      '<label class="visually-hidden" for="jo-paper">Paper</label><select class="form-select form-select-sm jo-paper" id="jo-paper"><option value="A4"' + (paperNow === 'A4' ? ' selected' : '') + '>A4 sheet</option><option value="80mm"' + (paperNow === '80mm' ? ' selected' : '') + '>80 mm roll</option></select>' +
+      '<div class="dropdown dropup"><button type="button" class="btn btn-sm btn-primary dropdown-toggle" id="jo-print" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>Print Job Order</button><ul class="dropdown-menu dropdown-menu-end">' +
+      [['BOTH', 'Both copies'], ['CLIENT', 'Client copy'], ['SHOP', 'Laundry shop copy']].map(function (x) { return '<li><button type="button" class="dropdown-item" data-copy="' + x[0] + '">' + x[1] + '</button></li>'; }).join('') + '</ul></div>');
+    UI.el('jo-paper').onchange = function () { setPaper(UI.el('jo-paper').value); };
+    UI.el('jo-actions').querySelectorAll('[data-copy]').forEach(function (b) { b.onclick = function () { print(j.OrderId, b.getAttribute('data-copy'), UI.el('jo-paper').value); }; });
+    UI.el('jo-body').querySelectorAll('[data-price]').forEach(function (b) { b.onclick = function () { openPrice(j, j.Lines.filter(function (l) { return l.Id === b.getAttribute('data-price'); })[0]); }; });
+    UI.el('jo-files-show').onclick = function () { showFiles(j.OrderId); };
+    var input = UI.el('jo-attach-input'); if (input) input.onchange = function () { var file = input.files && input.files[0]; if (!file) return; attach(j.OrderId, file); input.value = ''; };
+  }
+  function showFiles(orderId) {
+    var box = UI.el('jo-files'); box.innerHTML = '<span class="small text-soft">Loading…</span>';
+    Api.call('jobOrders.get', { orderId: orderId, files: true }).then(function (r) {
+      var figs = [];
+      if (r.Signature) figs.push('<figure><img src="' + UI.esc(r.Signature) + '" alt="The client\'s signature"><figcaption>Signature of ' + UI.esc(r.ClientSignerName || 'the client') + '</figcaption></figure>');
+      (r.Photos || []).forEach(function (p, i) { figs.push('<figure><img src="' + UI.esc(p.Data) + '" alt="Photo ' + (i + 1) + ' of the signed copy"><figcaption>Signed copy · ' + UI.esc(F.datetime(p.At)) + '</figcaption></figure>'); });
+      box.innerHTML = figs.length ? '<div class="proof-view">' + figs.join('') + '</div>' + (r.keepDays ? '<p class="small text-soft mt-2 mb-0">Kept privately for ' + r.keepDays + ' days (the setting ProofKeepDays), then removed.</p>' : '') : '<p class="small text-soft mb-0">' + (r.SignatureRemoved ? 'The signature image was removed after its keep days; that it was signed, by whom and when is kept.' : (r.SignedOn === 'PHONE' ? 'No signature image is kept.' : 'No photo of the signed copy yet.')) + '</p>';
+    }).catch(function (e) { box.innerHTML = '<p class="small text-danger mb-0">' + UI.esc(UI.error(e)) + '</p>'; });
+  }
+  function attach(orderId, file) {
+    M.Photo.shrink(file, { maxBytes: 2 * 1024 * 1024 }).then(function (url) { return Api.call('jobOrders.attach', { orderId: orderId, photo: url }, { busy: true, timeoutMs: 120000 }); })
+      .then(function (r) { Toast.success('Photo of the signed copy kept'); render(r, shown ? shown.opts : {}); showFiles(orderId); }).catch(function (e) { Toast.danger(UI.error(e)); });
+  }
+  /** Shows a job order already in hand (the answer of the count, or of jobOrders.get). opts: { onChange, back, justCreated } */
+  function show(j, opts) { render(j, opts); Modal.open('jo-modal'); }
+  /** Opens the job order of an order (JOB_ORDER_VIEW). opts.back runs when the dialog closes (the order's dialog opens again). */
+  function open(orderId, opts) { return Api.call('jobOrders.get', { orderId: orderId }, { busy: true }).then(function (j) { show(j, opts); return j; }).catch(function (e) { Toast.danger(UI.error(e)); if (opts && opts.back) opts.back(); return null; }); }
+  UI.el('jo-modal').addEventListener('hidden.bs.modal', function () { if (pricing) return; var s = shown; shown = null; if (s && s.opts && s.opts.back) s.opts.back(); });
+
+  // ---------------------------------------------------------------- a manual price on one line
+  function openPrice(j, line) {
+    if (!line) return; var back = shown ? shown.opts : {}; pricing = { job: j, line: line, opts: back, saved: null, requestId: UI.uuid() };
+    Modal.closeThen('jo-modal', function () {
+      var manual = line.PriceSource === 'override';
+      UI.el('jo-price-title').textContent = 'Manual price · ' + line.Description; UI.el('jo-price-form').reset(); UI.el('jo-price-error').hidden = true;
+      UI.el('jo-price-hint').textContent = 'For job order ' + j.OrderNo + ' only, until the shop has received it. ' + qtyText(line) + ' counted.';
+      UI.el('jo-price-value').value = manual ? num(line.UnitPrice) : ''; UI.el('jo-price-standard').textContent = manual ? (num(line.ListPrice) > 0 ? F.peso(line.ListPrice) : 'none') : F.peso(line.UnitPrice);
+      UI.el('jo-price-reason').value = ''; UI.el('jo-price-remove').hidden = !manual;
+      Modal.open('jo-price-modal');
+    });
+  }
+  function savePrice(remove) {
+    var m = pricing; if (!m) return; var box = UI.el('jo-price-error'), value = UI.el('jo-price-value'), reason = UI.el('jo-price-reason'); box.hidden = true;
+    var say = function (msg, el) { box.textContent = msg; box.hidden = false; if (el) el.focus(); };
+    if (!remove && (value.value === '' || num(value.value) < 0)) return say('Enter the price for this job order (0 for free of charge).', value);
+    if (reason.value.trim().length < 3) return say(remove ? 'Say why the manual price is taken away.' : 'Say who agreed the price and why.', reason);
+    Api.call('jobOrders.overridePrice', { orderId: m.job.OrderId, lineId: m.line.Id, price: remove ? '' : num(value.value), reason: reason.value.trim(), requestId: m.requestId }, { busy: true }).then(function (r) {
+      Toast.success(remove ? 'Manual price taken away' : 'Manual price set'); m.saved = r; if (m.opts && m.opts.onChange) m.opts.onChange(r); Modal.close('jo-price-modal');
+    }).catch(function (e) { say(UI.error(e)); });
+  }
+  UI.el('jo-price-form').onsubmit = function (ev) { ev.preventDefault(); savePrice(false); };
+  UI.el('jo-price-remove').onclick = function () { savePrice(true); };
+  UI.el('jo-price-modal').addEventListener('hidden.bs.modal', function () { var m = pricing; pricing = null; if (m) show(m.saved || m.job, m.opts); });  // saved or cancelled: back to the job order
+
+  // ---------------------------------------------------------------- the Job Order document
+  var DOC_CSS = '.jo-doc{page-break-after:always}.jo-doc:last-child{page-break-after:auto}.jo-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.jo-top .doc-head{flex:1;margin-bottom:6px}' +
+    '.jo-copy{border:2px solid #111;padding:4px 10px;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}.jo-reprint{border:1px solid #111;padding:2px 8px;font-weight:700;font-size:10.5px;letter-spacing:.1em;margin-top:4px;text-align:center}' +
+    '.jo-no{display:flex;justify-content:space-between;gap:12px;font-size:13px;margin:6px 0}.jo-no b{font-size:15px}.jo-doc .blk{margin:6px 0 8px}.jo-doc th.r,.jo-doc td.r{text-align:right}' +
+    '.jo-sum{display:flex;justify-content:space-between;gap:12px;margin:6px 0;font-size:12.5px}.jo-est{font-weight:800;font-size:14px}.jo-doc .ack{margin:10px 0 6px}' +
+    '.jo-signs{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:8px;font-size:11.5px;page-break-inside:avoid}.jo-sign-box{text-align:center}.jo-sign-space{height:58px;display:flex;align-items:flex-end;justify-content:center}.jo-sign-space img{max-height:56px;max-width:100%}' +
+    '.jo-sign-line{border-top:1px solid #333;padding-top:3px;font-weight:700;letter-spacing:.04em}.jo-sign-box .small{color:#444}.jo-notice{font-size:10.5px;color:#444;margin-top:10px;text-align:center}' +
+    '.jo-half{page-break-inside:avoid;break-inside:avoid}.jo-half.first{border-bottom:1px dashed #555;margin-bottom:4mm;padding-bottom:4mm}.jo-compact{font-size:10px;line-height:1.25}.jo-compact table{margin:2px 0}.jo-compact th,.jo-compact td{padding:1px 5px;font-size:9.5px;line-height:1.2}.jo-compact p{margin:2px 0}.jo-compact .doc-head{padding-bottom:3px;margin-bottom:3px}.jo-compact .doc-logo{max-height:24px;margin-bottom:2px}.jo-compact .doc-biz{font-size:13px}.jo-compact .doc-biz-sub{font-size:9.5px}.jo-compact .doc-title{font-size:11px;margin-top:1px}.jo-compact .jo-copy{font-size:10.5px;padding:3px 8px}' +
+    '.jo-compact .blk{font-size:10px;gap:0 18px;margin:2px 0 3px}.jo-compact .jo-no{font-size:10.5px;margin:2px 0}.jo-compact .jo-no b{font-size:12px}.jo-compact .ack{font-size:9px;margin:3px 0 0}.jo-compact .jo-sign-space{height:26px}.jo-compact .jo-sign-space img{max-height:25px}.jo-compact .jo-signs{font-size:9px;margin-top:0}.jo-compact .jo-sign-box .small{font-size:8.5px}.jo-compact .jo-notice{font-size:8.5px;margin-top:2px}.jo-compact .doc-foot{margin-top:3px;padding-top:2px;font-size:8.5px}.jo-compact .jo-sum{font-size:10px;margin:2px 0}.jo-compact .jo-est{font-size:11.5px}' +
+    '.jo-roll .jo-copy{display:block;text-align:center;margin:4px 0}.jo-roll .jo-sign-space{height:52px}.jo-roll .jo-sign-line{margin-top:2px}.jo-roll .cut{border-top:1px dashed #555;margin:10px 0}';
+  var ACK = 'I acknowledge that the laundry items listed above were surrendered to the authorized personnel of {biz} for laundry service, subject to receiving verification at the shop.';
+  var NOTICE = 'This is an operational document, not an official receipt or sales invoice.';
+  function copyLabel(copy) { return copy === 'CLIENT' ? 'Client copy' : 'Laundry shop copy'; }
+  function signBoxes(d) {
+    var esc = UI.esc, client;
+    if (d.SignedOn === 'PHONE') client = '<div class="jo-sign-space">' + (d.Signature ? '<img src="' + esc(d.Signature) + '" alt="Signature">' : '') + '</div><div class="jo-sign-line">' + esc(d.ClientSignerName || '') + '</div><div class="small">' + (d.ClientSignerPosition ? esc(d.ClientSignerPosition) + ' · ' : '') + 'Client representative</div><div class="small">Signed electronically on ' + esc(F.datetime(d.SignedAt || d.PickupAt)) + (d.Signature ? '' : ' (image no longer kept)') + '</div>';
+    else client = '<div class="jo-sign-space"></div><div class="jo-sign-line">' + esc(d.ClientSignerName || '') + '</div><div class="small">' + (d.ClientSignerPosition ? esc(d.ClientSignerPosition) + ' · ' : '') + 'Client representative</div><div class="small">Signature over printed name · date and time</div>';
+    return '<div class="jo-signs"><div class="jo-sign-box">' + client + '</div><div class="jo-sign-box"><div class="jo-sign-space"></div><div class="jo-sign-line">' + esc(d.PickupBy || '') + '</div><div class="small">Pickup personnel</div><div class="small">' + esc(F.datetime(d.PickupAt)) + '</div></div></div>';
+  }
+  function conditions(d) { return d.Lines.map(function (l, i) { return l.ConditionAtPickup ? 'line ' + (i + 1) + ': ' + l.ConditionAtPickup : ''; }).filter(Boolean).join('; '); }
+  /** One copy on a full page (or half a page, compact): the same job order, only the copy label differs. */
+  function pageCopy(d, copy, compact) {
+    var esc = UI.esc, c = d.Client || {}, biz = d.Business || {};
+    var rows = d.Lines.map(function (l, i) { return '<tr><td class="r">' + (i + 1) + '</td><td>' + esc(l.Description) + '</td><td>' + esc(l.ByWeight ? 'By weight' : (l.Category || '')) + '</td><td class="r num">' + (l.ByWeight ? num(l.PickupWeightKg) : num(l.PickupQty)) + '</td><td>' + esc(l.ByWeight ? 'kg' : (l.Unit || 'pc')) + '</td><td class="r num">' + esc(F.peso(l.UnitPrice)) + '</td><td class="r num">' + esc(F.peso(l.Amount)) + '</td><td>' + esc(l.ConditionAtPickup || '') + '</td></tr>'; }).join('');
+    var cond = conditions(d), blk = function (k, v) { return v ? '<div><b>' + k + '</b>' + esc(v) + '</div>' : ''; };
+    return '<div class="jo-top">' + M.Print.header({ title: 'Commercial laundry pickup job order', business: biz }) + '<div><div class="jo-copy">' + copyLabel(copy) + '</div>' + (d.Reprint ? '<div class="jo-reprint">REPRINT</div>' : '') + '</div></div>' +
+      '<div class="jo-no"><span>Job Order No. <b>' + esc(d.OrderNo) + '</b></span><span>Pickup ' + esc(F.datetime(d.PickupAt)) + '</span></div>' +
+      '<div class="blk">' + blk('Client', c.Company) + blk('Establishment', c.EstablishmentType) + blk('Property', c.PropertyName) + blk('Department', c.Department) + blk('Address', c.Address) + blk('Contract ref.', c.ContractRef) + blk('Representative', c.Representative) + blk('Contact', c.Phone) + '</div>' +
+      '<table><thead><tr><th class="r">No.</th><th>Linen</th><th>Category</th><th class="r">Qty</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount</th><th>Remarks</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="jo-sum"><span>' + esc(piecesText(num(d.PiecesPickup), num(d.WeightPickupKg), d.BagsAtPickup)) + (d.IsExpress ? ' · EXPRESS' : '') + '</span><span>Estimated charges <span class="jo-est">' + esc(F.peso(d.OrderTotal)) + '</span> <span class="small">(final after receiving verification)</span></span></div>' +
+      (d.SpecialInstructions ? '<p><b>Special instructions:</b> ' + esc(d.SpecialInstructions) + '</p>' : '') + (cond ? '<p><b>Stains or damage noted at pickup:</b> ' + esc(cond) + '</p>' : '') +
+      '<p class="ack">' + esc(ACK.replace('{biz}', biz.name || 'the laundry shop')) + '</p>' + signBoxes(d) +
+      '<div class="jo-notice">' + NOTICE + (d.SignedOn === 'PAPER' && d.PaperFormNo ? ' Paper form ' + esc(d.PaperFormNo) + '.' : '') + '</div>' + M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: (d.Reprint ? 'REPRINT · ' : '') + 'print ' + num(d.PrintCount) + ' · ' + d.OrderNo });
+  }
+  /** One copy on an 80 mm roll (a portable printer): the same facts, one linen a row. */
+  function rollCopy(d, copy) {
+    var esc = UI.esc, c = d.Client || {}, biz = d.Business || {}, row = function (a, b, cls) { return '<div class="row' + (cls ? ' ' + cls : '') + '"><span>' + a + '</span><span>' + b + '</span></div>'; };
+    var logo = M.Brand && M.Brand.pictures ? M.Brand.pictures().logo : '', cond = conditions(d);
+    return '<div class="receipt-paper jo-roll">' + (logo ? '<div class="c logo"><img src="' + logo + '" alt=""></div>' : '') + '<div class="c strong">' + esc(biz.name || '') + '</div>' + [biz.branch, biz.address, biz.phone].filter(Boolean).map(function (t) { return '<div class="c muted">' + esc(t) + '</div>'; }).join('') +
+      '<hr><div class="c strong">COMMERCIAL LAUNDRY PICKUP JOB ORDER</div><div class="jo-copy">' + copyLabel(copy) + (d.Reprint ? ' · REPRINT' : '') + '</div>' +
+      row('Job Order No.', '<span class="strong">' + esc(d.OrderNo) + '</span>') + row('Pickup', esc(F.datetime(d.PickupAt))) + '<hr>' +
+      '<div class="strong">' + esc(c.Company || '') + '</div>' + [c.EstablishmentType, c.PropertyName, c.Department, c.Address, c.ContractRef ? 'Contract ' + c.ContractRef : '', c.Representative ? 'Rep. ' + c.Representative : '', c.Phone].filter(Boolean).map(function (t) { return '<div>' + esc(t) + '</div>'; }).join('') + '<hr>' +
+      d.Lines.map(function (l, i) { return '<div>' + (i + 1) + '. ' + esc(l.Description) + '</div>' + row(esc(qtyText(l)) + ' × ' + esc(F.peso(l.UnitPrice)), esc(F.peso(l.Amount))) + (l.ConditionAtPickup ? '<div class="muted">' + esc(l.ConditionAtPickup) + '</div>' : ''); }).join('') + '<hr>' +
+      '<div>' + esc(piecesText(num(d.PiecesPickup), num(d.WeightPickupKg), d.BagsAtPickup)) + (d.IsExpress ? ' · EXPRESS' : '') + '</div>' + row('Estimated charges', esc(F.peso(d.OrderTotal)), 'big') + '<div class="muted">Final after receiving verification.</div>' +
+      (d.SpecialInstructions ? '<div>Instructions: ' + esc(d.SpecialInstructions) + '</div>' : '') + (cond ? '<div>Noted at pickup: ' + esc(cond) + '</div>' : '') + '<hr><div>' + esc(ACK.replace('{biz}', biz.name || 'the laundry shop')) + '</div>' +
+      signBoxes(d).replace('jo-signs', 'jo-signs one') + '<div class="foot c">' + NOTICE + '</div><div class="foot c">Printed ' + esc(F.datetime(d.PrintedAt)) + (d.PrintedBy ? ' by ' + esc(d.PrintedBy) : '') + ' · print ' + num(d.PrintCount) + '</div></div>';
+  }
+  /** The document's HTML. copy: CLIENT | SHOP | BOTH; paper: A4 | 80mm. Both copies of a short count (COMPACT_MAX lines or fewer) share one A4 sheet, two halves with a cut line. */
+  function documentHtml(d, copy, paperSize) {
+    var copies = copy === 'BOTH' ? ['CLIENT', 'SHOP'] : [copy], css = '<style>' + DOC_CSS + (paperSize === '80mm' ? '.jo-signs.one{grid-template-columns:1fr;gap:6px}' : '') + '</style>';
+    if (paperSize === '80mm') return css + copies.map(function (c, i) { return (i ? '<div class="jo-roll"><div class="cut"></div></div>' : '') + rollCopy(d, c); }).join('');
+    if (copies.length === 2 && d.Lines.length <= COMPACT_MAX) return css + '<div class="jo-doc jo-compact"><div class="jo-half first">' + pageCopy(d, 'CLIENT', true) + '</div><div class="jo-half">' + pageCopy(d, 'SHOP', true) + '</div></div>';
+    return css + copies.map(function (c) { return '<div class="jo-doc">' + pageCopy(d, c, false) + '</div>'; }).join('');
+  }
+  /** Prints the Job Order (JOB_ORDER_VIEW). The server counts the print and says whether it is a reprint; the page only lays it out. */
+  function print(orderId, copy, paperSize) {
+    paperSize = paperSize === '80mm' ? '80mm' : 'A4';
+    return Api.call('jobOrders.document', { orderId: orderId, copy: copy || 'BOTH', paper: paperSize }, { busy: true, timeoutMs: 60000 }).then(function (d) {
+      M.Print.open(documentHtml(d, d.Copy, paperSize), { title: 'Job Order ' + d.OrderNo, size: paperSize, margin: paperSize === 'A4' && d.Copy === 'BOTH' && d.Lines.length <= COMPACT_MAX ? '8mm' : undefined });
+      if (shown && shown.job && shown.job.OrderId === orderId) { shown.job.PrintCount = d.PrintCount; shown.job.LastPrintedAt = d.PrintedAt; }
+      return d;
+    }).catch(function (e) { Toast.danger(UI.error(e)); return null; });
+  }
+
+  M.JobOrders = { count: openCount, open: open, show: show, print: print, documentHtml: documentHtml, canCount: function () { return can('JOB_ORDER_PICKUP'); }, canView: function () { return can('JOB_ORDER_VIEW'); }, COMPACT_MAX: COMPACT_MAX };
 })();
 </script>
 
