@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'f78ea4c8db', version: '1.45.0' };</script>
+  <script>window.MLS_PWA = { build: '0a80ad241b', version: '1.46.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -1060,7 +1060,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.45.0';
+  var VERSION = '1.46.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -8769,11 +8769,13 @@ window.MLS = (function () {
     <input class="form-control" id="rp-from" type="date" aria-label="From date">
     <input class="form-control" id="rp-to" type="date" aria-label="To date">
     <select class="form-select" id="rp-group" hidden aria-label="Group by"><option value="day">By day</option><option value="service">By service</option><option value="cashier">By cashier</option><option value="branch">By branch</option></select>
+    <select class="form-select" id="rp-job" hidden aria-label="Job-order report"></select>
     <select class="form-select" id="rp-year" hidden aria-label="Year"></select>
     <select class="form-select" id="rp-module" hidden aria-label="Module"><option value="">All modules</option></select>
     <select class="form-select" id="rp-action" hidden aria-label="Action"><option value="">All actions</option></select>
     <input class="form-control search" id="rp-search" placeholder="Search user, record, values" autocomplete="off" hidden aria-label="Search the report">
   </div>
+  <div id="rp-head"></div>
   <div class="sum-grid" id="rp-kpis"></div>
   <p class="small text-soft mb-2" id="rp-covers" hidden></p>
   <div class="card mb-3" id="rp-chart-card" hidden><div class="card-body"><canvas id="rp-chart" height="90" aria-label="Chart"></canvas></div></div>
@@ -8785,7 +8787,7 @@ window.MLS = (function () {
 (function () {
   'use strict';
   var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast;
-  var state = { tab: 'sales', from: '', to: '', groupBy: 'day', year: '', module: '', action: '', search: '', page: 1 }, data = null, chart = null, last = { columns: [], rows: [], title: '' };
+  var state = { tab: 'sales', job: 'PICKUPS', customerId: '', from: '', to: '', groupBy: 'day', year: '', module: '', action: '', search: '', page: 1 }, data = null, chart = null, last = { columns: [], rows: [], title: '' };
   function can(c) { return M.Auth.can(c); }
   function pad(n) { return String(n).padStart(2, '0'); }
   function isoLocal(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -8796,7 +8798,7 @@ window.MLS = (function () {
   function pct(v, dp) { return v === null || v === undefined ? '—' : F.number(v, dp === undefined ? 1 : dp) + '%'; }
   function delta(v) { if (v === null || v === undefined) return '<span class="text-soft">—</span>'; var up = Number(v) > 0; return '<span class="' + (up ? 'text-success' : (Number(v) < 0 ? 'text-danger' : 'text-soft')) + '">' + (up ? '▲ ' : (Number(v) < 0 ? '▼ ' : '')) + F.number(Math.abs(Number(v)), 1) + '%</span>'; }
   function bold(v) { return '<span class="money fw-bold">' + F.peso(v) + '</span>'; }
-  var TABS = [['sales', 'Sales', 'REPORT_VIEW'], ['payments', 'Payments', 'REPORT_VIEW'], ['expenses', 'Expenses', 'REPORT_VIEW'], ['receivables', 'Receivables', 'REPORT_VIEW'], ['production', 'Production', 'REPORT_VIEW'], ['business', 'Business', 'REPORT_VIEW'], ['inventory', 'Inventory', 'REPORT_VIEW'], ['payroll', 'Payroll', ['STAFF_PAYROLL_ADMIN', 'STAFF_PAYROLL_HOURS_VIEW']], ['messages', 'Messages', 'SMS_VIEW_LOGS'], ['audit', 'Audit log', 'AUDIT_VIEW']];
+  var TABS = [['sales', 'Sales', 'REPORT_VIEW'], ['payments', 'Payments', 'REPORT_VIEW'], ['expenses', 'Expenses', 'REPORT_VIEW'], ['receivables', 'Receivables', 'REPORT_VIEW'], ['production', 'Production', 'REPORT_VIEW'], ['business', 'Business', 'REPORT_VIEW'], ['jobs', 'Job orders', 'REPORT_VIEW'], ['inventory', 'Inventory', 'REPORT_VIEW'], ['payroll', 'Payroll', ['STAFF_PAYROLL_ADMIN', 'STAFF_PAYROLL_HOURS_VIEW']], ['messages', 'Messages', 'SMS_VIEW_LOGS'], ['audit', 'Audit log', 'AUDIT_VIEW']];
   var PRESETS = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This week'], ['month', 'This month'], ['lastMonth', 'Last month'], ['quarter', 'Last 90 days'], ['year', 'This year'], ['twelve', 'Last 12 months']];
   function tabAllowed(t) { var p = t[2]; return Array.isArray(p) ? p.some(can) : can(p); }
   function preset(code) {
@@ -8942,28 +8944,129 @@ window.MLS = (function () {
     return '<div class="card mb-3"><div class="card-header">' + UI.esc(title) + '</div><div class="card-body p-0"><div class="table-wrap"><table class="table table-sm table-cards aligned mb-0"><thead><tr>' + columns.map(function (c) { return '<th class="' + (c.align === 'right' ? 'text-end num' : '') + '">' + UI.esc(c.label) + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (r) { return '<tr>' + columns.map(function (c, i) { return '<td data-label="' + UI.esc(c.label) + '" class="' + (c.align === 'right' ? 'text-end num' : (i === 0 ? 'lead-cell' : '')) + '">' + (c.format ? c.format(r[c.key], r) : UI.esc(r[c.key])) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div></div></div>';
   }
 
+  // ---------------------------------------------------------------- release 1.46.0: the job-order reports (one tab, ten reports)
+  var JOB_LIST = [['PICKUPS', 'Pickup register'], ['DELIVERIES', 'Delivery register'], ['PENDING', 'Pending job orders'], ['OUTSTANDING', 'Outstanding linens'], ['DISCREPANCY', 'Receiving differences'], ['LOSSES', 'Missing and damaged'], ['CLIENT', 'Client history'], ['REVENUE', 'Revenue by client and category'], ['RIDERS', 'Rider performance'], ['TURNAROUND', 'Turnaround']];
+  function num(v) { return v === '' || v === null || v === undefined ? '<span class="text-soft">—</span>' : F.number(v); }
+  function hrs(v) { return v === null || v === undefined ? '<span class="text-soft">—</span>' : F.number(v, 1) + ' h'; }
+  function hrsText(v) { return v === null || v === undefined ? '—' : F.number(v, 1) + ' h'; }
+  function lead(main, sub) { return '<span class="fw-bold">' + UI.esc(main) + '</span>' + (sub ? '<div class="small text-soft">' + sub + '</div>' : ''); }
+  function jobLoad() { return Api.call('reports.jobOrders', { report: state.job, from: state.from, to: state.to, customerId: state.job === 'CLIENT' ? state.customerId : '' }); }
+  function openJob(r) { if (r.OrderId && M.JobOrders && M.JobOrders.canView()) M.JobOrders.open(r.OrderId); }
+  var OUTCOMES = { FULL: 'Fully delivered', DELIVERED: 'Delivered', PARTIAL: 'Partially delivered', WITH_DISCREPANCY: 'With discrepancy', REJECTED: 'Rejected by client', FAILED: 'Failed attempt' };
+  var R = 'right';
+  var JOBS = {
+    PICKUPS: {
+      kpis: function (d) { var t = d.totals; return [['Job orders', t.jobOrders], ['Clients', t.clients], ['Bags', t.bags], ['Pieces', F.number(t.pieces)], ['By weight', F.number(t.weightKg, 2) + ' kg'], ['Billed', F.peso(t.billed)], ['Cancelled', t.cancelled]]; },
+      columns: function () { return [{ key: 'OrderNo', label: 'Job order', format: function (v, r) { return lead(v, F.datetime(r.PickupAt) + (r.Cancelled ? ' · <span class="text-danger">' + UI.esc(r.StatusLabel) + '</span>' : '')); } }, { key: 'Client', label: 'Client' }, { key: 'Rider', label: 'Counted by' }, { key: 'Bags', label: 'Bags', align: R }, { key: 'Pieces', label: 'Pieces', align: R, format: num }, { key: 'WeightKg', label: 'Kg', align: R, format: function (v) { return v ? F.number(v, 2) : '<span class="text-soft">—</span>'; } },
+        { key: 'SignedOn', label: 'Signed', format: function (v, r) { return UI.esc(v === 'PAPER' ? 'On paper' + (r.PaperFormNo ? ' ' + r.PaperFormNo : '') : (v === 'PHONE' ? 'On the phone' : '—')); } }, { key: 'StatusLabel', label: 'Now' }, { key: 'OrderTotal', label: 'Total', align: R, format: peso }]; },
+      chart: function (d) { return { type: 'bar', labels: d.byDay.map(function (r) { return r.Label.slice(5); }), datasets: [{ label: 'Pieces picked up', data: d.byDay.map(function (r) { return r.Pieces; }) }] }; },
+      extra: function (d) { return table('By day', [{ key: 'Label', label: 'Day', format: function (v) { return '<span class="fw-bold">' + F.date(v) + '</span>'; } }, { key: 'JobOrders', label: 'Job orders', align: R }, { key: 'Bags', label: 'Bags', align: R }, { key: 'Pieces', label: 'Pieces', align: R, format: num }, { key: 'WeightKg', label: 'Kg', align: R, format: function (v) { return F.number(v, 2); } }], d.byDay); },
+      onRow: openJob
+    },
+    DELIVERIES: {
+      kpis: function (d) { var t = d.totals; return [['Trips', t.trips], ['Full', t.full], ['Partial', t.partial], ['Discrepancy', t.withDiscrepancy], ['Rejected', t.rejectedTrips], ['Failed', t.failed], ['Delivered', F.number(t.delivered)], ['Collected', F.peso(t.collected)]]; },
+      columns: function () { return [{ key: 'OrderNo', label: 'Job order', format: function (v, r) { return lead(v, (r.TripNo ? 'Trip ' + r.TripNo + ' · ' : '') + F.datetime(r.At)); } }, { key: 'Client', label: 'Client' }, { key: 'Rider', label: 'Rider' }, { key: 'Outcome', label: 'Outcome', format: function (v) { return UI.esc(OUTCOMES[v] || F.status(v)); } }, { key: 'Delivered', label: 'Delivered', align: R, format: num }, { key: 'Damaged', label: 'Damaged', align: R }, { key: 'Rejected', label: 'Rejected', align: R },
+        { key: 'ReceivedBy', label: 'Received by', format: function (v, r) { return r.FailureReason ? '<span class="text-danger">' + UI.esc(r.FailureReason) + '</span>' : (UI.esc(v || '—') + (r.Position ? '<div class="small text-soft">' + UI.esc(r.Position) + '</div>' : '')); } }, { key: 'Collected', label: 'Collected', align: R, format: peso }]; },
+      chart: function (d) { var t = d.totals; return { type: 'bar', labels: ['Full', 'Partial', 'With discrepancy', 'Rejected', 'Failed'], datasets: [{ label: 'Trips', data: [t.full, t.partial, t.withDiscrepancy, t.rejectedTrips, t.failed] }] }; },
+      extra: function () { return '<p class="small text-soft">Each row is one delivery trip of a job order that ended in the range. The pieces come from the trip\'s own records.</p>'; },
+      onRow: openJob
+    },
+    PENDING: {
+      noDates: true,
+      kpis: function (d) { var t = d.totals; return [['Open job orders', t.jobOrders], ['Clients', t.clients], ['Pieces', F.number(t.pieces)], ['To review', t.needsReview], ['Past due', t.overdue], ['Oldest', t.oldestDays + ' d'], ['Unpaid balance', F.peso(t.balance)]]; },
+      columns: function () { return [{ key: 'OrderNo', label: 'Job order', format: function (v, r) { return lead(v, 'picked up ' + F.date(r.PickupAt)); } }, { key: 'Client', label: 'Client' }, { key: 'StageLabel', label: 'Where', format: function (v, r) { return UI.esc(v) + (r.NeedsReview ? '<div class="small text-danger">difference to review</div>' : ''); } }, { key: 'AgeDays', label: 'Age', align: R, format: function (v) { return v + ' d'; } }, { key: 'Pieces', label: 'Pieces', align: R, format: num }, { key: 'ToDeliver', label: 'To deliver', align: R, format: num },
+        { key: 'DueAt', label: 'Due', format: function (v, r) { return v ? '<span class="' + (r.Overdue ? 'text-danger' : '') + '">' + F.datetime(v) + '</span>' : '<span class="text-soft">—</span>'; } }, { key: 'BalanceAmount', label: 'Balance', align: R, format: peso }]; },
+      chart: function (d) { return { type: 'bar', labels: d.byStage.map(function (s) { return s.Label; }), datasets: [{ label: 'Job orders', data: d.byStage.map(function (s) { return s.JobOrders; }) }] }; },
+      extra: function (d) { return d.rows.length ? table('By stage', [{ key: 'Label', label: 'Where' }, { key: 'JobOrders', label: 'Job orders', align: R }, { key: 'Pieces', label: 'Pieces', align: R, format: num }, { key: 'OldestDays', label: 'Oldest', align: R, format: function (v) { return v + ' d'; } }], d.byStage) : ''; },
+      onRow: openJob
+    },
+    OUTSTANDING: {
+      noDates: true,
+      kpis: function (d) { var t = d.totals; return [['Job orders', t.jobOrders], ['Clients', t.clients], ['Pieces to deliver', F.number(t.pieces)], ['After a partial trip', F.number(t.partialPieces)], ['Lots by weight', t.lots + (t.lots ? ' (' + F.number(t.weightKg, 2) + ' kg)' : '')]]; },
+      columns: function () { return [{ key: 'Client', label: 'Client', format: function (v, r) { return lead(v, UI.esc(r.OrderNo)); } }, { key: 'Linen', label: 'Linen', format: function (v, r) { return UI.esc(v) + (r.Category ? '<div class="small text-soft">' + UI.esc(r.Category) + '</div>' : ''); } }, { key: 'StageLabel', label: 'Where' }, { key: 'Counted', label: 'Counted', align: R, format: function (v, r) { return r.ByWeight ? F.number(r.WeightKg, 2) + ' kg' : F.number(v); } }, { key: 'Delivered', label: 'Delivered', align: R }, { key: 'Rejected', label: 'Rejected', align: R },
+        { key: 'Outstanding', label: 'Outstanding', align: R, format: function (v, r) { return '<span class="fw-bold">' + (r.ByWeight ? '1 lot' : F.number(v)) + '</span>'; } }]; },
+      chart: function () { return null; },
+      extra: function (d) { var cols = function (first) { return [{ key: 'Label', label: first }, { key: 'JobOrders', label: 'Job orders', align: R }, { key: 'Pieces', label: 'Pieces', align: R, format: num }, { key: 'Lots', label: 'Lots by weight', align: R }]; }; return table('By client', cols('Client'), d.byClient) + table('By linen', cols('Linen'), d.byLinen) + '<p class="small text-soft">What the shop still holds for its clients, now: the count received (the pickup count while a job order awaits receiving) less what was delivered or written off. A rejected piece stays outstanding.</p>'; },
+      onRow: openJob
+    },
+    DISCREPANCY: {
+      kpis: function (d) { var t = d.totals; return [['Received', t.received], ['With a difference', t.withDifference + ' (' + F.number(t.pct, 1) + '%)'], ['Awaiting review', t.awaitingReview], ['Pieces short', F.number(t.shortPieces)], ['Pieces over', F.number(t.overPieces)]]; },
+      columns: function () { return [{ key: 'OrderNo', label: 'Job order', format: function (v, r) { return lead(v, 'received ' + F.datetime(r.ReceivedAt)); } }, { key: 'Client', label: 'Client' }, { key: 'Linen', label: 'Linen' }, { key: 'Pickup', label: 'Pickup', align: R, format: function (v, r) { return F.number(v, 2) + (r.ByWeight ? ' kg' : ''); } }, { key: 'Received', label: 'Received', align: R, format: function (v, r) { return F.number(v, 2) + (r.ByWeight ? ' kg' : ''); } },
+        { key: 'Diff', label: 'Difference', align: R, format: function (v, r) { return '<span class="fw-bold ' + (v < 0 ? 'text-danger' : '') + '">' + (v > 0 ? '+' : '') + F.number(v, 2) + (r.ByWeight ? ' kg' : '') + '</span>'; } }, { key: 'Reason', label: 'Reason' },
+        { key: 'State', label: 'Review', format: function (v, r) { return v === 'REVIEWED' ? 'Reviewed' + (r.ReviewedBy ? ' by ' + UI.esc(r.ReviewedBy) : '') + '<div class="small text-soft">billed on the ' + (r.BillBasis === 'PICKUP' ? 'pickup' : 'received') + ' count' + (r.ReviewNote ? ' · ' + UI.esc(r.ReviewNote) : '') + '</div>' : '<span class="text-danger">Awaiting review</span>'; } }]; },
+      chart: function () { return null; },
+      extra: function () { return '<p class="small text-soft">The job orders received in the range whose count at the shop differed from the pickup count, one row per linen (or the bags).</p>'; },
+      onRow: openJob
+    },
+    LOSSES: {
+      kpis: function (d) { var t = d.totals; return [['Events', t.events], ['Job orders', t.jobOrders], ['Short', F.number(t.short)], ['Damaged', F.number(t.damaged)], ['Rejected', F.number(t.rejected)], ['Written off', F.number(t.writtenOff)], ['Value', F.peso(t.value)]].concat(t.missing ? [['Missing', F.number(t.missing)]] : []); },
+      columns: function () { return [{ key: 'OrderNo', label: 'Job order', format: function (v, r) { return lead(v, F.datetime(r.At)); } }, { key: 'Client', label: 'Client' }, { key: 'Linen', label: 'Linen' }, { key: 'KindLabel', label: 'What' }, { key: 'Qty', label: 'Pieces', align: R, format: function (v, r) { return r.ByWeight ? F.number(r.WeightKg, 2) + ' kg' : F.number(v); } }, { key: 'Value', label: 'At the billed price', align: R, format: peso }, { key: 'Reason', label: 'Reason' }, { key: 'By', label: 'Recorded by' }]; },
+      chart: function (d) { var t = d.totals; return d.rows.length ? { type: 'bar', labels: ['Short at receiving', 'Damaged', 'Rejected', 'Written off'], datasets: [{ label: 'Pieces', data: [t.short, t.damaged, t.rejected, t.writtenOff] }] } : null; },
+      extra: function (d) { var cols = function (first) { return [{ key: 'Label', label: first }, { key: 'Short', label: 'Short', align: R }, { key: 'Damaged', label: 'Damaged', align: R }, { key: 'Rejected', label: 'Rejected', align: R }, { key: 'WrittenOff', label: 'Written off', align: R }, { key: 'Value', label: 'At the billed price', align: R, format: peso }]; };
+        return table('By client', cols('Client'), d.byClient) + table('By linen', cols('Linen'), d.byLinen) + '<p class="small text-soft">Events recorded in the range. A rejected piece may have been delivered on a later trip, and a damaged piece was accepted by the client; neither changes the bill. The value is the pieces at the price on the job order, for comparison only.</p>'; },
+      onRow: openJob
+    },
+    CLIENT: {
+      kpis: function (d) { var t = d.totals; return d.client ? [['Job orders', t.jobOrders], ['Open', t.open], ['Picked up', F.number(t.pieces)], ['Delivered', F.number(t.delivered)], ['Differences', t.withDifference], ['Billed', F.peso(t.billed)], ['Paid', F.peso(t.paid)], ['Balance', F.peso(t.balance)]] : [['Clients', t.clients], ['Job orders', t.jobOrders], ['Picked up', F.number(t.pieces)], ['Billed', F.peso(t.billed)], ['Paid', F.peso(t.paid)], ['Balance', F.peso(t.balance)]]; },
+      columns: function (d) {
+        if (!d.client) return [{ key: 'Client', label: 'Client', format: function (v) { return lead(v, 'open the history'); } }, { key: 'JobOrders', label: 'Job orders', align: R }, { key: 'Open', label: 'Open', align: R }, { key: 'Pieces', label: 'Pieces', align: R, format: num }, { key: 'LastPickup', label: 'Last pickup', format: function (v) { return F.date(v); } }, { key: 'Billed', label: 'Billed', align: R, format: bold }, { key: 'Paid', label: 'Paid', align: R, format: peso }, { key: 'Balance', label: 'Balance', align: R, format: peso }];
+        return [{ key: 'OrderNo', label: 'Job order', format: function (v, r) { return lead(v, 'picked up ' + F.datetime(r.PickupAt)); } }, { key: 'StatusLabel', label: 'Status', format: function (v, r) { return '<span class="' + (r.Cancelled ? 'text-danger' : '') + '">' + UI.esc(v) + '</span>' + (r.ReceivingStatus === 'DISCREPANCY' || r.ReceivingStatus === 'REVIEWED' ? '<div class="small text-soft">receiving difference</div>' : ''); } }, { key: 'PiecesPickup', label: 'Picked up', align: R, format: num }, { key: 'PiecesReceived', label: 'Received', align: R, format: num }, { key: 'PiecesDelivered', label: 'Delivered', align: R, format: num },
+          { key: 'OrderTotal', label: 'Total', align: R, format: bold }, { key: 'PaidAmount', label: 'Paid', align: R, format: peso }, { key: 'BalanceAmount', label: 'Balance', align: R, format: peso }];
+      },
+      chart: function () { return null; },
+      head: function (d) { var c = d.client; if (!c) return ''; var bits = [c.PropertyName, c.EstablishmentType ? F.status(c.EstablishmentType) : '', c.Representative, c.BillingTerms, c.ContractRef ? 'Contract ' + c.ContractRef : ''].filter(Boolean); return '<div class="d-flex flex-wrap align-items-center gap-2 mb-3"><button type="button" class="btn btn-outline-secondary btn-sm" id="rp-client-back"><i class="fa-solid fa-arrow-left me-1"></i>All clients</button><span class="fw-bold" id="rp-client-name">' + UI.esc(c.Name) + '</span><span class="small text-soft">' + UI.esc(bits.join(' · ')) + '</span></div>'; },
+      extra: function (d) { return d.client ? '' : '<p class="small text-soft">The job orders picked up in the range, by client. Choose a client for its job orders.</p>'; },
+      onRow: function (r) { if (data && data.client) openJob(r); else if (r.CustomerId) { state.customerId = r.CustomerId; load(); } }
+    },
+    REVENUE: {
+      kpis: function (d) { var t = d.totals; return [['Job orders', t.jobOrders], ['Clients', t.clients], ['Linens billed', F.peso(t.lines)], ['Discounts', F.peso(t.discounts)], ['Delivery fees', F.peso(t.deliveryFees)], ['Other charges', F.peso(t.otherCharges)], ['Billed', F.peso(t.billed)], ['Paid', F.peso(t.paid)], ['Balance', F.peso(t.balance)]]; },
+      columns: function () { return [{ key: 'Client', label: 'Client', format: function (v) { return '<span class="fw-bold">' + UI.esc(v) + '</span>'; } }, { key: 'JobOrders', label: 'Job orders', align: R }, { key: 'Pieces', label: 'Pieces', align: R, format: num }, { key: 'WeightKg', label: 'Kg', align: R, format: function (v) { return v ? F.number(v, 2) : '<span class="text-soft">—</span>'; } }, { key: 'Billed', label: 'Billed', align: R, format: bold }, { key: 'Paid', label: 'Paid', align: R, format: peso }, { key: 'Balance', label: 'Balance', align: R, format: peso }, { key: 'SharePct', label: 'Share', align: R, format: function (v) { return pct(v); } }]; },
+      chart: function (d) { var top = d.rows.slice(0, 10); return { type: 'bar', labels: top.map(function (r) { return r.Client; }), datasets: [{ label: 'Billed', data: top.map(function (r) { return r.Billed; }) }] }; },
+      extra: function (d) { var cols = function (first) { return [{ key: 'Label', label: first }, { key: 'Qty', label: 'Pieces', align: R, format: num }, { key: 'WeightKg', label: 'Kg', align: R, format: function (v) { return v ? F.number(v, 2) : '<span class="text-soft">—</span>'; } }, { key: 'Amount', label: 'Amount', align: R, format: bold }, { key: 'SharePct', label: 'Share', align: R, format: function (v) { return pct(v); } }]; };
+        return table('By category', cols('Category'), d.byCategory) + table('By linen', cols('Linen'), d.byLinen) + '<p class="small text-soft">Job orders by their order date, cancelled and refunded ones left out, as in the Sales report. The categories and linens add up to the linens billed; discounts, delivery fees and other charges are on the order, not on a linen.</p>'; },
+      onRow: function (r) { if (r.CustomerId) { state.job = 'CLIENT'; state.customerId = r.CustomerId; UI.el('rp-job').value = 'CLIENT'; paintToolbar(); load(); } }
+    },
+    RIDERS: {
+      kpis: function (d) { var t = d.totals; return [['Riders', t.riders], ['Pickups', t.pickups], ['Picked up', F.number(t.piecesPicked)], ['Trips', t.trips], ['Delivered', F.number(t.delivered)], ['Failed', t.failed + t.rejectedTrips], ['In window', t.timed ? t.onTime + ' of ' + t.timed : '—'], ['Collected', F.peso(t.collected)]]; },
+      columns: function () { return [{ key: 'Rider', label: 'Rider', format: function (v) { return '<span class="fw-bold">' + UI.esc(v) + '</span>'; } }, { key: 'Pickups', label: 'Pickups', align: R }, { key: 'PiecesPicked', label: 'Pieces picked up', align: R, format: num }, { key: 'Trips', label: 'Trips', align: R }, { key: 'Full', label: 'Full', align: R }, { key: 'Partial', label: 'Partial', align: R }, { key: 'Failed', label: 'Failed or rejected', align: R, format: function (v, r) { return String(r.Failed + r.RejectedTrips); } }, { key: 'PiecesDelivered', label: 'Pieces delivered', align: R, format: num },
+        { key: 'OnTimePct', label: 'Within the window', align: R, format: function (v, r) { return r.Timed ? r.OnTime + ' of ' + r.Timed : '<span class="text-soft">—</span>'; } }, { key: 'Collected', label: 'Collected', align: R, format: peso }]; },
+      chart: function (d) { return { type: 'bar', labels: d.rows.map(function (r) { return r.Rider; }), datasets: [{ label: 'Pickups', data: d.rows.map(function (r) { return r.Pickups; }) }, { label: 'Trips', data: d.rows.map(function (r) { return r.Trips; }) }] }; },
+      extra: function () { return '<p class="small text-soft">Job orders only: who counted each pickup, and who made each delivery trip that ended in the range. "Within the window" counts the delivered trips that had a booked window.</p>'; }
+    },
+    TURNAROUND: {
+      kpis: function (d) { var t = d.totals; return [['Completed', t.completed], ['To received', hrsText(t.toReceiveH)], ['To ready', hrsText(t.toReadyH)], ['To delivered', hrsText(t.toDeliverH)], ['Total', hrsText(t.totalH)], ['On time', t.timed ? t.onTime + ' of ' + t.timed + ' (' + F.number(t.onTimePct, 1) + '%)' : '—'], ['Several trips', t.moreThanOneTrip], ['Discrepancy', t.withDiscrepancy]]; },
+      columns: function () { return [{ key: 'OrderNo', label: 'Job order', format: function (v, r) { return lead(v, 'completed ' + F.datetime(r.ReleasedAt)); } }, { key: 'Client', label: 'Client' }, { key: 'ToReceiveH', label: 'To received', align: R, format: hrs }, { key: 'ToReadyH', label: 'To ready', align: R, format: hrs }, { key: 'ToDeliverH', label: 'To delivered', align: R, format: hrs }, { key: 'TotalH', label: 'Total', align: R, format: function (v) { return '<span class="fw-bold">' + hrs(v) + '</span>'; } }, { key: 'Trips', label: 'Trips', align: R },
+        { key: 'OnTime', label: 'On time', format: function (v) { return v === null || v === undefined ? '<span class="text-soft">—</span>' : (v ? 'Yes' : '<span class="text-danger">Late</span>'); } }]; },
+      chart: function (d) { var t = d.totals; return d.rows.length ? { type: 'bar', labels: ['Pickup to received', 'Received to ready', 'Ready to delivered'], datasets: [{ label: 'Average hours', data: [t.toReceiveH || 0, t.toReadyH || 0, t.toDeliverH || 0] }] } : null; },
+      extra: function (d) { return table('By client', [{ key: 'Label', label: 'Client' }, { key: 'JobOrders', label: 'Job orders', align: R }, { key: 'ToReceiveH', label: 'To received', align: R, format: hrs }, { key: 'ToReadyH', label: 'To ready', align: R, format: hrs }, { key: 'ToDeliverH', label: 'To delivered', align: R, format: hrs }, { key: 'TotalH', label: 'Total', align: R, format: hrs }], d.byClient) + '<p class="small text-soft">The job orders completed in the range. Hours run on the clock, nights and closed days included. "On time" compares the completion with the order\'s due time.</p>'; },
+      onRow: openJob
+    }
+  };
+  Object.keys(JOBS).forEach(function (k) { JOBS[k].load = jobLoad; JOBS[k].rows = function (d) { return d.rows; }; });
+
   // ---------------------------------------------------------------- render
-  function spec() { return SPECS[state.tab]; }
+  function spec() { return state.tab === 'jobs' ? JOBS[state.job] : SPECS[state.tab]; }
   function paintTabs() {
     UI.html('rp-tabs', TABS.filter(tabAllowed).map(function (t) { return '<button type="button" data-tab="' + t[0] + '"' + (t[0] === state.tab ? ' class="active"' : '') + '>' + t[1] + '</button>'; }).join(''));
     UI.el('rp-tabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { state.tab = b.getAttribute('data-tab'); state.page = 1; if (state.tab === 'business' && !state.wideRange) { preset('twelve'); state.wideRange = true; } paintTabs(); paintToolbar(); load(); }; });
   }
   function paintToolbar() {
     var s = spec();
-    UI.el('rp-group').hidden = state.tab !== 'sales'; UI.el('rp-year').hidden = !s.yearPicker; UI.el('rp-from').hidden = !!s.noRange; UI.el('rp-presets').hidden = !!s.noRange; UI.el('rp-to').hidden = !!s.yearPicker;
+    UI.el('rp-group').hidden = state.tab !== 'sales'; UI.el('rp-year').hidden = !s.yearPicker; UI.el('rp-from').hidden = !!(s.noRange || s.noDates); UI.el('rp-presets').hidden = !!(s.noRange || s.noDates); UI.el('rp-to').hidden = !!(s.yearPicker || s.noDates); UI.el('rp-job').hidden = state.tab !== 'jobs';
     UI.el('rp-module').hidden = !s.auditFilters; UI.el('rp-action').hidden = !s.auditFilters; UI.el('rp-search').hidden = !(s.auditFilters || s.searchFilter); UI.el('rp-search').placeholder = s.searchFilter ? 'Search customer, number, template or text' : 'Search user, record, values';
     UI.el('rp-to').setAttribute('aria-label', s.noRange ? 'As of' : 'To date');
     if (s.yearPicker && !UI.el('rp-year').options.length) { var y = new Date().getFullYear(); UI.el('rp-year').innerHTML = '<option value="">All years</option>' + UI.options([y, y - 1, y - 2], state.year, function (v) { return String(v); }, function (v) { return String(v); }); }
   }
   var reportSeq = Api.sequence();
   function load() {
-    var s = spec(); UI.el('rp-table').innerHTML = UI.skeleton({ kind: 'rows', count: 6, label: 'Loading the report' }); UI.el('rp-extra').innerHTML = ''; UI.el('rp-kpis').innerHTML = '';
+    var s = spec(); UI.el('rp-table').innerHTML = UI.skeleton({ kind: 'rows', count: 6, label: 'Loading the report' }); UI.el('rp-extra').innerHTML = ''; UI.el('rp-kpis').innerHTML = ''; UI.el('rp-head').innerHTML = '';
     var ticket = reportSeq.take();
     return s.load().then(function (d) {
       if (!reportSeq.is(ticket)) return;  // the user has changed the tab, the dates or the page meanwhile
       data = d; var cols = s.columns(d), rows = s.rows(d);
       cols.forEach(function (c, i) { if (c.align === 'right') c.num = true; else if (i === 0) c.cls = 'lead-cell'; });  // 1.32.0: figures as amount columns, the first column a phone card's title
-      last = { columns: cols, rows: rows, title: TABS.filter(function (t) { return t[0] === state.tab; })[0][1] };
+      last = { columns: cols, rows: rows, title: state.tab === 'jobs' ? 'Job orders: ' + JOB_LIST.filter(function (j) { return j[0] === state.job; })[0][1] + (d.client ? ', ' + d.client.Name : '') : TABS.filter(function (t) { return t[0] === state.tab; })[0][1] };
+      UI.html('rp-head', s.head ? s.head(d) : ''); var back = UI.el('rp-client-back'); if (back) back.onclick = function () { state.customerId = ''; load(); };
       UI.html('rp-kpis', s.kpis(d).map(function (k) { return '<div class="tile"><div class="k">' + UI.esc(k[0]) + '</div><div class="v">' + UI.esc(String(k[1])) + '</div></div>'; }).join(''));
       M.Table.render(UI.el('rp-table'), { columns: cols, rows: rows, cls: 'aligned', total: d.total, page: d.page, pages: d.pages, empty: { icon: 'fa-chart-line', title: 'Nothing in this range', hint: 'Widen the dates or pick another preset.' }, onPage: function (p) { state.page = p; load(); }, onRow: s.onRow || null });
       UI.html('rp-extra', s.extra(d) || '');
@@ -8971,7 +9074,7 @@ window.MLS = (function () {
       var cv = UI.el('rp-covers'); if (d.covers && d.covers.note) { cv.hidden = false; cv.textContent = 'Covers ' + F.date(d.covers.from) + ' – ' + F.date(d.covers.to) + ': ' + d.covers.note + '.'; } else cv.hidden = true;
       if (s.auditFilters) { var ms = UI.el('rp-module'), as = UI.el('rp-action'); if (ms.options.length <= 1) ms.innerHTML = '<option value="">All modules</option>' + UI.options(d.modules, state.module, function (x) { return x; }, function (x) { return x; }); if (as.options.length <= 1) as.innerHTML = '<option value="">All actions</option>' + UI.options(d.actions, state.action, function (x) { return F.status(x); }, function (x) { return x; }); }
       paintChart(s.chart(d));
-      UI.el('rp-scope').textContent = (s.noRange ? (s.yearPicker ? (state.year || 'all years') : 'as of ' + F.date(state.to || today())) : F.date(d.from || state.from) + ' – ' + F.date(d.to || state.to)) + ' · ' + UI.branchName(M.AppState.me.activeBranch);
+      UI.el('rp-scope').textContent = (s.noDates ? 'as of now' : s.noRange ? (s.yearPicker ? (state.year || 'all years') : 'as of ' + F.date(state.to || today())) : F.date(d.from || state.from) + ' – ' + F.date(d.to || state.to)) + ' · ' + UI.branchName(M.AppState.me.activeBranch);
     }).catch(function (e) { if (!reportSeq.is(ticket)) return; var box = UI.el('rp-table'); box.innerHTML = UI.empty({ icon: 'fa-plug-circle-xmark', title: 'The report could not be loaded', hint: UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }); var b = box.querySelector('[data-empty-action]'); if (b) b.onclick = function () { load(); }; paintChart(null); });
   }
   function paintChart(c) {
@@ -8988,7 +9091,7 @@ window.MLS = (function () {
     var cols = last.columns, rows = last.rows; if (!rows.length) { Toast.info('Nothing to download.'); return; }
     var cell = function (v) { if (v === null || v === undefined) return ''; if (typeof v === 'object') v = JSON.stringify(v); v = String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
     var text = [cols.map(function (c) { return cell(c.label); }).join(',')].concat(rows.map(function (r) { return cols.map(function (c) { return cell(r[c.key]); }).join(','); })).join('\n');
-    var blob = new Blob(['﻿' + text], { type: 'text/csv;charset=utf-8' }), a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = ('mls-' + state.tab + '-' + (state.from || today()) + (state.to ? '-to-' + state.to : '') + '.csv'); document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    var blob = new Blob(['﻿' + text], { type: 'text/csv;charset=utf-8' }), a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = ('mls-' + state.tab + (state.tab === 'jobs' ? '-' + state.job.toLowerCase() : '') + '-' + (state.from || today()) + (state.to ? '-to-' + state.to : '') + '.csv'); document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
   function print() {
     if (!data) return; var s = spec(), cols = last.columns, rows = last.rows;
@@ -9008,6 +9111,7 @@ window.MLS = (function () {
     UI.el('rp-group').onchange = function () { state.groupBy = this.value; load(); }; UI.el('rp-year').onchange = function () { state.year = this.value; load(); };
     UI.el('rp-module').onchange = function () { state.module = this.value; state.page = 1; load(); }; UI.el('rp-action').onchange = function () { state.action = this.value; state.page = 1; load(); };
     UI.el('rp-search').oninput = UI.debounce(function () { state.search = UI.el('rp-search').value.trim(); state.page = 1; load(); }, 400);
+    UI.el('rp-job').innerHTML = UI.options(JOB_LIST, state.job, function (j) { return j[1]; }, function (j) { return j[0]; }); UI.el('rp-job').onchange = function () { state.job = this.value; state.customerId = ''; state.page = 1; paintToolbar(); load(); };
     UI.el('rp-csv').onclick = csv; UI.el('rp-print').onclick = print; UI.el('rp-refresh').onclick = function () { load(); };
   }
   function start(params) {
