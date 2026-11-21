@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '0a80ad241b', version: '1.46.0' };</script>
+  <script>window.MLS_PWA = { build: '0ea3d201a9', version: '1.47.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -299,7 +299,7 @@
      done (completed, released, closed) on the soft burgundy; history (inactive, void, archived, retired) as an outlined pill */
   .status-badge.s-new, .status-badge.s-received, .status-badge.s-leave, .status-badge.s-holiday, .status-badge.s-unassigned, .status-badge.s-draft, .status-badge.s-not_started, .status-badge.s-scheduled, .status-badge.s-prepared, .status-badge.s-unknown, .status-badge.s-sample, .status-badge.s-planned, .status-badge.s-backed_up { background: var(--mls-well); color: var(--mls-ink); }
   .status-badge.s-processing, .status-badge.s-washing, .status-badge.s-drying, .status-badge.s-folding, .status-badge.s-qc, .status-badge.s-packed, .status-badge.s-assigned, .status-badge.s-accepted, .status-badge.s-open, .status-badge.s-in_progress, .status-badge.s-out_for_delivery, .status-badge.s-for_pickup, .status-badge.s-computed, .status-badge.s-gateway_queued, .status-badge.s-running { background: var(--mls-info-soft); color: var(--mls-info); }
-  .status-badge.s-ready, .status-badge.s-verified, .status-badge.s-applied, .status-badge.s-active, .status-badge.s-paid, .status-badge.s-present, .status-badge.s-approved, .status-badge.s-finalized, .status-badge.s-delivered, .status-badge.s-picked_up, .status-badge.s-in, .status-badge.s-pass, .status-badge.s-ok, .status-badge.s-on_time, .status-badge.s-user_confirmed_sent, .status-badge.s-resolved, .status-badge.s-gateway_delivered, .status-badge.s-attached, .status-badge.s-production { background: var(--mls-success-soft); color: var(--mls-success); }
+  .status-badge.s-ready, .status-badge.s-issued, .status-badge.s-verified, .status-badge.s-applied, .status-badge.s-active, .status-badge.s-paid, .status-badge.s-present, .status-badge.s-approved, .status-badge.s-finalized, .status-badge.s-delivered, .status-badge.s-picked_up, .status-badge.s-in, .status-badge.s-pass, .status-badge.s-ok, .status-badge.s-on_time, .status-badge.s-user_confirmed_sent, .status-badge.s-resolved, .status-badge.s-gateway_delivered, .status-badge.s-attached, .status-badge.s-production { background: var(--mls-success-soft); color: var(--mls-success); }
   .status-badge.s-partial, .status-badge.s-reviewed, .status-badge.s-late, .status-badge.s-undertime, .status-badge.s-pending, .status-badge.s-reopened, .status-badge.s-submitted, .status-badge.s-stale, .status-badge.s-unpaid, .status-badge.s-warning, .status-badge.s-composer_open_requested, .status-badge.s-in_review, .status-badge.s-gateway_sent, .status-badge.s-soon, .status-badge.s-stopped, .status-badge.s-skipped { background: var(--mls-warning-soft); color: var(--mls-warning); }
   .status-badge.s-cancelled, .status-badge.s-discrepancy, .status-badge.s-refunded, .status-badge.s-absent, .status-badge.s-review, .status-badge.s-rejected, .status-badge.s-failed, .status-badge.s-fail, .status-badge.s-locked, .status-badge.s-disabled, .status-badge.s-error, .status-badge.s-overdue, .status-badge.s-not_sent, .status-badge.s-failed_to_open, .status-badge.s-gateway_failed, .status-badge.s-down, .status-badge.s-due, .status-badge.s-missing, .status-badge.s-test, .status-badge.s-demo, .status-badge.s-deleted { background: var(--mls-danger-soft); color: var(--mls-danger); }
   .status-badge.s-completed, .status-badge.s-released, .status-badge.s-closed { background: var(--mls-primary-soft); color: var(--mls-primary); }
@@ -1060,7 +1060,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.46.0';
+  var VERSION = '1.47.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -4436,6 +4436,7 @@ window.MLS = (function () {
       var more = [], danger = [], right = [];
       if (M.Auth.can('INCIDENT_CREATE')) more.push('<li><button type="button" class="dropdown-item" data-act="incident"><i class="fa-solid fa-triangle-exclamation me-2" aria-hidden="true"></i>Report incident</button></li>');
       if (M.Auth.can('CUSTOMER_ERASE') && !c.Anonymised) danger.push('<li><button type="button" class="dropdown-item text-danger" data-act="erase"><i class="fa-solid fa-user-slash me-2" aria-hidden="true"></i>Erase personal data</button></li>');
+      if (c.CustomerType === 'CORPORATE' && !c.Anonymised && M.Statements && M.Statements.canView()) right.push('<button type="button" class="btn btn-sm btn-outline-secondary" data-act="statement"><i class="fa-solid fa-file-invoice me-1"></i>Statement</button>');  // 1.47.0
       if (M.Auth.can('CUSTOMER_EDIT') && !c.Anonymised) right.push('<button type="button" class="btn btn-sm btn-outline-primary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button>');
       if (M.Auth.can('POS_CREATE') && c.Status === 'ACTIVE') right.push('<button type="button" class="btn btn-sm btn-primary" data-act="pos"><i class="fa-solid fa-cash-register me-1"></i>New order</button>');
       var moreMenu = more.length || danger.length ? '<div class="dropdown dropup cust-more"><button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" id="cust-more" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis me-1" aria-hidden="true"></i>More</button><ul class="dropdown-menu">' + more.join('') + (more.length && danger.length ? '<li><hr class="dropdown-divider"></li>' : '') + danger.join('') + '</ul></div>' : '';
@@ -4444,7 +4445,7 @@ window.MLS = (function () {
       var smsItems = []; if (withBalance) smsItems.push({ code: 'BALANCE_REMINDER', label: 'Balance reminder · ' + withBalance.OrderNo, icon: 'fa-bell', suggested: true, arg: withBalance.Id }); smsItems.push({ code: 'GENERAL', label: 'General message', icon: 'fa-comment', suggested: !withBalance });
       var smsMenu = M.Sms && M.Sms.can(c.Mobile) && c.Status === 'ACTIVE' ? M.Sms.menuHtml({ id: 'cust-sms-menu', label: 'Send SMS', items: smsItems }) : '';
       UI.html('cust-view-actions', moreMenu + '<span class="spacer"></span>' + smsMenu + right.join(''));
-      UI.el('cust-view-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); if (a === 'incident') return M.Incidents.report({ customerId: c.Id, customerName: c.FullName }); if (a === 'erase') return erase(c); M.Modal.closeThen('cust-view-modal', function () { if (a === 'pos') M.Router.go('pos', { customerId: c.Id }); else openForm(c); }); }; });
+      UI.el('cust-view-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); if (a === 'incident') return M.Incidents.report({ customerId: c.Id, customerName: c.FullName }); if (a === 'erase') return erase(c); M.Modal.closeThen('cust-view-modal', function () { if (a === 'pos') M.Router.go('pos', { customerId: c.Id }); else if (a === 'statement') M.Statements.open(c.Id, { name: c.FullName }); else openForm(c); }); }; });
       if (smsMenu) M.Sms.wireMenu(UI.el('cust-view-actions'), function (arg) { return { customerId: c.Id, orderId: arg || '' }; }, function () { if (M.Auth.can('SMS_VIEW_LOGS')) loadHistory(c.Id); });
       M.Modal.open('cust-view-modal');
     }).catch(function (e) { Toast.danger(UI.error(e)); });
@@ -7396,6 +7397,181 @@ window.MLS = (function () {
 })();
 </script>
 
+        <!-- Mrs Laundry Sys — StatementsPage.html (release 1.47.0): a client's statement of account.
+     One dialog, opened from a client's page and from Reports → Job orders → Client history: choose the period, preview the figures
+     (nothing is written), issue the statement (numbered and kept as issued), print an issued statement, void a mistaken one. -->
+<div class="modal fade" id="soa-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="soa-title">Statement of account</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <div class="row g-2 align-items-end" id="soa-period">
+          <div class="col-6 col-md-3"><label class="form-label" for="soa-from">From</label><input class="form-control" id="soa-from" type="date"></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="soa-to">To</label><input class="form-control" id="soa-to" type="date"></div>
+          <div class="col-12 col-md-6 d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="soa-this">This month</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="soa-last">Last month</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="soa-show"><i class="fa-solid fa-rotate me-1" aria-hidden="true"></i>Show</button>
+          </div>
+        </div>
+        <div class="alert alert-danger small mt-3 mb-0" id="soa-error" role="alert" hidden></div>
+        <div class="mt-3" id="soa-body"></div>
+        <div class="row g-2 mt-1" id="soa-issue-fields" hidden>
+          <div class="col-12 col-md-4"><label class="form-label" for="soa-due">Due date (optional)</label><input class="form-control" id="soa-due" type="date"></div>
+          <div class="col-12 col-md-8"><label class="form-label" for="soa-notes">Note printed on the statement (optional)</label><input class="form-control" id="soa-notes" maxlength="200"></div>
+        </div>
+        <div class="row g-2 mt-1" id="soa-void-fields" hidden>
+          <div class="col-12"><label class="form-label" for="soa-void-reason">Why is this statement voided?</label><input class="form-control" id="soa-void-reason" maxlength="200"></div>
+        </div>
+        <section class="od-section mt-3"><h6 class="section-title">Issued statements <span class="count" id="soa-count">0</span></h6><div id="soa-list"></div></section>
+      </div>
+      <div class="modal-footer flex-wrap gap-2" id="soa-actions"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Modal = M.Modal;
+  var s = null;  // { customerId, name, doc (the preview or an issued statement), requestId, voiding }
+  var PAPER_KEY = 'mls.statement.paper';
+  function can(code) { return M.Auth.can(code); }
+  function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function month(offset) { var now = new Date(), a = new Date(now.getFullYear(), now.getMonth() + offset, 1), b = offset === 0 ? now : new Date(now.getFullYear(), now.getMonth() + offset + 1, 0); return [iso(a), iso(b)]; }
+  function money(v) { return v === '' || v === null || v === undefined ? '' : F.peso(v); }
+  function periodText(d) { return F.date(d.PeriodFrom) + ' to ' + F.date(d.PeriodTo); }
+  function error(msg) { var box = UI.el('soa-error'); box.textContent = msg || ''; box.hidden = !msg; }
+
+  function table(title, head, rows, empty) {
+    if (!rows.length) return empty ? '<section class="od-section mt-3"><h6 class="section-title">' + title + '</h6><p class="small text-muted mb-0">' + empty + '</p></section>' : '';
+    return '<section class="od-section mt-3"><h6 class="section-title">' + title + ' <span class="count">' + rows.length + '</span></h6><div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr>' +
+      head.map(function (h) { return '<th' + (h[1] ? ' class="text-end num"' : '') + '>' + h[0] + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td data-label="' + head[i][0] + '"' + (head[i][1] ? ' class="text-end num"' : '') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div></section>';
+  }
+  function orderRows(lines) { return lines.map(function (l) { return [UI.esc(F.date(l.Date)), '<span class="fw-bold">' + UI.esc(l.OrderNo) + '</span> <span class="text-muted small">' + UI.esc(l.Description) + '</span>', l.Pieces === '' ? '' : num(l.Pieces), money(l.Billed), money(l.Paid), money(l.Balance)]; }); }
+  var ORDER_HEAD = [['Date'], ['Order'], ['Pieces', 1], ['Billed', 1], ['Paid', 1], ['Balance', 1]];
+
+  /** The statement on the screen: the preview, or an issued one as it was issued. */
+  function bodyHtml(d) {
+    var issued = d.Status !== 'PREVIEW', c = d.Client || {};
+    var top = issued
+      ? '<div class="d-flex flex-wrap align-items-center gap-2 mb-2"><span class="fw-bold" id="soa-no">' + UI.esc(d.StatementNo) + '</span>' + UI.badge(d.Status) + '<span class="text-muted small">' + UI.esc(periodText(d)) + ' · issued ' + UI.esc(F.datetime(d.IssuedAt)) + (d.IssuedBy ? ' by ' + UI.esc(d.IssuedBy) : '') + '</span></div>' +
+        (d.Status === 'VOID' ? '<div class="alert alert-light border small">Voided' + (d.VoidedBy ? ' by ' + UI.esc(d.VoidedBy) : '') + ': ' + UI.esc(d.VoidReason) + '</div>' : '')
+      : '<p class="small text-muted mb-2" id="soa-preview-note">Preview for ' + UI.esc(periodText(d)) + '. Nothing is saved until the statement is issued.</p>';
+    var grid = [['Brought forward', money(d.Forward), 'soa-forward'], ['Billed this period', money(d.Billed), 'soa-billed'], ['Paid this period', money(d.Paid), 'soa-paid'], ['Balance due', money(d.BalanceDue), 'soa-balance']];
+    if (d.DueDate) grid.push(['Due by', UI.esc(F.date(d.DueDate)), 'soa-due-shown']);
+    if (c.BillingTerms) grid.push(['Billing terms', UI.esc(c.BillingTerms), 'soa-terms']);
+    var touching = !issued && d.Issued && d.Issued.length ? '<div class="alert alert-light border small mt-3 mb-0" id="soa-touching">Already issued for days in this period: ' + d.Issued.map(function (x) { return UI.esc(x.StatementNo) + ' (' + UI.esc(F.date(x.PeriodFrom)) + ' to ' + UI.esc(F.date(x.PeriodTo)) + ')'; }).join(', ') + '.</div>' : '';
+    return top + '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v" id="' + g[2] + '">' + g[1] + '</div></div>'; }).join('') + '</div>' +
+      (d.Notes ? '<div class="alert alert-light border small mt-3 mb-0">' + UI.esc(d.Notes) + '</div>' : '') + (d.Covers ? '<div class="alert alert-light border small mt-3 mb-0" id="soa-covers">' + UI.esc(d.Covers.charAt(0).toUpperCase() + d.Covers.slice(1)) + '.</div>' : '') + touching +
+      table('Orders in this period', ORDER_HEAD, orderRows(d.Orders), 'No order was billed in this period.') +
+      table('Earlier orders still owing', ORDER_HEAD, orderRows(d.Earlier)) +
+      table('Payments received in this period', [['Date'], ['Order'], ['Payment'], ['Amount', 1]], d.Payments.map(function (l) { return [UI.esc(F.date(l.Date)), UI.esc(l.OrderNo), UI.esc(l.Description), money(l.Paid)]; }));
+  }
+
+  function actions() {
+    var d = s.doc, issued = d && d.Status !== 'PREVIEW', out = [];
+    if (issued) out.push('<button type="button" class="btn btn-sm btn-outline-secondary" id="soa-back"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Back to the preview</button>');
+    out.push('<span class="spacer"></span>');
+    if (issued && d.Status === 'ISSUED' && can('STATEMENT_ISSUE')) out.push(s.voiding ? '<button type="button" class="btn btn-sm btn-danger" id="soa-void-go">Void the statement</button>' : '<button type="button" class="btn btn-sm btn-outline-danger" id="soa-void">Void</button>');
+    if (issued) out.push('<button type="button" class="btn btn-sm btn-primary" id="soa-print"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>' + (num(d.PrintCount) ? 'Print again' : 'Print') + '</button>');
+    if (d && !issued && can('STATEMENT_ISSUE')) out.push('<button type="button" class="btn btn-sm btn-primary" id="soa-issue"><i class="fa-solid fa-file-invoice me-1" aria-hidden="true"></i>Issue statement</button>');
+    UI.html('soa-actions', out.join(''));
+    UI.el('soa-issue-fields').hidden = !(d && !issued && can('STATEMENT_ISSUE')); UI.el('soa-void-fields').hidden = !s.voiding; UI.el('soa-period').hidden = !!issued;
+    var b;
+    if ((b = UI.el('soa-back'))) b.onclick = function () { s.voiding = false; preview(); };
+    if ((b = UI.el('soa-void'))) b.onclick = function () { s.voiding = true; actions(); UI.el('soa-void-reason').value = ''; UI.el('soa-void-reason').focus(); };
+    if ((b = UI.el('soa-void-go'))) b.onclick = voidIt;
+    if ((b = UI.el('soa-print'))) b.onclick = function () { print(s.doc.Id); };
+    if ((b = UI.el('soa-issue'))) b.onclick = issue;
+  }
+  function render(d) { s.doc = d; error(''); UI.html('soa-body', d ? bodyHtml(d) : ''); actions(); }
+
+  function preview() {
+    var from = UI.el('soa-from').value, to = UI.el('soa-to').value; s.requestId = UI.uuid(); s.voiding = false;
+    return Api.call('statements.preview', { customerId: s.customerId, from: from, to: to }, { busy: true }).then(function (d) { render(d); return d; })
+      .catch(function (e) { s.doc = null; UI.html('soa-body', ''); actions(); error(UI.error(e)); return null; });
+  }
+  function list() {
+    return Api.call('statements.list', { customerId: s.customerId }).then(function (r) {
+      UI.el('soa-count').textContent = r.rows.length;
+      UI.html('soa-list', r.rows.length ? '<div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>No.</th><th>Period</th><th class="text-end num">Balance due</th><th>Status</th></tr></thead><tbody>' + r.rows.map(function (x) {
+        return '<tr class="pointer" tabindex="0" data-kb="row" data-soa="' + UI.esc(x.Id) + '"><td data-label="No." class="fw-bold">' + UI.esc(x.StatementNo) + '</td><td data-label="Period">' + UI.esc(periodText(x)) + '</td><td data-label="Balance due" class="text-end num">' + money(x.BalanceDue) + '</td><td data-label="Status">' + UI.badge(x.Status) + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : '<p class="small text-muted mb-0">None yet.</p>');
+      UI.el('soa-list').querySelectorAll('[data-soa]').forEach(function (tr) { tr.onclick = function () { show(tr.getAttribute('data-soa')); }; });
+    }).catch(function (e) { UI.html('soa-list', '<p class="small text-danger mb-0">' + UI.esc(UI.error(e)) + '</p>'); });
+  }
+  function show(id) { s.voiding = false; return Api.call('statements.get', { id: id }, { busy: true }).then(function (d) { render(d); UI.el('soa-body').scrollIntoView({ block: 'nearest' }); return d; }).catch(function (e) { error(UI.error(e)); return null; }); }
+
+  function issue() {
+    var btn = UI.el('soa-issue'); if (!s.doc || s.doc.Status !== 'PREVIEW') return; btn.disabled = true;
+    Api.call('statements.issue', { customerId: s.customerId, from: s.doc.PeriodFrom, to: s.doc.PeriodTo, dueDate: UI.el('soa-due').value, notes: UI.el('soa-notes').value.trim(), requestId: s.requestId }, { busy: true, timeoutMs: 120000 }).then(function (d) {
+      Toast.success('Statement ' + d.StatementNo + ' issued'); UI.el('soa-due').value = ''; UI.el('soa-notes').value = ''; render(d); list();
+    }).catch(function (e) { btn.disabled = false; error(UI.error(e)); });
+  }
+  function voidIt() {
+    var reason = UI.el('soa-void-reason').value.trim(), btn = UI.el('soa-void-go');
+    if (reason.length < 3) { error('Say why the statement is voided.'); UI.el('soa-void-reason').focus(); return; }
+    btn.disabled = true;
+    Api.call('statements.void', { id: s.doc.Id, reason: reason }, { busy: true }).then(function (d) { s.voiding = false; Toast.success('Statement ' + d.StatementNo + ' voided'); render(d); list(); })
+      .catch(function (e) { btn.disabled = false; error(UI.error(e)); });
+  }
+
+  // ------------------------------------------------------------------ the printed statement
+  var DOC_CSS = '.soa-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.soa-top .doc-head{flex:1;text-align:left;margin-bottom:0}.soa-top .doc-logo{margin-left:0}.soa-mark{font-weight:800;font-size:13px;letter-spacing:.06em;border:2px solid #111;padding:2px 8px;white-space:nowrap}' +
+    '.soa-no{display:flex;justify-content:space-between;gap:12px;margin:10px 0 6px;font-size:13px}.soa-blk{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;margin:6px 0 10px}.soa-blk b{display:inline-block;min-width:96px;font-weight:700}' +
+    '.soa-sum{margin:10px 0 0 auto;width:auto;min-width:46%}.soa-sum td{border:0;padding:3px 6px}.soa-sum tr.tot td{border-top:2px solid #333}.soa-note{margin-top:12px;font-size:11px;color:#444}.soa-void{color:#b91c1c}';
+  function docTable(title, head, rows) {
+    if (!rows.length) return '';
+    return '<h2>' + title + '</h2><table><thead><tr>' + head.map(function (h) { return '<th' + (h[1] ? ' class="r"' : '') + '>' + h[0] + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td' + (head[i][1] ? ' class="r num"' : '') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+  }
+  function documentHtml(d) {
+    var esc = UI.esc, c = d.Client || {}, blk = function (k, v) { return v ? '<div><b>' + k + '</b>' + esc(v) + '</div>' : ''; };
+    var rows = function (lines) { return lines.map(function (l) { return [esc(F.date(l.Date)), esc(l.OrderNo), esc(l.Description), l.Pieces === '' ? '' : num(l.Pieces), esc(money(l.Billed)), esc(money(l.Paid)), esc(money(l.Balance))]; }); };
+    var head = [['Date'], ['Order no.'], [''], ['Pieces', 1], ['Billed', 1], ['Paid', 1], ['Balance', 1]];
+    var mark = d.Status === 'VOID' ? '<div class="soa-mark soa-void">VOID</div>' : (d.Reprint ? '<div class="soa-mark">REPRINT</div>' : '');
+    return '<style>' + DOC_CSS + '</style><div class="soa-top">' + M.Print.header({ title: 'Statement of account', business: d.Business || {} }) + '<div>' + mark + '</div></div>' +
+      '<div class="soa-no"><span>Statement No. <b>' + esc(d.StatementNo) + '</b></span><span>Period <b>' + esc(periodText(d)) + '</b></span></div>' +
+      '<div class="soa-blk">' + blk('Client', c.Name) + blk('Property', c.PropertyName) + blk('Address', c.Address) + blk('Representative', [c.Representative, c.RepresentativePosition].filter(Boolean).join(', ')) + blk('Contract ref.', c.ContractRef) + blk('Billing terms', c.BillingTerms) + blk('Issued', F.date(d.IssuedAt)) + blk('Due by', d.DueDate ? F.date(d.DueDate) : '') + '</div>' +
+      docTable('Orders in this period', head, rows(d.Orders)) + docTable('Earlier orders still owing', head, rows(d.Earlier)) +
+      docTable('Payments received in this period', [['Date'], ['Order no.'], ['Payment'], ['Amount', 1]], d.Payments.map(function (l) { return [esc(F.date(l.Date)), esc(l.OrderNo), esc(l.Description), esc(money(l.Paid))]; })) +
+      '<table class="soa-sum"><tbody><tr><td>Balance brought forward</td><td class="r num">' + esc(money(d.Forward)) + '</td></tr><tr><td>Billed this period</td><td class="r num">' + esc(money(d.Billed)) + '</td></tr><tr><td>Paid this period</td><td class="r num">' + esc(money(d.Paid)) + '</td></tr>' +
+      '<tr class="tot"><td>BALANCE DUE</td><td class="r num">' + esc(money(d.BalanceDue)) + '</td></tr></tbody></table>' +
+      (d.Notes ? '<p>' + esc(d.Notes) + '</p>' : '') +
+      '<div class="soa-note">This statement lists the orders billed and the payments received as recorded on the day it was issued. It is not an official receipt.' + (d.Status === 'VOID' ? ' <span class="soa-void">This statement was voided: ' + esc(d.VoidReason) + '.</span>' : '') + '</div>' +
+      M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: (d.Reprint ? 'REPRINT · ' : '') + 'print ' + num(d.PrintCount) + ' · ' + d.StatementNo });
+  }
+  /** The server counts the print first; the page is laid out from its answer. */
+  function print(id) {
+    var size = 'A4'; try { size = window.localStorage.getItem(PAPER_KEY) || 'A4'; } catch (e) { /* private mode */ }
+    return Api.call('statements.document', { id: id }, { busy: true }).then(function (d) {
+      M.Print.open(documentHtml(d), { title: 'Statement ' + d.StatementNo, size: size });
+      if (s && s.doc && s.doc.Id === d.Id) { s.doc.PrintCount = d.PrintCount; actions(); }
+      return d;
+    }).catch(function (e) { Toast.danger(UI.error(e)); return null; });
+  }
+
+  /** Opens the dialog for a client. opts: { name, from, to } */
+  function open(customerId, opts) {
+    opts = opts || {}; s = { customerId: customerId, name: opts.name || '', doc: null, requestId: UI.uuid(), voiding: false };
+    var r = opts.from && opts.to ? [opts.from, opts.to] : month(0);
+    UI.el('soa-title').textContent = 'Statement of account' + (s.name ? ' · ' + s.name : ''); UI.el('soa-from').value = r[0]; UI.el('soa-to').value = r[1]; UI.el('soa-due').value = ''; UI.el('soa-notes').value = '';
+    UI.html('soa-body', ''); UI.html('soa-list', ''); UI.el('soa-count').textContent = '0'; error(''); actions();
+    Modal.open('soa-modal');
+    return Promise.all([preview(), list()]);
+  }
+  UI.el('soa-show').onclick = function () { preview(); };
+  UI.el('soa-this').onclick = function () { var r = month(0); UI.el('soa-from').value = r[0]; UI.el('soa-to').value = r[1]; preview(); };
+  UI.el('soa-last').onclick = function () { var r = month(-1); UI.el('soa-from').value = r[0]; UI.el('soa-to').value = r[1]; preview(); };
+
+  M.Statements = { open: open, print: print, documentHtml: documentHtml, canView: function () { return can('REPORT_VIEW'); }, canIssue: function () { return can('STATEMENT_ISSUE'); } };
+})();
+</script>
+
         <!-- Mrs Laundry Sys — IncidentsPage.html: the Incidents module (damage, loss, complaints, delays): the list under the lens, the report dialog every module shares (M.Incidents.report), and the review page for managers.
      1.31.0 (stage 5): grey rows and Try again, a card per incident on a phone with its status beside its number, the incident's parts titled and its footer ordered (the next step at the right). -->
 <section id="view-incidents" class="view" hidden>
@@ -9014,7 +9190,7 @@ window.MLS = (function () {
           { key: 'OrderTotal', label: 'Total', align: R, format: bold }, { key: 'PaidAmount', label: 'Paid', align: R, format: peso }, { key: 'BalanceAmount', label: 'Balance', align: R, format: peso }];
       },
       chart: function () { return null; },
-      head: function (d) { var c = d.client; if (!c) return ''; var bits = [c.PropertyName, c.EstablishmentType ? F.status(c.EstablishmentType) : '', c.Representative, c.BillingTerms, c.ContractRef ? 'Contract ' + c.ContractRef : ''].filter(Boolean); return '<div class="d-flex flex-wrap align-items-center gap-2 mb-3"><button type="button" class="btn btn-outline-secondary btn-sm" id="rp-client-back"><i class="fa-solid fa-arrow-left me-1"></i>All clients</button><span class="fw-bold" id="rp-client-name">' + UI.esc(c.Name) + '</span><span class="small text-soft">' + UI.esc(bits.join(' · ')) + '</span></div>'; },
+      head: function (d) { var c = d.client; if (!c) return ''; var bits = [c.PropertyName, c.EstablishmentType ? F.status(c.EstablishmentType) : '', c.Representative, c.BillingTerms, c.ContractRef ? 'Contract ' + c.ContractRef : ''].filter(Boolean); return '<div class="d-flex flex-wrap align-items-center gap-2 mb-3"><button type="button" class="btn btn-outline-secondary btn-sm" id="rp-client-back"><i class="fa-solid fa-arrow-left me-1"></i>All clients</button><span class="fw-bold" id="rp-client-name">' + UI.esc(c.Name) + '</span><span class="small text-soft">' + UI.esc(bits.join(' · ')) + '</span>' + (M.Statements && M.Statements.canView() ? '<button type="button" class="btn btn-outline-primary btn-sm ms-auto" id="rp-client-soa"><i class="fa-solid fa-file-invoice me-1"></i>Statement</button>' : '') + '</div>'; },
       extra: function (d) { return d.client ? '' : '<p class="small text-soft">The job orders picked up in the range, by client. Choose a client for its job orders.</p>'; },
       onRow: function (r) { if (data && data.client) openJob(r); else if (r.CustomerId) { state.customerId = r.CustomerId; load(); } }
     },
@@ -9067,6 +9243,7 @@ window.MLS = (function () {
       cols.forEach(function (c, i) { if (c.align === 'right') c.num = true; else if (i === 0) c.cls = 'lead-cell'; });  // 1.32.0: figures as amount columns, the first column a phone card's title
       last = { columns: cols, rows: rows, title: state.tab === 'jobs' ? 'Job orders: ' + JOB_LIST.filter(function (j) { return j[0] === state.job; })[0][1] + (d.client ? ', ' + d.client.Name : '') : TABS.filter(function (t) { return t[0] === state.tab; })[0][1] };
       UI.html('rp-head', s.head ? s.head(d) : ''); var back = UI.el('rp-client-back'); if (back) back.onclick = function () { state.customerId = ''; load(); };
+      var soa = UI.el('rp-client-soa'); if (soa) soa.onclick = function () { M.Statements.open(state.customerId, { name: d.client ? d.client.Name : '', from: state.from, to: state.to }); };  // 1.47.0
       UI.html('rp-kpis', s.kpis(d).map(function (k) { return '<div class="tile"><div class="k">' + UI.esc(k[0]) + '</div><div class="v">' + UI.esc(String(k[1])) + '</div></div>'; }).join(''));
       M.Table.render(UI.el('rp-table'), { columns: cols, rows: rows, cls: 'aligned', total: d.total, page: d.page, pages: d.pages, empty: { icon: 'fa-chart-line', title: 'Nothing in this range', hint: 'Widen the dates or pick another preset.' }, onPage: function (p) { state.page = p; load(); }, onRow: s.onRow || null });
       UI.html('rp-extra', s.extra(d) || '');
