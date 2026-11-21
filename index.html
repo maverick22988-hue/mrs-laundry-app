@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'a12944a892', version: '1.43.0' };</script>
+  <script>window.MLS_PWA = { build: '7892d7890c', version: '1.44.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -477,6 +477,7 @@
   .jo-price-tag { display: inline-block; font-size: var(--fs-xs); font-weight: 700; border: 1px solid var(--mls-line); border-radius: 999px; padding: 0 .5rem; white-space: nowrap; } .jo-price-tag.manual { border-color: var(--mls-ink-soft); }
   .jo-rline { border: 1px solid var(--mls-line); border-radius: var(--mls-radius-sm); padding: 8px 12px; margin-bottom: 8px; } .jo-rline.differs { border-color: var(--mls-ink-soft); }
   .jo-rline-main { display: grid; grid-template-columns: minmax(0, 1fr) 8rem; gap: 10px; align-items: end; } .jo-rline-name { min-width: 0; overflow-wrap: anywhere; align-self: center; } .jo-rline-reason { margin-top: 8px; }
+  .jo-dline-qty { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px; align-items: end; } .jo-dline-qty .form-label { font-size: .78rem; margin-bottom: 2px; }
   .jo-diff { font-weight: 700; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
   .jo-log { list-style: none; padding: 0; margin: 0; } .jo-log li { padding: 4px 0; border-bottom: 1px solid var(--mls-line); overflow-wrap: anywhere; } .jo-log li:last-child { border-bottom: 0; }
   .jo-paper { width: auto; } .jo-narrow { display: none; } .jo-lines td.num, .jo-lines th.num { text-align: right; white-space: nowrap; }
@@ -1058,7 +1059,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.43.0';
+  var VERSION = '1.44.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -4025,7 +4026,7 @@ window.MLS = (function () {
     // outlines beside it; the rare and the destructive ones (correct, labels, incident, refund, cancel) one tap away under More, at the left.
     // Nothing is removed: every action keeps its data-action and its permission.
     var t = o.Transitions, can = M.Auth.can, main = [], more = [];
-    var canRelease = can('ORDER_STATUS') && t.indexOf('COMPLETED') >= 0, canPay = can('PAYMENT_CREATE') && Number(o.BalanceAmount) > 0 && ['CANCELLED', 'REFUNDED'].indexOf(o.Status) < 0;
+    var canRelease = can('ORDER_STATUS') && t.indexOf('COMPLETED') >= 0 && !o.IsCommercial, canPay = can('PAYMENT_CREATE') && Number(o.BalanceAmount) > 0 && ['CANCELLED', 'REFUNDED'].indexOf(o.Status) < 0;
     main.push(['print', '', 'btn-outline-secondary', 'fa-print', 'Receipt']); main.push(['note', '', 'btn-outline-secondary', 'fa-comment', 'Add note']);
     if (can('ORDER_STATUS') && t.indexOf('PROCESSING') >= 0) main.push(['status', 'PROCESSING', 'btn-outline-primary', 'fa-play', 'Start processing']);
     if (can('ORDER_STATUS') && t.indexOf('READY') >= 0) main.push(['status', 'READY', 'btn-outline-primary', 'fa-bag-shopping', 'Mark ready']);
@@ -6219,8 +6220,8 @@ window.MLS = (function () {
   function jobArgs() { var f = UI.el('dsp-job-form'), zoneId = f.querySelector('[name=zoneId]').value, z = zones.filter(function (x) { return x.Id === zoneId; })[0]; return { branchId: z ? z.BranchId : (f.querySelector('[name=branchId]').value || lensBranch()), zoneId: zoneId, jobType: jobType }; }
   function refreshWindows() { if (newPicker && slotDefs) newPicker.load(jobArgs()); }
   function paintOrders() {
-    UI.html('dsp-orders', ready.length ? ready.map(function (o) { return '<label class="d-flex align-items-start gap-2 py-1 border-bottom"><input class="form-check-input mt-1" type="checkbox" value="' + UI.esc(o.Id) + '" data-ready><span><span class="fw-bold">' + UI.esc(o.OrderNo) + '</span> ' + (o.ServiceType === 'DELIVERY' ? '<span class="badge text-bg-light border">for delivery</span>' : '') + '<div class="small text-soft">' + UI.esc(o.CustomerName) + (o.Address ? ' · ' + UI.esc(o.Address) : '') + (Number(o.BalanceAmount) > 0 ? ' · <span class="text-danger">balance ' + F.peso(o.BalanceAmount) + '</span>' : ' · paid') + '</div></span></label>'; }).join('') : '<div class="text-soft small p-2">No ready orders waiting for delivery.</div>');
-    UI.el('dsp-orders').querySelectorAll('[data-ready]').forEach(function (cb) { cb.onchange = function () { var first = selectedOrders()[0]; if (first && cb.checked) { var f = UI.el('dsp-job-form'); ['customerName', 'phone', 'address', 'latitude', 'longitude'].forEach(function (k) { var el = f.querySelector('[name=' + k + ']'); var v = { customerName: first.CustomerName, phone: first.CustomerPhone, address: first.Address, latitude: first.Latitude, longitude: first.Longitude }[k]; if (!el.value && v !== '' && v !== null && v !== undefined) el.value = v; }); } }; });
+    UI.html('dsp-orders', ready.length ? ready.map(function (o) { return '<label class="d-flex align-items-start gap-2 py-1 border-bottom"><input class="form-check-input mt-1" type="checkbox" value="' + UI.esc(o.Id) + '" data-ready' + (o.JobOrder ? ' data-jo' + (o.Received ? '' : ' disabled') : '') + '><span><span class="fw-bold">' + UI.esc(o.OrderNo) + '</span> ' + (o.ServiceType === 'DELIVERY' ? '<span class="badge text-bg-light border">for delivery</span>' : '') + (o.JobOrder ? '<span class="badge text-bg-info">Job order</span>' + (o.Received ? (o.DeliveryState === 'PARTIAL' ? ' <span class="small">' + Number(o.PiecesOutstanding) + ' still to deliver</span>' : '') : ' <span class="small text-danger">not received at the shop yet</span>') : '') + '<div class="small text-soft">' + UI.esc(o.CustomerName) + (o.Address ? ' · ' + UI.esc(o.Address) : '') + (Number(o.BalanceAmount) > 0 ? ' · <span class="text-danger">balance ' + F.peso(o.BalanceAmount) + '</span>' : ' · paid') + '</div></span></label>'; }).join('') : '<div class="text-soft small p-2">No ready orders waiting for delivery.</div>');
+    UI.el('dsp-orders').querySelectorAll('[data-ready]').forEach(function (cb) { cb.onchange = function () { if (cb.checked) UI.el('dsp-orders').querySelectorAll('[data-ready]:checked').forEach(function (x) { if (x !== cb && (cb.hasAttribute('data-jo') || x.hasAttribute('data-jo'))) x.checked = false; });  /* 1.44.0: a job order goes on a delivery of its own */ var first = selectedOrders()[0]; if (first && cb.checked) { var f = UI.el('dsp-job-form'); ['customerName', 'phone', 'address', 'latitude', 'longitude'].forEach(function (k) { var el = f.querySelector('[name=' + k + ']'); var v = { customerName: first.CustomerName, phone: first.CustomerPhone, address: first.Address, latitude: first.Latitude, longitude: first.Longitude }[k]; if (!el.value && v !== '' && v !== null && v !== undefined) el.value = v; }); } }; });
   }
   function selectedOrders() { var ids = []; UI.el('dsp-orders').querySelectorAll('[data-ready]:checked').forEach(function (cb) { ids.push(cb.value); }); return ready.filter(function (o) { return ids.indexOf(o.Id) >= 0; }); }
   function openNew() {
@@ -6297,6 +6298,7 @@ window.MLS = (function () {
     <form class="modal-content" id="dlv-complete-form" autocomplete="off">
       <div class="modal-header"><h5 class="modal-title" id="dlv-complete-title">Delivered</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
+        <div id="dlv-jo" hidden></div>
         <div id="dlv-collect"></div>
         <div class="mt-3"><label class="form-label" for="dlv-notes">Notes (optional)</label><input class="form-control" id="dlv-notes" name="notes" maxlength="200" placeholder="Left with the guard, paid by the neighbour…"></div>
         <div class="form-check mt-2" id="dlv-pin-wrap" hidden><input class="form-check-input" type="checkbox" name="saveCustomerLocation" id="dlv-pin"><label class="form-check-label" for="dlv-pin">Save my current location as this customer's pin <span class="text-soft small">— the next rider navigates straight here</span></label></div>
@@ -6307,6 +6309,7 @@ window.MLS = (function () {
           <div id="dlv-proof-photo-wrap"><label class="form-label small mb-1" for="dlv-proof-photo"><i class="fa-solid fa-camera me-1"></i>Photo of the laundry handed over</label><input class="form-control" type="file" id="dlv-proof-photo" accept="image/jpeg,image/png,image/*" capture="environment"><div class="small text-soft mt-1" id="dlv-proof-photo-note" hidden></div><img class="proof-thumb" id="dlv-proof-photo-preview" alt="The photo taken" hidden></div>
           <div class="mt-2" id="dlv-proof-sig-wrap"><div class="d-flex align-items-center"><span class="form-label small mb-1" id="dlv-proof-sig-label"><i class="fa-solid fa-signature me-1"></i>Customer's signature</span><button type="button" class="btn btn-link btn-sm ms-auto p-0" id="dlv-proof-sig-clear">Clear</button></div><canvas class="sig-pad" id="dlv-proof-sig" role="img" aria-labelledby="dlv-proof-sig-label"></canvas></div>
           <div class="mt-2"><label class="form-label small mb-1" for="dlv-proof-received">Received by</label><input class="form-control" id="dlv-proof-received" maxlength="80" placeholder="Name of the person who took the laundry"></div>
+          <div class="mt-2" id="dlv-proof-position-wrap" hidden><label class="form-label small mb-1" for="dlv-proof-position">Position <span class="text-soft">(optional)</span></label><input class="form-control" id="dlv-proof-position" maxlength="60" placeholder="Housekeeping supervisor…"></div>
         </section>
         <div class="alert alert-danger py-2 small mt-3" id="dlv-complete-error" hidden role="alert"></div>
       </div>
@@ -6396,7 +6399,7 @@ window.MLS = (function () {
       (canCount && !j.IsOpen ? '<button type="button" class="btn btn-sm btn-primary" data-count="' + UI.esc(j.Id) + '"><i class="fa-solid fa-clipboard-list me-1"></i>Count linens</button>' : '') +
       jobOrders.map(function (i) { return '<button type="button" class="btn btn-sm btn-outline-primary" data-joborder="' + UI.esc(i.OrderId) + '"><i class="fa-solid fa-clipboard-list me-1"></i>Job Order</button>'; }).join('');
     return '<div class="job-card' + (j.IsOpen ? '' : ' done') + '" data-job="' + UI.esc(j.Id) + '">' +
-      '<div class="d-flex align-items-center gap-2 flex-wrap"><span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>' + UI.badge(j.Status, statusLabel(j.Status)) + (j._pending ? '<span class="pending-tag" title="Recorded on this phone; the server has not received it yet">not synced</span>' : '') + windowTag(j) + '<span class="ms-auto small text-soft">' + UI.esc(j.Id) + '</span></div>' +
+      '<div class="d-flex align-items-center gap-2 flex-wrap"><span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>' + UI.badge(j.Status, statusLabel(j.Status)) + (j._pending ? '<span class="pending-tag" title="Recorded on this phone; the server has not received it yet">not synced</span>' : '') + windowTag(j) + (j.TripNo ? '<span class="badge text-bg-light border">Trip ' + Number(j.TripNo) + '</span>' : '') + (j.Outcome && M.JobOrders ? M.JobOrders.outcomeBadge(j.Outcome) : '') + '<span class="ms-auto small text-soft">' + UI.esc(j.Id) + '</span></div>' +
       '<div class="who mt-1">' + UI.esc(j.CustomerName || 'Customer') + '</div>' +
       (j.Address || nav ? '<div class="addr">' + UI.esc(j.Address || 'Pinned location') + (link ? ' <a href="' + link + '" target="_blank" rel="noopener" class="ms-1 text-nowrap"><i class="fa-solid fa-map-location-dot"></i> Map</a>' : '') + (nav && j.IsOpen ? ' <a href="' + nav + '" target="_blank" rel="noopener" class="ms-1 fw-bold text-nowrap"><i class="fa-solid fa-diamond-turn-right"></i> Navigate</a>' : '') + (j.Latitude && j.Longitude ? ' <span class="small text-soft" title="Pinned coordinates"><i class="fa-solid fa-location-dot"></i></span>' : '') + '</div>' : '') +
       (j.Phone ? '<div><a href="tel:' + UI.esc(j.Phone) + '"><i class="fa-solid fa-phone me-1"></i>' + UI.esc(j.Phone) + '</a></div>' : '') +
@@ -6464,13 +6467,15 @@ window.MLS = (function () {
     };
   }
   /** The proof section of the completion dialog, set for this job and the settings; the photo is shrunk as soon as it is taken. */
-  function setupProof(j) {
+  function setupProof(j, jo) {
     var ps = proofSettings(), wrap = UI.el('dlv-proof'), pickup = j.JobType === 'PICKUP';
+    if (jo && ps.mode === 'OFF') ps = { mode: 'OPTIONAL', photo: true, signature: true, keepDays: ps.keepDays };  // 1.44.0: a job order's delivery is acknowledged by who received it, also where proofs are otherwise off
+    UI.el('dlv-proof-position-wrap').hidden = !jo; UI.el('dlv-proof-position').value = '';
     photo = { data: '', job: null };
     wrap.hidden = ps.mode === 'OFF' || (!ps.photo && !ps.signature);
     if (wrap.hidden) return ps;
     var required = ps.mode === 'REQUIRED' && !pickup;
-    UI.el('dlv-proof-head').textContent = (pickup ? 'Proof of pickup' : 'Proof of delivery') + (required ? ' (required)' : ' (optional)');
+    UI.el('dlv-proof-head').textContent = jo ? 'Received by' : (pickup ? 'Proof of pickup' : 'Proof of delivery') + (required ? ' (required)' : ' (optional)');
     UI.el('dlv-proof-hint').textContent = (required ? (ps.photo && ps.signature ? 'Take a photo or have the customer sign — at least one. ' : (ps.photo ? 'Take a photo. ' : 'Have the customer sign. ')) : '') + 'Kept privately ' + (ps.keepDays ? 'for ' + ps.keepDays + ' days' : 'until removed') + ' as personal data; only the shop sees it.';
     UI.el('dlv-proof-photo-wrap').hidden = !ps.photo; UI.el('dlv-proof-sig-wrap').hidden = !ps.signature;
     var input = UI.el('dlv-proof-photo'), prev = UI.el('dlv-proof-photo-preview'), note = UI.el('dlv-proof-photo-note');
@@ -6492,10 +6497,10 @@ window.MLS = (function () {
     return ps;
   }
   /** The proof to send: { photo, signature, receivedBy }, or null when nothing was taken; refuses (returns a message) when REQUIRED and nothing was. */
-  function proofToSend(j, ps) {
+  function proofToSend(j, ps, nothingAccepted) {
     if (ps.mode === 'OFF' || UI.el('dlv-proof').hidden) return { proof: null };
     var sig = ps.signature && pad && pad.signed() ? pad.dataUrl() : '', received = UI.el('dlv-proof-received').value.trim(), pic = ps.photo ? photo.data : '';
-    if (ps.mode === 'REQUIRED' && j.JobType === 'DELIVERY' && !pic && !sig) return { error: 'A proof of delivery is required: ' + (ps.photo && ps.signature ? 'take a photo or have the customer sign' : (ps.photo ? 'take a photo' : 'have the customer sign')) + '.' };
+    if (ps.mode === 'REQUIRED' && j.JobType === 'DELIVERY' && !pic && !sig && !nothingAccepted) return { error: 'A proof of delivery is required: ' + (ps.photo && ps.signature ? 'take a photo or have the customer sign' : (ps.photo ? 'take a photo' : 'have the customer sign')) + '.' };
     return { proof: pic || sig || received ? { photo: pic, signature: sig, receivedBy: received } : null };
   }
   /** The proof of a job (a dispatcher, or the rider whose job it was): the images as the server keeps them, who received it, or why they are gone. */
@@ -6515,10 +6520,18 @@ window.MLS = (function () {
     }).catch(function (e) { Toast.danger(UI.error(e)); });
   }
 
+  /** 1.44.0: a delivery that carries a job order is completed by quantities; its linens are read from the server first (so it needs a connection). */
   function openComplete(j, onChange) {
+    var item = j.JobType === 'DELIVERY' && M.JobOrders ? j.Items.filter(function (i) { return i.JobOrder; })[0] : null;
+    if (!item) return openCompleteWith(j, onChange, null);
+    if (M.Net && M.Net.state && M.Net.state() !== 'online') { Toast.warning('Delivering a job order needs a connection for now: its linens are counted with the server.'); return null; }
+    return Api.call('jobOrders.get', { orderId: item.OrderId }, { busy: true, noOffline: true }).then(function (jo) { openCompleteWith(j, onChange, jo); }).catch(function (e) { Toast.danger(UI.error(e)); });
+  }
+  function openCompleteWith(j, onChange, jo) {
     var meta = data || { paymentMethods: (M.AppState.me.settings.PaymentMethods || ['CASH']), referenceRequiredFor: (M.AppState.me.settings.ReferenceRequiredFor || []) };
     completeRequest = UI.uuid();
     UI.el('dlv-complete-title').textContent = (j.JobType === 'PICKUP' ? 'Picked up · ' : 'Delivered · ') + (j.CustomerName || j.Id);
+    var joBox = UI.el('dlv-jo'); joBox.hidden = !jo; joBox.innerHTML = jo ? M.JobOrders.delivery.html(jo) : '';
     var toCollect = j.Items.filter(function (i) { return Number(i.AmountToCollect) > 0; });
     // 1.28.0 (Stage 5): a title over what the rider collects, and each order's amount, method and reference with its label above it
     UI.html('dlv-collect', j.JobType === 'PICKUP' ? '<p class="mb-0">Laundry collected from the customer. It will be received and weighed at the POS.</p>' : (toCollect.length ? '<h6 class="section-title">Collect</h6><p class="small text-soft mb-2">Enter what the customer handed you for each order. Leave 0 when nothing was collected (the balance stays on the order).</p>' + toCollect.map(function (i, n) {
@@ -6526,23 +6539,28 @@ window.MLS = (function () {
     }).join('') : '<p class="mb-0">Every order on this job is fully paid. Hand over the laundry and confirm.</p>'));
     UI.el('dlv-collect').querySelectorAll('[data-f=method]').forEach(function (sel) { var sync = function () { sel.closest('[data-order]').querySelector('[data-ref]').hidden = meta.referenceRequiredFor.indexOf(sel.value) < 0; }; sel.onchange = sync; sync(); });
     UI.el('dlv-complete-form').reset(); UI.el('dlv-complete-error').hidden = true;
-    var ps = setupProof(j);
+    var ps = setupProof(j, jo); if (jo) M.JobOrders.delivery.wire(joBox);
     var hasGeo = !!navigator.geolocation; UI.el('dlv-pin-wrap').hidden = !(hasGeo && j.CustomerId); UI.el('dlv-geo-note').hidden = !hasGeo;
     UI.el('dlv-complete-form').onsubmit = function (ev) {
       ev.preventDefault(); var box = UI.el('dlv-complete-error'); box.hidden = true;
       var collections = [], bad = null;
       UI.el('dlv-collect').querySelectorAll('[data-order]').forEach(function (row) { var amt = Number(row.querySelector('[data-f=amount]').value) || 0, method = row.querySelector('[data-f=method]').value, ref = (row.querySelector('[data-f=referenceNo]').value || '').trim(); if (amt > 0) { if (meta.referenceRequiredFor.indexOf(method) >= 0 && !ref) bad = 'Enter the ' + M.OrdersUI.methodLabel(method).toLowerCase() + ' reference number for ' + row.querySelector('.fw-bold').textContent.trim().split(' ')[0] + '.'; collections.push({ orderId: row.getAttribute('data-order'), amount: amt, method: method, referenceNo: ref }); } });
       if (bad) { box.textContent = bad; box.hidden = false; return; }
+      var q = jo ? M.JobOrders.delivery.read(joBox) : null, who = UI.el('dlv-proof-received');
+      if (q && q.error) { box.textContent = q.error[0]; box.hidden = false; if (q.error[1]) q.error[1].focus(); return; }
+      if (q && q.delivered > 0 && who.value.trim().length < 2) { box.textContent = 'Write the name of the person who received the linens.'; box.hidden = false; who.focus(); return; }
       var btn = UI.el('dlv-complete-ok'); btn.disabled = true; var pin = UI.el('dlv-pin').checked && !UI.el('dlv-pin-wrap').hidden;
       // a photo still being prepared is waited for; then the proof is checked here first (REQUIRED), and again by the server
       Promise.resolve(photo.job).then(function () {
-        var pr = proofToSend(j, ps); if (pr.error) { var e = new Error(pr.error); e.local = true; throw e; }
+        var pr = proofToSend(j, ps, !!(q && !q.delivered)); if (pr.error) { var e = new Error(pr.error); e.local = true; throw e; }
         // the phone's position rides along when it is available in time; the job never waits on it for more than a few seconds
         return (hasGeo ? locate(6000) : Promise.resolve(null)).then(function (loc) {
           var payload = { id: j.Id, collections: collections, notes: UI.el('dlv-complete-form').querySelector('[name=notes]').value, requestId: completeRequest, location: loc ? { lat: loc.lat, lng: loc.lng } : null, saveCustomerLocation: !!(pin && loc) };
           if (pr.proof) payload.proof = pr.proof;
+          if (q) payload.jobOrder = { lines: q.lines, receivedByPosition: UI.el('dlv-proof-position').value.trim() };
           return Api.call('deliveries.complete', payload, { busy: true, timeoutMs: pr.proof ? 120000 : undefined }).then(function (r) {
             btn.disabled = false; M.Modal.close('dlv-complete-modal'); photo = { data: '', job: null };
+            if (r.jobOrder) { Toast[r.jobOrder.outcome === 'FULL' ? 'success' : 'warning'](M.JobOrders.outcomeText(r.jobOrder.outcome) + ' · ' + r.jobOrder.delivered + ' delivered' + (r.jobOrder.outstanding ? ', ' + r.jobOrder.outstanding + ' go back to the shop' : '') + (r.payments && r.payments.length ? ' · ' + F.peso(r.payments.reduce(function (t, p) { return t + Number(p.Amount); }, 0)) + ' collected' : '')); if (onChange) onChange(r); M.JobOrders.open(r.jobOrder.orderId, { onChange: onChange }); return; }
             Toast.success((j.JobType === 'PICKUP' ? 'Pickup done' : 'Delivered') + (r.payments && r.payments.length ? ' · ' + F.peso(r.payments.reduce(function (t, p) { return t + Number(p.Amount); }, 0)) + ' collected' : '') + (r.proof && r.proof.stored ? ' · proof kept' : (r._pending && pr.proof ? ' · proof kept on this phone until it syncs' : '')) + (pin ? (loc ? ' · customer location pinned' : ' · no GPS fix, pin not saved') : '')); if (onChange) onChange(r);
           });
         });
@@ -6577,7 +6595,7 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — JobOrdersPage.html: the Job Orders module (release 1.43.0: the list by where each job order stands, receiving at the shop, a manager's review of a difference) and the commercial job order's shared dialogs and M.JobOrders (release 1.42.0: the linen count on a pickup job, the job order itself, a manual price on a line, the Job Order document on A4 or an 80 mm roll). Delivery quantities come in 1.44.0. -->
+        <!-- Mrs Laundry Sys — JobOrdersPage.html: the Job Orders module (release 1.43.0: the list by where each job order stands, receiving at the shop, a manager's review of a difference; release 1.44.0: where the delivery stands, the trips and their Delivery Confirmation, the rider's delivery form, closing the remainder) and the commercial job order's shared dialogs and M.JobOrders (release 1.42.0: the linen count on a pickup job, the job order itself, a manual price on a line, the Job Order document on A4 or an 80 mm roll). -->
 <section id="view-joborders" class="view" hidden>
   <div class="view-head">
     <h2>Job Orders</h2>
@@ -6590,6 +6608,7 @@ window.MLS = (function () {
     <button type="button" data-tab="REVIEW">To review<span class="count" data-count="REVIEW"></span></button>
     <button type="button" data-tab="PRODUCTION">In production<span class="count" data-count="PRODUCTION"></span></button>
     <button type="button" data-tab="READY">Ready<span class="count" data-count="READY"></span></button>
+    <button type="button" data-tab="PARTIAL">Partially delivered<span class="count" data-count="PARTIAL"></span></button>
     <button type="button" data-tab="ALL">All</button>
   </div>
   <div class="toolbar">
@@ -6847,31 +6866,36 @@ window.MLS = (function () {
   function gotText(l) { return l.ByWeight ? num(l.ReceivedWeightKg) + ' kg' : num(l.ReceivedQty) + ' ' + (l.Unit || 'pc'); }
   function differs(l) { return l.ByWeight ? num(l.ReceivedWeightKg) !== num(l.PickupWeightKg) : num(l.ReceivedQty) !== num(l.PickupQty); }
   function signed(n) { return (n > 0 ? '+' : '') + n; }
-  function logWhat(g) { return g.Type === 'ADJUSTMENT' ? 'Review' : (g.LineId ? g.Line + ' ' + (num(g.WeightKg) ? signed(num(g.WeightKg)) + ' kg' : signed(num(g.Qty))) : 'Bags ' + signed(num(g.Qty))); }
+  var LOG_WORD = { DAMAGED: 'damaged', REJECTED: 'rejected', WRITTEN_OFF: 'written off' };
+  function logWhat(g) { if (LOG_WORD[g.Type]) return g.Line + ': ' + num(g.Qty) + ' ' + LOG_WORD[g.Type]; return g.Type === 'ADJUSTMENT' ? 'Review' : (g.LineId ? g.Line + ' ' + (num(g.WeightKg) ? signed(num(g.WeightKg)) + ' kg' : signed(num(g.Qty))) : 'Bags ' + signed(num(g.Qty))); }
   function fact(k, v) { return v ? '<div class="jo-fact"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>' : ''; }
   function render(j, opts) {
     shown = { job: j, opts: opts || {} };
     var c = j.Client || {};
     UI.el('jo-title').innerHTML = 'Job Order ' + UI.esc(j.OrderNo) + ' ' + UI.badge(j.Status, j.StatusLabel) + (j.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '');
-    var got = j.ReceivingStatus && j.ReceivingStatus !== 'PENDING';
+    var got = j.ReceivingStatus && j.ReceivingStatus !== 'PENDING', trips = j.Trips || [], del = got && ((j.DeliveryState && j.DeliveryState !== 'NONE') || trips.length > 0);  // 1.44.0: the delivery columns appear with the first trip
     var rows = j.Lines.map(function (l, i) {
       var note = priceNote(l);
-      return '<tr><td class="num jo-wide">' + (i + 1) + '</td><td><span class="fw-bold">' + UI.esc(l.Description) + '</span>' + (l.Category ? ' <span class="small text-soft jo-wide">' + UI.esc(l.Category) + '</span>' : '') + (l.ConditionAtPickup ? '<div class="small">' + UI.esc(l.ConditionAtPickup) + '</div>' : '') + '<div class="jo-narrow small text-soft">' + UI.esc(qtyText(l)) + (got ? ' picked up · <span class="' + (differs(l) ? 'jo-diff' : '') + '">' + UI.esc(gotText(l)) + ' received</span>' : '') + ' × ' + F.peso(l.UnitPrice) + '</div>' + (note ? '<div class="jo-narrow">' + note + '</div>' : '') + '</td>' +
-        '<td class="num jo-wide">' + UI.esc(qtyText(l)) + '</td>' + (got ? '<td class="num jo-wide' + (differs(l) ? ' jo-diff' : '') + '">' + UI.esc(gotText(l)) + '</td>' : '') + '<td class="num jo-wide">' + F.peso(l.UnitPrice) + '</td><td class="num money">' + F.peso(l.Amount) + '</td><td class="jo-wide">' + note + '</td>' +
+      return '<tr><td class="num jo-wide">' + (i + 1) + '</td><td><span class="fw-bold">' + UI.esc(l.Description) + '</span>' + (l.Category ? ' <span class="small text-soft jo-wide">' + UI.esc(l.Category) + '</span>' : '') + (l.ConditionAtPickup ? '<div class="small">' + UI.esc(l.ConditionAtPickup) + '</div>' : '') + '<div class="jo-narrow small text-soft">' + UI.esc(qtyText(l)) + (got ? ' picked up · <span class="' + (differs(l) ? 'jo-diff' : '') + '">' + UI.esc(gotText(l)) + ' received</span>' : '') + (del ? ' · ' + num(l.DeliveredQty) + ' delivered, ' + num(l.Outstanding) + ' left' : '') + ' × ' + F.peso(l.UnitPrice) + '</div>' + (note ? '<div class="jo-narrow">' + note + '</div>' : '') + '</td>' +
+        '<td class="num jo-wide">' + UI.esc(qtyText(l)) + '</td>' + (got ? '<td class="num jo-wide' + (differs(l) ? ' jo-diff' : '') + '">' + UI.esc(gotText(l)) + '</td>' : '') + (del ? '<td class="num jo-wide">' + num(l.DeliveredQty) + (num(l.DamagedQty) ? ' <span class="small text-soft">(' + num(l.DamagedQty) + ' damaged)</span>' : '') + '</td><td class="num jo-wide' + (num(l.Outstanding) ? ' jo-diff' : '') + '">' + num(l.Outstanding) + (num(l.WrittenOffQty) ? ' <span class="small text-soft">(' + num(l.WrittenOffQty) + ' written off)</span>' : '') + '</td>' : '') + '<td class="num jo-wide">' + F.peso(l.UnitPrice) + '</td><td class="num money">' + F.peso(l.Amount) + '</td><td class="jo-wide">' + note + '</td>' +
         (j.canOverride ? '<td class="text-end"><button type="button" class="btn btn-sm btn-outline-secondary" data-price="' + UI.esc(l.Id) + '" aria-label="Set a manual price for ' + UI.esc(l.Description) + '"><i class="fa-solid fa-tag" aria-hidden="true"></i><span class="jo-wide ms-1">Price</span></button></td>' : '') + '</tr>';
     }).join('');
+    var log = (j.Log || []).filter(function (g) { return g.Type !== 'DELIVERED'; });  // what was delivered is in the trips and the columns
     UI.html('jo-body',
       (opts && opts.justCreated ? '<div class="alert alert-success py-2 small"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Saved. Print the Job Order now, or later from this job or from Orders.</div>' : '') +
       '<div class="jo-facts">' + fact('Client', UI.esc(c.Company || '') + (c.EstablishmentType ? ' <span class="text-soft">· ' + UI.esc(c.EstablishmentType) + '</span>' : '')) + fact('Property', UI.esc(c.PropertyName || '')) + fact('Department', UI.esc(c.Department || '')) + fact('Address', UI.esc(c.Address || '')) + fact('Contract', UI.esc(c.ContractRef || '')) +
       fact('Picked up', UI.esc(F.datetime(j.PickupAt)) + (j.PickupBy ? ' · ' + UI.esc(j.PickupBy) : '')) + fact('Surrendered by', signedText(j)) + fact('Counted', UI.esc(piecesText(num(j.PiecesPickup), num(j.WeightPickupKg), j.BagsAtPickup))) +
       (got ? fact('Received', UI.esc(piecesText(num(j.PiecesReceived), num(j.WeightReceivedKg), j.BagsReceived) || '0 pieces') + ' ' + UI.badge(j.ReceivingStatus, RECEIVING[j.ReceivingStatus]) + '<div class="small text-soft">' + UI.esc(F.datetime(j.ReceivedAt)) + (j.ReceivedBy ? ' · ' + UI.esc(j.ReceivedBy) : '') + (j.ReceivingRemarks ? ' · ' + UI.esc(j.ReceivingRemarks) : '') + '</div>') : '') +
-      (got && j.ReviewedAt ? fact('Reviewed', UI.esc(F.datetime(j.ReviewedAt)) + (j.ReviewedBy ? ' · ' + UI.esc(j.ReviewedBy) : '') + (j.ReviewNote ? '<div class="small">' + UI.esc(j.ReviewNote) + '</div>' : '')) : '') + fact('Instructions', UI.esc(j.SpecialInstructions || '')) + fact('Printed', num(j.PrintCount) ? num(j.PrintCount) + ' time' + (num(j.PrintCount) === 1 ? '' : 's') + (j.LastPrintedAt ? ' · last ' + UI.esc(F.datetime(j.LastPrintedAt)) : '') : 'not yet') + '</div>' +
-      '<div class="table-responsive mt-3"><table class="table table-sm align-middle mb-0 jo-lines" id="jo-lines"><thead><tr><th class="num jo-wide">No.</th><th>Linen</th><th class="num jo-wide">' + (got ? 'Picked up' : 'Counted') + '</th>' + (got ? '<th class="num jo-wide">Received</th>' : '') + '<th class="num jo-wide">Unit price</th><th class="num">Amount</th><th class="jo-wide">Price</th>' + (j.canOverride ? '<th><span class="visually-hidden">Actions</span></th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      (got && j.ReviewedAt ? fact('Reviewed', UI.esc(F.datetime(j.ReviewedAt)) + (j.ReviewedBy ? ' · ' + UI.esc(j.ReviewedBy) : '') + (j.ReviewNote ? '<div class="small">' + UI.esc(j.ReviewNote) + '</div>' : '')) : '') + (del ? fact('Delivery', (outcomeBadge(j.DeliveryState) || '<span class="text-soft">not delivered yet</span>') + ' <span id="jo-delivery">' + num(j.PiecesDelivered) + ' delivered' + (num(j.Outstanding) ? ' · ' + num(j.Outstanding) + ' still to deliver' : '') + '</span>') : '') + fact('Instructions', UI.esc(j.SpecialInstructions || '')) + fact('Printed', num(j.PrintCount) ? num(j.PrintCount) + ' time' + (num(j.PrintCount) === 1 ? '' : 's') + (j.LastPrintedAt ? ' · last ' + UI.esc(F.datetime(j.LastPrintedAt)) : '') : 'not yet') + '</div>' +
+      '<div class="table-responsive mt-3"><table class="table table-sm align-middle mb-0 jo-lines" id="jo-lines"><thead><tr><th class="num jo-wide">No.</th><th>Linen</th><th class="num jo-wide">' + (got ? 'Picked up' : 'Counted') + '</th>' + (got ? '<th class="num jo-wide">Received</th>' : '') + (del ? '<th class="num jo-wide">Delivered</th><th class="num jo-wide">Left</th>' : '') + '<th class="num jo-wide">Unit price</th><th class="num">Amount</th><th class="jo-wide">Price</th>' + (j.canOverride ? '<th><span class="visually-hidden">Actions</span></th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
       '<div class="jo-totals mt-2"><span>' + (num(j.DiscountAmount) > 0 ? 'Discount ' + F.peso(j.DiscountAmount) + ' · ' : '') + (num(j.DeliveryFee) > 0 ? 'Delivery fee ' + F.peso(j.DeliveryFee) + ' · ' : '') + (num(j.OtherCharges) > 0 ? 'Other charges ' + F.peso(j.OtherCharges) : '') + '</span><span>' + (got ? 'Charges' : 'Estimated charges') + ' <b class="money" id="jo-total">' + F.peso(j.OrderTotal) + '</b> <span class="text-soft small" id="jo-basis">' + (got ? '— billed for the ' + (j.BillBasis === 'PICKUP' ? 'pickup count' : 'count received') : '— final after receiving') + '</span></span></div>' +
-      (got && (j.Log || []).length ? '<h6 class="section-title mt-3">Differences and decisions</h6><ul class="jo-log" id="jo-log">' + j.Log.map(function (g) { return '<li><span class="fw-bold">' + UI.esc(logWhat(g)) + '</span> <span class="text-soft small">' + UI.esc(g.Reason || '') + ' · ' + UI.esc(g.By || '') + ' · ' + UI.esc(F.datetime(g.At)) + '</span></li>'; }).join('') + '</ul>' : '') +
+      (trips.length ? '<h6 class="section-title mt-3">Delivery trips</h6><ul class="jo-log" id="jo-trips">' + trips.map(function (t) { var finished = t.Status === 'DELIVERED' || t.Status === 'FAILED';
+        return '<li class="d-flex align-items-center gap-2 flex-wrap"><span><span class="fw-bold">' + (num(t.TripNo) ? 'Trip ' + num(t.TripNo) + ' · ' : '') + UI.esc(t.Id) + '</span> ' + (outcomeBadge(t.Outcome) || UI.badge(t.Status, t.Status === 'FAILED' ? 'Attempted, not received' : F.status(t.Status))) + ' <span class="text-soft small">' + [t.At ? F.datetime(t.At) : '', t.Rider, t.ReceivedBy ? 'received by ' + t.ReceivedBy + (t.ReceivedByPosition ? ' (' + t.ReceivedByPosition + ')' : '') : '', t.FailureReason].filter(Boolean).map(UI.esc).join(' · ') + '</span></span>' +
+          (finished ? '<button type="button" class="btn btn-sm btn-outline-primary ms-auto" data-dc="' + UI.esc(t.Id) + '"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>Delivery Confirmation</button>' : '') + '</li>'; }).join('') + '</ul>' : '') +
+      (got && log.length ? '<h6 class="section-title mt-3">Differences and decisions</h6><ul class="jo-log" id="jo-log">' + log.map(function (g) { return '<li><span class="fw-bold">' + UI.esc(logWhat(g)) + '</span> <span class="text-soft small">' + UI.esc(g.Reason || '') + ' · ' + UI.esc(g.By || '') + ' · ' + UI.esc(F.datetime(g.At)) + '</span></li>'; }).join('') + '</ul>' : '') +
       '<div class="mt-3" id="jo-files"><button type="button" class="btn btn-link btn-sm p-0" id="jo-files-show"><i class="fa-solid fa-image me-1" aria-hidden="true"></i>' + (j.SignedOn === 'PHONE' ? 'View the signature' : 'View the photos of the signed copy') + '</button></div>');
     var paperNow = paper();
-    UI.html('jo-actions', (j.canReceive ? '<button type="button" class="btn btn-sm btn-success" id="jo-receive"><i class="fa-solid fa-box-open me-1" aria-hidden="true"></i>Receive</button>' : '') + (j.canReview ? '<button type="button" class="btn btn-sm btn-warning" id="jo-review"><i class="fa-solid fa-scale-balanced me-1" aria-hidden="true"></i>Review the difference</button>' : '') + (j.canAttach ? '<label class="btn btn-sm btn-outline-secondary mb-0" for="jo-attach-input"><i class="fa-solid fa-camera me-1" aria-hidden="true"></i>Add photo of the signed copy</label><input class="visually-hidden" type="file" id="jo-attach-input" accept="image/jpeg,image/png,image/*" capture="environment">' : '') + '<span class="spacer"></span>' +
+    UI.html('jo-actions', (j.canReceive ? '<button type="button" class="btn btn-sm btn-success" id="jo-receive"><i class="fa-solid fa-box-open me-1" aria-hidden="true"></i>Receive</button>' : '') + (j.canClose ? '<button type="button" class="btn btn-sm btn-outline-danger" id="jo-close"><i class="fa-solid fa-box-archive me-1" aria-hidden="true"></i>Close the remainder</button>' : '') + (j.canReview ? '<button type="button" class="btn btn-sm btn-warning" id="jo-review"><i class="fa-solid fa-scale-balanced me-1" aria-hidden="true"></i>Review the difference</button>' : '') + (j.canAttach ? '<label class="btn btn-sm btn-outline-secondary mb-0" for="jo-attach-input"><i class="fa-solid fa-camera me-1" aria-hidden="true"></i>Add photo of the signed copy</label><input class="visually-hidden" type="file" id="jo-attach-input" accept="image/jpeg,image/png,image/*" capture="environment">' : '') + '<span class="spacer"></span>' +
       '<label class="visually-hidden" for="jo-paper">Paper</label><select class="form-select form-select-sm jo-paper" id="jo-paper"><option value="A4"' + (paperNow === 'A4' ? ' selected' : '') + '>A4 sheet</option><option value="80mm"' + (paperNow === '80mm' ? ' selected' : '') + '>80 mm roll</option></select>' +
       '<div class="dropdown dropup"><button type="button" class="btn btn-sm btn-primary dropdown-toggle" id="jo-print" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>Print Job Order</button><ul class="dropdown-menu dropdown-menu-end">' +
       [['BOTH', 'Both copies'], ['CLIENT', 'Client copy'], ['SHOP', 'Laundry shop copy']].map(function (x) { return '<li><button type="button" class="dropdown-item" data-copy="' + x[0] + '">' + x[1] + '</button></li>'; }).join('') + '</ul></div>');
@@ -6881,6 +6905,8 @@ window.MLS = (function () {
     UI.el('jo-files-show').onclick = function () { showFiles(j.OrderId); };
     var rc = UI.el('jo-receive'); if (rc) rc.onclick = function () { openReceive(j); };
     var rv = UI.el('jo-review'); if (rv) rv.onclick = function () { openReview(j); };
+    var cl = UI.el('jo-close'); if (cl) cl.onclick = function () { openClose(j); };
+    UI.el('jo-body').querySelectorAll('[data-dc]').forEach(function (b) { b.onclick = function () { printDelivery(j.OrderId, b.getAttribute('data-dc'), 'BOTH', UI.el('jo-paper').value); }; });
     var input = UI.el('jo-attach-input'); if (input) input.onchange = function () { var file = input.files && input.files[0]; if (!file) return; attach(j.OrderId, file); input.value = ''; };
   }
   function showFiles(orderId) {
@@ -7061,6 +7087,119 @@ window.MLS = (function () {
     }).catch(function (e) { btn.disabled = false; box.textContent = UI.error(e); box.hidden = false; });
   };
 
+  // ---------------------------------------------------------------- release 1.44.0: delivery by quantities
+  var OUTCOME = { FULL: ['DELIVERED', 'Fully delivered'], PARTIAL: ['PARTIAL', 'Partially delivered'], WITH_DISCREPANCY: ['DISCREPANCY', 'Delivered with discrepancy'], REJECTED: ['REJECTED', 'Rejected by client'] };
+  function outcomeBadge(code) { var x = OUTCOME[code]; return x ? UI.badge(x[0], x[1]) : ''; }
+  function outcomeText(code) { return OUTCOME[code] ? OUTCOME[code][1] : ''; }
+  /** One linen of the rider's delivery form: what the client accepted, how many of those were damaged, what the client rejected. */
+  function dline(l) {
+    var id = UI.esc(l.Id), out = num(l.Outstanding), kilo = !!l.ByWeight, what = kilo ? num(l.ReceivedWeightKg) + ' kg (one lot)' : out + ' ' + (l.Unit || 'pc');
+    var box = function (f, label) { return '<div><label class="form-label" for="jo-d-' + f + '-' + id + '">' + label + '</label><input class="form-control" id="jo-d-' + f + '-' + id + '" data-f="' + f + '" type="number" inputmode="numeric" min="0" step="1"></div>'; };  // no max: more than is outstanding is refused in words, by the dialog
+    return '<div class="jo-rline jo-dline" data-line="' + id + '" data-out="' + out + '"><div class="jo-rline-name"><span class="fw-bold">' + UI.esc(l.Description) + '</span><div class="small text-soft">to deliver ' + UI.esc(what) + (num(l.DeliveredQty) ? ' · ' + num(l.DeliveredQty) + ' delivered before' : '') + '</div></div>' +
+      '<div class="jo-dline-qty">' + box('delivered', kilo ? 'Delivered (1 = the lot)' : 'Delivered') + box('damaged', 'Of these, damaged') + box('rejected', 'Rejected') + '</div>' +
+      '<div class="jo-rline-reason" hidden><label class="form-label" for="jo-d-why-' + id + '">What was wrong</label><input class="form-control" id="jo-d-why-' + id + '" data-f="why" maxlength="160" placeholder="Stained, torn, not theirs…"></div></div>';
+  }
+  function dlines(box) { return Array.prototype.slice.call(box.querySelectorAll('.jo-dline')); }
+  function dval(r, f) { return r.querySelector('[data-f=' + f + ']').value; }
+  /** The delivery section of the completion dialog (My Deliveries): the linens of the job order still to deliver. */
+  function deliveryHtml(jo) {
+    var open = jo.Lines.filter(function (l) { return num(l.Outstanding) > 0; });
+    return '<h6 class="section-title">Linens delivered · job order ' + UI.esc(jo.OrderNo) + '</h6><p class="small text-soft mb-2">Type what the client accepted of each linen; 0 when none. A damaged piece the client keeps counts as delivered and as damaged. A rejected piece comes back to the shop and stays to be delivered.</p>' +
+      '<div class="d-flex mb-2"><button type="button" class="btn btn-outline-secondary btn-sm" id="jo-d-all"><i class="fa-solid fa-check-double me-1" aria-hidden="true"></i>All delivered</button></div><div id="jo-d-lines">' + open.map(dline).join('') + '</div><div class="jo-totals mt-2" id="jo-d-totals" aria-live="polite"></div>';
+  }
+  function deliverySync(box) {
+    var rows = dlines(box), total = 0, del = 0, rej = 0, done = 0;
+    rows.forEach(function (r) { var d = dval(r, 'delivered'), bad = num(dval(r, 'damaged')) > 0 || num(dval(r, 'rejected')) > 0; r.querySelector('.jo-rline-reason').hidden = !bad; r.classList.toggle('differs', bad); total += num(r.getAttribute('data-out')); if (d !== '') { done++; del += num(d); } rej += num(dval(r, 'rejected')); });
+    var left = total - del, el = box.querySelector('#jo-d-totals'); if (!el) return;
+    el.innerHTML = '<span><b>' + del + ' of ' + total + '</b> delivered' + (rej ? ' · ' + rej + ' rejected' : '') + '</span><span>' + (done < rows.length ? '' : (del === 0 ? (rej ? '<b class="jo-diff">Rejected by client</b> <span class="text-soft small">— everything comes back</span>' : '') : (left > 0 ? '<b class="jo-diff">Partially delivered</b> <span class="text-soft small">— ' + left + ' go back to the shop for another trip</span>' : '<b>Nothing left to deliver</b>'))) + '</span>';
+  }
+  function deliveryWire(box) {
+    dlines(box).forEach(function (r) { r.querySelectorAll('input').forEach(function (el) { el.addEventListener('input', function () { deliverySync(box); }); }); });
+    var all = box.querySelector('#jo-d-all'); if (all) all.onclick = function () { dlines(box).forEach(function (r) { var el = r.querySelector('[data-f=delivered]'); if (el.value === '') el.value = r.getAttribute('data-out'); }); deliverySync(box); };
+    deliverySync(box);
+  }
+  /** What the rider typed, as deliveries.complete takes it — or the first thing that is missing: { error: [message, field] }. */
+  function deliveryRead(box) {
+    var lines = [], bad = null, del = 0, rej = 0;
+    dlines(box).forEach(function (r) {
+      if (bad) return; var name = r.querySelector('.fw-bold').textContent, out = num(r.getAttribute('data-out')), dEl = r.querySelector('[data-f=delivered]'), d = dEl.value, m = num(dval(r, 'damaged')), x = num(dval(r, 'rejected')), why = dval(r, 'why').trim();
+      var int = function (n) { return n >= 0 && n === Math.round(n); };
+      if (d === '' || !int(num(d))) { bad = [name + ': type how many the client accepted (0 when none).', dEl]; return; }
+      if (!int(m) || !int(x)) { bad = [name + ': the counts are whole numbers.', r.querySelector('[data-f=' + (int(m) ? 'rejected' : 'damaged') + ']')]; return; }
+      if (num(d) + x > out) { bad = [name + ': ' + (num(d) + x) + ' is more than the ' + out + ' still to deliver.', dEl]; return; }
+      if (m > num(d)) { bad = [name + ': the damaged ones are counted among those delivered.', r.querySelector('[data-f=damaged]')]; return; }
+      if ((m > 0 || x > 0) && why.length < 3) { bad = ['Say what was wrong with ' + name + '.', r.querySelector('[data-f=why]')]; return; }
+      var line = { lineId: r.getAttribute('data-line'), delivered: num(d) }; if (m) line.damaged = m; if (x) line.rejected = x; if (why && (m || x)) line.reason = why; lines.push(line); del += num(d); rej += x;
+    });
+    if (bad) return { error: bad };
+    if (!del && !rej) return { error: ['Nothing was delivered. When nobody received it, go back and use Could not deliver.', box.querySelector('[data-f=delivered]')] };
+    return { lines: lines, delivered: del, rejected: rej };
+  }
+
+  /** A manager closes what stays undelivered (JOB_ORDER_ADJUST): one reason, then back to the job order. */
+  function openClose(j) {
+    sub = { job: j, opts: shown ? shown.opts : {}, saved: null, requestId: UI.uuid() };
+    Modal.closeThen('jo-modal', function () {
+      var s = sub, back = function () { if (sub !== s) return; sub = null; Modal.closeThen('reason-modal', function () { show(s.saved || s.job, s.opts); }); };
+      M.OrdersUI.openReason({ title: 'Close the remainder · ' + j.OrderNo, hint: num(j.Outstanding) + ' still to deliver will be written off and the job order completed. The earlier trips and the bill are not changed.', label: 'Why the rest will not be delivered', confirmText: 'Complete the job order', danger: true,
+        onSubmit: function (d) { return Api.call('jobOrders.close', { orderId: j.OrderId, reason: d.reason, requestId: s.requestId }, { timeoutMs: 120000 }).then(function (r) { s.saved = r; Toast.success('Job order ' + r.OrderNo + ' completed · the remainder written off'); if (s.opts && s.opts.onChange) s.opts.onChange(r); return r; }); } }).then(back, back);
+    });
+  }
+
+  // the Delivery Confirmation of one trip
+  var DACK = 'I hereby acknowledge receipt of the laundry items listed above, in the quantities stated for this delivery, from {biz}.';
+  var TRIP_WORDS = { FULL: 'Fully delivered', PARTIAL: 'Partially delivered', WITH_DISCREPANCY: 'Delivered with discrepancy', REJECTED: 'Rejected by client' };
+  function tripWords(t) { return TRIP_WORDS[t.Outcome] || (t.Status === 'FAILED' ? 'Delivery attempted but not received' : 'Delivered'); }
+  function tripRef(t) { return t.Id + (num(t.TripNo) ? ' (trip ' + num(t.TripNo) + ')' : ''); }
+  function dcTotals(d) {
+    var t = d.Totals, kg = num(t.kgPickup) || num(t.kgReceived);
+    return 'Pickup ' + num(t.pickup) + ' · received ' + num(t.received) + ' · delivered before ' + num(t.before) + ' · this trip ' + num(t.now) + ' · outstanding ' + num(t.outstanding) + ' · missing or disputed ' + num(t.missing) + ' · damaged or rejected ' + (num(t.damaged) + num(t.rejected)) +
+      (kg ? ' · by weight: ' + num(t.kgPickup) + ' kg picked up, ' + num(t.kgReceived) + ' kg received, ' + num(t.kgNow) + ' kg this trip' : '');
+  }
+  function dcSigns(d) {
+    var esc = UI.esc, t = d.Trip, got = t.Status === 'DELIVERED', client;
+    if (got && d.Signature) client = '<div class="jo-sign-space"><img src="' + esc(d.Signature) + '" alt="Signature"></div><div class="jo-sign-line">' + esc(t.ReceivedBy || '') + '</div><div class="small">' + (t.ReceivedByPosition ? esc(t.ReceivedByPosition) + ' · ' : '') + 'Received by</div><div class="small">Signed electronically on ' + esc(F.datetime(t.SignedAt || t.At)) + '</div>';
+    else client = '<div class="jo-sign-space"></div><div class="jo-sign-line">' + esc(got ? t.ReceivedBy || '' : '') + '</div><div class="small">' + (got && t.ReceivedByPosition ? esc(t.ReceivedByPosition) + ' · ' : '') + 'Received by</div><div class="small">Signature over printed name · position · date and time' + (d.SignatureRemoved ? ' (signature image no longer kept)' : '') + '</div>';
+    return '<div class="jo-signs"><div class="jo-sign-box">' + client + '</div><div class="jo-sign-box"><div class="jo-sign-space"></div><div class="jo-sign-line">' + esc(t.Rider || '') + '</div><div class="small">Delivered by</div><div class="small">' + esc(F.datetime(t.At)) + '</div></div></div>';
+  }
+  function dcPage(d, copy) {
+    var esc = UI.esc, c = d.Client || {}, biz = d.Business || {}, t = d.Trip, blk = function (k, v) { return v ? '<div><b>' + k + '</b>' + esc(v) + '</div>' : ''; };
+    var rows = d.Lines.map(function (l) { var u = l.ByWeight ? ' kg' : ''; return '<tr><td class="r">' + l.No + '</td><td>' + esc(l.Description) + '</td><td class="r num">' + num(l.Pickup) + u + '</td><td class="r num">' + num(l.Received) + u + '</td><td class="r num">' + num(l.Before) + u + '</td><td class="r num"><b>' + num(l.ThisTrip) + u + '</b></td><td class="r num">' + num(l.Outstanding) + u + '</td><td>' + esc(l.Remarks || '') + '</td></tr>'; }).join('');
+    return '<div class="jo-top">' + M.Print.header({ title: 'Laundry delivery confirmation / receiving acknowledgment', business: biz }) + '<div><div class="jo-copy">' + copyLabel(copy) + '</div></div></div>' +
+      '<div class="jo-no"><span>Job Order No. <b>' + esc(d.OrderNo) + '</b> · Delivery ref. ' + esc(tripRef(t)) + '</span><span>Picked up ' + esc(F.date(d.PickupAt)) + ' · ' + (t.Status === 'FAILED' ? 'Attempted ' : 'Delivered ') + esc(F.datetime(t.At)) + '</span></div>' +
+      '<div class="blk">' + blk('Client', c.Company) + blk('Property', c.PropertyName) + blk('Department', c.Department) + blk('Address', c.Address) + blk('Representative', c.Representative) + blk('Delivery personnel', t.Rider) + '</div>' +
+      '<table><thead><tr><th class="r">No.</th><th>Linen</th><th class="r">Pickup</th><th class="r">Shop recv.</th><th class="r">Prev. deliv.</th><th class="r">This trip</th><th class="r">Outstanding</th><th>Remarks</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<p class="dc-totals">' + esc(dcTotals(d)) + '</p><div class="dc-status">Status: ' + esc(tripWords(t)) + '</div>' + (t.Status === 'FAILED' && t.FailureReason ? '<p>' + esc(t.FailureReason) + '</p>' : '') +
+      '<p class="ack">' + esc(DACK.replace('{biz}', biz.name || 'the laundry shop')) + '</p>' + dcSigns(d) + '<div class="dc-extra"><span>Witness (optional): ______________________</span><span>Client stamp or seal (optional)</span><span>Remarks: ______________________</span></div>' +
+      '<div class="jo-notice">' + NOTICE + '</div>' + M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: d.OrderNo + ' · ' + tripRef(t) });
+  }
+  function dcRoll(d, copy) {
+    var esc = UI.esc, c = d.Client || {}, biz = d.Business || {}, t = d.Trip, row = function (a, b, cls) { return '<div class="row' + (cls ? ' ' + cls : '') + '"><span>' + a + '</span><span>' + b + '</span></div>'; };
+    var logo = M.Brand && M.Brand.pictures ? M.Brand.pictures().logo : '';
+    return '<div class="receipt-paper jo-roll">' + (logo ? '<div class="c logo"><img src="' + logo + '" alt=""></div>' : '') + '<div class="c strong">' + esc(biz.name || '') + '</div>' + [biz.branch, biz.address, biz.phone].filter(Boolean).map(function (x) { return '<div class="c muted">' + esc(x) + '</div>'; }).join('') +
+      '<hr><div class="c strong">LAUNDRY DELIVERY CONFIRMATION</div><div class="jo-copy">' + copyLabel(copy) + '</div>' + row('Job Order No.', '<span class="strong">' + esc(d.OrderNo) + '</span>') + row('Delivery ref.', esc(tripRef(t))) + row('Picked up', esc(F.date(d.PickupAt))) + row(t.Status === 'FAILED' ? 'Attempted' : 'Delivered', esc(F.datetime(t.At))) + '<hr>' +
+      '<div class="strong">' + esc(c.Company || '') + '</div>' + [c.PropertyName, c.Department, c.Address].filter(Boolean).map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('') + '<hr>' +
+      d.Lines.map(function (l) { var u = l.ByWeight ? ' kg' : ''; return '<div>' + l.No + '. ' + esc(l.Description) + '</div>' + row('picked up ' + num(l.Pickup) + u + ' · received ' + num(l.Received) + u, '') + row('before ' + num(l.Before) + u + ' · <span class="strong">this trip ' + num(l.ThisTrip) + u + '</span>', 'left ' + num(l.Outstanding) + u) + (l.Remarks ? '<div class="muted">' + esc(l.Remarks) + '</div>' : ''); }).join('') + '<hr>' +
+      '<div>' + esc(dcTotals(d)) + '</div><div class="c strong dc-status">' + esc(tripWords(t)).toUpperCase() + '</div>' + (t.Status === 'FAILED' && t.FailureReason ? '<div>' + esc(t.FailureReason) + '</div>' : '') + '<hr><div>' + esc(DACK.replace('{biz}', biz.name || 'the laundry shop')) + '</div>' +
+      dcSigns(d).replace('jo-signs', 'jo-signs one') + '<div class="foot c">' + NOTICE + '</div><div class="foot c">Printed ' + esc(F.datetime(d.PrintedAt)) + (d.PrintedBy ? ' by ' + esc(d.PrintedBy) : '') + '</div></div>';
+  }
+  /** The Delivery Confirmation's HTML, laid out as the Job Order is: one copy a page, both on one A4 sheet when the job order is short, or an 80 mm roll. */
+  function deliveryDocHtml(d, copy, paperSize) {
+    var copies = copy === 'BOTH' ? ['CLIENT', 'SHOP'] : [copy], css = '<style>' + DOC_CSS + DC_CSS + (paperSize === '80mm' ? '.jo-signs.one{grid-template-columns:1fr;gap:6px}' : '') + '</style>';
+    if (paperSize === '80mm') return css + copies.map(function (c, i) { return (i ? '<div class="jo-roll"><div class="cut"></div></div>' : '') + dcRoll(d, c); }).join('');
+    if (copies.length === 2 && d.Lines.length <= COMPACT_MAX) return css + '<div class="jo-doc jo-compact"><div class="jo-half first">' + dcPage(d, 'CLIENT') + '</div><div class="jo-half">' + dcPage(d, 'SHOP') + '</div></div>';
+    return css + copies.map(function (c) { return '<div class="jo-doc">' + dcPage(d, c) + '</div>'; }).join('');
+  }
+  var DC_CSS = '.dc-totals{font-size:11.5px;margin:6px 0}.dc-status{display:inline-block;border:2px solid #111;padding:4px 12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin:4px 0}.dc-extra{display:flex;justify-content:space-between;gap:12px;font-size:10.5px;margin-top:10px;color:#333}' +
+    '.jo-compact .dc-totals{font-size:9px;margin:2px 0}.jo-compact .dc-status{font-size:10px;padding:2px 8px;margin:1px 0}.jo-compact .dc-extra{font-size:8.5px;margin-top:3px}.jo-roll .dc-status{display:block;margin:6px 0}';
+  function printDelivery(orderId, deliveryId, copy, paperSize) {
+    paperSize = paperSize === '80mm' ? '80mm' : 'A4';
+    return Api.call('jobOrders.deliveryDocument', { orderId: orderId, deliveryId: deliveryId, copy: copy || 'BOTH', paper: paperSize }, { busy: true, timeoutMs: 60000 }).then(function (d) {
+      M.Print.open(deliveryDocHtml(d, d.Copy, paperSize), { title: 'Delivery Confirmation ' + d.OrderNo + ' ' + d.Trip.Id, size: paperSize, margin: paperSize === 'A4' && d.Copy === 'BOTH' && d.Lines.length <= COMPACT_MAX ? '8mm' : undefined });
+      return d;
+    }).catch(function (e) { Toast.danger(UI.error(e)); return null; });
+  }
+
   // ---------------------------------------------------------------- release 1.43.0: the Job Orders screen
   var state = { tab: 'AWAITING', q: '', page: 1 }, asked = 0;
   function received(row) { return row.ReceivingStatus === 'PENDING' ? '<span class="text-soft">—</span>' : UI.esc(piecesText(num(row.PiecesReceived), num(row.WeightReceivedKg), row.BagsReceived) || '0 pieces') + (row.ReceivingStatus !== 'VERIFIED' ? ' ' + UI.badge(row.ReceivingStatus, RECEIVING[row.ReceivingStatus]) : ''); }
@@ -7069,7 +7208,7 @@ window.MLS = (function () {
     var box = UI.el('jobs-table'), mine = ++asked; if (!box.innerHTML) setTimeout(function () { if (!box.innerHTML) box.innerHTML = UI.skeleton({ kind: 'rows', count: 5, label: 'Loading the job orders' }); }, 160);
     return Api.call('jobOrders.list', { tab: state.tab, q: state.q, page: state.page }).then(function (r) {
       if (mine !== asked) return;
-      ['AWAITING', 'REVIEW', 'PRODUCTION', 'READY'].forEach(function (k) { var el = document.querySelector('#jobs-tabs [data-count="' + k + '"]'); if (el) el.textContent = r.counts[k] || ''; });
+      ['AWAITING', 'REVIEW', 'PRODUCTION', 'READY', 'PARTIAL'].forEach(function (k) { var el = document.querySelector('#jobs-tabs [data-count="' + k + '"]'); if (el) el.textContent = r.counts[k] || ''; });
       M.Table.render(box, {
         columns: [
           { key: 'OrderNo', label: 'Job order', cls: 'lead-cell', format: function (v, row) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (row.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '') + '<span class="ph-only lead-status">' + UI.badge(row.Status, row.StatusLabel) + '</span>'; } },
@@ -7077,10 +7216,10 @@ window.MLS = (function () {
           { key: 'PickupAt', label: 'Picked up', format: function (v, row) { return UI.esc(F.datetime(v)) + '<div class="small text-soft">' + UI.esc(piecesText(num(row.PiecesPickup), num(row.WeightPickupKg), row.BagsAtPickup)) + '</div>'; } },
           { key: 'ReceivingStatus', label: 'Received', format: function (v, row) { return received(row); } },
           { key: 'OrderTotal', label: 'Charges', num: true, format: function (v, row) { return '<span class="money">' + F.peso(v) + '</span>' + (row.ReceivingStatus === 'PENDING' ? '<div class="small text-soft">estimate</div>' : ''); } },
-          { key: 'Status', label: 'Status', cls: 'ph-hide', format: function (v, row) { return UI.badge(v, row.StatusLabel); } }
+          { key: 'Status', label: 'Status', cls: 'ph-hide', format: function (v, row) { return UI.badge(v, row.StatusLabel) + (row.DeliveryState ? '<div class="small text-soft">' + (row.DeliveryState === 'PARTIAL' ? num(row.PiecesDelivered) + ' delivered · ' + num(row.PiecesOutstanding) + ' to deliver' : UI.esc(outcomeText(row.DeliveryState))) + '</div>' : ''); } }
         ],
         cls: 'aligned', rows: r.rows, total: r.total, page: r.page, pages: r.pages,
-        empty: { icon: 'fa-clipboard-list', title: state.q ? 'No job orders match' : (state.tab === 'AWAITING' ? 'Nothing is waiting to be received' : state.tab === 'REVIEW' ? 'No difference is waiting for a review' : 'No job orders here'), hint: state.q ? 'Change the search.' : (state.tab === 'AWAITING' ? 'A job order appears here when a rider has counted the linens at a commercial client.' : '') },
+        empty: { icon: 'fa-clipboard-list', title: state.q ? 'No job orders match' : (state.tab === 'AWAITING' ? 'Nothing is waiting to be received' : state.tab === 'REVIEW' ? 'No difference is waiting for a review' : state.tab === 'PARTIAL' ? 'No job order is partly delivered' : 'No job orders here'), hint: state.q ? 'Change the search.' : (state.tab === 'AWAITING' ? 'A job order appears here when a rider has counted the linens at a commercial client.' : '') },
         onPage: function (p) { state.page = p; load(); }, onRow: function (row) { open(row.OrderId, { onChange: function () { load(); } }); }
       });
       UI.el('jobs-scope').textContent = UI.branchName(M.AppState.me.activeBranch) + ' · ' + r.total + ' job order' + (r.total === 1 ? '' : 's');
@@ -7097,7 +7236,8 @@ window.MLS = (function () {
   var wired = false;
   M.Router.register('joborders', { title: 'Job orders', render: function () { if (!wired) { wired = true; wire(); } load(); }, refresh: load });
 
-  M.JobOrders = { count: openCount, open: open, show: show, print: print, documentHtml: documentHtml, canCount: function () { return can('JOB_ORDER_PICKUP'); }, canView: function () { return can('JOB_ORDER_VIEW'); }, COMPACT_MAX: COMPACT_MAX };
+  M.JobOrders = { count: openCount, open: open, show: show, print: print, documentHtml: documentHtml, canCount: function () { return can('JOB_ORDER_PICKUP'); }, canView: function () { return can('JOB_ORDER_VIEW'); }, COMPACT_MAX: COMPACT_MAX,
+    delivery: { html: deliveryHtml, wire: deliveryWire, read: deliveryRead }, outcomeBadge: outcomeBadge, outcomeText: outcomeText, printDelivery: printDelivery, deliveryDocHtml: deliveryDocHtml };
 })();
 </script>
 
