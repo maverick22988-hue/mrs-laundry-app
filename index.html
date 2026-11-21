@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '7892d7890c', version: '1.44.0' };</script>
+  <script>window.MLS_PWA = { build: 'f78ea4c8db', version: '1.45.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -794,6 +794,7 @@
   .sync-list .ref { font-size: .8rem; color: var(--mls-ink-soft); margin-top: .1rem; }
   .sync-stat { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; font-size: .9rem; }
   .review-list li { background: var(--mls-warning-soft); border-radius: 10px; padding: .6rem .7rem; margin-bottom: .4rem; border: 1px solid var(--mls-warning-line); }
+  .review-list .when, .review-list .ref { color: var(--mls-ink); }  /* 1.45.0: the soft ink did not reach 4.5:1 on the tinted row */
   .device-check { list-style: none; margin: 0; padding: 0; font-size: .85rem; }
   .device-check li { display: flex; gap: .5rem; align-items: flex-start; padding: .25rem 0; border-bottom: 1px solid var(--mls-line); }
   .device-check li:last-child { border-bottom: 0; }
@@ -1059,7 +1060,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.44.0';
+  var VERSION = '1.45.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -2362,7 +2363,7 @@ window.MLS = (function () {
  * online and shortly after the data version moves, and files every live answer of a read action as it passes.
  * When the server cannot be reached, MLS.Api asks here: a read is answered from the copy (lists are computed from the
  * stored rows with the server's own rules, a quote by the same shared pricing code the server runs, everything else from
- * the filed answer); one of the eleven queueable writes is applied to the copy and queued — an order gets a provisional
+ * the filed answer); one of the twelve queueable writes is applied to the copy and queued — an order gets a provisional
  * reference and a temporary id, a payment is provisional, a stage, a punch or a job step is kept with the time it was
  * pressed — and nothing else is accepted. MLS.Queue pushes the queue through sync.push as soon as the server answers,
  * in order, and records the verdict of every operation exactly as the ledger returned it: applied (with the id and number
@@ -2374,9 +2375,9 @@ window.MLS = (function () {
   var M = window.MLS, UI = M.UI, Api = M.Api, Net = M.Net, AppState = M.AppState, F = M.Formatter;
   var DB_NAME = 'mls-offline', DB_VERSION = 2, STORES = ['meta', 'snapshots', 'orders', 'customers', 'queue'];
   /** The writes a device may make offline (decision 6); the server's Sync.QUEUEABLE is the same list and refuses anything else. */
-  var QUEUEABLE = ['orders.create', 'customers.quickAdd', 'customers.save', 'payments.create', 'production.advance', 'production.qc', 'timeclock.punch', 'deliveries.accept', 'deliveries.start', 'deliveries.complete', 'deliveries.fail'];
+  var QUEUEABLE = ['orders.create', 'customers.quickAdd', 'customers.save', 'payments.create', 'production.advance', 'production.qc', 'timeclock.punch', 'deliveries.accept', 'deliveries.start', 'deliveries.complete', 'deliveries.fail', 'jobOrders.pickup'];  // the last since 1.45.0: the pickup count of a commercial job order
   /** Writes whose server handler refuses to apply twice (a RequestId): safe to queue after a timed-out call; the others are queued only when the call never left the device. */
-  var IDEMPOTENT = ['orders.create', 'customers.quickAdd', 'customers.save', 'payments.create'];
+  var IDEMPOTENT = ['orders.create', 'customers.quickAdd', 'customers.save', 'payments.create', 'jobOrders.pickup'];
   var PUSH_BATCH = 50;
   var OPEN_TIMEOUT_MS = 8000;
 
@@ -2441,6 +2442,8 @@ window.MLS = (function () {
   function phoneOf(v) { return String(v === null || v === undefined ? '' : v).trim().replace(/[\s\-().]/g, ''); }
   function fail(code, message, fields) { return { code: code, message: message, fields: fields || null, offline: true }; }
   function clone(v) { return v === undefined ? undefined : JSON.parse(JSON.stringify(v)); }
+  /** The client of a job order as its documents show it (the same fields the server snapshots at pickup). */
+  function clientSnapshot(c, d, department) { return { Company: c.FullName, EstablishmentType: c.EstablishmentType || '', PropertyName: c.PropertyName || '', Address: d.Address || c.Address || '', Representative: c.Representative || '', RepresentativePosition: c.RepresentativePosition || '', Phone: d.Phone || c.Phone || '', Department: String(department || '').trim().slice(0, 60), ContractRef: c.ContractRef || '', BillingTerms: c.BillingTerms || '' }; }
   function labelOf(status, labels) { return (labels || {})[status] || String(status || '').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, function (c) { return c.toUpperCase(); }); }
   /** This browser's stable id: the provisional references and the ledger name the device by it. */
   function deviceId() { try { var id = localStorage.getItem('mls.deviceId'); if (!id) { id = UI.uuid().replace(/-/g, '').slice(0, 12); localStorage.setItem('mls.deviceId', id); } return id; } catch (e) { return 'nolocal'; } }
@@ -2520,7 +2523,31 @@ window.MLS = (function () {
     function servicesQuote(opts) { return Quote.price(opts || {}).then(function (q) { return { data: q, asOf: null, how: 'quote' }; }); }
     /** dispatch.get for a job on the rider's own list (the complete dialog opens with it). */
     function dispatchGet(opts) { return snapshot('deliveries.mine', {}).then(function (hit) { var d = hit && hit.data && (hit.data.rows || []).filter(function (x) { return x.Id === String(opts && opts.id || ''); })[0]; return d ? { data: d, asOf: hit.asOf, how: 'snapshot' } : null; }); }
-    var LOCAL = { 'orders.list': ordersList, 'orders.get': orderGet, 'orders.receipt': orderReceipt, 'customers.list': customersList, 'customers.search': customersSearch, 'customers.get': customerGet, 'services.quote': servicesQuote, 'dispatch.get': dispatchGet };
+
+    /**
+     * jobOrders.start from the copy (1.45.0): the rider's own pickup job, the client as the copy holds it, and the linens with the price this
+     * client pays by the shared pricing rules over the catalogue the device holds. Null when the copy lacks any of them (the count then
+     * needs a connection).
+     */
+    function jobOrdersStart(opts) {
+      var S = window.MLS_SHARED, me = AppState.me;
+      return Promise.all([snapshot('deliveries.mine', {}), Quote.catalogue()]).then(function (r) {
+        var d = r[0] && r[0].data && (r[0].data.rows || []).filter(function (x) { return x.Id === String(opts && opts.deliveryId || ''); })[0], cat = r[1];
+        if (!d || !cat || !S || !me || !d.CustomerId || d.JobType !== 'PICKUP') return null;
+        return Store.get('customers', String(d.CustomerId)).then(function (c) {
+          if (!c || c.CustomerType !== 'CORPORATE') return null;
+          var today = isoLocalDate(), own = Array.isArray(c.Prices) ? c.Prices : [], canOverride = (me.permissions || []).indexOf('PRICE_OVERRIDE') >= 0;
+          var services = Object.keys(cat.services).map(function (k) { return cat.services[k]; }).filter(function (s) { return !s.Status || s.Status === 'ACTIVE'; }).map(function (s) {
+            var mine = S.resolveClientPrice(s.Id, today, own), row = mine || S.resolvePrice(s.Id, d.BranchId, c.CustomerType, today, cat.prices);
+            return { Id: s.Id, Name: s.Name, Category: s.Category || '', PricingType: s.PricingType, Unit: s.Unit || S.unitLabel(s.PricingType), Price: row ? Math.round(Number(row.Price) * 100) / 100 : null, Source: row ? (mine ? 'client' : 'list') : '', MinimumQty: Number(s.MinimumQty) || 0 };
+          }).filter(function (s) { return s.Price !== null || canOverride; }).sort(function (a, b) { return String(a.Category).localeCompare(String(b.Category)) || String(a.Name).localeCompare(String(b.Name)); });
+          return { data: { job: { Id: d.Id, Status: d.Status, CustomerName: d.CustomerName, Address: d.Address, Phone: d.Phone, BranchId: d.BranchId }, client: clientSnapshot(c, d, ''), services: services, canOverride: canOverride, maxLines: 60, backdateDays: 7, offline: true }, asOf: r[0].asOf, how: 'snapshot' };
+        });
+      });
+    }
+    /** jobOrders.get: a job order counted offline, from the provisional order the device holds; any other from the answer the device filed when it was last opened. */
+    function jobOrdersGet(opts) { var id = String(opts && (opts.orderId || opts.id) || ''); return Store.get('orders', id).then(function (o) { return o && o._jobOrder ? { data: o._jobOrder, asOf: o.OfflineAt || null, how: 'orders' } : snapshot('jobOrders.get', opts); }); }
+    var LOCAL = { 'jobOrders.start': jobOrdersStart, 'jobOrders.get': jobOrdersGet, 'orders.list': ordersList, 'orders.get': orderGet, 'orders.receipt': orderReceipt, 'customers.list': customersList, 'customers.search': customersSearch, 'customers.get': customerGet, 'services.quote': servicesQuote, 'dispatch.get': dispatchGet };
     /** The offline answer for an action, or null when the device holds none. Never throws for a copy miss; a quote that the shared core refuses rejects with its validation error, as the server would. */
     function answer(action, payload) {
       var fn = LOCAL[action];
@@ -2538,7 +2565,9 @@ window.MLS = (function () {
   var Quote = (function () {
     /** The catalogue as the pull filed it: services with their price rows, the live promo codes and the pricing settings (services.list forPos), the sellable products (inventory.all). */
     function catalogue() {
-      return Promise.all([Answers.snapshot('services.list', { forPos: true }), Answers.snapshot('inventory.all', { sellable: true, type: 'PRODUCT' }), Answers.ordersMeta()]).then(function (r) {
+      // 1.45.0: a rider has no POS catalogue; the pull gives the price list for a pickup count instead (jobOrders.catalogue)
+      var list = Answers.snapshot('services.list', { forPos: true }).then(function (s) { return s && s.data && Array.isArray(s.data.rows) ? s : Answers.snapshot('jobOrders.catalogue', {}); });
+      return Promise.all([list, Answers.snapshot('inventory.all', { sellable: true, type: 'PRODUCT' }), Answers.ordersMeta()]).then(function (r) {
         var cat = r[0] && r[0].data, items = r[1] && r[1].data, om = r[2];
         if (!cat || !Array.isArray(cat.rows) || !cat.rows.length || !cat.rows[0].Prices) return null;
         var services = {}, prices = []; cat.rows.forEach(function (s) { services[s.Id] = s; (s.Prices || []).forEach(function (p) { prices.push(p); }); });
@@ -2549,13 +2578,13 @@ window.MLS = (function () {
     /** The customer as the copy holds it: the type, and (1.41.0) a commercial client's own prices, which the server sends with a Corporate customer's row and which beat the price list. */
     function customerType(customerId) { var none = { type: 'REGULAR', prices: [] }; if (!customerId) return Promise.resolve(none); return Store.get('customers', String(customerId)).then(function (c) { return c ? { type: c.CustomerType || 'REGULAR', prices: c.CustomerType === 'CORPORATE' && Array.isArray(c.Prices) ? c.Prices : [] } : none; }).catch(function () { return none; }); }
     /** The quote the server would give (services.quote), computed by the same code over the catalogue the device holds. Rejects as the server rejects. */
-    function price(input) {
+    function price(input, extra) {
       var S = window.MLS_SHARED, me = AppState.me;
       if (!S) return Promise.reject(fail('NETWORK', 'This page did not load the pricing rules; reload it while connected.'));
       if (!me || !me.activeBranch || me.activeBranch === 'ALL') return Promise.reject(fail('VALIDATION', 'Choose a branch first', { branchId: 'required' }));
       return Promise.all([catalogue(), customerType(input.customerId)]).then(function (r) {
         var cat = r[0]; if (!cat) throw fail('NETWORK', 'This device has no copy of the catalogue yet; open the POS once while connected.');
-        var env = { branchId: me.activeBranch, customerType: r[1].type, clientPrices: r[1].prices, dateIso: isoLocalDate(), now: new Date(), canDiscount: (me.permissions || []).indexOf('POS_DISCOUNT') >= 0, prices: cat.prices, services: cat.services, items: cat.items, promos: cat.promos, settings: cat.settings };
+        var env = { branchId: me.activeBranch, customerType: r[1].type, clientPrices: r[1].prices, dateIso: isoLocalDate(), now: new Date(), canDiscount: (me.permissions || []).indexOf('POS_DISCOUNT') >= 0, overrides: extra && extra.overrides ? extra.overrides : null /* 1.45.0: a manual price typed on a count made offline, for the estimate only — the server decides */, prices: cat.prices, services: cat.services, items: cat.items, promos: cat.promos, settings: cat.settings };
         var q;
         try { q = S.priceCart(input, env); } catch (e) { throw { code: e.code || 'VALIDATION', message: e.message || String(e), fields: e.fields || null }; }
         q.dueAt = q.dueAt instanceof Date ? q.dueAt.toISOString() : q.dueAt;
@@ -2723,14 +2752,17 @@ window.MLS = (function () {
         else if (action === 'deliveries.start') { if (['ASSIGNED', 'ACCEPTED'].indexOf(d.Status) < 0) bad(' and cannot be started'); next = 'OUT_FOR_DELIVERY'; orderMoves = (d.Items || []).map(function (i) { return { orderId: i.OrderId, status: 'OUT_FOR_DELIVERY', details: 'Out for delivery with ' + myName() + ' · offline' }; }); }
         else if (action === 'deliveries.complete') {
           if (d.Status !== 'OUT_FOR_DELIVERY') bad('; start it before completing'); next = d.JobType === 'DELIVERY' ? 'DELIVERED' : 'PICKED_UP';
+          var joItem = d.JobType === 'DELIVERY' ? (d.Items || []).filter(function (i) { return i.JobOrder; })[0] : null, trip = joItem ? jobOrderTrip(d, joItem, p) : null;  // 1.45.0: a job order is delivered by quantities, offline too
+          if (trip) next = trip.next;
           var collections = Array.isArray(p.collections) ? p.collections : [];
           if (collections.some(function (c) { return Number(c.amount) > 0; }) && (me().permissions || []).indexOf('PAYMENT_COLLECT') < 0) throw fail('FORBIDDEN', 'This action needs the PAYMENT_COLLECT permission');
-          orderMoves = (d.Items || []).map(function (i) { var c = collections.filter(function (x) { return x && x.orderId === i.OrderId; })[0]; return { orderId: i.OrderId, status: d.JobType === 'DELIVERY' ? 'COMPLETED' : null, details: 'Delivered by ' + myName() + ' · offline', collect: c && Number(c.amount) > 0 ? c : null }; });
+          orderMoves = (d.Items || []).map(function (i) { var c = collections.filter(function (x) { return x && x.orderId === i.OrderId; })[0]; if (trip && i === joItem) return { orderId: i.OrderId, status: trip.orderStatus, details: trip.details, collect: c && Number(c.amount) > 0 ? c : null, onlyFrom: 'OUT_FOR_DELIVERY' }; return { orderId: i.OrderId, status: d.JobType === 'DELIVERY' ? 'COMPLETED' : null, details: 'Delivered by ' + myName() + ' · offline', collect: c && Number(c.amount) > 0 ? c : null }; });
           details = String(p.notes || '').trim();
           // 1.15.0: the proof taken offline travels inside this operation; the copy says it was taken (or is missing where the settings require it)
-          var pr = p.proof && typeof p.proof === 'object' ? p.proof : {}, st = me().settings || {}, mode = String(st.ProofOfDelivery || 'OFF').toUpperCase(), taken = mode !== 'OFF' && !!(pr.photo || pr.signature);
+          var pr = p.proof && typeof p.proof === 'object' ? p.proof : {}, st = me().settings || {}, mode = String(st.ProofOfDelivery || 'OFF').toUpperCase(); if (trip && mode === 'OFF') mode = 'OPTIONAL'; var taken = mode !== 'OFF' && !!(pr.photo || pr.signature);
           d._proofTaken = taken; if (mode !== 'OFF' && pr.receivedBy) d.ReceivedBy = String(pr.receivedBy).trim().slice(0, 80);
-          d.ProofStatus = taken ? 'ATTACHED' : (mode === 'REQUIRED' && d.JobType === 'DELIVERY' ? 'MISSING' : (d.ProofStatus || ''));
+          d.ProofStatus = taken ? 'ATTACHED' : (mode === 'REQUIRED' && d.JobType === 'DELIVERY' && !(trip && !trip.delivered) ? 'MISSING' : (d.ProofStatus || ''));
+          if (trip) { if (trip.outcome) d.Outcome = trip.outcome; if (trip.receivedBy) d.ReceivedBy = trip.receivedBy; if (trip.position) d.ReceivedByPosition = trip.position; if (trip.rejectedWhy) d.FailureReason = trip.rejectedWhy; d._trip = { delivered: trip.delivered, remaining: trip.remaining, outcome: trip.outcome }; }
         }
         else if (action === 'deliveries.fail') { var reason = String(p.reason || '').trim(); if (reason.length < 3) throw fail('VALIDATION', 'Say why the delivery failed', { reason: 'required' }); if (['ACCEPTED', 'OUT_FOR_DELIVERY'].indexOf(d.Status) < 0) bad(' and cannot be failed'); next = 'FAILED'; d.FailureReason = reason; orderMoves = (d.Items || []).map(function (i) { return { orderId: i.OrderId, status: 'READY', details: 'Delivery failed: ' + reason + ' · offline', onlyFrom: 'OUT_FOR_DELIVERY' }; }); }
         return Answers.ordersMeta().then(function (om) {
@@ -2752,6 +2784,78 @@ window.MLS = (function () {
       });
     }
     /** Applies an operation to the copy; resolves with { result, tempId?, provisionalRef?, quote?, label, skip? }. Rejects with a validation error as the server would. */
+
+    /**
+     * 1.45.0: what a delivery of a job order does to the rider's copy — the same rules the server applies, over the lines the job carries.
+     * → { next, outcome, orderStatus, details, delivered, remaining } and the job's lines moved; throws as the server would refuse.
+     */
+    function jobOrderTrip(d, item, p) {
+      var jo = p.jobOrder && typeof p.jobOrder === 'object' ? p.jobOrder : null;
+      if (!Array.isArray(item.Lines)) throw fail('NETWORK', 'No connection to the server — this phone does not hold the linens of job order ' + (item.OrderNo || '') + '; delivering it needs a connection.');
+      if (!jo || !Array.isArray(jo.lines)) throw fail('VALIDATION', 'Job order ' + (item.OrderNo || '') + ' is delivered by quantities: enter what was delivered of each linen', { jobOrder: 'required' });
+      var given = {}; jo.lines.forEach(function (g) { if (g && g.lineId) given[String(g.lineId)] = g; });
+      var delivered = 0, rejected = 0, remaining = 0, why = [], whole = function (v) { var n = v === undefined || v === '' || v === null ? 0 : Number(v); if (!(n >= 0) || n !== Math.round(n)) throw fail('VALIDATION', 'The counts are whole numbers', { jobOrder: 'number' }); return n; };
+      var moved = item.Lines.map(function (l) {
+        var out = Number(l.Outstanding) || 0, g = given[l.Id];
+        if (!g) { if (out > 0) throw fail('VALIDATION', 'Enter what was delivered of ' + l.Description + ' (0 when none of it was)', { jobOrder: 'missing' }); return l; }
+        var dq = whole(g.delivered), rq = whole(g.rejected), mq = whole(g.damaged), reason = String(g.reason || '').trim();
+        if (dq + rq > out) throw fail('VALIDATION', l.Description + ': ' + (dq + rq) + ' is more than the ' + out + ' still to deliver', { jobOrder: 'over' });
+        if (mq > dq) throw fail('VALIDATION', l.Description + ': the damaged ones are counted among those delivered', { jobOrder: 'damaged' });
+        if ((rq > 0 || mq > 0) && reason.length < 3) throw fail('VALIDATION', 'Say what was wrong with ' + l.Description, { reason: 'required' });
+        delivered += dq; rejected += rq; remaining += out - dq; if (rq) why.push(rq + ' ' + l.Description + ' (' + reason + ')');
+        return Object.assign({}, l, { Outstanding: out - dq, Delivered: (Number(l.Delivered) || 0) + dq });
+      });
+      if (!delivered && !rejected) throw fail('VALIDATION', 'Nothing was delivered of job order ' + (item.OrderNo || '') + '. When nobody received it, use Could not deliver', { jobOrder: 'nothing' });
+      var receivedBy = String((p.proof && p.proof.receivedBy) || jo.receivedBy || '').trim().slice(0, 80);
+      if (delivered > 0 && receivedBy.length < 2) throw fail('VALIDATION', 'Write the name of the person who received the linens', { receivedBy: 'required' });
+      item.Lines = moved;
+      var trip = Number(d.TripNo) ? 'Trip ' + Number(d.TripNo) : 'Delivery ' + d.Id, outcome = !delivered ? 'REJECTED' : (remaining > 0 ? 'PARTIAL' : '');
+      return { next: delivered ? 'DELIVERED' : 'FAILED', outcome: outcome, orderStatus: delivered && remaining === 0 ? 'COMPLETED' : 'READY', delivered: delivered, remaining: remaining, receivedBy: receivedBy, position: String(jo.receivedByPosition || '').trim().slice(0, 60), rejectedWhy: why.length ? 'Rejected by the client: ' + why.join('; ') : '',
+        details: trip + ' · ' + (outcome === 'REJECTED' ? 'rejected by the client' : outcome === 'PARTIAL' ? 'partially delivered' : 'delivered') + ' · ' + delivered + ' delivered' + (rejected ? ', ' + rejected + ' rejected' : '') + (remaining ? ' · ' + remaining + ' still to deliver' : '') + ' · offline' };
+    }
+
+    /**
+     * jobOrders.pickup (1.45.0): the count of a commercial pickup made without the server. The device prices it with its own copy (an
+     * estimate — the server prices again at sync), gives it a provisional reference and a temporary id, keeps the job order as the dialog
+     * and the printout show it, and marks the pickup job done on this device. The job order number arrives at sync.
+     */
+    function jobOrdersPickup(p, at) {
+      var m = me();
+      var lines = Array.isArray(p.lines) ? p.lines : []; if (!lines.length) throw fail('VALIDATION', 'Count at least one linen', { lines: 'required' });
+      var signer = String(p.signerName || '').trim(); if (signer.length < 2) throw fail('VALIDATION', 'Write the name of the person who surrendered the linens', { signerName: 'required' });
+      var signedOn = String(p.signedOn || '').toUpperCase(); if (['PHONE', 'PAPER'].indexOf(signedOn) < 0) throw fail('VALIDATION', 'Say how the client signed', { signedOn: 'enum' });
+      if (signedOn === 'PHONE' && !p.signature) throw fail('VALIDATION', 'Have the client sign on the phone, or choose "signs the printed copy"', { signature: 'required' });
+      var bags = Number(p.bags); if (!(bags >= 0) || bags !== Math.round(bags)) throw fail('VALIDATION', 'Enter how many bags were taken (0 when none)', { bags: 'min' });
+      return Answers.snapshot('deliveries.mine', {}).then(function (hit) {
+        if (!hit || !hit.data) throw fail('VALIDATION', 'This device has no copy of your deliveries yet; open them once while connected', { deliveryId: 'copy' });
+        var data = clone(hit.data), d = (data.rows || []).filter(function (x) { return x.Id === String(p.deliveryId || ''); })[0];
+        if (!d) throw fail('NOT_FOUND', 'Job ' + p.deliveryId + ' was not found on this device');
+        if (d.JobType !== 'PICKUP' || ['ACCEPTED', 'OUT_FOR_DELIVERY'].indexOf(d.Status) < 0 || (d.Items || []).length) throw fail('VALIDATION', 'Job ' + d.Id + ' is ' + lower(d.Status).replace(/_/g, ' ') + '; its linens cannot be counted here', { deliveryId: 'status' });
+        var overrides = null, seen = {}; lines.forEach(function (l) { if (seen[l.serviceId]) throw fail('VALIDATION', 'A linen is on the count twice; put it on one line', { lines: 'duplicate' }); seen[l.serviceId] = true; if (l.price !== undefined && l.price !== '' && l.price !== null) { if ((m.permissions || []).indexOf('PRICE_OVERRIDE') < 0) throw fail('FORBIDDEN', 'A manual price needs the PRICE_OVERRIDE permission'); (overrides = overrides || {})[l.serviceId] = Math.round(Number(l.price) * 100) / 100; } });
+        var input = { customerId: d.CustomerId, serviceType: 'PICKUP', isExpress: p.isExpress === true, lines: lines.map(function (l) { return l.weightKg !== undefined ? { lineType: 'SERVICE', serviceId: l.serviceId, weightKg: l.weightKg } : { lineType: 'SERVICE', serviceId: l.serviceId, qty: l.qty }; }) };
+        return Promise.all([Quote.price(input, { overrides: overrides }), Answers.ordersMeta(), Store.get('customers', String(d.CustomerId)), nextProvisionalRef(), Quote.catalogue()]).then(function (r) {
+          var q = r[0], om = r[1], c = r[2], ref = r[3], cat = r[4]; if (!c) throw fail('NOT_FOUND', 'The client of job ' + d.Id + ' is not on this device');
+          var id = tempId(), pieces = 0, kg = 0, when = p.pickupAt || at, label = 'Awaiting receiving';
+          var joLines = q.lines.map(function (l, i) { var src = lines[i] || {}, kilo = Number(l.WeightKg) > 0; if (kilo) kg += Number(l.WeightKg); else pieces += Number(l.Qty);
+            return { Id: id + '-J' + (i + 1), Sequence: i + 1, ServiceId: l.ServiceId, Description: l.Description, Category: ((cat && cat.services[l.ServiceId]) || {}).Category || '', Unit: l.Unit, UnitPrice: l.UnitPrice, ListPrice: l.priceSource === 'client' || l.priceSource === 'override' ? l.listPrice : undefined, PriceSource: l.priceSource || '', PriceReason: src.priceReason || undefined, PickupQty: kilo ? 0 : Number(l.Qty), PickupWeightKg: kilo ? Number(l.WeightKg) : 0, ByWeight: kilo, ConditionAtPickup: String(src.condition || '').trim().slice(0, 160), Remarks: '', Amount: l.LineTotal, BilledQty: kilo ? Number(l.WeightKg) : Number(l.Qty) }; });
+          kg = Math.round(kg * 100) / 100;
+          var jo = { Id: id, OrderId: id, OrderNo: ref, Provisional: true, ProvisionalRef: ref, Status: 'NEW', StatusLabel: label, BranchId: d.BranchId, Branch: branchName(d.BranchId), CustomerId: c.Id, PickupDeliveryId: d.Id, Client: clientSnapshot(c, d, p.department), PickupAt: when, PickupBy: myName(),
+            ClientSignerName: signer, ClientSignerPosition: String(p.signerPosition || '').trim().slice(0, 60), SignedOn: signedOn, SignedAt: signedOn === 'PHONE' ? at : null, PaperFormNo: signedOn === 'PAPER' ? String(p.paperFormNo || '').trim().slice(0, 40) : '', BagsAtPickup: bags, PiecesPickup: pieces, WeightPickupKg: kg, ReceivingStatus: 'PENDING', DeliveryState: 'NONE',
+            SpecialInstructions: String(p.specialInstructions || '').trim().slice(0, 300), Remarks: '', PrintCount: 0, LastPrintedAt: null, IsExpress: !!q.isExpress, Subtotal: q.subtotal, DiscountAmount: q.discountAmount, DeliveryFee: q.deliveryFee, OtherCharges: q.otherCharges, OrderTotal: q.total, PaidAmount: 0, BalanceAmount: q.total, Lines: joLines,
+            canOverride: false, canReceive: false, canReview: false, canAttach: false, Signature: signedOn === 'PHONE' ? p.signature : '', Business: om.receipt ? om.receipt.business : null };
+          var o = { Id: id, OrderNo: ref, ProvisionalRef: ref, OfflineAt: at, BranchId: d.BranchId, Branch: jo.Branch, BranchCode: branchCode(d.BranchId), CustomerId: c.Id, CustomerName: c.FullName, CustomerPhone: c.Phone, Mobile: c.Phone, OrderDate: isoLocalDate(new Date(at)), DueAt: q.dueAt, IsExpress: !!q.isExpress, BagCount: bags, TotalWeightKg: q.totalWeightKg,
+            Subtotal: q.subtotal, DiscountAmount: q.discountAmount, DiscountReason: q.discountReason, DeliveryFee: q.deliveryFee, OtherCharges: q.otherCharges, OrderTotal: q.total, PaidAmount: 0, BalanceAmount: q.total, Status: 'NEW', StatusLabel: label, ServiceType: 'PICKUP', IsCommercial: true, Notes: jo.SpecialInstructions, CashierUserId: m.user.Id, Cashier: myName(), ReleasedAt: '', ReleasedBy: '', ReleasedByName: '', RequestId: '', TrackingToken: '', PromoCode: '',
+            CreatedAt: at, UpdatedAt: at, CreatedBy: m.user.Username, UpdatedBy: m.user.Username, IsOpen: true, Transitions: [], Customer: { Id: c.Id, FullName: c.FullName, Phone: c.Phone, Mobile: c.Mobile || c.Phone, SmsOptOut: !!c.SmsOptOut, CustomerType: c.CustomerType, Address: c.Address },
+            Items: q.lines.map(function (l, i) { return { Id: id + '-L' + (i + 1), OrderId: id, LineType: l.LineType, ServiceId: l.ServiceId, ItemId: '', Description: l.Description, Qty: l.Qty, WeightKg: l.WeightKg, Unit: l.Unit, UnitPrice: l.UnitPrice, LineTotal: l.LineTotal, MaterialsConsumedAt: '' }; }),
+            Payments: [], Timeline: [activity('CREATED', '', 'NEW', 'Job order ' + ref + ' counted offline on this device · ' + q.lines.length + ' line' + (q.lines.length === 1 ? '' : 's') + ' · estimated ' + F.peso(q.total), at)], _pending: true, _jobOrder: jo };
+          d.Status = 'PICKED_UP'; d._pending = true; d.IsOpen = false; d.CompletedAt = at; d.Actions = []; delete d.Commercial;
+          d.Items = [{ Id: id + '-S1', DeliveryId: d.Id, OrderId: id, Sequence: 1, Status: 'PICKED_UP', JobOrder: true, OrderNo: ref, OrderStatus: 'NEW', OrderStatusLabel: label, CustomerName: c.FullName, OrderTotal: q.total, BalanceAmount: q.total, BagCount: bags, TotalWeightKg: q.totalWeightKg, AmountToCollect: 0, CollectedAmount: 0, Bags: null }];
+          return Promise.all([Store.put('orders', id, o), Store.put('snapshots', payloadKey('deliveries.mine', {}), Object.assign({}, hit, { data: data }))]).then(function () {
+            return { result: jo, tempId: id, provisionalRef: ref, quote: { total: q.total, subtotal: q.subtotal, lines: q.lines.map(function (l) { return { ServiceId: l.ServiceId, UnitPrice: l.UnitPrice, LineTotal: l.LineTotal }; }) }, label: 'Job order ' + ref + ' · ' + c.FullName + ' · ' + [pieces ? pieces + ' pc' : '', kg ? kg + ' kg' : ''].filter(Boolean).join(', ') };
+          });
+        });
+      });
+    }
     function apply(action, payload, at, opts) {
       payload = payload || {}; var online = !!(opts && opts.online);
       try {
@@ -2764,6 +2868,7 @@ window.MLS = (function () {
           case 'production.qc': return productionQc(payload, at, online);
           case 'timeclock.punch': return timeclockPunch(payload, at);
           case 'deliveries.accept': case 'deliveries.start': case 'deliveries.complete': case 'deliveries.fail': return deliveryStep(action, payload, at);
+          case 'jobOrders.pickup': return jobOrdersPickup(payload, at);
           default: return Promise.reject(fail('NETWORK', 'No connection to the server — this needs a connection.'));
         }
       } catch (e) { return Promise.reject(e); }
@@ -2772,11 +2877,19 @@ window.MLS = (function () {
     function confirm(op, r) {
       var data = r.data, writes = [];
       if ((data === undefined || data === null) && op.tempId && r.resultId) {  // answered from the ledger without the record: the provisional row goes, the next pull brings the server's
-        if (op.action === 'orders.create') writes.push(Store.remove('orders', op.tempId));
+        if (op.action === 'orders.create' || op.action === 'jobOrders.pickup') writes.push(Store.remove('orders', op.tempId));
         else if (op.action === 'customers.quickAdd' || op.action === 'customers.save') writes.push(Store.remove('customers', op.tempId));
         return Promise.all(writes);
       }
       if (op.action === 'orders.create' && data && data.Id) { if (data.Receipt) delete data.Receipt; writes.push(Store.remove('orders', op.tempId).then(function () { return Store.put('orders', data.Id, data); })); }
+      else if (op.action === 'jobOrders.pickup' && data && data.OrderId) {
+        // 1.45.0: the server's job order replaces the provisional one; the pickup job on this device learns the real order (the next pull brings the order itself)
+        delete data.created; delete data.duplicate;
+        writes.push(Store.remove('orders', op.tempId)); writes.push(Store.put('snapshots', payloadKey('jobOrders.get', { orderId: data.OrderId }), { action: 'jobOrders.get', payload: { orderId: data.OrderId }, data: data, asOf: new Date().toISOString() }));
+        writes.push(Answers.snapshot('deliveries.mine', {}).then(function (hit) { if (!hit || !hit.data) return; var rows = clone(hit.data.rows || []), x = rows.filter(function (r) { return r.Id === data.PickupDeliveryId; })[0]; if (!x) return;
+          x.Status = 'PICKED_UP'; x.IsOpen = false; x.Actions = []; delete x.Commercial; delete x._pending; x.Items = [{ DeliveryId: x.Id, OrderId: data.OrderId, Sequence: 1, Status: 'PICKED_UP', JobOrder: true, OrderNo: data.OrderNo, OrderStatus: data.Status, OrderStatusLabel: data.StatusLabel, CustomerName: (data.Client || {}).Company || x.CustomerName, OrderTotal: data.OrderTotal, BalanceAmount: data.BalanceAmount, BagCount: data.BagsAtPickup, AmountToCollect: 0, CollectedAmount: 0, Bags: null }];
+          return Store.put('snapshots', payloadKey('deliveries.mine', {}), Object.assign({}, hit, { data: Object.assign({}, hit.data, { rows: rows }) })); }));
+      }
       else if ((op.action === 'customers.quickAdd' || op.action === 'customers.save') && data) { var c = data.customer || data; if (c && c.Id) { if (op.tempId && op.tempId !== c.Id) writes.push(Store.remove('customers', op.tempId)); writes.push(Store.put('customers', c.Id, Object.assign({}, c, { _pending: undefined }))); } }
       else if (op.action === 'payments.create' && data && data.order) writes.push(Store.put('orders', data.order.Id, data.order));
       else if ((op.action === 'production.advance' || op.action === 'production.qc') && data && data.order) writes.push(Store.put('orders', data.order.Id, data.order));
@@ -2864,7 +2977,7 @@ window.MLS = (function () {
                 o.result = { status: v.status, resultId: v.resultId || '', resultRef: v.resultRef || '', flags: v.flags || [], conflicts: v.conflicts || [], error: v.error || null, at: new Date().toISOString() };
                 if (o.online) { if (v.status === 'APPLIED' || v.status === 'DUPLICATE') summary.online.applied++; else summary.online.refused.push({ label: o.label, message: v.error ? v.error.message : 'refused', orderId: o.payload && o.payload.orderId }); }
                 else if (v.status === 'APPLIED' || v.status === 'DUPLICATE') summary.offlineDone++;
-                if (v.status === 'APPLIED' || v.status === 'DUPLICATE') { o.state = 'APPLIED'; if (o.payload && o.payload.proof && typeof o.payload.proof === 'object') o.payload.proof = { photo: o.payload.proof.photo ? '[sent]' : '', signature: o.payload.proof.signature ? '[sent]' : '', receivedBy: o.payload.proof.receivedBy || '' }; /* 1.15.0: the server keeps the images now; this phone does not */ if (v.status === 'APPLIED') summary.applied++; else summary.duplicate++; if (v.flags && v.flags.length) summary.flagged++; if (o.tempId && v.resultId) map[o.tempId] = v.resultId; if (v.data || (o.tempId && v.resultId)) confirms.push(Local.confirm(o, v)); summary.labels.push(o.label + (v.resultRef ? ' → ' + v.resultRef : '')); }
+                if (v.status === 'APPLIED' || v.status === 'DUPLICATE') { o.state = 'APPLIED'; if (o.payload && o.payload.proof && typeof o.payload.proof === 'object') o.payload.proof = { photo: o.payload.proof.photo ? '[sent]' : '', signature: o.payload.proof.signature ? '[sent]' : '', receivedBy: o.payload.proof.receivedBy || '' }; if (o.action === 'jobOrders.pickup' && o.payload) { if (o.payload.signature) o.payload.signature = '[sent]'; if (o.payload.photo) o.payload.photo = '[sent]'; } /* 1.15.0, and 1.45.0 for a pickup count: the server keeps the images now; this phone does not */ if (v.status === 'APPLIED') summary.applied++; else summary.duplicate++; if (v.flags && v.flags.length) summary.flagged++; if (o.tempId && v.resultId) map[o.tempId] = v.resultId; if (v.data || (o.tempId && v.resultId)) confirms.push(Local.confirm(o, v)); summary.labels.push(o.label + (v.resultRef ? ' → ' + v.resultRef : '')); }
                 else { o.state = 'REJECTED'; summary.rejected++; summary.labels.push(o.label + ' ✗ ' + (v.error ? v.error.message : 'refused')); }
               });
               // 1.22.0: a move made online that the server applied as it was leaves the queue (the Sync page lists what was made offline, what was refused and what was flagged)
@@ -6390,7 +6503,7 @@ window.MLS = (function () {
       return '<button type="button" class="btn ' + spec[0] + '" data-act="' + a + '" data-id="' + UI.esc(j.Id) + '"><i class="fa-solid ' + spec[1] + ' me-1"></i>' + spec[2] + '</button>';
     }).join('');
     // 1.42.0: a commercial client's pickup offers the linen count, which creates the job order (also once the job was closed with Picked up: a paper form typed in afterwards); a job that carries a job order opens it
-    var canCount = !!(j.Commercial && !j._pending && M.JobOrders && M.JobOrders.canCount() && (j.Status === 'PICKED_UP' || (j.Actions || []).indexOf('start') >= 0 || (j.Actions || []).indexOf('complete') >= 0));
+    var canCount = !!(j.Commercial && !(j._pending && j.Status === 'PICKED_UP') && M.JobOrders && M.JobOrders.canCount() && (j.Status === 'PICKED_UP' || (j.Actions || []).indexOf('start') >= 0 || (j.Actions || []).indexOf('complete') >= 0));
     if (canCount && j.IsOpen && !opts.readOnly) acts = '<button type="button" class="btn btn-primary" data-count="' + UI.esc(j.Id) + '"><i class="fa-solid fa-clipboard-list me-1"></i>Count linens</button>' + acts;
     var jobOrders = M.JobOrders && M.JobOrders.canView() ? j.Items.filter(function (i) { return i.JobOrder; }) : [];
     var link = mapLink(j), nav = navLink(j);
@@ -6524,10 +6637,11 @@ window.MLS = (function () {
   function openComplete(j, onChange) {
     var item = j.JobType === 'DELIVERY' && M.JobOrders ? j.Items.filter(function (i) { return i.JobOrder; })[0] : null;
     if (!item) return openCompleteWith(j, onChange, null);
-    if (M.Net && M.Net.state && M.Net.state() !== 'online') { Toast.warning('Delivering a job order needs a connection for now: its linens are counted with the server.'); return null; }
-    return Api.call('jobOrders.get', { orderId: item.OrderId }, { busy: true, noOffline: true }).then(function (jo) { openCompleteWith(j, onChange, jo); }).catch(function (e) { Toast.danger(UI.error(e)); });
+    // 1.45.0: the job carries the linens still to deliver, so the form opens at once, with or without a connection
+    if (Array.isArray(item.Lines)) return openCompleteWith(j, onChange, { OrderId: item.OrderId, OrderNo: item.OrderNo, Lines: item.Lines.map(function (l) { return { Id: l.Id, Description: l.Description, Unit: l.Unit, ByWeight: !!l.ByWeight, ReceivedWeightKg: l.ByWeight ? l.Received : 0, Outstanding: l.Outstanding, DeliveredQty: l.Delivered || 0 }; }) }, item);
+    return Api.call('jobOrders.get', { orderId: item.OrderId }, { busy: true, noOffline: true }).then(function (jo) { openCompleteWith(j, onChange, jo, null); }).catch(function (e) { Toast.danger(e && (e.code === 'NETWORK' || e.code === 'TIMEOUT') ? 'This phone does not hold the linens of this job order; delivering it needs a connection.' : UI.error(e)); });
   }
-  function openCompleteWith(j, onChange, jo) {
+  function openCompleteWith(j, onChange, jo, joItem) {
     var meta = data || { paymentMethods: (M.AppState.me.settings.PaymentMethods || ['CASH']), referenceRequiredFor: (M.AppState.me.settings.ReferenceRequiredFor || []) };
     completeRequest = UI.uuid();
     UI.el('dlv-complete-title').textContent = (j.JobType === 'PICKUP' ? 'Picked up · ' : 'Delivered · ') + (j.CustomerName || j.Id);
@@ -6560,6 +6674,13 @@ window.MLS = (function () {
           if (q) payload.jobOrder = { lines: q.lines, receivedByPosition: UI.el('dlv-proof-position').value.trim() };
           return Api.call('deliveries.complete', payload, { busy: true, timeoutMs: pr.proof ? 120000 : undefined }).then(function (r) {
             btn.disabled = false; M.Modal.close('dlv-complete-modal'); photo = { data: '', job: null };
+            if (jo && r._pending) {
+              // 1.45.0: delivered without a connection — kept on this phone; a provisional Delivery Confirmation can be printed for the client now
+              var t = r._trip || {}; Toast.warning((t.outcome === 'PARTIAL' ? 'Partially delivered' : t.outcome === 'REJECTED' ? 'Rejected by client' : 'Delivered') + ' · ' + (t.delivered || 0) + ' delivered' + (t.remaining ? ', ' + t.remaining + ' go back to the shop' : '') + ' · kept on this phone until it syncs'); if (onChange) onChange(r);
+              if (joItem && q) { var who = { receivedBy: UI.el('dlv-proof-received').value.trim(), position: UI.el('dlv-proof-position').value.trim(), signature: pr.proof && pr.proof.signature ? pr.proof.signature : '' };
+                M.Modal.closeThen('dlv-complete-modal', function () { M.Modal.confirm({ title: 'Print the Delivery Confirmation?', body: 'It prints from this phone, marked provisional. The confirmed one prints from the job order once this trip has synced.', okText: 'Print' }).then(function (yes) { if (!yes) return; Api.call('orders.meta', {}).then(function (om) { return om && om.receipt ? om.receipt.business : null; }, function () { return null; }).then(function (biz) { M.JobOrders.printLocalDelivery(M.JobOrders.localDeliveryDoc(j, joItem, q, who, biz), M.JobOrders.paper()); }); }); }); }
+              return;
+            }
             if (r.jobOrder) { Toast[r.jobOrder.outcome === 'FULL' ? 'success' : 'warning'](M.JobOrders.outcomeText(r.jobOrder.outcome) + ' · ' + r.jobOrder.delivered + ' delivered' + (r.jobOrder.outstanding ? ', ' + r.jobOrder.outstanding + ' go back to the shop' : '') + (r.payments && r.payments.length ? ' · ' + F.peso(r.payments.reduce(function (t, p) { return t + Number(p.Amount); }, 0)) + ' collected' : '')); if (onChange) onChange(r); M.JobOrders.open(r.jobOrder.orderId, { onChange: onChange }); return; }
             Toast.success((j.JobType === 'PICKUP' ? 'Pickup done' : 'Delivered') + (r.payments && r.payments.length ? ' · ' + F.peso(r.payments.reduce(function (t, p) { return t + Number(p.Amount); }, 0)) + ' collected' : '') + (r.proof && r.proof.stored ? ' · proof kept' : (r._pending && pr.proof ? ' · proof kept on this phone until it syncs' : '')) + (pin ? (loc ? ' · customer location pinned' : ' · no GPS fix, pin not saved') : '')); if (onChange) onChange(r);
           });
@@ -6813,12 +6934,13 @@ window.MLS = (function () {
    * a job whose customer is not a commercial client is refused there, in words. onDone(jobOrder) once it is saved.
    */
   function openCount(jobId, onDone) {
-    if (M.Net && M.Net.state && M.Net.state() !== 'online') { Toast.warning('Counting linens needs a connection for now. Use a paper form and type it in once you are connected.'); return Promise.resolve(null); }
+    // 1.45.0: without a connection the count opens from this phone's copy (the job, the client, the prices); it is kept here and sent when the phone reconnects
     return Api.call('jobOrders.start', { deliveryId: jobId }, { busy: true }).then(function (r) {
       count = { job: r.job, client: r.client, services: r.services, canOverride: !!r.canOverride, maxLines: r.maxLines || 60, backdateDays: r.backdateDays || 7, requestId: UI.uuid(), nextLine: 0, photo: { data: '', job: null }, onDone: onDone };
       var c = r.client;
       UI.el('jo-count-title').textContent = 'Count linens · ' + (c.Company || r.job.CustomerName || r.job.Id);
-      UI.html('jo-count-client', '<div class="fw-bold">' + UI.esc(c.Company) + (c.EstablishmentType ? ' <span class="badge text-bg-light">' + UI.esc(c.EstablishmentType) + '</span>' : '') + '</div>' + [c.PropertyName, c.Address, c.ContractRef ? 'Contract ' + c.ContractRef : ''].filter(Boolean).map(function (t) { return '<div class="small text-soft">' + UI.esc(t) + '</div>'; }).join(''));
+      UI.html('jo-count-client', '<div class="fw-bold">' + UI.esc(c.Company) + (c.EstablishmentType ? ' <span class="badge text-bg-light">' + UI.esc(c.EstablishmentType) + '</span>' : '') + '</div>' + [c.PropertyName, c.Address, c.ContractRef ? 'Contract ' + c.ContractRef : ''].filter(Boolean).map(function (t) { return '<div class="small text-soft">' + UI.esc(t) + '</div>'; }).join('') +
+        (r.offline ? '<div class="alert alert-warning py-2 small mt-2 mb-0" id="jo-count-offline"><i class="fa-solid fa-cloud-arrow-up me-1" aria-hidden="true"></i>No connection. The count is kept on this phone and sent when you reconnect; the job order gets its number then. Prices are this phone\'s copy.</div>' : ''));
       UI.el('jo-count-form').reset(); UI.el('jo-count-lines').innerHTML = ''; UI.el('jo-count-error').hidden = true; UI.el('jo-count-photo-note').hidden = true;
       UI.el('jo-count-signer').value = c.Representative || ''; UI.el('jo-count-position').value = c.RepresentativePosition || '';
       var at = UI.el('jo-count-at'), iso = function (d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }; at.max = iso(new Date()); at.min = iso(new Date(Date.now() - count.backdateDays * 86400000));
@@ -6848,7 +6970,7 @@ window.MLS = (function () {
       return loc.then(function (pos) { if (pos) g.payload.location = { lat: pos.lat, lng: pos.lng }; return Api.call('jobOrders.pickup', g.payload, { busy: true, timeoutMs: 120000 }); });
     }).then(function (jo) {
       btn.disabled = false; var done = count.onDone; count = null;
-      Modal.closeThen('jo-count-modal', function () { Toast.success('Job order ' + jo.OrderNo + ' created · ' + piecesText(num(jo.PiecesPickup), num(jo.WeightPickupKg), jo.BagsAtPickup)); if (done) done(jo); show(jo, { onChange: done, justCreated: true }); });
+      Modal.closeThen('jo-count-modal', function () { if (jo.Provisional) Toast.warning('Kept on this phone as ' + jo.OrderNo + ' · ' + piecesText(num(jo.PiecesPickup), num(jo.WeightPickupKg), jo.BagsAtPickup) + ' · it gets its job order number when you reconnect'); else Toast.success('Job order ' + jo.OrderNo + ' created · ' + piecesText(num(jo.PiecesPickup), num(jo.WeightPickupKg), jo.BagsAtPickup)); if (done) done(jo); show(jo, { onChange: done, justCreated: true }); });
     }).catch(function (e) { btn.disabled = false; countError(UI.error(e), e && e.local && e.local.focus ? e.local : null); });
   };
 
@@ -6872,7 +6994,7 @@ window.MLS = (function () {
   function render(j, opts) {
     shown = { job: j, opts: opts || {} };
     var c = j.Client || {};
-    UI.el('jo-title').innerHTML = 'Job Order ' + UI.esc(j.OrderNo) + ' ' + UI.badge(j.Status, j.StatusLabel) + (j.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '');
+    UI.el('jo-title').innerHTML = 'Job Order ' + UI.esc(j.OrderNo) + ' ' + (j.Provisional ? '<span class="pending-tag">not synced</span> ' : '') + UI.badge(j.Status, j.StatusLabel) + (j.IsExpress ? ' <span class="badge text-bg-warning">Express</span>' : '');
     var got = j.ReceivingStatus && j.ReceivingStatus !== 'PENDING', trips = j.Trips || [], del = got && ((j.DeliveryState && j.DeliveryState !== 'NONE') || trips.length > 0);  // 1.44.0: the delivery columns appear with the first trip
     var rows = j.Lines.map(function (l, i) {
       var note = priceNote(l);
@@ -6882,7 +7004,8 @@ window.MLS = (function () {
     }).join('');
     var log = (j.Log || []).filter(function (g) { return g.Type !== 'DELIVERED'; });  // what was delivered is in the trips and the columns
     UI.html('jo-body',
-      (opts && opts.justCreated ? '<div class="alert alert-success py-2 small"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Saved. Print the Job Order now, or later from this job or from Orders.</div>' : '') +
+      (j.Provisional ? '<div class="alert alert-warning py-2 small" id="jo-provisional"><i class="fa-solid fa-cloud-arrow-up me-1" aria-hidden="true"></i>Kept on this phone, not yet on the server. Reference <b>' + UI.esc(j.ProvisionalRef || j.OrderNo) + '</b>; the job order number arrives when the phone reconnects. A copy printed now is marked provisional, and the charges are this phone\'s estimate.</div>' :
+      (opts && opts.justCreated ? '<div class="alert alert-success py-2 small"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Saved. Print the Job Order now, or later from this job or from Orders.</div>' : '')) +
       '<div class="jo-facts">' + fact('Client', UI.esc(c.Company || '') + (c.EstablishmentType ? ' <span class="text-soft">· ' + UI.esc(c.EstablishmentType) + '</span>' : '')) + fact('Property', UI.esc(c.PropertyName || '')) + fact('Department', UI.esc(c.Department || '')) + fact('Address', UI.esc(c.Address || '')) + fact('Contract', UI.esc(c.ContractRef || '')) +
       fact('Picked up', UI.esc(F.datetime(j.PickupAt)) + (j.PickupBy ? ' · ' + UI.esc(j.PickupBy) : '')) + fact('Surrendered by', signedText(j)) + fact('Counted', UI.esc(piecesText(num(j.PiecesPickup), num(j.WeightPickupKg), j.BagsAtPickup))) +
       (got ? fact('Received', UI.esc(piecesText(num(j.PiecesReceived), num(j.WeightReceivedKg), j.BagsReceived) || '0 pieces') + ' ' + UI.badge(j.ReceivingStatus, RECEIVING[j.ReceivingStatus]) + '<div class="small text-soft">' + UI.esc(F.datetime(j.ReceivedAt)) + (j.ReceivedBy ? ' · ' + UI.esc(j.ReceivedBy) : '') + (j.ReceivingRemarks ? ' · ' + UI.esc(j.ReceivingRemarks) : '') + '</div>') : '') +
@@ -6893,16 +7016,16 @@ window.MLS = (function () {
         return '<li class="d-flex align-items-center gap-2 flex-wrap"><span><span class="fw-bold">' + (num(t.TripNo) ? 'Trip ' + num(t.TripNo) + ' · ' : '') + UI.esc(t.Id) + '</span> ' + (outcomeBadge(t.Outcome) || UI.badge(t.Status, t.Status === 'FAILED' ? 'Attempted, not received' : F.status(t.Status))) + ' <span class="text-soft small">' + [t.At ? F.datetime(t.At) : '', t.Rider, t.ReceivedBy ? 'received by ' + t.ReceivedBy + (t.ReceivedByPosition ? ' (' + t.ReceivedByPosition + ')' : '') : '', t.FailureReason].filter(Boolean).map(UI.esc).join(' · ') + '</span></span>' +
           (finished ? '<button type="button" class="btn btn-sm btn-outline-primary ms-auto" data-dc="' + UI.esc(t.Id) + '"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>Delivery Confirmation</button>' : '') + '</li>'; }).join('') + '</ul>' : '') +
       (got && log.length ? '<h6 class="section-title mt-3">Differences and decisions</h6><ul class="jo-log" id="jo-log">' + log.map(function (g) { return '<li><span class="fw-bold">' + UI.esc(logWhat(g)) + '</span> <span class="text-soft small">' + UI.esc(g.Reason || '') + ' · ' + UI.esc(g.By || '') + ' · ' + UI.esc(F.datetime(g.At)) + '</span></li>'; }).join('') + '</ul>' : '') +
-      '<div class="mt-3" id="jo-files"><button type="button" class="btn btn-link btn-sm p-0" id="jo-files-show"><i class="fa-solid fa-image me-1" aria-hidden="true"></i>' + (j.SignedOn === 'PHONE' ? 'View the signature' : 'View the photos of the signed copy') + '</button></div>');
+      (j.Provisional ? '' : '<div class="mt-3" id="jo-files"><button type="button" class="btn btn-link btn-sm p-0" id="jo-files-show"><i class="fa-solid fa-image me-1" aria-hidden="true"></i>' + (j.SignedOn === 'PHONE' ? 'View the signature' : 'View the photos of the signed copy') + '</button></div>'));
     var paperNow = paper();
     UI.html('jo-actions', (j.canReceive ? '<button type="button" class="btn btn-sm btn-success" id="jo-receive"><i class="fa-solid fa-box-open me-1" aria-hidden="true"></i>Receive</button>' : '') + (j.canClose ? '<button type="button" class="btn btn-sm btn-outline-danger" id="jo-close"><i class="fa-solid fa-box-archive me-1" aria-hidden="true"></i>Close the remainder</button>' : '') + (j.canReview ? '<button type="button" class="btn btn-sm btn-warning" id="jo-review"><i class="fa-solid fa-scale-balanced me-1" aria-hidden="true"></i>Review the difference</button>' : '') + (j.canAttach ? '<label class="btn btn-sm btn-outline-secondary mb-0" for="jo-attach-input"><i class="fa-solid fa-camera me-1" aria-hidden="true"></i>Add photo of the signed copy</label><input class="visually-hidden" type="file" id="jo-attach-input" accept="image/jpeg,image/png,image/*" capture="environment">' : '') + '<span class="spacer"></span>' +
       '<label class="visually-hidden" for="jo-paper">Paper</label><select class="form-select form-select-sm jo-paper" id="jo-paper"><option value="A4"' + (paperNow === 'A4' ? ' selected' : '') + '>A4 sheet</option><option value="80mm"' + (paperNow === '80mm' ? ' selected' : '') + '>80 mm roll</option></select>' +
       '<div class="dropdown dropup"><button type="button" class="btn btn-sm btn-primary dropdown-toggle" id="jo-print" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>Print Job Order</button><ul class="dropdown-menu dropdown-menu-end">' +
       [['BOTH', 'Both copies'], ['CLIENT', 'Client copy'], ['SHOP', 'Laundry shop copy']].map(function (x) { return '<li><button type="button" class="dropdown-item" data-copy="' + x[0] + '">' + x[1] + '</button></li>'; }).join('') + '</ul></div>');
     UI.el('jo-paper').onchange = function () { setPaper(UI.el('jo-paper').value); };
-    UI.el('jo-actions').querySelectorAll('[data-copy]').forEach(function (b) { b.onclick = function () { print(j.OrderId, b.getAttribute('data-copy'), UI.el('jo-paper').value); }; });
+    UI.el('jo-actions').querySelectorAll('[data-copy]').forEach(function (b) { b.onclick = function () { print(j.OrderId, b.getAttribute('data-copy'), UI.el('jo-paper').value, j); }; });
     UI.el('jo-body').querySelectorAll('[data-price]').forEach(function (b) { b.onclick = function () { openPrice(j, j.Lines.filter(function (l) { return l.Id === b.getAttribute('data-price'); })[0]); }; });
-    UI.el('jo-files-show').onclick = function () { showFiles(j.OrderId); };
+    var fs = UI.el('jo-files-show'); if (fs) fs.onclick = function () { showFiles(j.OrderId); };
     var rc = UI.el('jo-receive'); if (rc) rc.onclick = function () { openReceive(j); };
     var rv = UI.el('jo-review'); if (rv) rv.onclick = function () { openReview(j); };
     var cl = UI.el('jo-close'); if (cl) cl.onclick = function () { openClose(j); };
@@ -6978,27 +7101,27 @@ window.MLS = (function () {
     var esc = UI.esc, c = d.Client || {}, biz = d.Business || {};
     var rows = d.Lines.map(function (l, i) { return '<tr><td class="r">' + (i + 1) + '</td><td>' + esc(l.Description) + '</td><td>' + esc(l.ByWeight ? 'By weight' : (l.Category || '')) + '</td><td class="r num">' + (l.ByWeight ? num(l.PickupWeightKg) : num(l.PickupQty)) + '</td><td>' + esc(l.ByWeight ? 'kg' : (l.Unit || 'pc')) + '</td><td class="r num">' + esc(F.peso(l.UnitPrice)) + '</td><td class="r num">' + esc(F.peso(l.Amount)) + '</td><td>' + esc(l.ConditionAtPickup || '') + '</td></tr>'; }).join('');
     var cond = conditions(d), blk = function (k, v) { return v ? '<div><b>' + k + '</b>' + esc(v) + '</div>' : ''; };
-    return '<div class="jo-top">' + M.Print.header({ title: 'Commercial laundry pickup job order', business: biz }) + '<div><div class="jo-copy">' + copyLabel(copy) + '</div>' + (d.Reprint ? '<div class="jo-reprint">REPRINT</div>' : '') + '</div></div>' +
-      '<div class="jo-no"><span>Job Order No. <b>' + esc(d.OrderNo) + '</b></span><span>Pickup ' + esc(F.datetime(d.PickupAt)) + '</span></div>' +
+    return '<div class="jo-top">' + M.Print.header({ title: 'Commercial laundry pickup job order', business: biz }) + '<div><div class="jo-copy">' + copyLabel(copy) + '</div>' + (d.Provisional ? '<div class="jo-reprint">PROVISIONAL</div>' : (d.Reprint ? '<div class="jo-reprint">REPRINT</div>' : '')) + '</div></div>' +
+      '<div class="jo-no"><span>' + (d.Provisional ? 'Provisional ref. ' : 'Job Order No. ') + '<b>' + esc(d.OrderNo) + '</b></span><span>Pickup ' + esc(F.datetime(d.PickupAt)) + '</span></div>' +
       '<div class="blk">' + blk('Client', c.Company) + blk('Establishment', c.EstablishmentType) + blk('Property', c.PropertyName) + blk('Department', c.Department) + blk('Address', c.Address) + blk('Contract ref.', c.ContractRef) + blk('Representative', c.Representative) + blk('Contact', c.Phone) + '</div>' +
       '<table><thead><tr><th class="r">No.</th><th>Linen</th><th>Category</th><th class="r">Qty</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount</th><th>Remarks</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '<div class="jo-sum"><span>' + esc(piecesText(num(d.PiecesPickup), num(d.WeightPickupKg), d.BagsAtPickup)) + (d.IsExpress ? ' · EXPRESS' : '') + '</span><span>Estimated charges <span class="jo-est">' + esc(F.peso(d.OrderTotal)) + '</span> <span class="small">(final after receiving verification)</span></span></div>' +
       (d.SpecialInstructions ? '<p><b>Special instructions:</b> ' + esc(d.SpecialInstructions) + '</p>' : '') + (cond ? '<p><b>Stains or damage noted at pickup:</b> ' + esc(cond) + '</p>' : '') +
       '<p class="ack">' + esc(ACK.replace('{biz}', biz.name || 'the laundry shop')) + '</p>' + signBoxes(d) +
-      '<div class="jo-notice">' + NOTICE + (d.SignedOn === 'PAPER' && d.PaperFormNo ? ' Paper form ' + esc(d.PaperFormNo) + '.' : '') + '</div>' + M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: (d.Reprint ? 'REPRINT · ' : '') + 'print ' + num(d.PrintCount) + ' · ' + d.OrderNo });
+      '<div class="jo-notice">' + NOTICE + (d.SignedOn === 'PAPER' && d.PaperFormNo ? ' Paper form ' + esc(d.PaperFormNo) + '.' : '') + (d.Provisional ? ' ' + PROV_NOTE + ' The job order number is given then.' : '') + '</div>' + M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: d.Provisional ? 'PROVISIONAL · ' + d.OrderNo : (d.Reprint ? 'REPRINT · ' : '') + 'print ' + num(d.PrintCount) + ' · ' + d.OrderNo });
   }
   /** One copy on an 80 mm roll (a portable printer): the same facts, one linen a row. */
   function rollCopy(d, copy) {
     var esc = UI.esc, c = d.Client || {}, biz = d.Business || {}, row = function (a, b, cls) { return '<div class="row' + (cls ? ' ' + cls : '') + '"><span>' + a + '</span><span>' + b + '</span></div>'; };
     var logo = M.Brand && M.Brand.pictures ? M.Brand.pictures().logo : '', cond = conditions(d);
     return '<div class="receipt-paper jo-roll">' + (logo ? '<div class="c logo"><img src="' + logo + '" alt=""></div>' : '') + '<div class="c strong">' + esc(biz.name || '') + '</div>' + [biz.branch, biz.address, biz.phone].filter(Boolean).map(function (t) { return '<div class="c muted">' + esc(t) + '</div>'; }).join('') +
-      '<hr><div class="c strong">COMMERCIAL LAUNDRY PICKUP JOB ORDER</div><div class="jo-copy">' + copyLabel(copy) + (d.Reprint ? ' · REPRINT' : '') + '</div>' +
-      row('Job Order No.', '<span class="strong">' + esc(d.OrderNo) + '</span>') + row('Pickup', esc(F.datetime(d.PickupAt))) + '<hr>' +
+      '<hr><div class="c strong">COMMERCIAL LAUNDRY PICKUP JOB ORDER</div><div class="jo-copy">' + copyLabel(copy) + (d.Provisional ? ' · PROVISIONAL' : (d.Reprint ? ' · REPRINT' : '')) + '</div>' +
+      row(d.Provisional ? 'Provisional ref.' : 'Job Order No.', '<span class="strong">' + esc(d.OrderNo) + '</span>') + row('Pickup', esc(F.datetime(d.PickupAt))) + '<hr>' +
       '<div class="strong">' + esc(c.Company || '') + '</div>' + [c.EstablishmentType, c.PropertyName, c.Department, c.Address, c.ContractRef ? 'Contract ' + c.ContractRef : '', c.Representative ? 'Rep. ' + c.Representative : '', c.Phone].filter(Boolean).map(function (t) { return '<div>' + esc(t) + '</div>'; }).join('') + '<hr>' +
       d.Lines.map(function (l, i) { return '<div>' + (i + 1) + '. ' + esc(l.Description) + '</div>' + row(esc(qtyText(l)) + ' × ' + esc(F.peso(l.UnitPrice)), esc(F.peso(l.Amount))) + (l.ConditionAtPickup ? '<div class="muted">' + esc(l.ConditionAtPickup) + '</div>' : ''); }).join('') + '<hr>' +
       '<div>' + esc(piecesText(num(d.PiecesPickup), num(d.WeightPickupKg), d.BagsAtPickup)) + (d.IsExpress ? ' · EXPRESS' : '') + '</div>' + row('Estimated charges', esc(F.peso(d.OrderTotal)), 'big') + '<div class="muted">Final after receiving verification.</div>' +
       (d.SpecialInstructions ? '<div>Instructions: ' + esc(d.SpecialInstructions) + '</div>' : '') + (cond ? '<div>Noted at pickup: ' + esc(cond) + '</div>' : '') + '<hr><div>' + esc(ACK.replace('{biz}', biz.name || 'the laundry shop')) + '</div>' +
-      signBoxes(d).replace('jo-signs', 'jo-signs one') + '<div class="foot c">' + NOTICE + '</div><div class="foot c">Printed ' + esc(F.datetime(d.PrintedAt)) + (d.PrintedBy ? ' by ' + esc(d.PrintedBy) : '') + ' · print ' + num(d.PrintCount) + '</div></div>';
+      signBoxes(d).replace('jo-signs', 'jo-signs one') + '<div class="foot c">' + NOTICE + (d.Provisional ? ' ' + PROV_NOTE + ' The job order number is given then.' : '') + '</div><div class="foot c">Printed ' + esc(F.datetime(d.PrintedAt)) + (d.PrintedBy ? ' by ' + esc(d.PrintedBy) : '') + (d.Provisional ? '' : ' · print ' + num(d.PrintCount)) + '</div></div>';
   }
   /** The document's HTML. copy: CLIENT | SHOP | BOTH; paper: A4 | 80mm. Both copies of a short count (COMPACT_MAX lines or fewer) share one A4 sheet, two halves with a cut line. */
   function documentHtml(d, copy, paperSize) {
@@ -7008,8 +7131,9 @@ window.MLS = (function () {
     return css + copies.map(function (c) { return '<div class="jo-doc">' + pageCopy(d, c, false) + '</div>'; }).join('');
   }
   /** Prints the Job Order (JOB_ORDER_VIEW). The server counts the print and says whether it is a reprint; the page only lays it out. */
-  function print(orderId, copy, paperSize) {
+  function print(orderId, copy, paperSize, j) {
     paperSize = paperSize === '80mm' ? '80mm' : 'A4';
+    if (j && j.Provisional) { var d = localDocument(j, copy); M.Print.open(documentHtml(d, d.Copy, paperSize), { title: 'Job Order ' + d.OrderNo + ' (provisional)', size: paperSize, margin: paperSize === 'A4' && d.Copy === 'BOTH' && d.Lines.length <= COMPACT_MAX ? '8mm' : undefined }); return Promise.resolve(d); }  // 1.45.0: counted offline — printed from this phone, marked provisional, not counted as a print
     return Api.call('jobOrders.document', { orderId: orderId, copy: copy || 'BOTH', paper: paperSize }, { busy: true, timeoutMs: 60000 }).then(function (d) {
       M.Print.open(documentHtml(d, d.Copy, paperSize), { title: 'Job Order ' + d.OrderNo, size: paperSize, margin: paperSize === 'A4' && d.Copy === 'BOTH' && d.Lines.length <= COMPACT_MAX ? '8mm' : undefined });
       if (shown && shown.job && shown.job.OrderId === orderId) { shown.job.PrintCount = d.PrintCount; shown.job.LastPrintedAt = d.PrintedAt; }
@@ -7165,23 +7289,23 @@ window.MLS = (function () {
   function dcPage(d, copy) {
     var esc = UI.esc, c = d.Client || {}, biz = d.Business || {}, t = d.Trip, blk = function (k, v) { return v ? '<div><b>' + k + '</b>' + esc(v) + '</div>' : ''; };
     var rows = d.Lines.map(function (l) { var u = l.ByWeight ? ' kg' : ''; return '<tr><td class="r">' + l.No + '</td><td>' + esc(l.Description) + '</td><td class="r num">' + num(l.Pickup) + u + '</td><td class="r num">' + num(l.Received) + u + '</td><td class="r num">' + num(l.Before) + u + '</td><td class="r num"><b>' + num(l.ThisTrip) + u + '</b></td><td class="r num">' + num(l.Outstanding) + u + '</td><td>' + esc(l.Remarks || '') + '</td></tr>'; }).join('');
-    return '<div class="jo-top">' + M.Print.header({ title: 'Laundry delivery confirmation / receiving acknowledgment', business: biz }) + '<div><div class="jo-copy">' + copyLabel(copy) + '</div></div></div>' +
+    return '<div class="jo-top">' + M.Print.header({ title: 'Laundry delivery confirmation / receiving acknowledgment', business: biz }) + '<div><div class="jo-copy">' + copyLabel(copy) + '</div>' + (d.Provisional ? '<div class="jo-reprint">PROVISIONAL</div>' : '') + '</div></div>' +
       '<div class="jo-no"><span>Job Order No. <b>' + esc(d.OrderNo) + '</b> · Delivery ref. ' + esc(tripRef(t)) + '</span><span>Picked up ' + esc(F.date(d.PickupAt)) + ' · ' + (t.Status === 'FAILED' ? 'Attempted ' : 'Delivered ') + esc(F.datetime(t.At)) + '</span></div>' +
       '<div class="blk">' + blk('Client', c.Company) + blk('Property', c.PropertyName) + blk('Department', c.Department) + blk('Address', c.Address) + blk('Representative', c.Representative) + blk('Delivery personnel', t.Rider) + '</div>' +
       '<table><thead><tr><th class="r">No.</th><th>Linen</th><th class="r">Pickup</th><th class="r">Shop recv.</th><th class="r">Prev. deliv.</th><th class="r">This trip</th><th class="r">Outstanding</th><th>Remarks</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '<p class="dc-totals">' + esc(dcTotals(d)) + '</p><div class="dc-status">Status: ' + esc(tripWords(t)) + '</div>' + (t.Status === 'FAILED' && t.FailureReason ? '<p>' + esc(t.FailureReason) + '</p>' : '') +
       '<p class="ack">' + esc(DACK.replace('{biz}', biz.name || 'the laundry shop')) + '</p>' + dcSigns(d) + '<div class="dc-extra"><span>Witness (optional): ______________________</span><span>Client stamp or seal (optional)</span><span>Remarks: ______________________</span></div>' +
-      '<div class="jo-notice">' + NOTICE + '</div>' + M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: d.OrderNo + ' · ' + tripRef(t) });
+      '<div class="jo-notice">' + NOTICE + (d.Provisional ? ' ' + PROV_NOTE : '') + '</div>' + M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: (d.Provisional ? 'PROVISIONAL · ' : '') + d.OrderNo + ' · ' + tripRef(t) });
   }
   function dcRoll(d, copy) {
     var esc = UI.esc, c = d.Client || {}, biz = d.Business || {}, t = d.Trip, row = function (a, b, cls) { return '<div class="row' + (cls ? ' ' + cls : '') + '"><span>' + a + '</span><span>' + b + '</span></div>'; };
     var logo = M.Brand && M.Brand.pictures ? M.Brand.pictures().logo : '';
     return '<div class="receipt-paper jo-roll">' + (logo ? '<div class="c logo"><img src="' + logo + '" alt=""></div>' : '') + '<div class="c strong">' + esc(biz.name || '') + '</div>' + [biz.branch, biz.address, biz.phone].filter(Boolean).map(function (x) { return '<div class="c muted">' + esc(x) + '</div>'; }).join('') +
-      '<hr><div class="c strong">LAUNDRY DELIVERY CONFIRMATION</div><div class="jo-copy">' + copyLabel(copy) + '</div>' + row('Job Order No.', '<span class="strong">' + esc(d.OrderNo) + '</span>') + row('Delivery ref.', esc(tripRef(t))) + row('Picked up', esc(F.date(d.PickupAt))) + row(t.Status === 'FAILED' ? 'Attempted' : 'Delivered', esc(F.datetime(t.At))) + '<hr>' +
+      '<hr><div class="c strong">LAUNDRY DELIVERY CONFIRMATION</div><div class="jo-copy">' + copyLabel(copy) + (d.Provisional ? ' · PROVISIONAL' : '') + '</div>' + row('Job Order No.', '<span class="strong">' + esc(d.OrderNo) + '</span>') + row('Delivery ref.', esc(tripRef(t))) + row('Picked up', esc(F.date(d.PickupAt))) + row(t.Status === 'FAILED' ? 'Attempted' : 'Delivered', esc(F.datetime(t.At))) + '<hr>' +
       '<div class="strong">' + esc(c.Company || '') + '</div>' + [c.PropertyName, c.Department, c.Address].filter(Boolean).map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('') + '<hr>' +
       d.Lines.map(function (l) { var u = l.ByWeight ? ' kg' : ''; return '<div>' + l.No + '. ' + esc(l.Description) + '</div>' + row('picked up ' + num(l.Pickup) + u + ' · received ' + num(l.Received) + u, '') + row('before ' + num(l.Before) + u + ' · <span class="strong">this trip ' + num(l.ThisTrip) + u + '</span>', 'left ' + num(l.Outstanding) + u) + (l.Remarks ? '<div class="muted">' + esc(l.Remarks) + '</div>' : ''); }).join('') + '<hr>' +
       '<div>' + esc(dcTotals(d)) + '</div><div class="c strong dc-status">' + esc(tripWords(t)).toUpperCase() + '</div>' + (t.Status === 'FAILED' && t.FailureReason ? '<div>' + esc(t.FailureReason) + '</div>' : '') + '<hr><div>' + esc(DACK.replace('{biz}', biz.name || 'the laundry shop')) + '</div>' +
-      dcSigns(d).replace('jo-signs', 'jo-signs one') + '<div class="foot c">' + NOTICE + '</div><div class="foot c">Printed ' + esc(F.datetime(d.PrintedAt)) + (d.PrintedBy ? ' by ' + esc(d.PrintedBy) : '') + '</div></div>';
+      dcSigns(d).replace('jo-signs', 'jo-signs one') + '<div class="foot c">' + NOTICE + (d.Provisional ? ' ' + PROV_NOTE : '') + '</div><div class="foot c">Printed ' + esc(F.datetime(d.PrintedAt)) + (d.PrintedBy ? ' by ' + esc(d.PrintedBy) : '') + '</div></div>';
   }
   /** The Delivery Confirmation's HTML, laid out as the Job Order is: one copy a page, both on one A4 sheet when the job order is short, or an 80 mm roll. */
   function deliveryDocHtml(d, copy, paperSize) {
@@ -7198,6 +7322,36 @@ window.MLS = (function () {
       M.Print.open(deliveryDocHtml(d, d.Copy, paperSize), { title: 'Delivery Confirmation ' + d.OrderNo + ' ' + d.Trip.Id, size: paperSize, margin: paperSize === 'A4' && d.Copy === 'BOTH' && d.Lines.length <= COMPACT_MAX ? '8mm' : undefined });
       return d;
     }).catch(function (e) { Toast.danger(UI.error(e)); return null; });
+  }
+
+  // ---------------------------------------------------------------- release 1.45.0: counted or delivered without a connection
+  var PROV_NOTE = 'Provisional: made without a connection. The server confirms it when the phone reconnects.';
+  /** The Job Order of a count kept on this phone: printed from what the phone holds, marked provisional, under its reference. */
+  function localDocument(j, copy) { return Object.assign({}, j, { Copy: copy || 'BOTH', Business: j.Business || {}, PrintedBy: (M.AppState.me && M.AppState.me.user.DisplayName) || '', PrintedAt: new Date().toISOString(), PrintCount: 0, Reprint: false }); }
+  /**
+   * The Delivery Confirmation of a trip completed without a connection, from what the phone holds: the job's lines as they stood before
+   * the trip, what the rider typed, who received it and the signature just taken. Printed provisional; the confirmed one prints from the
+   * job order once the trip has synced. job: the rider's job; item: its job-order stop (with Lines as before the trip); q: the typed quantities.
+   */
+  function localDeliveryDoc(job, item, q, who, business) {
+    var typed = {}; q.lines.forEach(function (l) { typed[l.lineId] = l; });
+    var tot = { pickup: 0, received: 0, before: 0, now: 0, outstanding: 0, missing: 0, damaged: 0, rejected: 0, kgPickup: 0, kgReceived: 0, kgNow: 0 }, r2 = function (n) { return Math.round(n * 100) / 100; };
+    var lines = (item.Lines || []).map(function (l, i) {
+      var t = typed[l.Id] || {}, kilo = !!l.ByWeight, k = kilo ? num(l.Received) : 1, before = num(l.Delivered), now = num(t.delivered), left = Math.max(0, num(l.Outstanding) - now), short = r2(num(l.Pickup) - num(l.Received)), why = [];
+      if (num(t.damaged)) why.push(num(t.damaged) + ' damaged: ' + (t.reason || '')); if (num(t.rejected)) why.push(num(t.rejected) + ' rejected: ' + (t.reason || ''));
+      if (kilo) { tot.kgPickup = r2(tot.kgPickup + num(l.Pickup)); tot.kgReceived = r2(tot.kgReceived + num(l.Received)); tot.kgNow = r2(tot.kgNow + now * k); }
+      else { tot.pickup += num(l.Pickup); tot.received += num(l.Received); tot.before += before; tot.now += now; tot.outstanding += left; if (short > 0) tot.missing += short; }
+      tot.damaged += num(t.damaged); tot.rejected += num(t.rejected);
+      var remark = (short > 0 ? [short + (kilo ? ' kg' : '') + ' not received at the shop'] : []).concat(why); if (!remark.length) remark = [left === 0 ? 'Complete' : (now > 0 ? 'Partial' : '')];
+      return { No: i + 1, Description: l.Description, Unit: l.Unit, ByWeight: kilo || undefined, Pickup: num(l.Pickup), Received: num(l.Received), Before: r2(before * k), ThisTrip: r2(now * k), Outstanding: r2(left * k), Remarks: remark.filter(Boolean).join('; ') };
+    });
+    var c = item.Client || {}, at = new Date().toISOString(), me = M.AppState.me;
+    return { OrderId: item.OrderId, OrderNo: item.OrderNo, Provisional: true, Client: { Company: job.CustomerName, PropertyName: c.PropertyName, Department: c.Department, Address: job.Address, Representative: c.Representative }, PickupAt: item.PickupAt, Copy: 'BOTH', Business: business || {}, PrintedBy: me ? me.user.DisplayName : '', PrintedAt: at,
+      Trip: { Id: job.Id, TripNo: num(job.TripNo), Status: q.delivered ? 'DELIVERED' : 'FAILED', Outcome: !q.delivered ? 'REJECTED' : (lines.some(function (l) { return l.Outstanding > 0; }) ? 'PARTIAL' : ''), At: at, Rider: me ? me.user.DisplayName : '', ReceivedBy: who.receivedBy || '', ReceivedByPosition: who.position || '', FailureReason: '', SignedAt: at }, Lines: lines, Totals: tot, Signature: who.signature || '' };
+  }
+  function printLocalDelivery(doc, paperSize) {
+    paperSize = paperSize === '80mm' ? '80mm' : 'A4';
+    M.Print.open(deliveryDocHtml(doc, doc.Copy, paperSize), { title: 'Delivery Confirmation ' + doc.OrderNo + ' ' + doc.Trip.Id + ' (provisional)', size: paperSize, margin: paperSize === 'A4' && doc.Lines.length <= COMPACT_MAX ? '8mm' : undefined });
   }
 
   // ---------------------------------------------------------------- release 1.43.0: the Job Orders screen
@@ -7237,7 +7391,8 @@ window.MLS = (function () {
   M.Router.register('joborders', { title: 'Job orders', render: function () { if (!wired) { wired = true; wire(); } load(); }, refresh: load });
 
   M.JobOrders = { count: openCount, open: open, show: show, print: print, documentHtml: documentHtml, canCount: function () { return can('JOB_ORDER_PICKUP'); }, canView: function () { return can('JOB_ORDER_VIEW'); }, COMPACT_MAX: COMPACT_MAX,
-    delivery: { html: deliveryHtml, wire: deliveryWire, read: deliveryRead }, outcomeBadge: outcomeBadge, outcomeText: outcomeText, printDelivery: printDelivery, deliveryDocHtml: deliveryDocHtml };
+    delivery: { html: deliveryHtml, wire: deliveryWire, read: deliveryRead }, outcomeBadge: outcomeBadge, outcomeText: outcomeText, printDelivery: printDelivery, deliveryDocHtml: deliveryDocHtml,
+    localDeliveryDoc: localDeliveryDoc, printLocalDelivery: printLocalDelivery, paper: paper };
 })();
 </script>
 
@@ -9941,7 +10096,7 @@ window.MLS = (function () {
   }
   function plain(text) { return '<li class="sync-plain text-soft small">' + text + '</li>'; }
   function when(v) { return v ? F.datetime(v) : ''; }
-  function actionLabel(a) { return { 'orders.create': 'Order', 'customers.quickAdd': 'New customer', 'customers.save': 'New customer', 'payments.create': 'Payment', 'production.advance': 'Production stage', 'production.qc': 'Quality check', 'timeclock.punch': 'Time clock', 'deliveries.accept': 'Job accepted', 'deliveries.start': 'Job started', 'deliveries.complete': 'Job completed', 'deliveries.fail': 'Job failed' }[a] || a; }
+  function actionLabel(a) { return { 'orders.create': 'Order', 'customers.quickAdd': 'New customer', 'customers.save': 'New customer', 'payments.create': 'Payment', 'production.advance': 'Production stage', 'production.qc': 'Quality check', 'timeclock.punch': 'Time clock', 'deliveries.accept': 'Job accepted', 'deliveries.start': 'Job started', 'deliveries.complete': 'Job completed', 'deliveries.fail': 'Job failed', 'jobOrders.pickup': 'Job order counted' }[a] || a; }
   function stateTag(o) {
     if (o.state === 'PENDING') return '<span class="pending-tag">waiting</span>';
     if (o.state === 'SENDING') return '<span class="pending-tag"><i class="fa-solid fa-rotate fa-spin"></i> sending</span>';
@@ -9998,7 +10153,7 @@ window.MLS = (function () {
   }
   // ---------------------------------------------------------------- the review (1.5.0)
   var reversing = null;  // the review item a stock movement opened from here will settle
-  function typeLabel(t) { return { NEGATIVE_STOCK: 'Stock below zero', OVERPAYMENT: 'Payment beyond the balance', DUPLICATE_CUSTOMER: 'Customer merged', PRICE_VARIANCE: 'Price changed', PROMO_VARIANCE: 'Promo changed', LATE_FOR_EOD: 'Paid on a closed day' }[t] || t; }
+  function typeLabel(t) { return { NEGATIVE_STOCK: 'Stock below zero', OVERPAYMENT: 'Payment beyond the balance', DUPLICATE_CUSTOMER: 'Customer merged', PRICE_VARIANCE: 'Price changed', PROMO_VARIANCE: 'Promo changed', LATE_FOR_EOD: 'Paid on a closed day', JOB_ORDER_ESTIMATE: 'Job order priced differently', JOB_ORDER_QUANTITY: 'Job order quantity beyond what was left' }[t] || t; }
   function reviewItem(c) {
     var d = c.Details || {}, open = c.Status === 'OPEN', acts = '';
     var what = '';
