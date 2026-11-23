@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '0528c9024a', version: '1.49.0' };</script>
+  <script>window.MLS_PWA = { build: '8418333b63', version: '1.50.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -297,7 +297,7 @@
      neutral (new, queued, planned) on the well; info (in progress, on its way, computed); success (ready, paid, good);
      warning (waiting on someone: unpaid, partial, late, pending, review); danger (cancelled, refused, missing, failed);
      done (completed, released, closed) on the soft burgundy; history (inactive, void, archived, retired) as an outlined pill */
-  .status-badge.s-new, .status-badge.s-planned, .status-badge.s-received, .status-badge.s-leave, .status-badge.s-holiday, .status-badge.s-unassigned, .status-badge.s-draft, .status-badge.s-not_started, .status-badge.s-scheduled, .status-badge.s-prepared, .status-badge.s-unknown, .status-badge.s-sample, .status-badge.s-planned, .status-badge.s-backed_up { background: var(--mls-well); color: var(--mls-ink); }
+  .status-badge.s-exempt, .status-badge.s-zero_rated, .status-badge.s-new, .status-badge.s-planned, .status-badge.s-received, .status-badge.s-leave, .status-badge.s-holiday, .status-badge.s-unassigned, .status-badge.s-draft, .status-badge.s-not_started, .status-badge.s-scheduled, .status-badge.s-prepared, .status-badge.s-unknown, .status-badge.s-sample, .status-badge.s-planned, .status-badge.s-backed_up { background: var(--mls-well); color: var(--mls-ink); }
   .status-badge.s-processing, .status-badge.s-on_the_road, .status-badge.s-washing, .status-badge.s-drying, .status-badge.s-folding, .status-badge.s-qc, .status-badge.s-packed, .status-badge.s-assigned, .status-badge.s-accepted, .status-badge.s-open, .status-badge.s-in_progress, .status-badge.s-out_for_delivery, .status-badge.s-for_pickup, .status-badge.s-computed, .status-badge.s-gateway_queued, .status-badge.s-running { background: var(--mls-info-soft); color: var(--mls-info); }
   .status-badge.s-ready, .status-badge.s-finished, .status-badge.s-issued, .status-badge.s-verified, .status-badge.s-applied, .status-badge.s-active, .status-badge.s-paid, .status-badge.s-present, .status-badge.s-approved, .status-badge.s-finalized, .status-badge.s-delivered, .status-badge.s-picked_up, .status-badge.s-in, .status-badge.s-pass, .status-badge.s-ok, .status-badge.s-on_time, .status-badge.s-user_confirmed_sent, .status-badge.s-resolved, .status-badge.s-gateway_delivered, .status-badge.s-attached, .status-badge.s-production { background: var(--mls-success-soft); color: var(--mls-success); }
   .status-badge.s-partial, .status-badge.s-paused, .status-badge.s-reviewed, .status-badge.s-late, .status-badge.s-undertime, .status-badge.s-pending, .status-badge.s-reopened, .status-badge.s-submitted, .status-badge.s-stale, .status-badge.s-unpaid, .status-badge.s-warning, .status-badge.s-composer_open_requested, .status-badge.s-in_review, .status-badge.s-gateway_sent, .status-badge.s-soon, .status-badge.s-stopped, .status-badge.s-skipped { background: var(--mls-warning-soft); color: var(--mls-warning); }
@@ -1067,7 +1067,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.49.0';
+  var VERSION = '1.50.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -2355,7 +2355,32 @@ window.MLS = (function () {
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else setTimeout(boot, 0);
 
-  return { version: VERSION, phase: APP_PHASE, host: HOST, MODULES: MODULES, AppState: AppState, Api: Api, Net: Net, Pwa: Pwa, Notify: Notify, Timing: Timing, runDeviceCheck: runDeviceCheck, UI: UI, Toast: Toast, Modal: Modal, Form: Form, Validator: Validator, Formatter: Formatter, Table: Table, Print: Print, Photo: Photo, Qr: Qr, Keys: Keys, Router: Router, Auth: Auth, Brand: Brand, Thumbs: Thumbs, openDevice: openDevice, start: start };
+  /**
+   * Release 1.50.0 — VAT, optional and off by default. Until VAT has been switched on once the server tells a page nothing about it
+   * (no setting, no figure on any order), and nothing here shows. rows(v) turns the breakdown of one stamped order, or the sum of a
+   * statement's orders, into the lines a receipt or a document prints: [[label, amount], …]; [] when there is nothing to say.
+   */
+  var Vat = {
+    settings: function () { return (AppState.me && AppState.me.settings) || {}; },
+    on: function () { return !!Vat.settings().VatRegistered; },
+    known: function () { var s = Vat.settings(); return !!(s.VatRegistered || s.VatStartDate); },
+    rate: function (r) { return String(Number(r) || 0) + '%'; },
+    statusLabel: function (s) { return s === 'EXEMPT' ? 'VAT-exempt' : s === 'ZERO_RATED' ? 'Zero-rated' : ''; },
+    rows: function (v) {
+      if (!v) return [];
+      if (v.Status === 'EXEMPT') return [['VAT-exempt sales', v.Exempt]];
+      if (v.Status === 'ZERO_RATED') return [['Zero-rated sales', v.ZeroRated], ['VAT (0%)', 0]];
+      if (v.Status === 'VATABLE') return [['VATable sales', v.Vatable], ['VAT (' + Vat.rate(v.Rate) + ')', v.Vat]];
+      var out = [];  // a sum over several orders: only the kinds that occur
+      if (Number(v.Vatable) || Number(v.Vat)) { out.push(['VATable sales', v.Vatable]); out.push(['VAT' + (v.Rates && v.Rates.length ? ' (' + v.Rates.map(Vat.rate).join(', ') + ')' : ''), v.Vat]); }
+      if (Number(v.ZeroRated)) out.push(['Zero-rated sales', v.ZeroRated]);
+      if (Number(v.Exempt)) out.push(['VAT-exempt sales', v.Exempt]);
+      if (Number(v.NoVat)) out.push(['Without VAT figures', v.NoVat]);
+      return out;
+    }
+  };
+
+  return { version: VERSION, phase: APP_PHASE, host: HOST, MODULES: MODULES, AppState: AppState, Api: Api, Net: Net, Pwa: Pwa, Notify: Notify, Timing: Timing, runDeviceCheck: runDeviceCheck, UI: UI, Toast: Toast, Modal: Modal, Form: Form, Validator: Validator, Formatter: Formatter, Table: Table, Print: Print, Photo: Photo, Qr: Qr, Keys: Keys, Router: Router, Auth: Auth, Brand: Brand, Thumbs: Thumbs, Vat: Vat, openDevice: openDevice, start: start };
 })();
 </script>
 
@@ -3999,7 +4024,7 @@ window.MLS = (function () {
       '<hr>' + lines + '<hr>' +
       '<div class="row"><span>Subtotal</span><span>' + money(o.Subtotal) + '</span></div>' + (Number(o.DiscountAmount) ? '<div class="row"><span>Discount' + (o.DiscountReason ? ' (' + esc(o.DiscountReason) + ')' : '') + '</span><span>-' + money(o.DiscountAmount) + '</span></div>' : '') +
       (Number(o.DeliveryFee) ? '<div class="row"><span>Delivery fee</span><span>' + money(o.DeliveryFee) + '</span></div>' : '') + (Number(o.OtherCharges) ? '<div class="row"><span>Other charges</span><span>' + money(o.OtherCharges) + '</span></div>' : '') +
-      '<div class="row big"><span>TOTAL</span><span>' + money(o.OrderTotal) + '</span></div>' + (pays ? '<hr>' + pays : '') +
+      '<div class="row big"><span>TOTAL</span><span>' + money(o.OrderTotal) + '</span></div>' + M.Vat.rows(d.vat).map(function (v) { return '<div class="row muted vat"><span>' + esc(v[0]) + '</span><span>' + money(v[1]) + '</span></div>'; }).join('') + (pays ? '<hr>' + pays : '') +
       '<div class="row"><span>Paid</span><span>' + money(o.PaidAmount) + '</span></div><div class="row strong"><span>' + (Number(o.BalanceAmount) > 0 ? 'BALANCE DUE' : 'Balance') + '</span><span>' + money(o.BalanceAmount) + '</span></div>' +
       (o.Notes ? '<hr><div>' + esc(o.Notes) + '</div>' : '') + '<hr><div class="row"><span>Status</span><span>' + esc(o.StatusLabel) + '</span></div><div class="row"><span>Cashier</span><span>' + esc(o.Cashier) + '</span></div>' +
       (b.footer ? '<hr><div class="c">' + esc(b.footer) + '</div>' : '') + (b.privacy ? '<div class="c muted small">' + esc(b.privacy) + '</div>' : '') + (d.provisional ? '' : trackingBlock(d)) + '<div class="c foot">Printed ' + esc(F.datetime(d.printedAt)) + (d.provisional ? ' · provisional' : '') + '</div></div>';
@@ -4323,6 +4348,7 @@ window.MLS = (function () {
               </div>
             </fieldset>
           </div>
+          <div class="col-12" id="cust-vat-wrap" hidden><label class="form-label" for="cust-f-vat">VAT status</label><select class="form-select" id="cust-f-vat" name="VatStatus" disabled><option value="">VATable (the ordinary case)</option><option value="EXEMPT">VAT-exempt</option><option value="ZERO_RATED">Zero-rated</option></select><div class="form-text">Orders made for this customer from now on show no VAT. Orders already made keep their figures.</div></div>
           <div class="col-12"><label class="form-label" for="cust-f-email">E-mail</label><input class="form-control" id="cust-f-email" name="Email" type="email"></div>
           <div class="col-12"><label class="form-label" for="cust-f-address">Address</label><input class="form-control" id="cust-f-address" name="Address" maxlength="200"></div>
           <div class="col-6"><label class="form-label" for="cust-f-lat">Latitude</label><input class="form-control" id="cust-f-lat" name="Latitude" type="number" inputmode="decimal" step="any"></div>
@@ -4414,6 +4440,8 @@ window.MLS = (function () {
     UI.el('cust-form-title').textContent = c ? 'Edit ' + c.FullName : 'New customer'; UI.el('cust-status-wrap').hidden = !c;
     if (c) Form.write(f, c); else f.querySelector('[name=Id]').value = '';
     companyBlock();
+    // 1.50.0: a customer's VAT status is offered only while VAT is on, to someone who may edit settings; otherwise the field is hidden and disabled, so it is not sent and the server leaves what it holds
+    var vatOn = M.Vat.on() && M.Auth.can('SETTINGS_EDIT'); UI.el('cust-vat-wrap').hidden = !vatOn; UI.el('cust-f-vat').disabled = !vatOn;
     M.Modal.open('cust-modal'); setTimeout(function () { if (!f.contains(document.activeElement)) f.querySelector('[name=FullName]').focus(); }, 300);
   }
   /** 1.41.0: the company fields show for a Corporate customer only; while hidden they are disabled, so the form does not send them and the server leaves what it holds. */
@@ -4427,6 +4455,7 @@ window.MLS = (function () {
       var grid = [['Mobile', UI.esc(c.Phone || '—') + (c.Phone && !c.Mobile ? ' <span class="badge text-bg-light border" title="Not a mobile number: no SMS">no SMS</span>' : '') + (c.SmsOptOut ? ' <span class="badge text-bg-secondary" title="Opted out of promotional messages">no promos</span>' : '')], ['E-mail', c.Email ? mail(c.Email) : '—'], ['Address', UI.esc(c.Address || '—')], ['Branch', UI.esc(UI.branchName(c.BranchId))], ['Orders', c.OrderCount], ['Total paid', F.peso(c.TotalPaid)], ['Balance', '<span class="' + (Number(c.Balance) > 0 ? 'text-danger' : 'text-success') + '">' + F.peso(c.Balance) + '</span>'], ['Since', F.date(c.CreatedAt)]];
       // 1.41.0: a commercial client's own facts, only those that are filled
       if (c.CustomerType === 'CORPORATE') [['Establishment', c.EstablishmentType], ['Property', c.PropertyName], ['Representative', [c.Representative, c.RepresentativePosition].filter(Boolean).join(' · ')], ['Contract', c.ContractRef], ['Billing terms', c.BillingTerms]].forEach(function (g) { if (g[1]) grid.push([g[0], UI.esc(g[1])]); });
+      if (c.VatStatus) grid.push(['VAT', UI.esc(M.Vat.statusLabel(c.VatStatus))]);  // 1.50.0
       // 1.28.0 (Stage 5): the facts and the notes, then titled sections over a hairline, as the order dialog has them: the order history
       // (on a phone each order one row: the number with the date and status under it, the total on the right with any balance under it)
       // and the messages (skeleton rows while they load)
@@ -7028,6 +7057,7 @@ window.MLS = (function () {
       (got && j.ReviewedAt ? fact('Reviewed', UI.esc(F.datetime(j.ReviewedAt)) + (j.ReviewedBy ? ' · ' + UI.esc(j.ReviewedBy) : '') + (j.ReviewNote ? '<div class="small">' + UI.esc(j.ReviewNote) + '</div>' : '')) : '') + (del ? fact('Delivery', (outcomeBadge(j.DeliveryState) || '<span class="text-soft">not delivered yet</span>') + ' <span id="jo-delivery">' + num(j.PiecesDelivered) + ' delivered' + (num(j.Outstanding) ? ' · ' + num(j.Outstanding) + ' still to deliver' : '') + '</span>') : '') + fact('Instructions', UI.esc(j.SpecialInstructions || '')) + fact('Printed', num(j.PrintCount) ? num(j.PrintCount) + ' time' + (num(j.PrintCount) === 1 ? '' : 's') + (j.LastPrintedAt ? ' · last ' + UI.esc(F.datetime(j.LastPrintedAt)) : '') : 'not yet') + '</div>' +
       '<div class="table-responsive mt-3"><table class="table table-sm align-middle mb-0 jo-lines" id="jo-lines"><thead><tr><th class="num jo-wide">No.</th><th>Linen</th><th class="num jo-wide">' + (got ? 'Picked up' : 'Counted') + '</th>' + (got ? '<th class="num jo-wide">Received</th>' : '') + (del ? '<th class="num jo-wide">Delivered</th><th class="num jo-wide">Left</th>' : '') + '<th class="num jo-wide">Unit price</th><th class="num">Amount</th><th class="jo-wide">Price</th>' + (j.canOverride ? '<th><span class="visually-hidden">Actions</span></th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
       '<div class="jo-totals mt-2"><span>' + (num(j.DiscountAmount) > 0 ? 'Discount ' + F.peso(j.DiscountAmount) + ' · ' : '') + (num(j.DeliveryFee) > 0 ? 'Delivery fee ' + F.peso(j.DeliveryFee) + ' · ' : '') + (num(j.OtherCharges) > 0 ? 'Other charges ' + F.peso(j.OtherCharges) : '') + '</span><span>' + (got ? 'Charges' : 'Estimated charges') + ' <b class="money" id="jo-total">' + F.peso(j.OrderTotal) + '</b> <span class="text-soft small" id="jo-basis">' + (got ? '— billed for the ' + (j.BillBasis === 'PICKUP' ? 'pickup count' : 'count received') : '— final after receiving') + '</span></span></div>' +
+      (j.Vat ? '<p class="small text-soft text-end mb-0" id="jo-vat">' + M.Vat.rows(j.Vat).map(function (v) { return UI.esc(v[0]) + ' <span class="money">' + F.peso(v[1]) + '</span>'; }).join(' · ') + '</p>' : '') +  // 1.50.0
       (trips.length ? '<h6 class="section-title mt-3">Delivery trips</h6><ul class="jo-log" id="jo-trips">' + trips.map(function (t) { var finished = t.Status === 'DELIVERED' || t.Status === 'FAILED';
         return '<li class="d-flex align-items-center gap-2 flex-wrap"><span><span class="fw-bold">' + (num(t.TripNo) ? 'Trip ' + num(t.TripNo) + ' · ' : '') + UI.esc(t.Id) + '</span> ' + (outcomeBadge(t.Outcome) || UI.badge(t.Status, t.Status === 'FAILED' ? 'Attempted, not received' : F.status(t.Status))) + ' <span class="text-soft small">' + [t.At ? F.datetime(t.At) : '', t.Rider, t.ReceivedBy ? 'received by ' + t.ReceivedBy + (t.ReceivedByPosition ? ' (' + t.ReceivedByPosition + ')' : '') : '', t.FailureReason].filter(Boolean).map(UI.esc).join(' · ') + '</span></span>' +
           (finished ? '<button type="button" class="btn btn-sm btn-outline-primary ms-auto" data-dc="' + UI.esc(t.Id) + '"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>Delivery Confirmation</button>' : '') + '</li>'; }).join('') + '</ul>' : '') +
@@ -7122,6 +7152,7 @@ window.MLS = (function () {
       '<div class="blk">' + blk('Client', c.Company) + blk('Establishment', c.EstablishmentType) + blk('Property', c.PropertyName) + blk('Department', c.Department) + blk('Address', c.Address) + blk('Contract ref.', c.ContractRef) + blk('Representative', c.Representative) + blk('Contact', c.Phone) + '</div>' +
       '<table><thead><tr><th class="r">No.</th><th>Linen</th><th>Category</th><th class="r">Qty</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount</th><th>Remarks</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '<div class="jo-sum"><span>' + esc(piecesText(num(d.PiecesPickup), num(d.WeightPickupKg), d.BagsAtPickup)) + (d.IsExpress ? ' · EXPRESS' : '') + '</span><span>Estimated charges <span class="jo-est">' + esc(F.peso(d.OrderTotal)) + '</span> <span class="small">(final after receiving verification)</span></span></div>' +
+      (d.Vat ? '<div class="jo-sum jo-vat"><span></span><span>' + M.Vat.rows(d.Vat).map(function (v) { return esc(v[0]) + ' ' + esc(F.peso(v[1])); }).join(' · ') + '</span></div>' : '') +
       (d.SpecialInstructions ? '<p><b>Special instructions:</b> ' + esc(d.SpecialInstructions) + '</p>' : '') + (cond ? '<p><b>Stains or damage noted at pickup:</b> ' + esc(cond) + '</p>' : '') +
       '<p class="ack">' + esc(ACK.replace('{biz}', biz.name || 'the laundry shop')) + '</p>' + signBoxes(d) +
       '<div class="jo-notice">' + NOTICE + (d.SignedOn === 'PAPER' && d.PaperFormNo ? ' Paper form ' + esc(d.PaperFormNo) + '.' : '') + (d.Provisional ? ' ' + PROV_NOTE + ' The job order number is given then.' : '') + '</div>' + M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: d.Provisional ? 'PROVISIONAL · ' + d.OrderNo : (d.Reprint ? 'REPRINT · ' : '') + 'print ' + num(d.PrintCount) + ' · ' + d.OrderNo });
@@ -7135,7 +7166,7 @@ window.MLS = (function () {
       row(d.Provisional ? 'Provisional ref.' : 'Job Order No.', '<span class="strong">' + esc(d.OrderNo) + '</span>') + row('Pickup', esc(F.datetime(d.PickupAt))) + '<hr>' +
       '<div class="strong">' + esc(c.Company || '') + '</div>' + [c.EstablishmentType, c.PropertyName, c.Department, c.Address, c.ContractRef ? 'Contract ' + c.ContractRef : '', c.Representative ? 'Rep. ' + c.Representative : '', c.Phone].filter(Boolean).map(function (t) { return '<div>' + esc(t) + '</div>'; }).join('') + '<hr>' +
       d.Lines.map(function (l, i) { return '<div>' + (i + 1) + '. ' + esc(l.Description) + '</div>' + row(esc(qtyText(l)) + ' × ' + esc(F.peso(l.UnitPrice)), esc(F.peso(l.Amount))) + (l.ConditionAtPickup ? '<div class="muted">' + esc(l.ConditionAtPickup) + '</div>' : ''); }).join('') + '<hr>' +
-      '<div>' + esc(piecesText(num(d.PiecesPickup), num(d.WeightPickupKg), d.BagsAtPickup)) + (d.IsExpress ? ' · EXPRESS' : '') + '</div>' + row('Estimated charges', esc(F.peso(d.OrderTotal)), 'big') + '<div class="muted">Final after receiving verification.</div>' +
+      '<div>' + esc(piecesText(num(d.PiecesPickup), num(d.WeightPickupKg), d.BagsAtPickup)) + (d.IsExpress ? ' · EXPRESS' : '') + '</div>' + row('Estimated charges', esc(F.peso(d.OrderTotal)), 'big') + M.Vat.rows(d.Vat).map(function (v) { return row(esc(v[0]), esc(F.peso(v[1])), 'muted vat'); }).join('') + '<div class="muted">Final after receiving verification.</div>' +
       (d.SpecialInstructions ? '<div>Instructions: ' + esc(d.SpecialInstructions) + '</div>' : '') + (cond ? '<div>Noted at pickup: ' + esc(cond) + '</div>' : '') + '<hr><div>' + esc(ACK.replace('{biz}', biz.name || 'the laundry shop')) + '</div>' +
       signBoxes(d).replace('jo-signs', 'jo-signs one') + '<div class="foot c">' + NOTICE + (d.Provisional ? ' ' + PROV_NOTE + ' The job order number is given then.' : '') + '</div><div class="foot c">Printed ' + esc(F.datetime(d.PrintedAt)) + (d.PrintedBy ? ' by ' + esc(d.PrintedBy) : '') + (d.Provisional ? '' : ' · print ' + num(d.PrintCount)) + '</div></div>';
   }
@@ -7477,6 +7508,7 @@ window.MLS = (function () {
         (d.Status === 'VOID' ? '<div class="alert alert-light border small">Voided' + (d.VoidedBy ? ' by ' + UI.esc(d.VoidedBy) : '') + ': ' + UI.esc(d.VoidReason) + '</div>' : '')
       : '<p class="small text-muted mb-2" id="soa-preview-note">Preview for ' + UI.esc(periodText(d)) + '. Nothing is saved until the statement is issued.</p>';
     var grid = [['Brought forward', money(d.Forward), 'soa-forward'], ['Billed this period', money(d.Billed), 'soa-billed'], ['Paid this period', money(d.Paid), 'soa-paid'], ['Balance due', money(d.BalanceDue), 'soa-balance']];
+    M.Vat.rows(d.Vat).forEach(function (v, i) { grid.push([v[0] + (i ? '' : ', of the amount billed'), money(v[1]), 'soa-vat-' + i]); });  // 1.50.0: only when an order of the period carries VAT figures
     if (d.DueDate) grid.push(['Due by', UI.esc(F.date(d.DueDate)), 'soa-due-shown']);
     if (c.BillingTerms) grid.push(['Billing terms', UI.esc(c.BillingTerms), 'soa-terms']);
     var touching = !issued && d.Issued && d.Issued.length ? '<div class="alert alert-light border small mt-3 mb-0" id="soa-touching">Already issued for days in this period: ' + d.Issued.map(function (x) { return UI.esc(x.StatementNo) + ' (' + UI.esc(F.date(x.PeriodFrom)) + ' to ' + UI.esc(F.date(x.PeriodTo)) + ')'; }).join(', ') + '.</div>' : '';
@@ -7556,6 +7588,7 @@ window.MLS = (function () {
       docTable('Payments received in this period', [['Date'], ['Order no.'], ['Payment'], ['Amount', 1]], d.Payments.map(function (l) { return [esc(F.date(l.Date)), esc(l.OrderNo), esc(l.Description), esc(money(l.Paid))]; })) +
       '<table class="soa-sum"><tbody><tr><td>Balance brought forward</td><td class="r num">' + esc(money(d.Forward)) + '</td></tr><tr><td>Billed this period</td><td class="r num">' + esc(money(d.Billed)) + '</td></tr><tr><td>Paid this period</td><td class="r num">' + esc(money(d.Paid)) + '</td></tr>' +
       '<tr class="tot"><td>BALANCE DUE</td><td class="r num">' + esc(money(d.BalanceDue)) + '</td></tr></tbody></table>' +
+      (d.Vat ? '<table class="soa-sum soa-vat"><tbody><tr><td colspan="2">Of the amount billed this period</td></tr>' + M.Vat.rows(d.Vat).map(function (v) { return '<tr><td>' + esc(v[0]) + '</td><td class="r num">' + esc(money(v[1])) + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
       (d.Notes ? '<p>' + esc(d.Notes) + '</p>' : '') +
       '<div class="soa-note">This statement lists the orders billed and the payments received as recorded on the day it was issued. It is not an official receipt.' + (d.Status === 'VOID' ? ' <span class="soa-void">This statement was voided: ' + esc(d.VoidReason) + '.</span>' : '') + '</div>' +
       M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: (d.Reprint ? 'REPRINT · ' : '') + 'print ' + num(d.PrintCount) + ' · ' + d.StatementNo });
@@ -9447,9 +9480,9 @@ window.MLS = (function () {
   function pct(v, dp) { return v === null || v === undefined ? '—' : F.number(v, dp === undefined ? 1 : dp) + '%'; }
   function delta(v) { if (v === null || v === undefined) return '<span class="text-soft">—</span>'; var up = Number(v) > 0; return '<span class="' + (up ? 'text-success' : (Number(v) < 0 ? 'text-danger' : 'text-soft')) + '">' + (up ? '▲ ' : (Number(v) < 0 ? '▼ ' : '')) + F.number(Math.abs(Number(v)), 1) + '%</span>'; }
   function bold(v) { return '<span class="money fw-bold">' + F.peso(v) + '</span>'; }
-  var TABS = [['sales', 'Sales', 'REPORT_VIEW'], ['payments', 'Payments', 'REPORT_VIEW'], ['expenses', 'Expenses', 'REPORT_VIEW'], ['receivables', 'Receivables', 'REPORT_VIEW'], ['production', 'Production', 'REPORT_VIEW'], ['business', 'Business', 'REPORT_VIEW'], ['jobs', 'Job orders', 'REPORT_VIEW'], ['routes', 'Routes', 'REPORT_VIEW'], ['inventory', 'Inventory', 'REPORT_VIEW'], ['payroll', 'Payroll', ['STAFF_PAYROLL_ADMIN', 'STAFF_PAYROLL_HOURS_VIEW']], ['messages', 'Messages', 'SMS_VIEW_LOGS'], ['audit', 'Audit log', 'AUDIT_VIEW']];
+  var TABS = [['sales', 'Sales', 'REPORT_VIEW'], ['payments', 'Payments', 'REPORT_VIEW'], ['expenses', 'Expenses', 'REPORT_VIEW'], ['receivables', 'Receivables', 'REPORT_VIEW'], ['production', 'Production', 'REPORT_VIEW'], ['business', 'Business', 'REPORT_VIEW'], ['jobs', 'Job orders', 'REPORT_VIEW'], ['routes', 'Routes', 'REPORT_VIEW'], ['vat', 'VAT', 'REPORT_VIEW', function () { return M.Vat.known(); }], ['inventory', 'Inventory', 'REPORT_VIEW'], ['payroll', 'Payroll', ['STAFF_PAYROLL_ADMIN', 'STAFF_PAYROLL_HOURS_VIEW']], ['messages', 'Messages', 'SMS_VIEW_LOGS'], ['audit', 'Audit log', 'AUDIT_VIEW']];
   var PRESETS = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This week'], ['month', 'This month'], ['lastMonth', 'Last month'], ['quarter', 'Last 90 days'], ['year', 'This year'], ['twelve', 'Last 12 months']];
-  function tabAllowed(t) { var p = t[2]; return Array.isArray(p) ? p.some(can) : can(p); }
+  function tabAllowed(t) { var p = t[2]; if (t[3] && !t[3]()) return false; return Array.isArray(p) ? p.some(can) : can(p); }  // 1.50.0: a tab may also depend on a setting (VAT: only once VAT has been switched on)
   function preset(code) {
     var d = new Date(), y = d.getFullYear(), m = d.getMonth(), r;
     if (code === 'today') r = [today(), today()];
@@ -9550,6 +9583,14 @@ window.MLS = (function () {
       chart: function (d) { return d.byVehicle.length ? { type: 'bar', labels: d.byVehicle.map(function (v) { return v.Vehicle; }), datasets: [{ label: 'Stops', data: d.byVehicle.map(function (v) { return v.Stops; }) }, { label: 'Made', data: d.byVehicle.map(function (v) { return v.Made; }) }] } : null; },
       extra: function (d) { return table('By vehicle', [{ key: 'Vehicle', label: 'Vehicle', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (r.Plate || r.Type ? '<div class="small text-soft">' + UI.esc([r.Plate, r.Type].filter(Boolean).join(' · ')) + '</div>' : ''); } }, { key: 'Routes', label: 'Routes', align: R }, { key: 'Stops', label: 'Stops', align: R }, { key: 'Made', label: 'Made', align: R }, { key: 'Failed', label: 'Failed', align: R }, { key: 'Open', label: 'Still open', align: R }, { key: 'PiecesPicked', label: 'Pieces picked up', align: R, format: num }, { key: 'PiecesDelivered', label: 'Pieces delivered', align: R, format: num }], d.byVehicle) +
         '<p class="small text-soft">The routes whose day is in the range. A cancelled route and a cancelled job are left out, and a job on no route is not in this report. A stop counts for the vehicle it was on. Pieces are a job order\'s linens: counted at the pickup that began it, and handed over on a delivery trip.</p>'; }
+    },
+    vat: {   // release 1.50.0: the VAT summary by month, from each order's own figures
+      load: function () { return Api.call('reports.vat', { from: state.from, to: state.to }); },
+      kpis: function (d) { var t = d.totals; return [['Orders', t.Orders], ['Sales', F.peso(t.Sales)], ['VATable sales', F.peso(t.Vatable)], ['VAT', F.peso(t.Vat)], ['Zero-rated', F.peso(t.ZeroRated)], ['VAT-exempt', F.peso(t.Exempt)], ['No VAT figures', F.peso(t.NoVat)]]; },
+      columns: function () { return [{ key: 'Month', label: 'Month', format: function (v) { var p = String(v).split('-'); return '<span class="fw-bold">' + UI.esc(new Date(Number(p[0]), Number(p[1]) - 1, 1).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' })) + '</span>'; } }, { key: 'Orders', label: 'Orders', align: R }, { key: 'Sales', label: 'Sales', align: R, format: peso }, { key: 'Vatable', label: 'VATable sales', align: R, format: peso }, { key: 'Vat', label: 'VAT', align: R, format: bold }, { key: 'ZeroRated', label: 'Zero-rated', align: R, format: peso }, { key: 'Exempt', label: 'VAT-exempt', align: R, format: peso }, { key: 'NoVat', label: 'Without VAT figures', align: R, format: peso }]; },
+      rows: function (d) { return d.rows; },
+      chart: function (d) { return d.rows.length ? { type: 'bar', labels: d.rows.map(function (r) { return r.Month; }), datasets: [{ label: 'VATable sales', data: d.rows.map(function (r) { return r.Vatable; }) }, { label: 'VAT', data: d.rows.map(function (r) { return r.Vat; }) }] } : null; },
+      extra: function (d) { return '<p class="small text-soft" id="rp-vat-note">' + (d.registered ? 'VAT is on at ' + UI.esc(M.Vat.rate(d.rate)) + ' since ' + UI.esc(F.date(d.startDate)) + '.' : 'VAT is switched off; the orders stamped while it was on keep their figures.') + ' The orders dated in the range that are neither cancelled nor refunded, as the Sales report counts them, by the month of the order. Each order shows the figures it was stamped with when it was made: prices include the VAT, so VATable sales plus VAT is what the customer was charged. <strong>Without VAT figures</strong> are orders made before the start day or while VAT was off. This summary is a working paper for your accountant, not a VAT return.</p>'; }
     },
     payroll: {
       noRange: true, yearPicker: true,
@@ -10009,7 +10050,56 @@ window.MLS = (function () {
   }
   function tabBusiness() {
     body().innerHTML = skel(6);
-    loadSettings().then(function (d) { if (state.tab !== 'business') return; body().innerHTML = d.groups.filter(function (g) { return BUSINESS_GROUPS.indexOf(g.Group) >= 0; }).map(function (g, i, all) { return card(g.Group === 'Business' ? 'Business information' : 'Receipts', groupForm(g, d.canEdit, all.length > 1)); }).join('') + card('Branches, services and pricing', '<p class="small text-soft mb-2">Branch addresses and receipt lines live under <strong>Branches</strong>; services, prices and recipes under <strong>Services</strong>.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-go-tab="branches"><i class="fa-solid fa-store me-1"></i>Branches</button><a class="btn btn-outline-secondary btn-sm" href="#/services"><i class="fa-solid fa-shirt me-1"></i>Services and pricing</a></div>'); wireGroupForms(body()); body().querySelectorAll('[data-go-tab]').forEach(function (b) { b.onclick = function () { state.tab = b.getAttribute('data-go-tab'); paintTabs(); showTab(); }; }); }).catch(function (e) { tabFailed(e); });
+    loadSettings().then(function (d) { if (state.tab !== 'business') return; body().innerHTML = d.groups.filter(function (g) { return BUSINESS_GROUPS.indexOf(g.Group) >= 0; }).map(function (g, i, all) { return card(g.Group === 'Business' ? 'Business information' : 'Receipts', groupForm(g, d.canEdit, all.length > 1)); }).join('') + card('VAT', '<div id="set-vat">' + skel(2, 'Loading the VAT registration') + '</div>') + card('Branches, services and pricing', '<p class="small text-soft mb-2">Branch addresses and receipt lines live under <strong>Branches</strong>; services, prices and recipes under <strong>Services</strong>.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-go-tab="branches"><i class="fa-solid fa-store me-1"></i>Branches</button><a class="btn btn-outline-secondary btn-sm" href="#/services"><i class="fa-solid fa-shirt me-1"></i>Services and pricing</a></div>'); wireGroupForms(body()); body().querySelectorAll('[data-go-tab]').forEach(function (b) { b.onclick = function () { state.tab = b.getAttribute('data-go-tab'); paintTabs(); showTab(); }; }); loadVat(); }).catch(function (e) { tabFailed(e); });
+  }
+
+  // ---------------------------------------------------------------- VAT (release 1.50.0): optional, off by default, switched by the Super administrator only
+  function loadVat() {
+    var box = UI.el('set-vat'); if (!box) return; box.innerHTML = skel(2, 'Loading the VAT registration');
+    Api.call('vat.get', {}).then(function (v) { if (state.tab === 'business' && UI.el('set-vat')) paintVat(v); }).catch(function (e) { var b = UI.el('set-vat'); if (b && state.tab === 'business') failed(b, 'The VAT registration could not be loaded', e, loadVat); });
+  }
+  function vatExample(rate) { var r = Number(rate); if (!(r > 0)) return ''; var net = Math.round(160000 * 100 / (100 + r)); return 'An order of ' + F.peso(1600) + ' shows ' + F.peso(net / 100) + ' of VATable sales and ' + F.peso((160000 - net) / 100) + ' of VAT.'; }
+  function paintVat(v) {
+    var box = UI.el('set-vat'), esc = UI.esc, starts = v.registered && v.startDate > v.today;
+    var state1 = v.registered
+      ? '<p class="mb-1" id="set-vat-state">VAT registered: <strong>Yes</strong> · ' + esc(M.Vat.rate(v.rate)) + ' · ' + (starts ? 'starts on ' : 'since ') + esc(F.date(v.startDate)) + '</p><p class="small text-soft mb-2">' + (starts ? 'Not started yet: orders are stamped from the start day on.' : 'Each new order stores its own VAT figures; receipts, job orders and statements show them.') + ' Prices do not change: they are read as including the VAT.</p>'
+      : '<p class="mb-1" id="set-vat-state">VAT registered: <strong>No</strong></p><p class="small text-soft mb-2">While this is No, nothing about VAT is computed, stored or shown anywhere in the system.</p>';
+    var count = v.stamped ? '<p class="small text-soft mb-2" id="set-vat-count">' + F.number(v.stamped) + ' order' + (v.stamped === 1 ? ' carries' : 's carry') + ' VAT figures. They keep them whatever is changed here.</p>' : '';
+    var actions = v.canEdit
+      ? '<div class="d-flex flex-wrap gap-2" id="set-vat-actions">' + (v.registered ? '<button type="button" class="btn btn-outline-secondary btn-sm" data-vat="change"><i class="fa-solid fa-pen me-1" aria-hidden="true"></i>Change the rate or the start day</button><button type="button" class="btn btn-outline-secondary btn-sm" data-vat="off"><i class="fa-solid fa-power-off me-1" aria-hidden="true"></i>Switch VAT off</button>' : '<button type="button" class="btn btn-outline-secondary btn-sm" data-vat="on"><i class="fa-solid fa-percent me-1" aria-hidden="true"></i>Set up VAT</button>') + '</div>'
+      : '<p class="small text-soft mb-0" id="set-vat-readonly">Only the Super administrator can change this.</p>';
+    box.innerHTML = state1 + count + actions + '<div id="set-vat-form-wrap"></div>';
+    box.querySelectorAll('[data-vat]').forEach(function (b) { b.onclick = function () { vatForm(v, b.getAttribute('data-vat')); }; });
+  }
+  function vatForm(v, mode) {
+    var wrap = UI.el('set-vat-form-wrap'), esc = UI.esc, off = mode === 'off', lockedStart = mode === 'change' && v.startDate <= v.today;
+    var title = off ? 'Switch VAT off' : mode === 'on' ? 'Switch VAT on' : 'Change VAT';
+    var notes = off
+      ? '<ul class="small mb-2"><li>From now on new orders store and show no VAT.</li><li>The orders already stamped keep their figures, on their receipts and in the VAT report.</li><li>You can switch it on again later with a new start day.</li></ul>'
+      : '<ul class="small mb-2"><li><strong>Your prices do not change.</strong> They are read as including the VAT; nothing is added on top.</li><li>Orders made from the start day on store their own VAT figures. Orders made before it never get any.</li><li>A later change of the rate does not alter orders already made.</li><li>This is not an accredited invoicing system: official receipts and VAT returns stay with your accountant. <strong>Ask your accountant to confirm the rate and the start day first.</strong></li></ul>';
+    var fields = off ? '' :
+      '<div class="col-6 col-md-3"><label class="form-label" for="set-vat-rate">VAT rate (%)</label><input class="form-control" id="set-vat-rate" name="rate" inputmode="decimal" maxlength="5" value="' + esc(v.rate) + '" aria-describedby="set-vat-example"></div>' +
+      '<div class="col-6 col-md-4"><label class="form-label" for="set-vat-start">Start day</label><input class="form-control" id="set-vat-start" name="startDate" type="date" min="' + esc(v.today) + '" value="' + esc(mode === 'change' ? v.startDate : v.today) + '"' + (lockedStart ? ' readonly aria-describedby="set-vat-start-note"' : '') + '>' + (lockedStart ? '<div class="form-text" id="set-vat-start-note">VAT has started; the start day stays.</div>' : '') + '</div>' +
+      '<div class="col-12"><p class="small text-soft mb-0" id="set-vat-example">' + esc(vatExample(v.rate)) + '</p></div>';
+    wrap.innerHTML = '<form class="mt-3 pt-3 border-top" id="set-vat-form" autocomplete="off" novalidate><div class="row g-2 align-items-end mx-0"><div class="col-12"><h6 class="section-title mb-1">' + title + '</h6>' + notes + '</div>' + fields +
+      '<div class="col-12 col-md-5"><label class="form-label" for="set-vat-confirm">Type ' + esc(v.confirmWord) + ' to confirm</label><input class="form-control upper" id="set-vat-confirm" name="confirm" maxlength="8" autocapitalize="characters" aria-required="true"></div>' +
+      '<div class="col-12"><div class="alert alert-danger py-2 small mb-0" id="set-vat-error" hidden role="alert"></div></div>' +
+      '<div class="col-12 d-flex gap-2"><button type="submit" class="btn btn-primary btn-sm" id="set-vat-save">' + title + '</button><button type="button" class="btn btn-outline-secondary btn-sm" id="set-vat-cancel">Cancel</button></div></div></form>';
+    var form = UI.el('set-vat-form'), err = UI.el('set-vat-error'), rate = UI.el('set-vat-rate');
+    if (rate) rate.oninput = function () { UI.el('set-vat-example').textContent = vatExample(rate.value); };
+    UI.el('set-vat-cancel').onclick = function () { wrap.innerHTML = ''; var b = UI.el('set-vat').querySelector('[data-vat="' + mode + '"]'); if (b) b.focus(); };
+    form.onsubmit = function (ev) {
+      ev.preventDefault(); err.hidden = true; form.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
+      var p = { registered: !off, confirm: UI.el('set-vat-confirm').value }; if (!off) { p.rate = rate.value; p.startDate = UI.el('set-vat-start').value; }
+      Api.call('vat.save', p, { busy: true }).then(function (r) {
+        if (M.AppState.me) M.AppState.me.settings = r.publicSettings;
+        Toast.success(!r.changed ? 'Nothing changed' : off ? 'VAT switched off' : mode === 'on' ? 'VAT switched on' : 'VAT changed'); M.Auth.refreshMe().catch(function () { /* best effort */ }); paintVat(r.vat);
+      }).catch(function (e) {
+        var key = e.fields ? Object.keys(e.fields)[0] : '', el = key ? form.querySelector('[name="' + key + '"]') : null; if (el) { el.classList.add('is-invalid'); el.focus(); }
+        err.textContent = UI.error(e); err.hidden = false;
+      });
+    };
+    (rate || UI.el('set-vat-confirm')).focus();
   }
   function tabSettings() {
     body().innerHTML = skel(6);
