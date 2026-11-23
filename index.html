@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '0ea3d201a9', version: '1.47.0' };</script>
+  <script>window.MLS_PWA = { build: '0528c9024a', version: '1.49.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -297,13 +297,13 @@
      neutral (new, queued, planned) on the well; info (in progress, on its way, computed); success (ready, paid, good);
      warning (waiting on someone: unpaid, partial, late, pending, review); danger (cancelled, refused, missing, failed);
      done (completed, released, closed) on the soft burgundy; history (inactive, void, archived, retired) as an outlined pill */
-  .status-badge.s-new, .status-badge.s-received, .status-badge.s-leave, .status-badge.s-holiday, .status-badge.s-unassigned, .status-badge.s-draft, .status-badge.s-not_started, .status-badge.s-scheduled, .status-badge.s-prepared, .status-badge.s-unknown, .status-badge.s-sample, .status-badge.s-planned, .status-badge.s-backed_up { background: var(--mls-well); color: var(--mls-ink); }
-  .status-badge.s-processing, .status-badge.s-washing, .status-badge.s-drying, .status-badge.s-folding, .status-badge.s-qc, .status-badge.s-packed, .status-badge.s-assigned, .status-badge.s-accepted, .status-badge.s-open, .status-badge.s-in_progress, .status-badge.s-out_for_delivery, .status-badge.s-for_pickup, .status-badge.s-computed, .status-badge.s-gateway_queued, .status-badge.s-running { background: var(--mls-info-soft); color: var(--mls-info); }
-  .status-badge.s-ready, .status-badge.s-issued, .status-badge.s-verified, .status-badge.s-applied, .status-badge.s-active, .status-badge.s-paid, .status-badge.s-present, .status-badge.s-approved, .status-badge.s-finalized, .status-badge.s-delivered, .status-badge.s-picked_up, .status-badge.s-in, .status-badge.s-pass, .status-badge.s-ok, .status-badge.s-on_time, .status-badge.s-user_confirmed_sent, .status-badge.s-resolved, .status-badge.s-gateway_delivered, .status-badge.s-attached, .status-badge.s-production { background: var(--mls-success-soft); color: var(--mls-success); }
-  .status-badge.s-partial, .status-badge.s-reviewed, .status-badge.s-late, .status-badge.s-undertime, .status-badge.s-pending, .status-badge.s-reopened, .status-badge.s-submitted, .status-badge.s-stale, .status-badge.s-unpaid, .status-badge.s-warning, .status-badge.s-composer_open_requested, .status-badge.s-in_review, .status-badge.s-gateway_sent, .status-badge.s-soon, .status-badge.s-stopped, .status-badge.s-skipped { background: var(--mls-warning-soft); color: var(--mls-warning); }
+  .status-badge.s-new, .status-badge.s-planned, .status-badge.s-received, .status-badge.s-leave, .status-badge.s-holiday, .status-badge.s-unassigned, .status-badge.s-draft, .status-badge.s-not_started, .status-badge.s-scheduled, .status-badge.s-prepared, .status-badge.s-unknown, .status-badge.s-sample, .status-badge.s-planned, .status-badge.s-backed_up { background: var(--mls-well); color: var(--mls-ink); }
+  .status-badge.s-processing, .status-badge.s-on_the_road, .status-badge.s-washing, .status-badge.s-drying, .status-badge.s-folding, .status-badge.s-qc, .status-badge.s-packed, .status-badge.s-assigned, .status-badge.s-accepted, .status-badge.s-open, .status-badge.s-in_progress, .status-badge.s-out_for_delivery, .status-badge.s-for_pickup, .status-badge.s-computed, .status-badge.s-gateway_queued, .status-badge.s-running { background: var(--mls-info-soft); color: var(--mls-info); }
+  .status-badge.s-ready, .status-badge.s-finished, .status-badge.s-issued, .status-badge.s-verified, .status-badge.s-applied, .status-badge.s-active, .status-badge.s-paid, .status-badge.s-present, .status-badge.s-approved, .status-badge.s-finalized, .status-badge.s-delivered, .status-badge.s-picked_up, .status-badge.s-in, .status-badge.s-pass, .status-badge.s-ok, .status-badge.s-on_time, .status-badge.s-user_confirmed_sent, .status-badge.s-resolved, .status-badge.s-gateway_delivered, .status-badge.s-attached, .status-badge.s-production { background: var(--mls-success-soft); color: var(--mls-success); }
+  .status-badge.s-partial, .status-badge.s-paused, .status-badge.s-reviewed, .status-badge.s-late, .status-badge.s-undertime, .status-badge.s-pending, .status-badge.s-reopened, .status-badge.s-submitted, .status-badge.s-stale, .status-badge.s-unpaid, .status-badge.s-warning, .status-badge.s-composer_open_requested, .status-badge.s-in_review, .status-badge.s-gateway_sent, .status-badge.s-soon, .status-badge.s-stopped, .status-badge.s-skipped { background: var(--mls-warning-soft); color: var(--mls-warning); }
   .status-badge.s-cancelled, .status-badge.s-discrepancy, .status-badge.s-refunded, .status-badge.s-absent, .status-badge.s-review, .status-badge.s-rejected, .status-badge.s-failed, .status-badge.s-fail, .status-badge.s-locked, .status-badge.s-disabled, .status-badge.s-error, .status-badge.s-overdue, .status-badge.s-not_sent, .status-badge.s-failed_to_open, .status-badge.s-gateway_failed, .status-badge.s-down, .status-badge.s-due, .status-badge.s-missing, .status-badge.s-test, .status-badge.s-demo, .status-badge.s-deleted { background: var(--mls-danger-soft); color: var(--mls-danger); }
   .status-badge.s-completed, .status-badge.s-released, .status-badge.s-closed { background: var(--mls-primary-soft); color: var(--mls-primary); }
-  .status-badge.s-inactive, .status-badge.s-void, .status-badge.s-rest_day, .status-badge.s-unscheduled, .status-badge.s-upcoming, .status-badge.s-out, .status-badge.s-archived, .status-badge.s-retired, .status-badge.s-removed { background: transparent; color: var(--mls-ink); border-color: var(--mls-line); }
+  .status-badge.s-inactive, .status-badge.s-ended, .status-badge.s-void, .status-badge.s-rest_day, .status-badge.s-unscheduled, .status-badge.s-upcoming, .status-badge.s-out, .status-badge.s-archived, .status-badge.s-retired, .status-badge.s-removed { background: transparent; color: var(--mls-ink); border-color: var(--mls-line); }
   .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 12px; }
   .toolbar .form-control, .toolbar .form-select { width: auto; min-width: 150px; flex: 0 0 auto; max-width: 100%; background-color: var(--mls-well); }
   .toolbar .form-control:focus, .toolbar .form-select:focus { background-color: var(--mls-card); }
@@ -501,6 +501,13 @@
   .slot-pick button.full .sub { color: var(--mls-danger); } .slot-pick button:disabled { opacity: .5; cursor: not-allowed; }
   .window-tag { display: inline-flex; align-items: center; gap: 4px; font-size: .8rem; font-weight: 700; padding: .1rem .5rem; border-radius: 999px; background: var(--mls-info-soft); color: var(--mls-info); }
   .window-tag.late { background: var(--mls-danger-soft); color: var(--mls-danger); }
+  /* ---- Release 1.49.0: the stops of a route, in order: the place, the stop, and the buttons that move it or take it off (44px targets) ---- */
+  .rte-stop { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--mls-line); } .rte-stop:last-child { border-bottom: 0; }
+  .rte-stop.off .rte-main { opacity: .6; text-decoration: line-through; text-decoration-color: var(--mls-line); }
+  .rte-seq { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--mls-well); color: var(--mls-ink); font-weight: 700; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; justify-content: center; }
+  .rte-main { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .rte-btns { flex: none; display: flex; gap: 6px; } .rte-btns .btn { width: var(--mls-tap); height: var(--mls-tap); padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+  @media (max-width: 575.98px) { .rte-stop { flex-wrap: wrap; } .rte-main { flex-basis: calc(100% - 40px); } .rte-btns { margin-left: 38px; } }
   .sig-pad { display: block; width: 100%; height: 180px; border: 1px dashed var(--mls-ink-faint); border-radius: var(--mls-radius-sm); background: var(--mls-card); touch-action: none; cursor: crosshair; }
   /* 1.35.0 (stage 6): product photos. A thumbnail box in a list (48 px) and on the item's page (96 px): the picture covers it, grey while it is on its way, a muted mark when the item has none */
   .thumb { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 48px; height: 48px; border-radius: var(--mls-radius-sm); background: var(--mls-well); border: 1px solid var(--mls-line-soft); color: var(--mls-ink-faint); overflow: hidden; vertical-align: middle; }
@@ -1060,7 +1067,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.47.0';
+  var VERSION = '1.49.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -4435,6 +4442,7 @@ window.MLS = (function () {
       // incident; Erase personal data, 1.12.0, after a divider), then Send SMS and Edit, and New order, the one primary, at the right
       var more = [], danger = [], right = [];
       if (M.Auth.can('INCIDENT_CREATE')) more.push('<li><button type="button" class="dropdown-item" data-act="incident"><i class="fa-solid fa-triangle-exclamation me-2" aria-hidden="true"></i>Report incident</button></li>');
+      if (c.CustomerType === 'CORPORATE' && !c.Anonymised && M.PickupSchedules && M.PickupSchedules.canView()) more.push('<li><button type="button" class="dropdown-item" data-act="schedule"><i class="fa-solid fa-repeat me-2" aria-hidden="true"></i>Pickup schedule</button></li>');  // 1.48.0
       if (M.Auth.can('CUSTOMER_ERASE') && !c.Anonymised) danger.push('<li><button type="button" class="dropdown-item text-danger" data-act="erase"><i class="fa-solid fa-user-slash me-2" aria-hidden="true"></i>Erase personal data</button></li>');
       if (c.CustomerType === 'CORPORATE' && !c.Anonymised && M.Statements && M.Statements.canView()) right.push('<button type="button" class="btn btn-sm btn-outline-secondary" data-act="statement"><i class="fa-solid fa-file-invoice me-1"></i>Statement</button>');  // 1.47.0
       if (M.Auth.can('CUSTOMER_EDIT') && !c.Anonymised) right.push('<button type="button" class="btn btn-sm btn-outline-primary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button>');
@@ -4445,7 +4453,7 @@ window.MLS = (function () {
       var smsItems = []; if (withBalance) smsItems.push({ code: 'BALANCE_REMINDER', label: 'Balance reminder · ' + withBalance.OrderNo, icon: 'fa-bell', suggested: true, arg: withBalance.Id }); smsItems.push({ code: 'GENERAL', label: 'General message', icon: 'fa-comment', suggested: !withBalance });
       var smsMenu = M.Sms && M.Sms.can(c.Mobile) && c.Status === 'ACTIVE' ? M.Sms.menuHtml({ id: 'cust-sms-menu', label: 'Send SMS', items: smsItems }) : '';
       UI.html('cust-view-actions', moreMenu + '<span class="spacer"></span>' + smsMenu + right.join(''));
-      UI.el('cust-view-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); if (a === 'incident') return M.Incidents.report({ customerId: c.Id, customerName: c.FullName }); if (a === 'erase') return erase(c); M.Modal.closeThen('cust-view-modal', function () { if (a === 'pos') M.Router.go('pos', { customerId: c.Id }); else if (a === 'statement') M.Statements.open(c.Id, { name: c.FullName }); else openForm(c); }); }; });
+      UI.el('cust-view-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); if (a === 'incident') return M.Incidents.report({ customerId: c.Id, customerName: c.FullName }); if (a === 'erase') return erase(c); M.Modal.closeThen('cust-view-modal', function () { if (a === 'schedule') M.PickupSchedules.open(c.Id, { name: c.FullName }); else if (a === 'pos') M.Router.go('pos', { customerId: c.Id }); else if (a === 'statement') M.Statements.open(c.Id, { name: c.FullName }); else openForm(c); }); }; });
       if (smsMenu) M.Sms.wireMenu(UI.el('cust-view-actions'), function (arg) { return { customerId: c.Id, orderId: arg || '' }; }, function () { if (M.Auth.can('SMS_VIEW_LOGS')) loadHistory(c.Id); });
       M.Modal.open('cust-view-modal');
     }).catch(function (e) { Toast.danger(UI.error(e)); });
@@ -6018,12 +6026,14 @@ window.MLS = (function () {
 })();
 </script>
 
-        <!-- Mrs Laundry Sys — DispatchPage.html: the Dispatch module: delivery and pickup jobs, rider assignment, zones, and since 1.15.0 the delivery windows (booked with their places left, rescheduled) with each stop's proof and the customer's confirmation; the job page reuses the rider card from My Deliveries. Release 1.27.0 (Stage 5) brings it to the design system: skeleton rows on a first visit, To collect as an amount column, phone cards with the job as the title, the job dialog and the new job in titled sections, and the job dialog's footer as the order dialog's. -->
+        <!-- Mrs Laundry Sys — DispatchPage.html: the Dispatch module: delivery and pickup jobs, rider assignment, zones, and since 1.49.0 the routes of a day (the Routes button; a stop of a route says its place), since 1.15.0 the delivery windows (booked with their places left, rescheduled) with each stop's proof and the customer's confirmation; the job page reuses the rider card from My Deliveries. Release 1.27.0 (Stage 5) brings it to the design system: skeleton rows on a first visit, To collect as an amount column, phone cards with the job as the title, the job dialog and the new job in titled sections, and the job dialog's footer as the order dialog's. -->
 <section id="view-dispatch" class="view" hidden>
   <div class="view-head">
     <h2>Dispatch</h2>
     <span class="text-soft small" id="dsp-scope"></span>
     <span class="spacer"></span>
+    <button type="button" class="btn btn-outline-primary btn-sm" id="dsp-routes" hidden><i class="fa-solid fa-route me-1"></i>Routes</button>
+    <button type="button" class="btn btn-outline-primary btn-sm" id="dsp-schedules" hidden><i class="fa-solid fa-repeat me-1"></i>Schedules</button>
     <button type="button" class="btn btn-outline-primary btn-sm" id="dsp-windows" hidden><i class="fa-regular fa-clock me-1"></i>Windows</button>
     <button type="button" class="btn btn-outline-primary btn-sm" id="dsp-zones" hidden><i class="fa-solid fa-map me-1"></i>Zones</button>
     <button type="button" class="btn btn-primary btn-sm" id="dsp-new" hidden><i class="fa-solid fa-plus me-1"></i>New job</button>
@@ -6168,7 +6178,7 @@ window.MLS = (function () {
 
   var listSeq = Api.sequence();
   /** A job's type, as a badge. */
-  function typeBadge(j) { return '<span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>'; }
+  function typeBadge(j) { return '<span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>' + (j.ScheduleId ? ' <span class="badge text-bg-light border" title="Created by the recurring schedule ' + UI.esc(j.ScheduleId) + '"><i class="fa-solid fa-repeat me-1" aria-hidden="true"></i>From schedule</span>' : '') + (j.RouteId ? ' <span class="badge text-bg-light border" title="Stop ' + Number(j.RouteSeq) + ' of route ' + UI.esc(j.RouteId) + '"><i class="fa-solid fa-route me-1" aria-hidden="true"></i>Route · stop ' + Number(j.RouteSeq) + '</span>' : ''); }  // 1.48.0 the schedule; 1.49.0 the route and the stop's place
   /** A job's status with what else needs looking at: the proof missing, a problem the customer reported. */
   function statusBadges(j) { return UI.badge(j.Status) + (j.ProofStatus === 'MISSING' ? ' ' + UI.badge('MISSING', 'proof missing') : '') + (j.Items.some(function (i) { return i.ProblemReportedAt; }) ? ' ' + UI.badge('FAILED', 'problem reported') : ''); }
   /**
@@ -6207,6 +6217,8 @@ window.MLS = (function () {
     // 1.21.0: whether an open stop's window is over is decided on this device's clock, as the production board does: the list may come from the server's saved answer (kept for hours since 1.21.0)
     var when = j.Window ? (j.Window.Name ? UI.esc(j.Window.Name) + ' · ' : '') + F.date(j.Window.Start) + ' ' + F.time(j.Window.Start) + '–' + F.time(j.Window.End) + (j.Window.Late ? ' <span class="window-tag late">done late</span>' : (j.Window.Overdue || (j.IsOpen && j.Window.End && new Date(j.Window.End).getTime() < Date.now()) ? ' <span class="window-tag late">window over</span>' : '')) : (j.ScheduledAt ? F.datetime(j.ScheduledAt) : 'any time');
     var grid = [['Rider', j.Rider ? UI.esc(j.Rider) : '<span class="text-danger">unassigned</span>'], ['Zone', UI.esc(j.Zone || '—')], ['Fee', F.peso(j.Fee)], [j.Window ? 'Window' : 'Scheduled', when], ['Created', F.datetime(j.CreatedAt) + ' · ' + UI.esc(j.CreatedBy || '')], ['Finished', j.CompletedAt ? F.datetime(j.CompletedAt) : '—'], ['Branch', UI.esc(j.Branch)]];
+    // 1.49.0: a stop of a route says so, and opens the route
+    if (j.Route) grid.push(['Route', '<button type="button" class="btn btn-link p-0 align-baseline" id="dsp-route-link">' + UI.esc(j.Route.Id) + '</button> · stop ' + Number(j.Route.Seq) + (j.Route.Vehicle ? ' · ' + UI.esc(j.Route.Vehicle) + (j.Route.Plate ? ' <span class="text-soft small">' + UI.esc(j.Route.Plate) + '</span>' : '') : '')]);
     // 1.27.0 (Stage 5): the facts, then two titled sections, as the order dialog has them: the stop (the rider's own card) and its orders.
     // On a phone each order is one row: the number and the customer with its status and the customer's word under them, the amount to
     // collect on the right with what was collected under it. Confirmation was headed Customer, which the order's own cell already names.
@@ -6217,6 +6229,7 @@ window.MLS = (function () {
       }).join('') + '</tbody></table></div></section>' : ''));
     var body = UI.el('dsp-view-body');
     M.DeliveriesUI.wireCard(body, function () { open(j.Id); load(); });
+    var rl = UI.el('dsp-route-link'); if (rl) rl.onclick = function () { M.Modal.closeThen('dsp-view-modal', function () { M.RoutesUI.open({ routeId: j.Route.Id, onChange: load }); }); };
     body.querySelectorAll('[data-order]').forEach(function (tr) { tr.onclick = function () { M.Modal.closeThen('dsp-view-modal', function () { M.OrdersUI.openOrder(tr.getAttribute('data-order')); }); }; });
     // 1.27.0: the footer as the order dialog's: the destructive action at the left; Reschedule and Close, then the rider's assignment at
     // the right — the one primary while the job has no rider, an outline once it has one (reassigning is the rare case)
@@ -6375,12 +6388,14 @@ window.MLS = (function () {
     Api.call('dispatch.saveZone', d, { busy: true }).then(function (z) { Toast.success('Zone saved'); f.reset(); paintZones(z); }).catch(function (e) { if (e.fields) Form.errors(f, e.fields, e.message); Toast.danger(UI.error(e)); });
   }
 
-  function paintButtons() { UI.el('dsp-new').hidden = !canAssign(); UI.el('dsp-zones').hidden = !canAssign(); UI.el('dsp-windows').hidden = !canAssign(); }
+  function paintButtons() { UI.el('dsp-routes').hidden = !(M.RoutesUI && M.RoutesUI.canView()); UI.el('dsp-schedules').hidden = !(M.PickupSchedules && M.PickupSchedules.canView()); UI.el('dsp-new').hidden = !canAssign(); UI.el('dsp-zones').hidden = !canAssign(); UI.el('dsp-windows').hidden = !canAssign(); }
   function wire() {
     UI.el('dsp-tabs').querySelectorAll('button').forEach(function (b) { b.onclick = function () { UI.el('dsp-tabs').querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); }); state.status = b.getAttribute('data-status'); state.page = 1; load(); }; });
     UI.el('dsp-search').oninput = UI.debounce(function () { state.search = UI.el('dsp-search').value.trim(); state.page = 1; load(); }, 350);
     UI.el('dsp-rider').onchange = function () { state.rider = this.value; state.page = 1; load(); }; UI.el('dsp-type').onchange = function () { state.type = this.value; state.page = 1; load(); }; UI.el('dsp-date').onchange = function () { state.date = this.value; state.page = 1; load(); };
     ensurePickers();
+    UI.el('dsp-schedules').onclick = function () { M.PickupSchedules.open('', { onChange: load }); };  // 1.48.0
+    UI.el('dsp-routes').onclick = function () { M.RoutesUI.open({ day: state.date || '', onChange: load }); };  // 1.49.0: the routes of the day the list shows, or of today and later
     UI.el('dsp-new').onclick = openNew; UI.el('dsp-zones').onclick = openZones; UI.el('dsp-windows').onclick = openWindows; UI.el('dsp-job-form').onsubmit = submitNew; UI.el('dsp-zone-form').onsubmit = submitZone; UI.el('dsp-slot-form').onsubmit = submitSlot;
     UI.el('dsp-job-form').querySelector('[name=branchId]').onchange = refreshWindows;
     UI.el('dsp-job-type').querySelectorAll('button').forEach(function (b) { b.onclick = function () { setType(b.getAttribute('data-type')); }; });
@@ -6513,7 +6528,7 @@ window.MLS = (function () {
       (canCount && !j.IsOpen ? '<button type="button" class="btn btn-sm btn-primary" data-count="' + UI.esc(j.Id) + '"><i class="fa-solid fa-clipboard-list me-1"></i>Count linens</button>' : '') +
       jobOrders.map(function (i) { return '<button type="button" class="btn btn-sm btn-outline-primary" data-joborder="' + UI.esc(i.OrderId) + '"><i class="fa-solid fa-clipboard-list me-1"></i>Job Order</button>'; }).join('');
     return '<div class="job-card' + (j.IsOpen ? '' : ' done') + '" data-job="' + UI.esc(j.Id) + '">' +
-      '<div class="d-flex align-items-center gap-2 flex-wrap"><span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>' + UI.badge(j.Status, statusLabel(j.Status)) + (j._pending ? '<span class="pending-tag" title="Recorded on this phone; the server has not received it yet">not synced</span>' : '') + windowTag(j) + (j.TripNo ? '<span class="badge text-bg-light border">Trip ' + Number(j.TripNo) + '</span>' : '') + (j.Outcome && M.JobOrders ? M.JobOrders.outcomeBadge(j.Outcome) : '') + '<span class="ms-auto small text-soft">' + UI.esc(j.Id) + '</span></div>' +
+      '<div class="d-flex align-items-center gap-2 flex-wrap"><span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>' + UI.badge(j.Status, statusLabel(j.Status)) + (j._pending ? '<span class="pending-tag" title="Recorded on this phone; the server has not received it yet">not synced</span>' : '') + windowTag(j) + (j.TripNo ? '<span class="badge text-bg-light border">Trip ' + Number(j.TripNo) + '</span>' : '') + (j.Route ? '<span class="badge text-bg-light border route-tag" title="Route ' + UI.esc(j.Route.Id) + '"><i class="fa-solid fa-route me-1" aria-hidden="true"></i>Stop ' + Number(j.Route.Seq) + (j.Route.Vehicle ? ' · ' + UI.esc(j.Route.Vehicle) : '') + '</span>' : '') + (j.Outcome && M.JobOrders ? M.JobOrders.outcomeBadge(j.Outcome) : '') + '<span class="ms-auto small text-soft">' + UI.esc(j.Id) + '</span></div>' +
       '<div class="who mt-1">' + UI.esc(j.CustomerName || 'Customer') + '</div>' +
       (j.Address || nav ? '<div class="addr">' + UI.esc(j.Address || 'Pinned location') + (link ? ' <a href="' + link + '" target="_blank" rel="noopener" class="ms-1 text-nowrap"><i class="fa-solid fa-map-location-dot"></i> Map</a>' : '') + (nav && j.IsOpen ? ' <a href="' + nav + '" target="_blank" rel="noopener" class="ms-1 fw-bold text-nowrap"><i class="fa-solid fa-diamond-turn-right"></i> Navigate</a>' : '') + (j.Latitude && j.Longitude ? ' <span class="small text-soft" title="Pinned coordinates"><i class="fa-solid fa-location-dot"></i></span>' : '') + '</div>' : '') +
       (j.Phone ? '<div><a href="tel:' + UI.esc(j.Phone) + '"><i class="fa-solid fa-phone me-1"></i>' + UI.esc(j.Phone) + '</a></div>' : '') +
@@ -7569,6 +7584,464 @@ window.MLS = (function () {
   UI.el('soa-last').onclick = function () { var r = month(-1); UI.el('soa-from').value = r[0]; UI.el('soa-to').value = r[1]; preview(); };
 
   M.Statements = { open: open, print: print, documentHtml: documentHtml, canView: function () { return can('REPORT_VIEW'); }, canIssue: function () { return can('STATEMENT_ISSUE'); } };
+})();
+</script>
+
+        <!-- Mrs Laundry Sys — PickupSchedulesPage.html (release 1.48.0): recurring pickup schedules.
+     One dialog. Opened from Dispatch it lists every schedule under the lens; opened for a commercial client (its page, or a row of that
+     list) it shows the client's schedules with the pickups already created, and lets a manager add, change, pause, resume, end a
+     schedule or leave one day out. A schedule creates pickup jobs only: no order, no bill, no payment. -->
+<div class="modal fade" id="psc-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="psc-title">Pickup schedules</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p class="small text-soft mb-2" id="psc-note"></p>
+        <div class="alert alert-warning small" id="psc-warn" role="status" hidden></div>
+        <div class="alert alert-danger small" id="psc-error" role="alert" hidden></div>
+        <div id="psc-list"></div>
+        <form class="od-section mt-3" id="psc-form" autocomplete="off" hidden>
+          <h6 class="section-title" id="psc-form-title">New schedule</h6>
+          <div class="small fw-bold mb-1" id="psc-days-label">Pickup days</div>
+          <div class="d-flex flex-wrap gap-3 mb-2" id="psc-days" role="group" aria-labelledby="psc-days-label"></div>
+          <div class="row g-2 mx-0">
+            <div class="col-6 col-md-3"><label class="form-label" for="psc-time">Time</label><input class="form-control" id="psc-time" type="time" required></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="psc-zone">Zone</label><select class="form-select" id="psc-zone"><option value="">No zone</option></select></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="psc-start">First day</label><input class="form-control" id="psc-start" type="date"></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="psc-end">Last day (optional)</label><input class="form-control" id="psc-end" type="date"></div>
+            <div class="col-12"><label class="form-label" for="psc-notes">Note for the rider (optional)</label><input class="form-control" id="psc-notes" maxlength="200"></div>
+          </div>
+          <p class="small text-soft mt-2 mb-0" id="psc-form-hint"></p>
+          <div class="d-flex flex-wrap gap-2 justify-content-end mt-3"><button type="button" class="btn btn-sm btn-outline-secondary" id="psc-form-cancel">Cancel</button><button type="submit" class="btn btn-sm btn-primary" id="psc-form-save">Save schedule</button></div>
+        </form>
+        <form class="od-section mt-3" id="psc-act" autocomplete="off" hidden>
+          <h6 class="section-title" id="psc-act-title"></h6>
+          <div id="psc-act-body"></div>
+          <div class="d-flex flex-wrap gap-2 justify-content-end mt-3"><button type="button" class="btn btn-sm btn-outline-secondary" id="psc-act-cancel">Cancel</button><button type="submit" class="btn btn-sm btn-primary" id="psc-act-go"></button></div>
+        </form>
+      </div>
+      <div class="modal-footer flex-wrap gap-2" id="psc-actions"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Modal = M.Modal;
+  var DAYS = [['1', 'Mon'], ['2', 'Tue'], ['3', 'Wed'], ['4', 'Thu'], ['5', 'Fri'], ['6', 'Sat'], ['7', 'Sun']];
+  var s = null;  // { customerId ('' = every client), name, data (the last list answer), editing (a schedule id or ''), act: { kind, id }, fromAll, onChange }
+  function can(code) { return M.Auth.can(code); }
+  function canView() { return can('SCHEDULE_MANAGE') || can('DISPATCH_VIEW'); }
+  function canManage() { return can('SCHEDULE_MANAGE'); }
+  function error(msg) { var box = UI.el('psc-error'); box.textContent = msg || ''; box.hidden = !msg; if (msg) box.scrollIntoView({ block: 'nearest' }); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function dayText(v) { if (!v) return ''; var d = new Date(v + 'T00:00:00'); return isNaN(d) ? String(v) : d.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' }); }
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+  function find(id) { return ((s.data && s.data.rows) || []).filter(function (r) { return r.Id === id; })[0] || null; }
+  function isoWeekday(d) { return String(d.getDay() || 7); }
+  /** The coming days of a schedule's pattern (for the day to leave out): from today, within its dates, not yet skipped. */
+  function comingDays(r, count) {
+    var out = [], d = new Date(); d.setHours(0, 0, 0, 0);
+    for (var i = 0; i < 60 && out.length < count; i++, d.setDate(d.getDate() + 1)) { var v = iso(d); if (r.Weekdays.indexOf(isoWeekday(d)) >= 0 && v >= r.StartDate && (!r.EndDate || v <= r.EndDate) && r.Skipped.indexOf(v) < 0) out.push(v); }
+    return out;
+  }
+
+  // ------------------------------------------------------------------ the list
+  function noteText(d) {
+    var last = d.lastRun && d.lastRun.at ? 'The nightly job last ran ' + F.datetime(d.lastRun.at) + (d.lastRun.ok === false ? ' and failed' : '') + '.' : 'The nightly job has not run yet.';
+    return 'A schedule creates the pickup jobs of the next ' + plural(d.aheadDays, 'day', 'days') + ' in Dispatch, unassigned. It creates no order and no bill. ' + last;
+  }
+  function scheduleLine(r) { return '<span class="fw-bold">' + UI.esc(r.Days) + '</span> at ' + UI.esc(F.clock(r.PickupTime)) + (r.Zone ? ' <span class="text-soft small">· ' + UI.esc(r.Zone) + '</span>' : ''); }
+  function nextText(r) { return r.Status === 'ACTIVE' ? (r.ClientActive ? (r.Next ? UI.esc(dayText(r.Next)) : '<span class="text-soft">none in sight</span>') : '<span class="text-danger">client not active: nothing is created</span>') : '<span class="text-soft">—</span>'; }
+  function allHtml(d) {
+    if (!d.rows.length) return '<p class="small text-muted mb-0">No schedule yet. Open a commercial client (Customers) and choose More → Pickup schedule.</p>';
+    return '<div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>Client</th><th>Pickup</th><th>Next pickup</th><th>Created</th><th>Status</th></tr></thead><tbody>' + d.rows.map(function (r) {
+      return '<tr class="pointer" tabindex="0" data-kb="row" data-psc-client="' + UI.esc(r.CustomerId) + '" data-psc-name="' + UI.esc(r.Client) + '"><td data-label="Client" class="fw-bold">' + UI.esc(r.Client) + '</td><td data-label="Pickup">' + scheduleLine(r) + '</td><td data-label="Next pickup">' + nextText(r) + '</td><td data-label="Created">' + plural(r.UpcomingCount, 'pickup', 'pickups') + '</td><td data-label="Status">' + UI.badge(r.Status) + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+  }
+  function clientHtml(d) {
+    if (!d.rows.length) return '<p class="small text-muted mb-0">' + (d.client && !d.client.Commercial ? 'A pickup schedule is for a commercial client.' : 'No schedule yet for this client.') + '</p>';
+    return d.rows.map(function (r) {
+      var acts = r.Actions.map(function (a) {
+        var label = { edit: 'Change', skip: 'Skip a day', pause: 'Pause', resume: 'Resume', end: 'End' }[a], icon = { edit: 'fa-pen', skip: 'fa-calendar-xmark', pause: 'fa-pause', resume: 'fa-play', end: 'fa-ban' }[a];
+        return '<button type="button" class="btn btn-sm ' + (a === 'end' ? 'btn-outline-danger' : 'btn-outline-secondary') + '" data-psc-act="' + a + '" data-id="' + UI.esc(r.Id) + '"><i class="fa-solid ' + icon + ' me-1" aria-hidden="true"></i>' + label + '</button>';
+      }).join('');
+      var up = (r.Upcoming || []).map(function (j) { return '<li><span class="fw-bold">' + UI.esc(dayText(j.Day)) + '</span> ' + UI.esc(F.time(j.ScheduledAt)) + ' · ' + UI.esc(j.Id) + ' ' + UI.badge(j.Status) + (j.Rider ? ' <span class="text-soft small">' + UI.esc(j.Rider) + '</span>' : '') + '</li>'; }).join('');
+      var skipped = r.Skipped.map(function (v) { return '<li>' + UI.esc(dayText(v)) + (r.Actions.indexOf('skip') >= 0 ? ' <button type="button" class="btn btn-sm btn-link p-0 ms-2" data-psc-unskip="' + UI.esc(v) + '" data-id="' + UI.esc(r.Id) + '">Put back</button>' : '') + '</li>'; }).join('');
+      var dates = 'From ' + UI.esc(F.date(r.StartDate)) + (r.EndDate ? ' to ' + UI.esc(F.date(r.EndDate)) : '') + (r.Notes ? ' · ' + UI.esc(r.Notes) : '');
+      var ended = r.Status === 'ENDED' ? '<div class="small text-soft">Ended ' + UI.esc(F.date(r.EndedAt)) + (r.EndedBy ? ' by ' + UI.esc(r.EndedBy) : '') + (r.EndReason ? ': ' + UI.esc(r.EndReason) : '') + '</div>' : '';
+      return '<section class="od-section mt-2" data-psc="' + UI.esc(r.Id) + '"><h6 class="section-title">' + UI.esc(r.Id) + ' ' + UI.badge(r.Status) + '</h6>' +
+        '<div>' + scheduleLine(r) + '</div><div class="small text-soft">' + dates + '</div>' + ended +
+        (r.Status === 'ACTIVE' ? '<div class="small mt-1">Next pickup: ' + nextText(r) + '</div>' : '') +
+        (up ? '<div class="small fw-bold mt-2">Pickups already created</div><ul class="small mb-0 ps-3">' + up + '</ul>' : (r.Status === 'ENDED' ? '' : '<div class="small text-soft mt-2">No pickup created yet.</div>')) +
+        (skipped ? '<div class="small fw-bold mt-2">Days left out</div><ul class="small mb-0 ps-3">' + skipped + '</ul>' : '') +
+        (acts ? '<div class="d-flex flex-wrap gap-2 mt-2">' + acts + '</div>' : '') + '</section>';
+    }).join('');
+  }
+  function footer() {
+    var d = s.data || {}, out = [];
+    if (s.fromAll && s.customerId) out.push('<button type="button" class="btn btn-sm btn-outline-secondary" id="psc-back"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>All schedules</button>');
+    if (s.customerId) out.push('<div class="form-check m-0"><input class="form-check-input" type="checkbox" id="psc-all"' + (s.all ? ' checked' : '') + '><label class="form-check-label small" for="psc-all">Show ended</label></div>');
+    out.push('<span class="spacer"></span>');
+    if (!s.customerId && canManage() && (d.rows || []).some(function (r) { return r.Status === 'ACTIVE'; })) out.push('<button type="button" class="btn btn-sm btn-outline-primary" id="psc-run"><i class="fa-solid fa-bolt me-1" aria-hidden="true"></i>Create pickups now</button>');
+    if (s.customerId && canManage() && d.client && d.client.Commercial && d.client.Eligible) out.push('<button type="button" class="btn btn-sm btn-primary" id="psc-new"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>New schedule</button>');
+    UI.html('psc-actions', out.join(''));
+    var b = UI.el('psc-back'); if (b) b.onclick = function () { open('', { onChange: s.onChange }); };
+    var a = UI.el('psc-all'); if (a) a.onchange = function () { s.all = a.checked; load(); };
+    var r = UI.el('psc-run'); if (r) r.onclick = runNow;
+    var n = UI.el('psc-new'); if (n) n.onclick = function () { openForm(null); };
+  }
+  function render(d) {
+    s.data = d; UI.el('psc-note').textContent = noteText(d);
+    var warn = UI.el('psc-warn'), w = '';
+    if (s.customerId && d.client && d.client.Commercial && !d.client.Eligible) w = 'This client is not active: its schedules create no pickup.';
+    warn.textContent = w; warn.hidden = !w;
+    UI.html('psc-list', s.customerId ? clientHtml(d) : allHtml(d));
+    var list = UI.el('psc-list');
+    list.querySelectorAll('[data-psc-client]').forEach(function (tr) { tr.onclick = function () { open(tr.getAttribute('data-psc-client'), { name: tr.getAttribute('data-psc-name'), fromAll: true, onChange: s.onChange }); }; });
+    list.querySelectorAll('[data-psc-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-psc-act'), id = b.getAttribute('data-id'); if (a === 'edit') openForm(find(id)); else if (a === 'resume') resume(id); else openAct(a, id); }; });
+    list.querySelectorAll('[data-psc-unskip]').forEach(function (b) { b.onclick = function () { unskip(b.getAttribute('data-id'), b.getAttribute('data-psc-unskip')); }; });
+    footer();
+  }
+  function load() {
+    return Api.call('schedules.list', s.customerId ? { customerId: s.customerId, status: s.all ? 'ALL' : 'OPEN' } : {}, { busy: true }).then(function (d) { render(d); return d; })
+      .catch(function (e) { UI.html('psc-list', ''); error(UI.error(e)); return null; });
+  }
+  function changed(msg) { closePanels(); if (msg) Toast.success(msg); if (s.onChange) { try { s.onChange(); } catch (e) { /* the opener's refresh is its own affair */ } } return load(); }
+
+  // ------------------------------------------------------------------ the form
+  function closePanels() { UI.el('psc-form').hidden = true; UI.el('psc-act').hidden = true; s.editing = ''; s.act = null; error(''); }
+  function paintDays(weekdays) { UI.html('psc-days', DAYS.map(function (d) { return '<div class="form-check form-check-inline m-0"><input class="form-check-input" type="checkbox" id="psc-day-' + d[0] + '" data-day="' + d[0] + '"' + (weekdays.indexOf(d[0]) >= 0 ? ' checked' : '') + '><label class="form-check-label" for="psc-day-' + d[0] + '">' + d[1] + '</label></div>'; }).join('')); }
+  function loadZones(branchId, chosen) {
+    var sel = UI.el('psc-zone'), fill = function (zones) { sel.innerHTML = '<option value="">No zone</option>' + zones.filter(function (z) { return !branchId || z.BranchId === branchId; }).map(function (z) { return '<option value="' + UI.esc(z.Id) + '">' + UI.esc(z.Name) + '</option>'; }).join(''); sel.value = chosen || ''; if (sel.value !== (chosen || '')) sel.value = ''; };
+    fill([]);
+    if (!can('DISPATCH_VIEW') && !can('DISPATCH_ASSIGN')) return Promise.resolve();
+    return Api.call('dispatch.zones', {}).then(fill).catch(function () { fill([]); });
+  }
+  function openForm(r) {
+    closePanels(); s.editing = r ? r.Id : '';
+    UI.el('psc-form-title').textContent = r ? 'Change schedule ' + r.Id : 'New schedule';
+    paintDays(r ? r.Weekdays : ''); UI.el('psc-time').value = r ? r.PickupTime : '09:00'; UI.el('psc-start').value = r ? r.StartDate : iso(new Date()); UI.el('psc-end').value = r ? r.EndDate : ''; UI.el('psc-notes').value = r ? r.Notes : '';
+    UI.el('psc-start').disabled = !!r && r.StartDate < iso(new Date());
+    UI.el('psc-form-hint').textContent = r ? 'A change applies to the pickups not yet created. Those already created stay as they are; move or cancel them in Dispatch.' : 'The pickups of the coming days are created at once, unassigned.';
+    UI.el('psc-form').hidden = false; UI.el('psc-form-save').disabled = false;
+    loadZones(r ? r.BranchId : (s.data && s.data.client ? s.data.client.BranchId : ''), r ? r.ZoneId : '');
+    UI.el('psc-form').scrollIntoView({ block: 'nearest' }); var first = UI.el('psc-days').querySelector('[data-day]'); if (first) first.focus();
+  }
+  function submitForm(ev) {
+    ev.preventDefault(); error('');
+    var days = []; UI.el('psc-days').querySelectorAll('[data-day]:checked').forEach(function (cb) { days.push(cb.getAttribute('data-day')); });
+    if (!days.length) { error('Tick the days of the pickup.'); return; }
+    if (!UI.el('psc-time').value) { error('Give the time of the pickup.'); UI.el('psc-time').focus(); return; }
+    var p = { Weekdays: days.join(''), PickupTime: UI.el('psc-time').value, zoneId: UI.el('psc-zone').value, StartDate: UI.el('psc-start').value, EndDate: UI.el('psc-end').value, Notes: UI.el('psc-notes').value.trim() };
+    if (s.editing) p.Id = s.editing; else p.customerId = s.customerId;
+    var btn = UI.el('psc-form-save'); btn.disabled = true;
+    Api.call('schedules.save', p, { busy: true }).then(function (r) {
+      if (r.jobInstalled === false) Toast.warning('The nightly job could not be installed from here. Ask an administrator to open Settings → Maintenance → Install triggers.');
+      return changed('Schedule saved' + (r.created ? ' · ' + plural(r.created, 'pickup', 'pickups') + ' created' : ''));
+    }).catch(function (e) { btn.disabled = false; error(UI.error(e)); });
+  }
+
+  // ------------------------------------------------------------------ skip, pause, end
+  function openAct(kind, id) {
+    var r = find(id); if (!r) return; closePanels(); s.act = { kind: kind, id: id };
+    var n = (r.Upcoming || []).filter(function (j) { return ['UNASSIGNED', 'ASSIGNED', 'ACCEPTED'].indexOf(j.Status) >= 0; }).length, body = '', title = '', go = '';
+    var also = n ? '<div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="psc-act-cancel-up" checked><label class="form-check-label" for="psc-act-cancel-up">Also cancel the ' + plural(n, 'pickup', 'pickups') + ' already created that ' + (n === 1 ? 'has' : 'have') + ' not started</label></div>' : '';
+    if (kind === 'skip') {
+      var days = comingDays(r, 12); title = 'Skip a day · ' + r.Id; go = 'Skip this day';
+      body = days.length ? '<label class="form-label" for="psc-act-day">Which day has no pickup?</label><select class="form-select" id="psc-act-day">' + days.map(function (v) { return '<option value="' + v + '">' + UI.esc(dayText(v)) + '</option>'; }).join('') + '</select><p class="small text-soft mt-2 mb-0">A pickup already created for that day is cancelled. The schedule goes on.</p>' : '<p class="small text-muted mb-0">No coming day to leave out.</p>';
+    } else if (kind === 'pause') {
+      title = 'Pause ' + r.Id; go = 'Pause schedule'; body = '<p class="small mb-0">No pickup is created while the schedule is paused. Resume it when the client is back.</p>' + also;
+    } else {
+      title = 'End ' + r.Id; go = 'End schedule'; body = '<label class="form-label" for="psc-act-reason">Why does the schedule end?</label><input class="form-control" id="psc-act-reason" maxlength="200"><p class="small text-soft mt-2 mb-0">An ended schedule cannot be resumed; make a new one if the client comes back. Nothing is deleted.</p>' + also;
+    }
+    UI.el('psc-act-title').textContent = title; UI.html('psc-act-body', body);
+    var btn = UI.el('psc-act-go'); btn.textContent = go; btn.className = 'btn btn-sm ' + (kind === 'end' ? 'btn-danger' : 'btn-primary'); btn.disabled = kind === 'skip' && !UI.el('psc-act-day');
+    UI.el('psc-act').hidden = false; UI.el('psc-act').scrollIntoView({ block: 'nearest' });
+    var first = UI.el('psc-act-day') || UI.el('psc-act-reason') || UI.el('psc-act-cancel-up') || btn; first.focus();
+  }
+  function submitAct(ev) {
+    ev.preventDefault(); if (!s.act) return; error('');
+    var kind = s.act.kind, id = s.act.id, up = UI.el('psc-act-cancel-up'), btn = UI.el('psc-act-go'), call, done;
+    if (kind === 'skip') { call = Api.call('schedules.skip', { id: id, date: UI.el('psc-act-day').value }, { busy: true }); done = function (r) { return 'Day left out' + (r.cancelled ? ' · ' + plural(r.cancelled, 'pickup', 'pickups') + ' cancelled' : ''); }; }
+    else if (kind === 'pause') { call = Api.call('schedules.pause', { id: id, cancelUpcoming: !!(up && up.checked) }, { busy: true }); done = function (r) { return 'Schedule paused' + (r.cancelled ? ' · ' + plural(r.cancelled, 'pickup', 'pickups') + ' cancelled' : ''); }; }
+    else {
+      var reason = UI.el('psc-act-reason').value.trim(); if (reason.length < 3) { error('Say why the schedule ends.'); UI.el('psc-act-reason').focus(); return; }
+      call = Api.call('schedules.end', { id: id, reason: reason, cancelUpcoming: !!(up && up.checked) }, { busy: true }); done = function (r) { return 'Schedule ended' + (r.cancelled ? ' · ' + plural(r.cancelled, 'pickup', 'pickups') + ' cancelled' : ''); };
+    }
+    btn.disabled = true;
+    call.then(function (r) { return changed(done(r)); }).catch(function (e) { btn.disabled = false; error(UI.error(e)); });
+  }
+  function resume(id) { error(''); Api.call('schedules.resume', { id: id }, { busy: true }).then(function (r) { return changed('Schedule resumed' + (r.created ? ' · ' + plural(r.created, 'pickup', 'pickups') + ' created' : '')); }).catch(function (e) { error(UI.error(e)); }); }
+  function unskip(id, day) { error(''); Api.call('schedules.unskip', { id: id, date: day }, { busy: true }).then(function (r) { return changed('Day put back' + (r.created ? ' · pickup created' : '')); }).catch(function (e) { error(UI.error(e)); }); }
+  function runNow() {
+    var btn = UI.el('psc-run'); btn.disabled = true; error('');
+    Api.call('schedules.generate', {}, { busy: true, timeoutMs: 120000 }).then(function (r) { return changed(r.created ? plural(r.created, 'pickup', 'pickups') + ' created' : 'Nothing to create: every day up to ' + F.date(r.upTo) + ' has its pickup'); })
+      .catch(function (e) { btn.disabled = false; error(UI.error(e)); });
+  }
+
+  /** Opens the dialog: for one client (customerId) or, with '', for every schedule under the lens. opts: { name, fromAll, onChange } */
+  function open(customerId, opts) {
+    opts = opts || {}; s = { customerId: customerId || '', name: opts.name || '', data: null, editing: '', act: null, all: false, fromAll: !!opts.fromAll, onChange: opts.onChange || null };
+    UI.el('psc-title').textContent = s.customerId ? 'Pickup schedule' + (s.name ? ' · ' + s.name : '') : 'Pickup schedules';
+    UI.html('psc-list', ''); UI.el('psc-note').textContent = ''; UI.el('psc-warn').hidden = true; UI.html('psc-actions', ''); closePanels();
+    if (!UI.el('psc-modal').classList.contains('show')) Modal.open('psc-modal');
+    return load();
+  }
+  UI.el('psc-form').onsubmit = submitForm; UI.el('psc-act').onsubmit = submitAct;
+  UI.el('psc-form-cancel').onclick = closePanels; UI.el('psc-act-cancel').onclick = closePanels;
+
+  M.PickupSchedules = { open: open, canView: canView, canManage: canManage };
+})();
+</script>
+
+        <!-- Mrs Laundry Sys — RoutesPage.html (release 1.49.0): the routes of a day.
+     One dialog, opened from Dispatch. It lists the routes of a day (or of today and later); a route opens with its stops in order.
+     A dispatcher makes a route (day, vehicle, rider), puts jobs already in Dispatch on it, moves a stop up or down, takes one off, changes
+     the vehicle or the rider, or cancels a route nobody drove. A route is a grouping and an order: every stop stays an ordinary job, and
+     the order is set by hand (no map service computes it). Making or changing a route needs a connection. -->
+<div class="modal fade" id="rte-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="rte-title">Routes</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p class="small text-soft mb-2" id="rte-note"></p>
+        <div class="alert alert-warning small" id="rte-warn" role="status" hidden></div>
+        <div class="alert alert-danger small" id="rte-error" role="alert" hidden></div>
+        <div class="d-flex align-items-end gap-2 flex-wrap mb-3" id="rte-filter">
+          <div><label class="form-label" for="rte-day">Day</label><input class="form-control" id="rte-day" type="date"></div>
+          <button type="button" class="btn btn-outline-secondary" id="rte-day-clear">Today and later</button>
+        </div>
+        <div id="rte-list"></div>
+        <form class="od-section mt-3" id="rte-form" autocomplete="off" hidden>
+          <h6 class="section-title" id="rte-form-title">New route</h6>
+          <div class="row g-2 mx-0">
+            <div class="col-12 col-md-4"><label class="form-label" for="rte-f-day">Day</label><input class="form-control" id="rte-f-day" type="date" aria-required="true"></div>
+            <div class="col-12 col-md-4"><label class="form-label" for="rte-f-vehicle">Vehicle</label><select class="form-select" id="rte-f-vehicle" aria-required="true"></select></div>
+            <div class="col-12 col-md-4"><label class="form-label" for="rte-f-rider">Rider</label><select class="form-select" id="rte-f-rider"><option value="">No rider yet</option></select></div>
+            <div class="col-12"><label class="form-label" for="rte-f-notes">Note (optional)</label><input class="form-control" id="rte-f-notes" maxlength="200"></div>
+          </div>
+          <p class="small text-soft mt-2 mb-0" id="rte-form-hint"></p>
+          <div class="d-flex flex-wrap gap-2 justify-content-end mt-3"><button type="button" class="btn btn-sm btn-outline-secondary" id="rte-form-cancel">Cancel</button><button type="submit" class="btn btn-sm btn-primary" id="rte-form-save">Save route</button></div>
+        </form>
+        <form class="od-section mt-3" id="rte-add" autocomplete="off" hidden>
+          <h6 class="section-title" id="rte-add-title">Add stops</h6>
+          <p class="small text-soft mb-2" id="rte-add-hint"></p>
+          <div class="border rounded p-2 scroll-220" id="rte-add-list" role="group" aria-labelledby="rte-add-title"></div>
+          <div class="d-flex flex-wrap gap-2 justify-content-end mt-3"><button type="button" class="btn btn-sm btn-outline-secondary" id="rte-add-cancel">Cancel</button><button type="submit" class="btn btn-sm btn-primary" id="rte-add-go">Put on the route</button></div>
+        </form>
+        <form class="od-section mt-3" id="rte-act" autocomplete="off" hidden>
+          <h6 class="section-title" id="rte-act-title">Cancel route</h6>
+          <label class="form-label" for="rte-act-reason">Why is the route cancelled?</label><input class="form-control" id="rte-act-reason" maxlength="200">
+          <p class="small text-soft mt-2 mb-0">Its stops are released and stay in Dispatch as they are, each with its rider. Nothing is deleted.</p>
+          <div class="d-flex flex-wrap gap-2 justify-content-end mt-3"><button type="button" class="btn btn-sm btn-outline-secondary" id="rte-act-cancel">Keep the route</button><button type="submit" class="btn btn-sm btn-danger" id="rte-act-go">Cancel route</button></div>
+        </form>
+      </div>
+      <div class="modal-footer flex-wrap gap-2" id="rte-actions"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Modal = M.Modal;
+  var STATE = { PLANNED: 'Planned', ON_THE_ROAD: 'On the road', FINISHED: 'Finished', CANCELLED: 'Cancelled' };
+  var s = null;  // { routeId ('' = the list), day ('' = today and later), data (the list answer), route (the open route), riders, editing, onChange }
+  function can(code) { return M.Auth.can(code); }
+  function canView() { return can('DISPATCH_VIEW'); }
+  function canManage() { return can('DISPATCH_ASSIGN'); }
+  function error(msg) { var box = UI.el('rte-error'); box.textContent = msg || ''; box.hidden = !msg; if (msg) box.scrollIntoView({ block: 'nearest' }); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function dayText(v) { if (!v) return ''; var d = new Date(v + 'T00:00:00'); return isNaN(d) ? String(v) : d.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' }); }
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+  function stateBadge(r) { return UI.badge(r.State, STATE[r.State] || r.State); }
+  function vehicleText(r) { return UI.esc(r.Vehicle) + (r.Plate ? ' <span class="text-soft small">' + UI.esc(r.Plate) + '</span>' : ''); }
+  function typeBadge(j) { return '<span class="badge ' + (j.JobType === 'PICKUP' ? 'text-bg-info' : 'text-bg-primary') + '">' + (j.JobType === 'PICKUP' ? 'Pickup' : 'Delivery') + '</span>'; }
+  function whenText(j, day) {
+    if (!j.ScheduledAt) return 'any time';
+    var d = new Date(j.ScheduledAt), same = iso(d) === day;
+    return (same ? F.time(j.ScheduledAt) : F.when(j.ScheduledAt)) + (j.WindowEndAt ? '–' + F.time(j.WindowEndAt) : '');
+  }
+  function progress(r) { return plural(r.Stops, 'stop', 'stops') + (r.Done || r.Failed ? ' · ' + r.Done + ' made' + (r.Failed ? ', ' + r.Failed + ' failed' : '') : ''); }
+
+  // ------------------------------------------------------------------ the list
+  function listHtml(d) {
+    if (!d.rows.length) return '<p class="small text-muted mb-0" id="rte-empty">' + (s.day ? 'No route on ' + UI.esc(dayText(s.day)) + '.' : 'No route for today or later.') + (canManage() ? ' Make one with New route.' : '') + '</p>';
+    return '<div class="table-wrap"><table class="table table-sm table-cards mb-0"><thead><tr><th>Route</th><th>Vehicle</th><th>Rider</th><th>Stops</th><th>Status</th></tr></thead><tbody>' + d.rows.map(function (r) {
+      return '<tr class="pointer" tabindex="0" data-kb="row" data-rte="' + UI.esc(r.Id) + '"><td data-label="Route" class="lead-cell"><span class="fw-bold">' + UI.esc(dayText(r.RouteDate)) + '</span><span class="ph-only lead-status">' + stateBadge(r) + '</span><div class="small text-soft">' + UI.esc(r.Id) + (M.AppState.me.activeBranch === 'ALL' ? ' · ' + UI.esc(UI.branchName(r.BranchId)) : '') + '</div></td><td data-label="Vehicle">' + vehicleText(r) + '</td><td data-label="Rider">' + (r.Rider ? UI.esc(r.Rider) : '<span class="text-soft">no rider yet</span>') + '</td><td data-label="Stops">' + UI.esc(progress(r)) + '</td><td data-label="Status" class="ph-hide">' + stateBadge(r) + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+  }
+  function paintList(d) {
+    s.data = d; s.route = null;
+    UI.el('rte-title').textContent = 'Routes';
+    UI.el('rte-note').textContent = 'A route puts jobs already in Dispatch on one vehicle, in the order you set by hand. Each stop is still completed, signed and paid as any job. The rider sees the stops in this order.';
+    var warn = UI.el('rte-warn'), w = canManage() && !d.vehicles.length ? 'No vehicle yet. Add one under Settings → Vehicles before making a route.' : '';
+    warn.textContent = w; warn.hidden = !w;
+    UI.el('rte-filter').hidden = false; UI.el('rte-day').value = s.day; UI.el('rte-day-clear').hidden = !s.day;
+    UI.html('rte-list', listHtml(d));
+    UI.el('rte-list').querySelectorAll('[data-rte]').forEach(function (tr) { tr.onclick = function () { openRoute(tr.getAttribute('data-rte')); }; });
+    UI.html('rte-actions', '<span class="spacer"></span>' + (canManage() && d.vehicles.length ? '<button type="button" class="btn btn-sm btn-primary" id="rte-new"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>New route</button>' : ''));
+    var nb = UI.el('rte-new'); if (nb) nb.onclick = function () { openForm(null); };
+  }
+  function loadList() {
+    closePanels();
+    return Api.call('routes.list', s.day ? { date: s.day } : {}, { busy: true }).then(function (d) { paintList(d); return d; })
+      .catch(function (e) { UI.html('rte-list', ''); UI.html('rte-actions', ''); error(UI.error(e)); return null; });
+  }
+
+  // ------------------------------------------------------------------ one route
+  function stopHtml(st, r, i, n) {
+    var order = r.Actions.indexOf('order') >= 0, flags = '';
+    if (st.OtherRider) flags += ' <span class="window-tag late" title="This stop is assigned to another rider than the route\'s">' + (st.Rider ? 'with ' + UI.esc(st.Rider) : 'no rider') + '</span>';
+    if (st.OtherDay) flags += ' <span class="window-tag late" title="Rescheduled in Dispatch to a later day">moved to ' + UI.esc(dayText(st.OtherDay)) + '</span>';
+    var sub = [UI.esc(st.Address || ''), st.Orders.length ? st.Orders.map(UI.esc).join(', ') + (st.TripNo ? ' · trip ' + Number(st.TripNo) : '') : '', UI.esc(st.Id)].filter(Boolean).join(' · ');
+    var btns = '';
+    if (order && n > 1) btns += '<button type="button" class="btn btn-outline-secondary" data-rte-up="' + UI.esc(st.Id) + '" aria-label="Move stop ' + (i + 1) + ' up"' + (i === 0 ? ' disabled' : '') + '><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button><button type="button" class="btn btn-outline-secondary" data-rte-down="' + UI.esc(st.Id) + '" aria-label="Move stop ' + (i + 1) + ' down"' + (i === n - 1 ? ' disabled' : '') + '><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>';
+    if (st.CanRemove) btns += '<button type="button" class="btn btn-outline-danger" data-rte-off="' + UI.esc(st.Id) + '" aria-label="Take stop ' + (i + 1) + ' off the route"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>';
+    return '<li class="rte-stop' + (st.Status === 'CANCELLED' ? ' off' : '') + '" data-stop="' + UI.esc(st.Id) + '"><span class="rte-seq" aria-hidden="true">' + (i + 1) + '</span><div class="rte-main"><div><span class="fw-bold text-nowrap">' + UI.esc(whenText(st, r.RouteDate)) + '</span> ' + typeBadge(st) + ' <span class="fw-bold">' + UI.esc(st.CustomerName || 'Customer') + '</span> ' + UI.badge(st.Status) + flags + '</div><div class="small text-soft">' + sub + '</div></div>' + (btns ? '<div class="rte-btns">' + btns + '</div>' : '') + '</li>';
+  }
+  function paintRoute(r) {
+    s.route = r; s.routeId = r.Id;
+    UI.el('rte-title').innerHTML = 'Route ' + UI.esc(r.Id) + ' ' + stateBadge(r);
+    UI.el('rte-note').textContent = ''; UI.el('rte-warn').hidden = true; UI.el('rte-filter').hidden = true;
+    var grid = [['Day', UI.esc(dayText(r.RouteDate))], ['Vehicle', vehicleText(r) + (r.VehicleType ? ' <span class="text-soft small">' + UI.esc(r.VehicleType) + '</span>' : '')], ['Rider', r.Rider ? UI.esc(r.Rider) : '<span class="text-soft">no rider yet</span>'], ['Stops', UI.esc(progress(r)) + (r.CancelledStops ? ' <span class="text-soft small">· ' + r.CancelledStops + ' cancelled</span>' : '')]];
+    if (r.Notes) grid.push(['Note', UI.esc(r.Notes)]);
+    if (r.Status === 'CANCELLED') grid.push(['Cancelled', UI.esc(F.datetime(r.CancelledAt)) + (r.CancelledBy ? ' by ' + UI.esc(r.CancelledBy) : '') + (r.CancelReason ? ': ' + UI.esc(r.CancelReason) : '')]);
+    var n = r.StopList.length;
+    UI.html('rte-list', '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v">' + g[1] + '</div></div>'; }).join('') + '</div>' +
+      '<section class="od-section"><h6 class="section-title">Stops in order</h6>' + (n ? '<ol class="rte-stops list-unstyled mb-0" id="rte-stops">' + r.StopList.map(function (st, i) { return stopHtml(st, r, i, n); }).join('') + '</ol>' : '<p class="small text-muted mb-0" id="rte-no-stops">' + (r.Status === 'CANCELLED' ? 'Its stops were released.' : 'No stop yet.' + (r.Actions.indexOf('add') >= 0 ? ' Put jobs on this route with Add stops.' : '')) + '</p>') + '</section>');
+    var list = UI.el('rte-list');
+    list.querySelectorAll('[data-rte-up]').forEach(function (b) { b.onclick = function () { move(b.getAttribute('data-rte-up'), -1); }; });
+    list.querySelectorAll('[data-rte-down]').forEach(function (b) { b.onclick = function () { move(b.getAttribute('data-rte-down'), 1); }; });
+    list.querySelectorAll('[data-rte-off]').forEach(function (b) { b.onclick = function () { takeOff(b.getAttribute('data-rte-off')); }; });
+    var left = '<button type="button" class="btn btn-sm btn-outline-secondary" id="rte-back"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>All routes</button>', right = '';
+    if (r.Actions.indexOf('cancel') >= 0) left += '<button type="button" class="btn btn-sm btn-outline-danger" id="rte-cancel"><i class="fa-solid fa-ban me-1" aria-hidden="true"></i>Cancel route</button>';
+    if (r.Actions.indexOf('edit') >= 0) right += '<button type="button" class="btn btn-sm btn-outline-primary" id="rte-edit"><i class="fa-solid fa-pen me-1" aria-hidden="true"></i>Change</button>';
+    if (r.Actions.indexOf('add') >= 0) right += '<button type="button" class="btn btn-sm btn-primary" id="rte-addbtn"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Add stops</button>';
+    UI.html('rte-actions', left + '<span class="spacer"></span>' + right);
+    UI.el('rte-back').onclick = function () { s.routeId = ''; loadList(); };
+    var cb = UI.el('rte-cancel'); if (cb) cb.onclick = openCancel;
+    var eb = UI.el('rte-edit'); if (eb) eb.onclick = function () { openForm(r); };
+    var ab = UI.el('rte-addbtn'); if (ab) ab.onclick = openAdd;
+  }
+  function openRoute(id) {
+    closePanels();
+    return Api.call('routes.get', { id: id }, { busy: true }).then(function (r) { paintRoute(r); return r; }).catch(function (e) { error(UI.error(e)); return null; });
+  }
+  function changed(msg, route) { closePanels(); if (msg) Toast.success(msg); if (s.onChange) { try { s.onChange(); } catch (e) { /* the opener's refresh is its own affair */ } } if (route) paintRoute(route); }
+  function move(id, step) {
+    var ids = s.route.StopList.map(function (st) { return st.Id; }), i = ids.indexOf(id), j = i + step; if (i < 0 || j < 0 || j >= ids.length) return;
+    ids.splice(j, 0, ids.splice(i, 1)[0]); error('');
+    Api.call('routes.reorder', { id: s.route.Id, jobIds: ids }, { busy: true }).then(function (r) {
+      changed('', r.route);
+      var b = UI.el('rte-list').querySelector('[data-rte-' + (step < 0 ? 'up' : 'down') + '="' + id + '"]'); if (b && !b.disabled) b.focus(); else { var li = UI.el('rte-list').querySelector('[data-stop="' + id + '"] button:not([disabled])'); if (li) li.focus(); }
+    }).catch(function (e) { error(UI.error(e)); openRouteQuiet(); });
+  }
+  /** After a refused change the route is read again, the reason left standing. */
+  function openRouteQuiet() { Api.call('routes.get', { id: s.route.Id }).then(function (r) { var msg = UI.el('rte-error').textContent; paintRoute(r); error(msg); }).catch(function () { /* the reason shown stands */ }); }
+  function takeOff(id) {
+    error('');
+    Api.call('routes.removeStop', { id: s.route.Id, jobId: id }, { busy: true }).then(function (r) { changed('Stop taken off the route; the job stays in Dispatch', r.route); }).catch(function (e) { error(UI.error(e)); openRouteQuiet(); });
+  }
+
+  // ------------------------------------------------------------------ the form
+  function closePanels() { ['rte-form', 'rte-add', 'rte-act'].forEach(function (id) { UI.el(id).hidden = true; }); if (s) s.editing = ''; error(''); }
+  function loadRiders() {
+    if (s.riders) return Promise.resolve(s.riders);
+    return Api.call('dispatch.riders', {}).then(function (r) { s.riders = r || []; return s.riders; }).catch(function () { s.riders = []; return s.riders; });
+  }
+  function vehiclesFor(r) {
+    var list = (s.data && s.data.vehicles) || [];
+    if (r) { list = list.filter(function (v) { return v.BranchId === r.BranchId; }); if (!list.some(function (v) { return v.Id === r.VehicleId; })) list = [{ Id: r.VehicleId, Label: r.Vehicle + (r.Plate ? ' · ' + r.Plate : '') + ' (inactive)' }].concat(list); }
+    return list;
+  }
+  function openForm(r) {
+    closePanels(); s.editing = r ? r.Id : '';
+    UI.el('rte-form-title').textContent = r ? 'Change route ' + r.Id : 'New route';
+    var day = UI.el('rte-f-day'), today = new Date(), ahead = (s.data && s.data.aheadDays) || 30;
+    day.min = iso(today); day.max = iso(new Date(today.getTime() + ahead * 86400000)); day.value = r ? r.RouteDate : (s.day && s.day >= day.min ? s.day : day.min); day.disabled = !!r; if (r) day.removeAttribute('min');
+    var ensure = s.data ? Promise.resolve(s.data) : Api.call('routes.list', {}).then(function (d) { s.data = d; return d; });
+    UI.el('rte-form-save').disabled = true;
+    Promise.all([ensure, loadRiders()]).then(function () {
+      var vs = vehiclesFor(r), me = M.AppState.me, all = me.activeBranch === 'ALL';
+      UI.el('rte-f-vehicle').innerHTML = (vs.length === 1 ? '' : '<option value="">Choose a vehicle</option>') + vs.map(function (v) { return '<option value="' + UI.esc(v.Id) + '">' + UI.esc(v.Label + (all && v.BranchId ? ' — ' + UI.branchName(v.BranchId) : '')) + '</option>'; }).join('');
+      if (r) UI.el('rte-f-vehicle').value = r.VehicleId;
+      UI.el('rte-f-rider').innerHTML = '<option value="">No rider yet</option>' + UI.options(s.riders, r ? r.RiderUserId : '', function (x) { return x.DisplayName + (x.OpenJobs ? ' (' + x.OpenJobs + ' open)' : ''); });
+      UI.el('rte-form-save').disabled = false;
+    }).catch(function (e) { error(UI.error(e)); });
+    UI.el('rte-f-notes').value = r ? r.Notes : '';
+    UI.el('rte-form-hint').textContent = r ? 'The day of a route is fixed. Another vehicle marks the stops still open. Another rider takes the open stops that are not on the road.' : 'The route belongs to the vehicle\'s branch. With a rider, every stop put on the route is assigned to that rider.';
+    UI.el('rte-form').hidden = false; UI.el('rte-form').scrollIntoView({ block: 'nearest' }); (r ? UI.el('rte-f-vehicle') : day).focus();
+  }
+  function submitForm(ev) {
+    ev.preventDefault(); error('');
+    var p = { VehicleId: UI.el('rte-f-vehicle').value, RiderUserId: UI.el('rte-f-rider').value, Notes: UI.el('rte-f-notes').value.trim() };
+    if (!p.VehicleId) { error('Choose the vehicle.'); UI.el('rte-f-vehicle').focus(); return; }
+    if (s.editing) p.Id = s.editing; else { p.RouteDate = UI.el('rte-f-day').value; if (!p.RouteDate) { error('Choose the day of the route.'); UI.el('rte-f-day').focus(); return; } }
+    var btn = UI.el('rte-form-save'); btn.disabled = true;
+    Api.call('routes.save', p, { busy: true }).then(function (r) {
+      var msg = s.editing ? 'Route changed' + (r.reassigned ? ' · ' + plural(r.reassigned, 'stop', 'stops') + ' assigned to ' + r.route.Rider : '') : 'Route ' + r.route.Id + ' made';
+      if (r.onTheRoad) Toast.warning(plural(r.onTheRoad, 'stop is', 'stops are') + ' already on the road and stayed with the rider who has ' + (r.onTheRoad === 1 ? 'it' : 'them') + '.');
+      changed(msg, r.route);
+    }).catch(function (e) { btn.disabled = false; error(UI.error(e)); });
+  }
+
+  // ------------------------------------------------------------------ adding stops
+  function openAdd() {
+    closePanels(); var r = s.route, box = UI.el('rte-add-list');
+    UI.el('rte-add-title').textContent = 'Add stops to ' + r.Id;
+    UI.el('rte-add-hint').textContent = 'Open jobs of this branch that are on no route and are not scheduled after ' + dayText(r.RouteDate) + '. They go to the end of the route, in the order listed.' + (r.Rider ? ' Each is assigned to ' + r.Rider + '.' : '');
+    box.innerHTML = UI.skeleton({ kind: 'rows', count: 3, label: 'Loading the jobs' }); UI.el('rte-add-go').disabled = true;
+    UI.el('rte-add').hidden = false; UI.el('rte-add').scrollIntoView({ block: 'nearest' });
+    Api.call('routes.candidates', { id: r.Id }).then(function (d) {
+      if (!s.route || s.route.Id !== d.routeId) return;
+      box.innerHTML = d.rows.length ? d.rows.map(function (j) {
+        return '<label class="d-flex align-items-start gap-2 py-1 border-bottom"><input class="form-check-input mt-1" type="checkbox" value="' + UI.esc(j.Id) + '" data-cand><span><span class="fw-bold text-nowrap">' + UI.esc(whenText(j, r.RouteDate)) + '</span> ' + typeBadge(j) + ' <span class="fw-bold">' + UI.esc(j.CustomerName || 'Customer') + '</span> ' + UI.badge(j.Status) + '<div class="small text-soft">' + [UI.esc(j.Address || ''), UI.esc(j.Zone || ''), j.Rider ? 'with ' + UI.esc(j.Rider) : '', UI.esc(j.Id)].filter(Boolean).join(' · ') + '</div></span></label>';
+      }).join('') : '<div class="text-soft small p-2" id="rte-add-none">No open job to add. Make the pickup or the delivery in Dispatch first; a job scheduled for a later day must be rescheduled first.</div>';
+      var sync = function () { UI.el('rte-add-go').disabled = !box.querySelector('[data-cand]:checked'); };
+      box.querySelectorAll('[data-cand]').forEach(function (cb) { cb.onchange = sync; }); sync();
+      var first = box.querySelector('[data-cand]'); (first || UI.el('rte-add-cancel')).focus();
+    }).catch(function (e) { box.innerHTML = ''; error(UI.error(e)); });
+  }
+  function submitAdd(ev) {
+    ev.preventDefault(); error('');
+    var ids = []; UI.el('rte-add-list').querySelectorAll('[data-cand]:checked').forEach(function (cb) { ids.push(cb.value); });
+    if (!ids.length) { error('Tick at least one job.'); return; }
+    var btn = UI.el('rte-add-go'); btn.disabled = true;
+    Api.call('routes.addStops', { id: s.route.Id, jobIds: ids }, { busy: true }).then(function (r) { s.riders = null; changed(plural(r.added, 'stop', 'stops') + ' put on the route' + (r.assigned ? ' · ' + r.assigned + ' assigned to ' + r.route.Rider : ''), r.route); })
+      .catch(function (e) { btn.disabled = false; error(UI.error(e)); });
+  }
+
+  // ------------------------------------------------------------------ cancelling a route
+  function openCancel() {
+    closePanels(); UI.el('rte-act-title').textContent = 'Cancel route ' + s.route.Id; UI.el('rte-act-reason').value = ''; UI.el('rte-act-go').disabled = false;
+    UI.el('rte-act').hidden = false; UI.el('rte-act').scrollIntoView({ block: 'nearest' }); UI.el('rte-act-reason').focus();
+  }
+  function submitCancel(ev) {
+    ev.preventDefault(); error('');
+    var reason = UI.el('rte-act-reason').value.trim(); if (reason.length < 3) { error('Say why the route is cancelled.'); UI.el('rte-act-reason').focus(); return; }
+    var btn = UI.el('rte-act-go'); btn.disabled = true;
+    Api.call('routes.cancel', { id: s.route.Id, reason: reason }, { busy: true }).then(function (r) { changed('Route cancelled' + (r.released ? ' · ' + plural(r.released, 'stop', 'stops') + ' released' : ''), r.route); })
+      .catch(function (e) { btn.disabled = false; error(UI.error(e)); });
+  }
+
+  /** Opens the dialog on the list of routes. opts: { day ('YYYY-MM-DD' or '' for today and later), routeId (opens that route), onChange } */
+  function open(opts) {
+    opts = opts || {}; s = { routeId: opts.routeId || '', day: opts.day || '', data: null, route: null, riders: null, editing: '', onChange: opts.onChange || null };
+    UI.el('rte-title').textContent = 'Routes'; UI.html('rte-list', ''); UI.el('rte-note').textContent = ''; UI.el('rte-warn').hidden = true; UI.html('rte-actions', ''); closePanels();
+    if (!UI.el('rte-modal').classList.contains('show')) Modal.open('rte-modal');
+    return s.routeId ? openRoute(s.routeId) : loadList();
+  }
+  UI.el('rte-form').onsubmit = submitForm; UI.el('rte-add').onsubmit = submitAdd; UI.el('rte-act').onsubmit = submitCancel;
+  UI.el('rte-form-cancel').onclick = closePanels; UI.el('rte-add-cancel').onclick = closePanels; UI.el('rte-act-cancel').onclick = closePanels;
+  UI.el('rte-day').onchange = function () { s.day = UI.el('rte-day').value; loadList(); };
+  UI.el('rte-day-clear').onclick = function () { s.day = ''; loadList(); };
+
+  M.RoutesUI = { open: open, canView: canView, canManage: canManage };
 })();
 </script>
 
@@ -8974,7 +9447,7 @@ window.MLS = (function () {
   function pct(v, dp) { return v === null || v === undefined ? '—' : F.number(v, dp === undefined ? 1 : dp) + '%'; }
   function delta(v) { if (v === null || v === undefined) return '<span class="text-soft">—</span>'; var up = Number(v) > 0; return '<span class="' + (up ? 'text-success' : (Number(v) < 0 ? 'text-danger' : 'text-soft')) + '">' + (up ? '▲ ' : (Number(v) < 0 ? '▼ ' : '')) + F.number(Math.abs(Number(v)), 1) + '%</span>'; }
   function bold(v) { return '<span class="money fw-bold">' + F.peso(v) + '</span>'; }
-  var TABS = [['sales', 'Sales', 'REPORT_VIEW'], ['payments', 'Payments', 'REPORT_VIEW'], ['expenses', 'Expenses', 'REPORT_VIEW'], ['receivables', 'Receivables', 'REPORT_VIEW'], ['production', 'Production', 'REPORT_VIEW'], ['business', 'Business', 'REPORT_VIEW'], ['jobs', 'Job orders', 'REPORT_VIEW'], ['inventory', 'Inventory', 'REPORT_VIEW'], ['payroll', 'Payroll', ['STAFF_PAYROLL_ADMIN', 'STAFF_PAYROLL_HOURS_VIEW']], ['messages', 'Messages', 'SMS_VIEW_LOGS'], ['audit', 'Audit log', 'AUDIT_VIEW']];
+  var TABS = [['sales', 'Sales', 'REPORT_VIEW'], ['payments', 'Payments', 'REPORT_VIEW'], ['expenses', 'Expenses', 'REPORT_VIEW'], ['receivables', 'Receivables', 'REPORT_VIEW'], ['production', 'Production', 'REPORT_VIEW'], ['business', 'Business', 'REPORT_VIEW'], ['jobs', 'Job orders', 'REPORT_VIEW'], ['routes', 'Routes', 'REPORT_VIEW'], ['inventory', 'Inventory', 'REPORT_VIEW'], ['payroll', 'Payroll', ['STAFF_PAYROLL_ADMIN', 'STAFF_PAYROLL_HOURS_VIEW']], ['messages', 'Messages', 'SMS_VIEW_LOGS'], ['audit', 'Audit log', 'AUDIT_VIEW']];
   var PRESETS = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This week'], ['month', 'This month'], ['lastMonth', 'Last month'], ['quarter', 'Last 90 days'], ['year', 'This year'], ['twelve', 'Last 12 months']];
   function tabAllowed(t) { var p = t[2]; return Array.isArray(p) ? p.some(can) : can(p); }
   function preset(code) {
@@ -9067,6 +9540,16 @@ window.MLS = (function () {
       onRow: function (r) { if (M.InventoryUI && can('INVENTORY_VIEW')) M.InventoryUI.openItem(r.ItemId); },
       chart: function (d) { var top = d.rows.slice().sort(function (a, b) { return b.Value - a.Value; }).slice(0, 10); return { type: 'bar', labels: top.map(function (r) { return r.Name; }), datasets: [{ label: 'Stock value', data: top.map(function (r) { return r.Value; }) }] }; },
       extra: function () { return ''; }
+    },
+    routes: {   // release 1.49.0: stops and pieces per route and per vehicle
+      load: function () { return Api.call('reports.routes', { from: state.from, to: state.to }); },
+      kpis: function (d) { var t = d.totals; return [['Routes', t.routes], ['Vehicles', t.vehicles], ['Stops', t.Stops], ['Made', t.Made], ['Failed', t.Failed], ['Still open', t.Open], ['Pieces picked up', F.number(t.PiecesPicked)], ['Pieces delivered', F.number(t.PiecesDelivered)]]; },
+      columns: function () { var labels = { PLANNED: 'planned', ON_THE_ROAD: 'on the road', FINISHED: 'finished' }; return [{ key: 'RouteId', label: 'Route', format: function (v, r) { return lead(F.date(r.RouteDate), UI.esc(v) + ' · ' + (labels[r.State] || '')); } }, { key: 'Vehicle', label: 'Vehicle', format: function (v, r) { return UI.esc(v) + (r.Plate ? '<div class="small text-soft">' + UI.esc(r.Plate) + '</div>' : ''); } }, { key: 'Rider', label: 'Rider', format: function (v) { return v ? UI.esc(v) : '<span class="text-soft">—</span>'; } }, { key: 'Stops', label: 'Stops', align: R }, { key: 'Pickups', label: 'Pickups', align: R }, { key: 'Deliveries', label: 'Deliveries', align: R }, { key: 'Made', label: 'Made', align: R }, { key: 'Failed', label: 'Failed', align: R }, { key: 'Open', label: 'Still open', align: R }, { key: 'PiecesPicked', label: 'Pieces picked up', align: R, format: num }, { key: 'PiecesDelivered', label: 'Pieces delivered', align: R, format: num }]; },
+      rows: function (d) { return d.rows; },
+      onRow: function (r) { if (M.RoutesUI && M.RoutesUI.canView()) M.RoutesUI.open({ routeId: r.RouteId }); },
+      chart: function (d) { return d.byVehicle.length ? { type: 'bar', labels: d.byVehicle.map(function (v) { return v.Vehicle; }), datasets: [{ label: 'Stops', data: d.byVehicle.map(function (v) { return v.Stops; }) }, { label: 'Made', data: d.byVehicle.map(function (v) { return v.Made; }) }] } : null; },
+      extra: function (d) { return table('By vehicle', [{ key: 'Vehicle', label: 'Vehicle', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (r.Plate || r.Type ? '<div class="small text-soft">' + UI.esc([r.Plate, r.Type].filter(Boolean).join(' · ')) + '</div>' : ''); } }, { key: 'Routes', label: 'Routes', align: R }, { key: 'Stops', label: 'Stops', align: R }, { key: 'Made', label: 'Made', align: R }, { key: 'Failed', label: 'Failed', align: R }, { key: 'Open', label: 'Still open', align: R }, { key: 'PiecesPicked', label: 'Pieces picked up', align: R, format: num }, { key: 'PiecesDelivered', label: 'Pieces delivered', align: R, format: num }], d.byVehicle) +
+        '<p class="small text-soft">The routes whose day is in the range. A cancelled route and a cancelled job are left out, and a job on no route is not in this report. A stop counts for the vehicle it was on. Pieces are a job order\'s linens: counted at the pickup that began it, and handed over on a delivery trip.</p>'; }
     },
     payroll: {
       noRange: true, yearPicker: true,
@@ -9437,7 +9920,7 @@ window.MLS = (function () {
   var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Form = M.Form;
   var can = function (c) { return M.Auth.can(c); };
   var state = { tab: 'profile', group: '', usersSearch: '', usersStatus: 'ALL', roleId: '' }, cache = { settings: null, roles: null, users: null, branches: null };
-  var TABS = [['profile', 'Profile', function () { return true; }], ['business', 'Business', function () { return can('SETTINGS_VIEW'); }], ['branding', 'Branding', function () { return can('SETTINGS_VIEW'); }], ['branches', 'Branches', function () { return can('SETTINGS_VIEW') || can('BRANCH_MANAGE'); }], ['users', 'Users', function () { return can('USER_MANAGE'); }], ['roles', 'Roles', function () { return can('USER_MANAGE') || can('SETTINGS_VIEW'); }], ['settings', 'Settings', function () { return can('SETTINGS_VIEW'); }], ['sms', 'SMS templates', function () { return can('SMS_VIEW_TEMPLATES'); }], ['maintenance', 'Maintenance', function () { return can('DATABASE_ADMIN'); }]];
+  var TABS = [['profile', 'Profile', function () { return true; }], ['business', 'Business', function () { return can('SETTINGS_VIEW'); }], ['branding', 'Branding', function () { return can('SETTINGS_VIEW'); }], ['branches', 'Branches', function () { return can('SETTINGS_VIEW') || can('BRANCH_MANAGE'); }], ['vehicles', 'Vehicles', function () { return can('SETTINGS_VIEW'); }], ['users', 'Users', function () { return can('USER_MANAGE'); }], ['roles', 'Roles', function () { return can('USER_MANAGE') || can('SETTINGS_VIEW'); }], ['settings', 'Settings', function () { return can('SETTINGS_VIEW'); }], ['sms', 'SMS templates', function () { return can('SMS_VIEW_TEMPLATES'); }], ['maintenance', 'Maintenance', function () { return can('DATABASE_ADMIN'); }]];
   var BUSINESS_GROUPS = ['Business', 'Receipts'];
   function me() { return M.AppState.me; }
   function body() { return UI.el('set-body'); }
@@ -9457,7 +9940,7 @@ window.MLS = (function () {
   function showTab() {
     var allowed = TABS.filter(function (t) { return t[2](); }).map(function (t) { return t[0]; }); if (allowed.indexOf(state.tab) < 0) state.tab = 'profile';
     UI.el('set-scope').textContent = TABS.filter(function (t) { return t[0] === state.tab; })[0][1];
-    ({ profile: tabProfile, business: tabBusiness, branding: tabBranding, branches: tabBranches, users: tabUsers, roles: tabRoles, settings: tabSettings, sms: tabSms, maintenance: tabMaintenance }[state.tab] || tabProfile)();
+    ({ profile: tabProfile, business: tabBusiness, branding: tabBranding, branches: tabBranches, vehicles: tabVehicles, users: tabUsers, roles: tabRoles, settings: tabSettings, sms: tabSms, maintenance: tabMaintenance }[state.tab] || tabProfile)();
   }
 
   // ---------------------------------------------------------------- profile
@@ -9723,6 +10206,41 @@ window.MLS = (function () {
   function submitBranch(ev) {
     ev.preventDefault(); var f = UI.el('set-branch-form'); if (Form.validate(f, { Name: ['required'] })) return; var box = UI.el('set-branch-error'); box.hidden = true;
     Api.call('branches.save', Form.read(f), { busy: true }).then(function (b) { Toast.success('Branch ' + b.Name + ' saved'); M.Modal.closeThen('set-branch-modal', function () { M.Auth.refreshMe().then(function () { tabBranches(); }).catch(function () { tabBranches(); }); }); }).catch(function (e) { if (e.fields) Form.errors(f, e.fields, e.message); box.textContent = UI.error(e); box.hidden = false; });
+  }
+
+  // ---------------------------------------------------------------- vehicles (release 1.49.0): the shop's vans and motorcycles; a route in Dispatch is made for one
+  var VEHICLE_TYPES = [['MOTORCYCLE', 'Motorcycle'], ['VAN', 'Van'], ['CAR', 'Car'], ['TRUCK', 'Truck'], ['BICYCLE', 'Bicycle'], ['OTHER', 'Other']];
+  function tabVehicles() {
+    body().innerHTML = skel(4, 'Loading the vehicles');
+    Api.call('vehicles.list', { includeInactive: true }).then(function (rows) { if (state.tab !== 'vehicles') return; paintVehicles(rows); }).catch(function (e) { tabFailed(e); });
+  }
+  function paintVehicles(rows) {
+    var edit = can('SETTINGS_EDIT'), all = me().activeBranch === 'ALL', many = me().branches.length > 1;
+    var table = rows.length ? '<div class="table-wrap"><table class="table table-sm table-cards aligned mb-0" id="set-veh-table"><thead><tr><th>Vehicle</th><th>Plate number</th><th>Type</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>' + rows.map(function (v) {
+      return '<tr data-id="' + UI.esc(v.Id) + '"><td data-label="Vehicle" class="lead-cell"><span class="lead-status ph-only">' + UI.badge(v.Status) + '</span><span class="fw-bold">' + UI.esc(v.Name) + '</span>' + (all ? ' <span class="small text-soft">' + UI.esc(UI.branchName(v.BranchId)) + '</span>' : '') + (v.Notes ? '<div class="small text-soft">' + UI.esc(v.Notes) + '</div>' : '') + '</td><td data-label="Plate number">' + (v.PlateNo ? UI.esc(v.PlateNo) : '<span class="text-soft">—</span>') + '</td><td data-label="Type">' + UI.esc(v.Type) + '</td><td data-label="Status" class="ph-hide">' + UI.badge(v.Status) + '</td><td class="text-end no-label">' + (edit ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-veh-edit="' + UI.esc(v.Id) + '"><i class="fa-solid fa-pen me-1" aria-hidden="true"></i>Edit</button>' : '') + '</td></tr>';
+    }).join('') + '</tbody></table></div>' : UI.empty({ icon: 'fa-truck', title: 'No vehicle yet', hint: 'Add the van or the motorcycle the riders use. A route in Dispatch is made for a vehicle.' });
+    var form = edit ? '<form class="row g-2 align-items-end mt-3" id="set-veh-form" autocomplete="off"><input type="hidden" name="Id"><div class="col-12"><h6 class="section-title mb-0" id="set-veh-form-title">New vehicle</h6></div>' +
+      '<div class="col-md-4"><label class="form-label" for="set-veh-name">Name</label><input class="form-control" id="set-veh-name" name="Name" maxlength="40" placeholder="Van 1" required></div>' +
+      '<div class="col-6 col-md-3"><label class="form-label" for="set-veh-plate">Plate number (optional)</label><input class="form-control upper" id="set-veh-plate" name="PlateNo" maxlength="15" autocapitalize="characters"></div>' +
+      '<div class="col-6 col-md-3"><label class="form-label" for="set-veh-type">Type</label><select class="form-select" id="set-veh-type" name="VehicleType">' + VEHICLE_TYPES.map(function (t) { return '<option value="' + t[0] + '">' + t[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div class="col-6 col-md-2"><label class="form-label" for="set-veh-status">Status</label><select class="form-select" id="set-veh-status" name="Status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></div>' +
+      '<div class="col-6 col-md-4" id="set-veh-branch-wrap"' + (many ? '' : ' hidden') + '><label class="form-label" for="set-veh-branch">Branch</label><select class="form-select" id="set-veh-branch" name="BranchId">' + (all ? '<option value="">Choose a branch</option>' : '') + UI.options(me().branches, all ? '' : me().activeBranch) + '</select></div>' +
+      '<div class="col-12 col-md-8"><label class="form-label" for="set-veh-notes">Note (optional)</label><input class="form-control" id="set-veh-notes" name="Notes" maxlength="200"></div>' +
+      '<div class="col-12"><div class="alert alert-danger py-2 small mb-0" id="set-veh-error" hidden role="alert"></div></div>' +
+      '<div class="col-12 d-flex flex-wrap gap-2 justify-content-end"><button type="button" class="btn btn-sm btn-outline-secondary" id="set-veh-clear">Clear</button><button type="submit" class="btn btn-sm btn-primary" id="set-veh-save">Save vehicle</button></div></form>' : '';
+    body().innerHTML = card('Vehicles', '<p class="small text-soft">The vehicles a route in Dispatch is made for. An inactive vehicle is kept for the routes it drove and is no longer offered. Nothing is deleted.</p>' + table + form);
+    if (!edit) return;
+    var f = UI.el('set-veh-form'), box = UI.el('set-veh-error');
+    var reset = function () { f.reset(); Form.clearErrors(f); f.querySelector('[name=Id]').value = ''; box.hidden = true; UI.el('set-veh-form-title').textContent = 'New vehicle'; UI.el('set-veh-branch-wrap').hidden = !many; };
+    UI.el('set-veh-clear').onclick = reset;
+    body().querySelectorAll('[data-veh-edit]').forEach(function (b) { b.onclick = function () { var v = rows.filter(function (x) { return x.Id === b.getAttribute('data-veh-edit'); })[0]; if (!v) return; reset(); Form.write(f, { Id: v.Id, Name: v.Name, PlateNo: v.PlateNo, VehicleType: v.VehicleType, Status: v.Status, Notes: v.Notes }); UI.el('set-veh-form-title').textContent = 'Change ' + v.Name; UI.el('set-veh-branch-wrap').hidden = true; f.scrollIntoView({ block: 'nearest' }); UI.el('set-veh-name').focus(); }; });
+    f.onsubmit = function (ev) {
+      ev.preventDefault(); box.hidden = true; if (Form.validate(f, { Name: ['required'] })) return;
+      var d = Form.read(f); if (d.Id) delete d.BranchId; else if (many && !d.BranchId) { box.textContent = 'Choose the branch of the vehicle.'; box.hidden = false; UI.el('set-veh-branch').focus(); return; }
+      var btn = UI.el('set-veh-save'); btn.disabled = true;
+      Api.call('vehicles.save', d, { busy: true }).then(function (list) { Toast.success('Vehicle ' + String(d.Name).trim() + ' saved'); if (state.tab === 'vehicles') paintVehicles(list); })
+        .catch(function (e) { btn.disabled = false; if (e.fields) Form.errors(f, e.fields, e.message); box.textContent = UI.error(e); box.hidden = false; });
+    };
   }
 
   // ---------------------------------------------------------------- users
