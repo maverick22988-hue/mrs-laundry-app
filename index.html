@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '8418333b63', version: '1.50.0' };</script>
+  <script>window.MLS_PWA = { build: '3f37d4ca1f', version: '1.51.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -303,7 +303,7 @@
   .status-badge.s-partial, .status-badge.s-paused, .status-badge.s-reviewed, .status-badge.s-late, .status-badge.s-undertime, .status-badge.s-pending, .status-badge.s-reopened, .status-badge.s-submitted, .status-badge.s-stale, .status-badge.s-unpaid, .status-badge.s-warning, .status-badge.s-composer_open_requested, .status-badge.s-in_review, .status-badge.s-gateway_sent, .status-badge.s-soon, .status-badge.s-stopped, .status-badge.s-skipped { background: var(--mls-warning-soft); color: var(--mls-warning); }
   .status-badge.s-cancelled, .status-badge.s-discrepancy, .status-badge.s-refunded, .status-badge.s-absent, .status-badge.s-review, .status-badge.s-rejected, .status-badge.s-failed, .status-badge.s-fail, .status-badge.s-locked, .status-badge.s-disabled, .status-badge.s-error, .status-badge.s-overdue, .status-badge.s-not_sent, .status-badge.s-failed_to_open, .status-badge.s-gateway_failed, .status-badge.s-down, .status-badge.s-due, .status-badge.s-missing, .status-badge.s-test, .status-badge.s-demo, .status-badge.s-deleted { background: var(--mls-danger-soft); color: var(--mls-danger); }
   .status-badge.s-completed, .status-badge.s-released, .status-badge.s-closed { background: var(--mls-primary-soft); color: var(--mls-primary); }
-  .status-badge.s-inactive, .status-badge.s-ended, .status-badge.s-void, .status-badge.s-rest_day, .status-badge.s-unscheduled, .status-badge.s-upcoming, .status-badge.s-out, .status-badge.s-archived, .status-badge.s-retired, .status-badge.s-removed { background: transparent; color: var(--mls-ink); border-color: var(--mls-line); }
+  .status-badge.s-inactive, .status-badge.s-discarded, .status-badge.s-ended, .status-badge.s-void, .status-badge.s-rest_day, .status-badge.s-unscheduled, .status-badge.s-upcoming, .status-badge.s-out, .status-badge.s-archived, .status-badge.s-retired, .status-badge.s-removed { background: transparent; color: var(--mls-ink); border-color: var(--mls-line); }
   .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 12px; }
   .toolbar .form-control, .toolbar .form-select { width: auto; min-width: 150px; flex: 0 0 auto; max-width: 100%; background-color: var(--mls-well); }
   .toolbar .form-control:focus, .toolbar .form-select:focus { background-color: var(--mls-card); }
@@ -470,6 +470,7 @@
   .jo-line-more { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 8px; }
   .jo-line-more:has(.jo-line-price) { grid-template-columns: minmax(0, 1fr) 8rem; } .jo-line-reason { grid-column: 1 / -1; }
   .jo-line-x { height: calc(1.5em + .75rem + 2px); min-width: 2.75rem; } .jo-line-sum:empty { display: none; } .jo-line-sum { margin-top: 6px; }
+  .ivc-tick { width: 36px; } .ivc-tick .form-check-input { width: 20px; height: 20px; margin: 0; }  /* 1.51.0: the tick column of a draft invoice */
   .jo-totals { display: flex; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; align-items: baseline; }
   .jo-sign { border: 0; padding: 0; margin: 0; } .jo-sign legend { float: none; width: auto; font-size: inherit; margin-bottom: 4px; }
   .jo-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 20px; }
@@ -1067,7 +1068,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.50.0';
+  var VERSION = '1.51.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -4474,6 +4475,7 @@ window.MLS = (function () {
       if (c.CustomerType === 'CORPORATE' && !c.Anonymised && M.PickupSchedules && M.PickupSchedules.canView()) more.push('<li><button type="button" class="dropdown-item" data-act="schedule"><i class="fa-solid fa-repeat me-2" aria-hidden="true"></i>Pickup schedule</button></li>');  // 1.48.0
       if (M.Auth.can('CUSTOMER_ERASE') && !c.Anonymised) danger.push('<li><button type="button" class="dropdown-item text-danger" data-act="erase"><i class="fa-solid fa-user-slash me-2" aria-hidden="true"></i>Erase personal data</button></li>');
       if (c.CustomerType === 'CORPORATE' && !c.Anonymised && M.Statements && M.Statements.canView()) right.push('<button type="button" class="btn btn-sm btn-outline-secondary" data-act="statement"><i class="fa-solid fa-file-invoice me-1"></i>Statement</button>');  // 1.47.0
+      if (c.CustomerType === 'CORPORATE' && !c.Anonymised && M.Invoices && M.Invoices.canView()) right.push('<button type="button" class="btn btn-sm btn-outline-secondary" data-act="invoices"><i class="fa-solid fa-file-invoice-dollar me-1"></i>Invoices</button>');  // 1.51.0
       if (M.Auth.can('CUSTOMER_EDIT') && !c.Anonymised) right.push('<button type="button" class="btn btn-sm btn-outline-primary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button>');
       if (M.Auth.can('POS_CREATE') && c.Status === 'ACTIVE') right.push('<button type="button" class="btn btn-sm btn-primary" data-act="pos"><i class="fa-solid fa-cash-register me-1"></i>New order</button>');
       var moreMenu = more.length || danger.length ? '<div class="dropdown dropup cust-more"><button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" id="cust-more" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis me-1" aria-hidden="true"></i>More</button><ul class="dropdown-menu">' + more.join('') + (more.length && danger.length ? '<li><hr class="dropdown-divider"></li>' : '') + danger.join('') + '</ul></div>' : '';
@@ -4482,7 +4484,7 @@ window.MLS = (function () {
       var smsItems = []; if (withBalance) smsItems.push({ code: 'BALANCE_REMINDER', label: 'Balance reminder · ' + withBalance.OrderNo, icon: 'fa-bell', suggested: true, arg: withBalance.Id }); smsItems.push({ code: 'GENERAL', label: 'General message', icon: 'fa-comment', suggested: !withBalance });
       var smsMenu = M.Sms && M.Sms.can(c.Mobile) && c.Status === 'ACTIVE' ? M.Sms.menuHtml({ id: 'cust-sms-menu', label: 'Send SMS', items: smsItems }) : '';
       UI.html('cust-view-actions', moreMenu + '<span class="spacer"></span>' + smsMenu + right.join(''));
-      UI.el('cust-view-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); if (a === 'incident') return M.Incidents.report({ customerId: c.Id, customerName: c.FullName }); if (a === 'erase') return erase(c); M.Modal.closeThen('cust-view-modal', function () { if (a === 'schedule') M.PickupSchedules.open(c.Id, { name: c.FullName }); else if (a === 'pos') M.Router.go('pos', { customerId: c.Id }); else if (a === 'statement') M.Statements.open(c.Id, { name: c.FullName }); else openForm(c); }); }; });
+      UI.el('cust-view-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); if (a === 'incident') return M.Incidents.report({ customerId: c.Id, customerName: c.FullName }); if (a === 'erase') return erase(c); M.Modal.closeThen('cust-view-modal', function () { if (a === 'schedule') M.PickupSchedules.open(c.Id, { name: c.FullName }); else if (a === 'pos') M.Router.go('pos', { customerId: c.Id }); else if (a === 'statement') M.Statements.open(c.Id, { name: c.FullName }); else if (a === 'invoices') M.Invoices.open({ customerId: c.Id, name: c.FullName }); else openForm(c); }); }; });
       if (smsMenu) M.Sms.wireMenu(UI.el('cust-view-actions'), function (arg) { return { customerId: c.Id, orderId: arg || '' }; }, function () { if (M.Auth.can('SMS_VIEW_LOGS')) loadHistory(c.Id); });
       M.Modal.open('cust-view-modal');
     }).catch(function (e) { Toast.danger(UI.error(e)); });
@@ -7620,6 +7622,274 @@ window.MLS = (function () {
 })();
 </script>
 
+        <!-- Mrs Laundry Sys — InvoicesPage.html (release 1.51.0): billing invoices for commercial clients.
+     One dialog with three views. The list: a client's invoices (or everyone's, from Reports). The draft: tick the job orders to bill,
+     save it, issue it. The invoice: as it was issued, with what was paid and what is owed now; print it, record a payment, void it.
+     The page sends only which job orders; every amount is the server's. -->
+<div class="modal fade" id="ivc-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="ivc-title">Invoices</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p class="small text-muted mb-2" id="ivc-note">A billing invoice bills a client for one or many job orders. Payments stay on the job orders; the invoice shows what they add up to. It is not an official receipt.</p>
+        <div class="alert alert-danger small mb-2" id="ivc-error" role="alert" hidden></div>
+        <div id="ivc-body"></div>
+      </div>
+      <div class="modal-footer flex-wrap gap-2" id="ivc-actions"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Modal = M.Modal;
+  var s = null;  // { customerId, name, view: 'list' | 'draft' | 'invoice', rows, page, more, draft: { id, cand, picked, requestId }, doc, panel: '' | 'pay' | 'void', payRequest }
+  var PAPER_KEY = 'mls.invoice.paper', methods = null;
+  function can(code) { return M.Auth.can(code); }
+  function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function month(offset) { var now = new Date(), a = new Date(now.getFullYear(), now.getMonth() + offset, 1), b = offset === 0 ? now : new Date(now.getFullYear(), now.getMonth() + offset + 1, 0); return [iso(a), iso(b)]; }
+  function money(v) { return v === '' || v === null || v === undefined ? '' : F.peso(v); }
+  function error(msg) { var box = UI.el('ivc-error'); box.textContent = msg || ''; box.hidden = !msg; if (msg) box.scrollIntoView({ block: 'nearest' }); }
+  function fail(e) { error(UI.error(e)); return null; }
+  var PAY_WORDS = { PAID: 'Paid', PARTIAL: 'Partly paid', UNPAID: 'Unpaid' };
+  /** The badges of an invoice: what it is, and for an issued one where its money stands. */
+  function badges(d) {
+    var out = UI.badge(d.Status);
+    if (d.Status === 'ISSUED') out += ' ' + (d.Overdue ? '<span class="status-badge s-overdue">Overdue ' + num(d.DaysOverdue) + ' day' + (num(d.DaysOverdue) === 1 ? '' : 's') + '</span>' : '<span class="status-badge s-' + String(d.PayStatus || 'unpaid').toLowerCase() + '">' + (PAY_WORDS[d.PayStatus] || '') + '</span>');
+    return out;
+  }
+  function title(text) { UI.el('ivc-title').textContent = text + (s && s.name ? ' · ' + s.name : ''); }
+  function foot(html) { UI.html('ivc-actions', html); }
+  function focusBody() { var b = UI.el('ivc-body'); b.setAttribute('tabindex', '-1'); b.focus({ preventScroll: true }); UI.el('ivc-modal').querySelector('.modal-body').scrollTop = 0; }
+
+  // ------------------------------------------------------------------ the list
+  function listHtml() {
+    if (!s.rows.length) return UI.empty({ icon: 'fa-file-invoice', title: 'No invoice yet', hint: s.customerId ? 'New invoice lists this client\'s job orders that were received and are on no invoice yet.' : 'Invoices are made from a commercial client\'s page.' });
+    return '<div class="table-wrap"><table class="table table-sm table-cards mb-0" id="ivc-table"><thead><tr><th>Invoice</th>' + (s.customerId ? '' : '<th>Client</th>') + '<th>Due</th><th class="text-end num">Total</th><th class="text-end num">Balance</th><th>Status</th></tr></thead><tbody>' + s.rows.map(function (x) {
+      return '<tr class="pointer" tabindex="0" data-kb="row" data-inv="' + UI.esc(x.Id) + '"><td data-label="Invoice"><span class="fw-bold">' + UI.esc(x.InvoiceNo || 'Draft') + '</span><div class="small text-muted">' + (x.IssuedAt ? 'issued ' + UI.esc(F.date(x.IssuedAt)) : 'saved ' + UI.esc(F.date(x.CreatedAt))) + ' · ' + num(x.OrderCount) + ' job order' + (num(x.OrderCount) === 1 ? '' : 's') + '</div></td>' +
+        (s.customerId ? '' : '<td data-label="Client">' + UI.esc(x.Client) + '</td>') + '<td data-label="Due">' + (x.DueDate ? UI.esc(F.date(x.DueDate)) : '<span class="text-muted">—</span>') + '</td><td data-label="Total" class="text-end num">' + money(x.Total) + '</td><td data-label="Balance" class="text-end num">' + (x.Status === 'VOID' ? '<span class="text-muted">—</span>' : money(x.Balance)) + '</td><td data-label="Status">' + badges(x) + '</td></tr>';
+    }).join('') + '</tbody></table></div>' + (s.more ? '<div class="text-center mt-2"><button type="button" class="btn btn-sm btn-outline-secondary" id="ivc-more">Show more</button></div>' : '');
+  }
+  function paintList() {
+    s.view = 'list'; s.doc = null; s.panel = ''; error(''); title('Invoices');
+    UI.html('ivc-body', listHtml());
+    UI.el('ivc-body').querySelectorAll('[data-inv]').forEach(function (tr) { tr.onclick = function () { show(tr.getAttribute('data-inv')); }; });
+    var m = UI.el('ivc-more'); if (m) m.onclick = function () { load(s.page + 1); };
+    foot('<span class="spacer"></span>' + (s.customerId && can('INVOICE_ISSUE') ? '<button type="button" class="btn btn-sm btn-primary" id="ivc-new"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>New invoice</button>' : ''));
+    var b = UI.el('ivc-new'); if (b) b.onclick = function () { compose(null); };
+  }
+  function load(page) {
+    var p = { page: page || 1 }; if (s.customerId) p.customerId = s.customerId;
+    return Api.call('invoices.list', p, { busy: true }).then(function (r) { s.rows = p.page > 1 ? s.rows.concat(r.rows) : r.rows; s.page = r.page; s.more = r.more; paintList(); return r; })
+      .catch(function (e) { s.rows = []; s.more = false; paintList(); return fail(e); });
+  }
+
+  // ------------------------------------------------------------------ the draft
+  function draftTotals() {
+    var d = s.draft, t = 0, n = 0; d.cand.rows.forEach(function (r) { if (d.picked[r.OrderId]) { t += Math.round(num(r.Total) * 100); n++; } });
+    var el = UI.el('ivc-pick-total'); if (el) el.textContent = n + ' job order' + (n === 1 ? '' : 's') + ' · ' + F.peso(t / 100);
+    ['ivc-save', 'ivc-issue'].forEach(function (id) { var b = UI.el(id); if (b) b.disabled = !n; });
+    var all = UI.el('ivc-pick-all'); if (all) { all.checked = n > 0 && n === d.cand.rows.length; all.indeterminate = n > 0 && n < d.cand.rows.length; }
+  }
+  function draftHtml() {
+    var d = s.draft, c = d.cand, rows = c.rows;
+    var range = '<div class="row g-2 align-items-end mx-0"><div class="col-6 col-md-3"><label class="form-label" for="ivc-from">Job orders from</label><input class="form-control" id="ivc-from" type="date" value="' + UI.esc(d.from) + '"></div><div class="col-6 col-md-3"><label class="form-label" for="ivc-to">To</label><input class="form-control" id="ivc-to" type="date" value="' + UI.esc(d.to) + '"></div>' +
+      '<div class="col-12 col-md-6 d-flex flex-wrap gap-2"><button type="button" class="btn btn-sm btn-outline-secondary" id="ivc-this">This month</button><button type="button" class="btn btn-sm btn-outline-secondary" id="ivc-last">Last month</button><button type="button" class="btn btn-sm btn-outline-secondary" id="ivc-all">All</button><button type="button" class="btn btn-sm btn-outline-primary" id="ivc-show"><i class="fa-solid fa-rotate me-1" aria-hidden="true"></i>Show</button></div></div>';
+    var left = [c.waiting ? c.waiting + ' not yet received' : '', c.invoiced ? c.invoiced + ' already on an invoice' : ''].filter(Boolean).join(' · ');
+    var table = rows.length ? '<div class="table-wrap mt-3"><table class="table table-sm table-cards mb-0" id="ivc-pick"><thead><tr><th class="ivc-tick"><input class="form-check-input" type="checkbox" id="ivc-pick-all" aria-label="Tick every job order"></th><th>Job order</th><th class="text-end num">Pieces</th><th class="text-end num">Amount</th><th class="text-end num">Paid</th><th class="text-end num">Balance</th></tr></thead><tbody>' + rows.map(function (r, i) {
+      return '<tr><td class="ivc-tick no-label"><input class="form-check-input" type="checkbox" id="ivc-pick-' + i + '" data-pick="' + UI.esc(r.OrderId) + '"' + (d.picked[r.OrderId] ? ' checked' : '') + '></td><td data-label="Job order"><label class="fw-bold mb-0" for="ivc-pick-' + i + '">' + UI.esc(r.OrderNo) + '</label><div class="small text-muted">' + UI.esc(F.date(r.Date)) + ' · ' + UI.esc(r.StatusLabel) + (r.OnDraft ? ' · <span class="text-danger">on another draft</span>' : '') + '</div></td><td data-label="Pieces" class="text-end num">' + num(r.Pieces) + '</td><td data-label="Amount" class="text-end num">' + money(r.Total) + '</td><td data-label="Paid" class="text-end num">' + money(r.Paid) + '</td><td data-label="Balance" class="text-end num">' + money(r.Balance) + '</td></tr>';
+    }).join('') + '</tbody></table></div><p class="fw-bold text-end mt-2 mb-0" id="ivc-pick-total" aria-live="polite"></p>'
+      : '<div class="mt-3">' + UI.empty({ icon: 'fa-box-open', title: 'No job order to invoice in these days', hint: 'A job order can be invoiced once its count was received, and only once.' }) + '</div>';
+    var fields = '<div class="row g-2 mt-2 mx-0"><div class="col-12 col-md-4"><label class="form-label" for="ivc-due">Due date</label><input class="form-control" id="ivc-due" type="date" value="' + UI.esc(d.due) + '" aria-describedby="ivc-due-help"><div class="form-text" id="ivc-due-help">' + num(c.creditDays) + ' days from today, as this client\'s last invoice or the setting. Empty: none.</div></div>' +
+      '<div class="col-12 col-md-8"><label class="form-label" for="ivc-notes">Note printed on the invoice (optional)</label><input class="form-control" id="ivc-notes" maxlength="300" value="' + UI.esc(d.notes) + '"></div></div>';
+    return range + (left ? '<p class="small text-muted mt-2 mb-0" id="ivc-left">Not listed: ' + UI.esc(left) + '.</p>' : '') + table + fields;
+  }
+  function paintDraft() {
+    var d = s.draft; s.view = 'draft'; error(''); title(d.id ? 'Draft invoice' : 'New invoice');
+    UI.html('ivc-body', draftHtml());
+    UI.el('ivc-body').querySelectorAll('[data-pick]').forEach(function (box) { box.onchange = function () { d.picked[box.getAttribute('data-pick')] = box.checked; draftTotals(); }; });
+    var all = UI.el('ivc-pick-all'); if (all) all.onchange = function () { d.cand.rows.forEach(function (r) { d.picked[r.OrderId] = all.checked; }); UI.el('ivc-body').querySelectorAll('[data-pick]').forEach(function (b) { b.checked = all.checked; }); draftTotals(); };
+    var reload = function (r) { keepFields(); if (r) { d.from = r[0]; d.to = r[1]; } else { d.from = UI.el('ivc-from').value; d.to = UI.el('ivc-to').value; } candidates(); };
+    UI.el('ivc-show').onclick = function () { reload(null); }; UI.el('ivc-this').onclick = function () { reload(month(0)); }; UI.el('ivc-last').onclick = function () { reload(month(-1)); }; UI.el('ivc-all').onclick = function () { reload(['', '']); };
+    foot('<button type="button" class="btn btn-sm btn-outline-secondary" id="ivc-back"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Back to the list</button>' + (d.id ? '<button type="button" class="btn btn-sm btn-outline-danger" id="ivc-discard">Discard draft</button>' : '') +
+      '<span class="spacer"></span><button type="button" class="btn btn-sm btn-outline-primary" id="ivc-save"><i class="fa-solid fa-floppy-disk me-1" aria-hidden="true"></i>Save draft</button><button type="button" class="btn btn-sm btn-primary" id="ivc-issue"><i class="fa-solid fa-file-invoice me-1" aria-hidden="true"></i>Issue invoice</button>');
+    UI.el('ivc-back').onclick = function () { load(1); };
+    UI.el('ivc-save').onclick = function () { saveDraft().then(function (v) { if (v) { Toast.success('Draft saved'); load(1); } }); };
+    UI.el('ivc-issue').onclick = issue;
+    var x = UI.el('ivc-discard'); if (x) x.onclick = discard;
+    draftTotals();
+  }
+  function keepFields() { var d = s.draft, a = UI.el('ivc-due'), b = UI.el('ivc-notes'); if (a) d.due = a.value; if (b) d.notes = b.value.trim(); }
+  function candidates() {
+    var d = s.draft, p = { customerId: s.customerId }; if (d.from) p.from = d.from; if (d.to) p.to = d.to; if (d.id) p.draftId = d.id;
+    return Api.call('invoices.candidates', p, { busy: true }).then(function (c) {
+      d.cand = c; if (d.due === null) d.due = c.dueDate || '';
+      // a job order ticked before and no longer listed in these days stays out; one never seen is ticked unless it sits on another draft
+      var seen = {}; c.rows.forEach(function (r) { seen[r.OrderId] = true; if (d.picked[r.OrderId] === undefined) d.picked[r.OrderId] = d.fresh ? !r.OnDraft : false; });
+      Object.keys(d.picked).forEach(function (id) { if (!seen[id]) delete d.picked[id]; });
+      paintDraft(); return c;
+    }).catch(fail);
+  }
+  /** A new draft (doc null), or one saved before. */
+  function compose(doc) {
+    var r = doc ? ['', ''] : month(0);
+    s.draft = { id: doc ? doc.Id : '', cand: { rows: [], creditDays: 0 }, picked: {}, from: r[0], to: r[1], due: doc ? (doc.DueDate || '') : null, notes: doc ? (doc.Notes || '') : '', fresh: !doc, requestId: UI.uuid() };
+    if (doc) doc.Orders.forEach(function (o) { s.draft.picked[o.OrderId] = true; });
+    return candidates().then(function (c) { if (c) focusBody(); return c; });
+  }
+  function saveDraft() {
+    var d = s.draft; keepFields();
+    var ids = d.cand.rows.filter(function (r) { return d.picked[r.OrderId]; }).map(function (r) { return r.OrderId; });
+    var p = { customerId: s.customerId, orderIds: ids, dueDate: d.due, notes: d.notes, requestId: d.requestId }; if (d.id) p.id = d.id;
+    return Api.call('invoices.saveDraft', p, { busy: true, timeoutMs: 120000 }).then(function (v) { d.id = v.Id; error(''); return v; }).catch(fail);
+  }
+  function issue() {
+    var btn = UI.el('ivc-issue'); btn.disabled = true;
+    saveDraft().then(function (v) {
+      if (!v) { btn.disabled = false; return null; }
+      return Api.call('invoices.issue', { id: v.Id }, { busy: true, timeoutMs: 120000 }).then(function (doc) { Toast.success('Invoice ' + doc.InvoiceNo + ' issued'); paintInvoice(doc); focusBody(); return doc; })
+        .catch(function (e) { btn.disabled = false; title('Draft invoice'); return fail(e); });
+    });
+  }
+  function discard() {
+    var btn = UI.el('ivc-discard'); btn.disabled = true;
+    Api.call('invoices.discard', { id: s.draft.id }, { busy: true }).then(function () { Toast.success('Draft discarded'); load(1); }).catch(function (e) { btn.disabled = false; fail(e); });
+  }
+
+  // ------------------------------------------------------------------ one invoice
+  function linesText(o) { return (o.Lines || []).map(function (l) { return UI.esc(l.Description) + ' ' + UI.esc(F.qty(l.Qty, l.Unit)) + ' × ' + money(l.UnitPrice); }).join(' · '); }
+  function invoiceHtml(d) {
+    var issued = d.Status === 'ISSUED', c = d.Client || {};
+    var top = '<div class="d-flex flex-wrap align-items-center gap-2 mb-2"><span class="fw-bold" id="ivc-no">' + UI.esc(d.InvoiceNo || 'Draft') + '</span>' + badges(d) + '<span class="text-muted small">' + (d.IssuedAt ? 'issued ' + UI.esc(F.datetime(d.IssuedAt)) + (d.IssuedBy ? ' by ' + UI.esc(d.IssuedBy) : '') : 'not issued yet') + '</span></div>' +
+      (d.Status === 'VOID' ? '<div class="alert alert-light border small" id="ivc-voided">Voided' + (d.VoidedBy ? ' by ' + UI.esc(d.VoidedBy) : '') + ': ' + UI.esc(d.VoidReason) + '. Its job orders can be invoiced again; payments already made stay on them.</div>' : '');
+    var grid = [['Invoice total', money(d.Total), 'ivc-total'], ['Paid', money(d.Paid), 'ivc-paid'], ['Balance', money(d.Balance), 'ivc-balance']];
+    if (d.DueDate) grid.push(['Due by', UI.esc(F.date(d.DueDate)), 'ivc-due-shown']);
+    if (num(d.Discount)) grid.push(['Discounts', money(d.Discount), 'ivc-discount']);
+    if (num(d.Charges)) grid.push(['Delivery and other charges', money(d.Charges), 'ivc-charges']);
+    M.Vat.rows(d.Vat).forEach(function (v, i) { grid.push([v[0], money(v[1]), 'ivc-vat-' + i]); });
+    if (c.BillingTerms) grid.push(['Billing terms', UI.esc(c.BillingTerms), 'ivc-terms']);
+    var differs = d.Differs ? '<div class="alert alert-warning small mt-3 mb-0" id="ivc-differs">The job orders now add up to ' + money(d.Now) + ', ' + money(Math.abs(num(d.Differs))) + (num(d.Differs) > 0 ? ' more' : ' less') + ' than this invoice says. A job order was corrected or cancelled after it was issued. Void this invoice and issue a new one to bill the corrected amount.</div>' : '';
+    var problems = d.Problems && d.Problems.length ? '<div class="alert alert-warning small mt-3 mb-0" id="ivc-problems">' + d.Problems.map(function (p) { return UI.esc(p.Problem); }).join('. ') + '. Open the draft and save it again.</div>' : '';
+    var orders = '<section class="od-section mt-3"><h6 class="section-title">Job orders <span class="count">' + d.Orders.length + '</span></h6><div class="table-wrap"><table class="table table-sm table-cards mb-0" id="ivc-orders"><thead><tr><th>Job order</th><th class="text-end num">Pieces</th><th class="text-end num">Amount</th><th class="text-end num">Paid</th><th class="text-end num">Balance</th></tr></thead><tbody>' + d.Orders.map(function (o) {
+      var flag = o.Cancelled ? ' <span class="status-badge s-cancelled">Cancelled since</span>' : (o.NowAmount !== undefined ? ' <span class="status-badge s-review">Now ' + money(o.NowAmount) + '</span>' : (o.Archived ? ' <span class="status-badge s-closed">Archived, paid</span>' : ''));
+      return '<tr><td data-label="Job order"><button type="button" class="btn btn-link p-0 fw-bold" data-order="' + UI.esc(o.OrderId) + '">' + UI.esc(o.OrderNo) + '</button> <span class="small text-muted">' + UI.esc(F.date(o.Date)) + '</span>' + flag + '<div class="small text-muted">' + linesText(o) + '</div></td><td data-label="Pieces" class="text-end num">' + num(o.Pieces) + '</td><td data-label="Amount" class="text-end num">' + money(o.Amount) + '</td><td data-label="Paid" class="text-end num">' + money(o.Paid) + '</td><td data-label="Balance" class="text-end num">' + money(o.Balance) + '</td></tr>';
+    }).join('') + '</tbody></table></div></section>';
+    var pays = d.Payments && d.Payments.length ? '<section class="od-section mt-3"><h6 class="section-title">Payments on these job orders <span class="count">' + d.Payments.length + '</span></h6><div class="table-wrap"><table class="table table-sm table-cards mb-0" id="ivc-pays"><thead><tr><th>Date</th><th>Job order</th><th>Payment</th><th class="text-end num">Amount</th><th><span class="visually-hidden">Acknowledgment</span></th></tr></thead><tbody>' + d.Payments.map(function (p, i, all) {
+      var first = p.Group && all.findIndex(function (q) { return q.Group === p.Group; }) === i;
+      return '<tr><td data-label="Date">' + UI.esc(F.date(p.Date)) + '</td><td data-label="Job order">' + UI.esc(p.OrderNo) + '</td><td data-label="Payment">' + (p.Type === 'REFUND' ? 'Refund · ' : '') + UI.esc(F.status(p.Method)) + (p.ReferenceNo ? ' · ' + UI.esc(p.ReferenceNo) : '') + '</td><td data-label="Amount" class="text-end num">' + (p.Type === 'REFUND' ? '-' : '') + money(p.Amount) + '</td><td class="text-end no-label">' + (first ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-ack="' + UI.esc(p.Group) + '"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>Acknowledgment</button>' : '') + '</td></tr>';
+    }).join('') + '</tbody></table></div></section>' : '';
+    var panel = '';
+    if (s.panel === 'pay') panel = '<form class="mt-3 pt-3 border-top" id="ivc-pay-form" autocomplete="off" novalidate><div class="row g-2 align-items-end mx-0"><div class="col-12"><h6 class="section-title mb-1">Record a payment</h6><p class="small text-muted mb-1">The amount is put on the job orders that still owe, the oldest first.</p></div>' +
+      '<div class="col-6 col-md-3"><label class="form-label" for="ivc-pay-amount">Amount</label><input class="form-control" id="ivc-pay-amount" name="amount" inputmode="decimal" value="' + UI.esc(num(d.Balance).toFixed(2)) + '" aria-required="true"></div>' +
+      '<div class="col-6 col-md-4"><label class="form-label" for="ivc-pay-method">Method</label><select class="form-select" id="ivc-pay-method" name="method">' + (methods || ['CASH']).map(function (m) { return '<option value="' + UI.esc(m) + '">' + UI.esc(F.status(m)) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="col-12 col-md-5"><label class="form-label" for="ivc-pay-ref">Reference number</label><input class="form-control" id="ivc-pay-ref" name="referenceNo" maxlength="60"></div>' +
+      '<div class="col-12 d-flex gap-2"><button type="submit" class="btn btn-primary btn-sm" id="ivc-pay-go">Record payment</button><button type="button" class="btn btn-outline-secondary btn-sm" id="ivc-panel-cancel">Cancel</button></div></div></form>';
+    if (s.panel === 'void') panel = '<form class="mt-3 pt-3 border-top" id="ivc-void-form" autocomplete="off" novalidate><div class="row g-2 align-items-end mx-0"><div class="col-12"><h6 class="section-title mb-1">Void this invoice</h6><p class="small text-muted mb-1">The invoice stays in the list as voided. Its job orders can be invoiced again. Payments already made stay on the job orders.</p></div>' +
+      '<div class="col-12"><label class="form-label" for="ivc-void-reason">Why is this invoice voided?</label><input class="form-control" id="ivc-void-reason" name="reason" maxlength="200" aria-required="true"></div>' +
+      '<div class="col-12 d-flex gap-2"><button type="submit" class="btn btn-danger btn-sm" id="ivc-void-go">Void the invoice</button><button type="button" class="btn btn-outline-secondary btn-sm" id="ivc-panel-cancel">Cancel</button></div></div></form>';
+    return top + '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v" id="' + g[2] + '">' + g[1] + '</div></div>'; }).join('') + '</div>' + differs + problems +
+      (d.Notes ? '<div class="alert alert-light border small mt-3 mb-0" id="ivc-notes-shown">' + UI.esc(d.Notes) + '</div>' : '') + orders + pays + panel + (issued || d.Status === 'VOID' ? '' : '<p class="small text-muted mt-3 mb-0">A draft has no number. Its figures follow the job orders until it is issued.</p>');
+  }
+  function paintInvoice(d) {
+    s.view = 'invoice'; s.doc = d; error(''); title(d.Status === 'DRAFT' ? 'Draft invoice' : 'Invoice ' + d.InvoiceNo);
+    UI.html('ivc-body', invoiceHtml(d));
+    var issued = d.Status === 'ISSUED', out = ['<button type="button" class="btn btn-sm btn-outline-secondary" id="ivc-back"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Back to the list</button>'];
+    if (issued && can('INVOICE_ISSUE') && !s.panel) out.push('<button type="button" class="btn btn-sm btn-outline-danger" id="ivc-void">Void</button>');
+    out.push('<span class="spacer"></span>');
+    if (d.Status === 'DRAFT' && can('INVOICE_ISSUE')) out.push('<button type="button" class="btn btn-sm btn-primary" id="ivc-edit"><i class="fa-solid fa-pen me-1" aria-hidden="true"></i>Open the draft</button>');
+    if (issued && can('PAYMENT_CREATE') && num(d.Balance) > 0 && !s.panel) out.push('<button type="button" class="btn btn-sm btn-outline-primary" id="ivc-pay"><i class="fa-solid fa-coins me-1" aria-hidden="true"></i>Record payment</button>');
+    if (d.Status === 'ISSUED' || d.Status === 'VOID') out.push('<button type="button" class="btn btn-sm btn-primary" id="ivc-print"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>' + (num(d.PrintCount) ? 'Print again' : 'Print') + '</button>');
+    foot(out.join(''));
+    var b;
+    UI.el('ivc-back').onclick = function () { load(1); };
+    if ((b = UI.el('ivc-edit'))) b.onclick = function () { compose(d); };
+    if ((b = UI.el('ivc-print'))) b.onclick = function () { print(d.Id); };
+    if ((b = UI.el('ivc-void'))) b.onclick = function () { s.panel = 'void'; paintInvoice(d); UI.el('ivc-void-reason').focus(); };
+    if ((b = UI.el('ivc-pay'))) b.onclick = function () { s.payRequest = UI.uuid().replace(/[^A-Za-z0-9]/g, '').slice(0, 32); (methods ? Promise.resolve() : M.OrdersUI.meta().then(function (m) { methods = m.paymentMethods; })).then(function () { s.panel = 'pay'; paintInvoice(d); UI.el('ivc-pay-amount').focus(); UI.el('ivc-pay-amount').select(); }).catch(fail); };
+    if ((b = UI.el('ivc-panel-cancel'))) b.onclick = function () { var was = s.panel; s.panel = ''; paintInvoice(d); var back = UI.el(was === 'pay' ? 'ivc-pay' : 'ivc-void'); if (back) back.focus(); };
+    if ((b = UI.el('ivc-pay-form'))) b.onsubmit = pay;
+    if ((b = UI.el('ivc-void-form'))) b.onsubmit = voidIt;
+    UI.el('ivc-body').querySelectorAll('[data-order]').forEach(function (x) { x.onclick = function () { var id = x.getAttribute('data-order'); Modal.closeThen('ivc-modal', function () { M.JobOrders.open(id, { back: function () { reopen(d.Id); } }); }); }; });
+    UI.el('ivc-body').querySelectorAll('[data-ack]').forEach(function (x) { x.onclick = function () { Api.call('invoices.receipt', { id: d.Id, group: x.getAttribute('data-ack') }, { busy: true }).then(printReceipt).catch(function (e) { Toast.danger(UI.error(e)); }); }; });
+  }
+  function show(id) { s.panel = ''; return Api.call('invoices.get', { id: id }, { busy: true }).then(function (d) { paintInvoice(d); focusBody(); return d; }).catch(fail); }
+  function reopen(id) { Modal.open('ivc-modal'); return show(id); }
+  function invalid(form, e) { var key = e.fields ? Object.keys(e.fields)[0] : '', el = key ? form.querySelector('[name="' + key + '"]') : null; if (el) { el.classList.add('is-invalid'); el.focus(); } error(UI.error(e)); }
+  function pay(ev) {
+    ev.preventDefault(); var form = UI.el('ivc-pay-form'), btn = UI.el('ivc-pay-go'), d = s.doc; error(''); form.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
+    btn.disabled = true;
+    Api.call('invoices.pay', { id: d.Id, amount: UI.el('ivc-pay-amount').value, method: UI.el('ivc-pay-method').value, referenceNo: UI.el('ivc-pay-ref').value.trim(), requestId: s.payRequest }, { busy: true, timeoutMs: 120000 }).then(function (r) {
+      s.panel = ''; Toast.success(F.peso(r.receipt.Amount) + ' recorded on ' + r.receipt.InvoiceNo); paintInvoice(r.invoice); printReceipt(r.receipt);
+    }).catch(function (e) { btn.disabled = false; invalid(form, e); });
+  }
+  function voidIt(ev) {
+    ev.preventDefault(); var form = UI.el('ivc-void-form'), btn = UI.el('ivc-void-go'), reason = UI.el('ivc-void-reason').value.trim(); error('');
+    if (reason.length < 3) { UI.el('ivc-void-reason').classList.add('is-invalid'); UI.el('ivc-void-reason').focus(); error('Say why the invoice is voided.'); return; }
+    btn.disabled = true;
+    Api.call('invoices.void', { id: s.doc.Id, reason: reason }, { busy: true }).then(function (d) { s.panel = ''; Toast.success('Invoice ' + d.InvoiceNo + ' voided'); paintInvoice(d); }).catch(function (e) { btn.disabled = false; invalid(form, e); });
+  }
+
+  // ------------------------------------------------------------------ the printed invoice and the payment acknowledgment
+  var DOC_CSS = '.ivc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.ivc-top .doc-head{flex:1;text-align:left;margin-bottom:0}.ivc-top .doc-logo{margin-left:0}.ivc-mark{font-weight:800;font-size:13px;letter-spacing:.06em;border:2px solid #111;padding:2px 8px;white-space:nowrap}.ivc-void{color:#b91c1c;border-color:#b91c1c}' +
+    '.ivc-band{background:#6D2322;color:#FFF9E3;padding:6px 10px;margin:10px 0 8px;display:flex;justify-content:space-between;gap:12px;font-size:13px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.ivc-band b{font-size:15px}' +
+    '.ivc-blk{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;margin:6px 0 10px}.ivc-blk b{display:inline-block;min-width:96px;font-weight:700}.ivc-jo td{background:#f6efe0;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    '.ivc-sum{margin:10px 0 0 auto;width:auto;min-width:46%}.ivc-sum td{border:0;padding:3px 6px}.ivc-sum tr.tot td{border-top:2px solid #333;font-weight:800}.ivc-how{margin-top:12px;border:1px solid #bbb;padding:6px 8px;white-space:pre-line}.ivc-note{margin-top:12px;font-size:11px;color:#444}';
+  function documentHtml(d) {
+    var esc = UI.esc, c = d.Client || {}, blk = function (k, v) { return v ? '<div><b>' + k + '</b>' + esc(v) + '</div>' : ''; }, n = 0;
+    var mark = d.Status === 'VOID' ? '<div class="ivc-mark ivc-void">VOID</div>' : (d.Reprint ? '<div class="ivc-mark">REPRINT</div>' : '');
+    var body = d.Orders.map(function (o) {
+      return '<tr class="ivc-jo"><td colspan="5">Job order ' + esc(o.OrderNo) + ' · ' + esc(F.date(o.Date)) + ' · ' + num(o.Pieces) + ' pieces</td><td class="r num">' + esc(money(o.Amount)) + '</td></tr>' +
+        (o.Lines || []).map(function (l) { return '<tr><td class="r num">' + (++n) + '</td><td>' + esc(l.Description) + '</td><td class="r num">' + esc(F.qty(l.Qty, '')) + '</td><td>' + esc(l.Unit || '') + '</td><td class="r num">' + esc(money(l.UnitPrice)) + '</td><td class="r num">' + esc(money(l.LineTotal)) + '</td></tr>'; }).join('') +
+        (num(o.Discount) ? '<tr><td></td><td colspan="4">Discount</td><td class="r num">-' + esc(money(o.Discount)) + '</td></tr>' : '') + (num(o.Charges) ? '<tr><td></td><td colspan="4">Delivery and other charges</td><td class="r num">' + esc(money(o.Charges)) + '</td></tr>' : '');
+    }).join('');
+    var sum = '<tr><td>Subtotal</td><td class="r num">' + esc(money(d.Subtotal)) + '</td></tr>' + (num(d.Discount) ? '<tr><td>Discounts</td><td class="r num">-' + esc(money(d.Discount)) + '</td></tr>' : '') + (num(d.Charges) ? '<tr><td>Delivery and other charges</td><td class="r num">' + esc(money(d.Charges)) + '</td></tr>' : '') +
+      '<tr class="tot"><td>INVOICE TOTAL</td><td class="r num">' + esc(money(d.Total)) + '</td></tr>' + M.Vat.rows(d.Vat).map(function (v) { return '<tr><td>' + esc(v[0]) + '</td><td class="r num">' + esc(money(v[1])) + '</td></tr>'; }).join('') +
+      '<tr><td>Paid to date</td><td class="r num">' + esc(money(d.Paid)) + '</td></tr><tr class="tot"><td>BALANCE DUE</td><td class="r num">' + esc(money(d.Balance)) + '</td></tr>';
+    return '<style>' + DOC_CSS + '</style><div class="ivc-top">' + M.Print.header({ title: 'Billing invoice', business: d.Business || {} }) + '<div>' + mark + '</div></div>' +
+      '<div class="ivc-band"><span>Invoice No. <b>' + esc(d.InvoiceNo) + '</b></span><span>Date <b>' + esc(F.date(d.IssuedAt)) + '</b></span><span>' + (d.DueDate ? 'Due <b>' + esc(F.date(d.DueDate)) + '</b>' : '') + '</span></div>' +
+      '<div class="ivc-blk">' + blk('Bill to', c.Name) + blk('Property', c.PropertyName) + blk('Address', c.Address) + blk('Attention', [c.Representative, c.RepresentativePosition].filter(Boolean).join(', ')) + blk('Phone', c.Phone) + blk('E-mail', c.Email) + blk('Contract ref.', c.ContractRef) + blk('Billing terms', c.BillingTerms) +
+      blk('Job orders of', d.PeriodFrom === d.PeriodTo ? F.date(d.PeriodFrom) : F.date(d.PeriodFrom) + ' to ' + F.date(d.PeriodTo)) + '</div>' +
+      '<table><thead><tr><th class="r">No.</th><th>Description</th><th class="r">Quantity</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount</th></tr></thead><tbody>' + body + '</tbody></table>' +
+      '<table class="ivc-sum"><tbody>' + sum + '</tbody></table>' + (d.Differs ? '<p class="ivc-note">Since this invoice was issued a job order on it was corrected or cancelled; the job orders now add up to ' + esc(money(d.Now)) + '.</p>' : '') +
+      (d.Notes ? '<p>' + esc(d.Notes) + '</p>' : '') + (d.Instructions ? '<div class="ivc-how"><b>How to pay</b>\n' + esc(d.Instructions) + '</div>' : '') +
+      '<div class="ivc-note">This billing invoice lists the job orders billed to the client. <b>It is not an official receipt.</b> Paid to date and balance due are as recorded when it was printed.' + (d.Status === 'VOID' ? ' <span class="ivc-void">This invoice was voided: ' + esc(d.VoidReason) + '.</span>' : '') + '</div>' +
+      M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: (d.Reprint ? 'REPRINT · ' : '') + 'print ' + num(d.PrintCount) + ' · ' + d.InvoiceNo });
+  }
+  function receiptHtml(r) {
+    var esc = UI.esc, c = r.Client || {};
+    return '<style>' + DOC_CSS + '</style><div class="ivc-top">' + M.Print.header({ title: 'Payment acknowledgment', business: r.Business || {} }) + '<div></div></div>' +
+      '<div class="ivc-band"><span>For invoice <b>' + esc(r.InvoiceNo) + '</b></span><span>Date <b>' + esc(F.date(r.Date)) + '</b></span><span>Amount <b>' + esc(money(r.Amount)) + '</b></span></div>' +
+      '<div class="ivc-blk"><div><b>Received from</b>' + esc(c.Name || '') + '</div>' + (c.PropertyName ? '<div><b>Property</b>' + esc(c.PropertyName) + '</div>' : '') + '<div><b>Paid by</b>' + esc(F.status(r.Method)) + (r.ReferenceNo ? ' · ' + esc(r.ReferenceNo) : '') + '</div><div><b>Received by</b>' + esc(r.ReceivedBy || '') + '</div></div>' +
+      '<table><thead><tr><th>Applied to job order</th><th class="r">Amount</th></tr></thead><tbody>' + r.Allocations.map(function (a) { return '<tr><td>' + esc(a.OrderNo) + '</td><td class="r num">' + esc(money(a.Amount)) + '</td></tr>'; }).join('') + '</tbody></table>' +
+      '<table class="ivc-sum"><tbody><tr class="tot"><td>AMOUNT RECEIVED</td><td class="r num">' + esc(money(r.Amount)) + '</td></tr></tbody></table>' +
+      '<div class="ivc-note">This acknowledges the payment recorded above against billing invoice ' + esc(r.InvoiceNo) + '. <b>It is not an official receipt.</b></div>' + M.Print.footer({ by: r.ReceivedBy, at: r.At, note: r.InvoiceNo });
+  }
+  function paper() { var size = 'A4'; try { size = window.localStorage.getItem(PAPER_KEY) || 'A4'; } catch (e) { /* private mode */ } return size; }
+  function printReceipt(r) { M.Print.open(receiptHtml(r), { title: 'Payment acknowledgment ' + r.InvoiceNo, size: paper() }); return r; }
+  /** The server counts the print first; the page is laid out from its answer. */
+  function print(id) {
+    return Api.call('invoices.document', { id: id }, { busy: true }).then(function (d) {
+      M.Print.open(documentHtml(d), { title: 'Invoice ' + d.InvoiceNo, size: paper() });
+      if (s && s.doc && s.doc.Id === d.Id) { s.doc.PrintCount = d.PrintCount; paintInvoice(s.doc); }
+      return d;
+    }).catch(function (e) { Toast.danger(UI.error(e)); return null; });
+  }
+
+  /** Opens the dialog. opts: { customerId, name, invoiceId } — a client's invoices, everyone's when no client is given, or one invoice straight away. */
+  function open(opts) {
+    opts = opts || {}; s = { customerId: opts.customerId || '', name: opts.name || '', view: 'list', rows: [], page: 1, more: false, draft: null, doc: null, panel: '', payRequest: '' };
+    title('Invoices'); UI.html('ivc-body', UI.skeleton({ kind: 'rows', count: 4, label: 'Loading the invoices' })); foot(''); error('');
+    Modal.open('ivc-modal');
+    return opts.invoiceId ? show(opts.invoiceId) : load(1);
+  }
+
+  M.Invoices = { open: open, print: print, documentHtml: documentHtml, receiptHtml: receiptHtml, canView: function () { return can('INVOICE_VIEW'); }, canIssue: function () { return can('INVOICE_ISSUE'); } };
+})();
+</script>
+
         <!-- Mrs Laundry Sys — PickupSchedulesPage.html (release 1.48.0): recurring pickup schedules.
      One dialog. Opened from Dispatch it lists every schedule under the lens; opened for a commercial client (its page, or a row of that
      list) it shows the client's schedules with the pickups already created, and lets a manager add, change, pause, resume, end a
@@ -9480,7 +9750,7 @@ window.MLS = (function () {
   function pct(v, dp) { return v === null || v === undefined ? '—' : F.number(v, dp === undefined ? 1 : dp) + '%'; }
   function delta(v) { if (v === null || v === undefined) return '<span class="text-soft">—</span>'; var up = Number(v) > 0; return '<span class="' + (up ? 'text-success' : (Number(v) < 0 ? 'text-danger' : 'text-soft')) + '">' + (up ? '▲ ' : (Number(v) < 0 ? '▼ ' : '')) + F.number(Math.abs(Number(v)), 1) + '%</span>'; }
   function bold(v) { return '<span class="money fw-bold">' + F.peso(v) + '</span>'; }
-  var TABS = [['sales', 'Sales', 'REPORT_VIEW'], ['payments', 'Payments', 'REPORT_VIEW'], ['expenses', 'Expenses', 'REPORT_VIEW'], ['receivables', 'Receivables', 'REPORT_VIEW'], ['production', 'Production', 'REPORT_VIEW'], ['business', 'Business', 'REPORT_VIEW'], ['jobs', 'Job orders', 'REPORT_VIEW'], ['routes', 'Routes', 'REPORT_VIEW'], ['vat', 'VAT', 'REPORT_VIEW', function () { return M.Vat.known(); }], ['inventory', 'Inventory', 'REPORT_VIEW'], ['payroll', 'Payroll', ['STAFF_PAYROLL_ADMIN', 'STAFF_PAYROLL_HOURS_VIEW']], ['messages', 'Messages', 'SMS_VIEW_LOGS'], ['audit', 'Audit log', 'AUDIT_VIEW']];
+  var TABS = [['sales', 'Sales', 'REPORT_VIEW'], ['payments', 'Payments', 'REPORT_VIEW'], ['expenses', 'Expenses', 'REPORT_VIEW'], ['receivables', 'Receivables', 'REPORT_VIEW'], ['production', 'Production', 'REPORT_VIEW'], ['business', 'Business', 'REPORT_VIEW'], ['jobs', 'Job orders', 'REPORT_VIEW'], ['routes', 'Routes', 'REPORT_VIEW'], ['invoices', 'Invoices', 'REPORT_VIEW'], ['vat', 'VAT', 'REPORT_VIEW', function () { return M.Vat.known(); }], ['inventory', 'Inventory', 'REPORT_VIEW'], ['payroll', 'Payroll', ['STAFF_PAYROLL_ADMIN', 'STAFF_PAYROLL_HOURS_VIEW']], ['messages', 'Messages', 'SMS_VIEW_LOGS'], ['audit', 'Audit log', 'AUDIT_VIEW']];
   var PRESETS = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This week'], ['month', 'This month'], ['lastMonth', 'Last month'], ['quarter', 'Last 90 days'], ['year', 'This year'], ['twelve', 'Last 12 months']];
   function tabAllowed(t) { var p = t[2]; if (t[3] && !t[3]()) return false; return Array.isArray(p) ? p.some(can) : can(p); }  // 1.50.0: a tab may also depend on a setting (VAT: only once VAT has been switched on)
   function preset(code) {
@@ -9583,6 +9853,17 @@ window.MLS = (function () {
       chart: function (d) { return d.byVehicle.length ? { type: 'bar', labels: d.byVehicle.map(function (v) { return v.Vehicle; }), datasets: [{ label: 'Stops', data: d.byVehicle.map(function (v) { return v.Stops; }) }, { label: 'Made', data: d.byVehicle.map(function (v) { return v.Made; }) }] } : null; },
       extra: function (d) { return table('By vehicle', [{ key: 'Vehicle', label: 'Vehicle', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span>' + (r.Plate || r.Type ? '<div class="small text-soft">' + UI.esc([r.Plate, r.Type].filter(Boolean).join(' · ')) + '</div>' : ''); } }, { key: 'Routes', label: 'Routes', align: R }, { key: 'Stops', label: 'Stops', align: R }, { key: 'Made', label: 'Made', align: R }, { key: 'Failed', label: 'Failed', align: R }, { key: 'Open', label: 'Still open', align: R }, { key: 'PiecesPicked', label: 'Pieces picked up', align: R, format: num }, { key: 'PiecesDelivered', label: 'Pieces delivered', align: R, format: num }], d.byVehicle) +
         '<p class="small text-soft">The routes whose day is in the range. A cancelled route and a cancelled job are left out, and a job on no route is not in this report. A stop counts for the vehicle it was on. Pieces are a job order\'s linens: counted at the pickup that began it, and handed over on a delivery trip.</p>'; }
+    },
+    invoices: {   // release 1.51.0: the invoices issued in the range, with where their money stands now
+      load: function () { return Api.call('reports.invoices', { from: state.from, to: state.to }); },
+      kpis: function (d) { var t = d.totals; return [['Invoices', t.Invoices], ['Billed', F.peso(t.Billed)], ['Paid', F.peso(t.Paid)], ['Outstanding', F.peso(t.Outstanding)], ['Still owing', t.Open], ['Overdue', F.peso(t.Overdue)], ['Overdue invoices', t.OverdueCount], ['Voided', t.Voided]]; },
+      columns: function () { var words = { PAID: 'Paid', PARTIAL: 'Partly paid', UNPAID: 'Unpaid' }; return [{ key: 'InvoiceNo', label: 'Invoice', format: function (v, r) { return lead(v, 'issued ' + UI.esc(F.date(r.Date)) + ' · ' + r.Orders + ' job order' + (r.Orders === 1 ? '' : 's')); } }, { key: 'Client', label: 'Client', format: function (v) { return UI.esc(v); } }, { key: 'DueDate', label: 'Due', format: function (v) { return v ? UI.esc(F.date(v)) : '<span class="text-soft">—</span>'; } }, { key: 'Total', label: 'Total', align: R, format: peso }, { key: 'Paid', label: 'Paid', align: R, format: peso }, { key: 'Balance', label: 'Balance', align: R, format: bold },
+        { key: 'PayStatus', label: 'Status', format: function (v, r) { return r.Overdue ? '<span class="status-badge s-overdue">Overdue ' + r.DaysOverdue + ' day' + (r.DaysOverdue === 1 ? '' : 's') + '</span>' : '<span class="status-badge s-' + String(v || 'unpaid').toLowerCase() + '">' + (words[v] || '') + '</span>'; } }]; },
+      rows: function (d) { return d.rows; },
+      onRow: function (r) { if (M.Invoices && M.Invoices.canView()) M.Invoices.open({ invoiceId: r.Id }); },
+      chart: function () { return null; },
+      extra: function (d) { return (d.voided.length ? table('Voided', [{ key: 'InvoiceNo', label: 'Invoice', format: function (v, r) { return lead(v, 'issued ' + UI.esc(F.date(r.Date))); } }, { key: 'Client', label: 'Client', format: function (v) { return UI.esc(v); } }, { key: 'Total', label: 'Total', align: R, format: peso }, { key: 'VoidReason', label: 'Why', format: function (v, r) { return UI.esc(v) + (r.VoidedBy ? '<div class="small text-soft">' + UI.esc(r.VoidedBy) + '</div>' : ''); } }], d.voided) : '') +
+        '<p class="small text-soft" id="rp-inv-note">The invoices issued in the range. Total is the amount on the invoice as it was issued. Paid and Balance are read from its job orders as they stand now, whenever the payment was made. An invoice is overdue when it still owes after its due date. A billing invoice is not an official receipt.</p>'; }
     },
     vat: {   // release 1.50.0: the VAT summary by month, from each order's own figures
       load: function () { return Api.call('reports.vat', { from: state.from, to: state.to }); },
