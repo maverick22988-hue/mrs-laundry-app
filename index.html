@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: '3f37d4ca1f', version: '1.51.0' };</script>
+  <script>window.MLS_PWA = { build: 'e79f40a53e', version: '1.52.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -298,12 +298,13 @@
      warning (waiting on someone: unpaid, partial, late, pending, review); danger (cancelled, refused, missing, failed);
      done (completed, released, closed) on the soft burgundy; history (inactive, void, archived, retired) as an outlined pill */
   .status-badge.s-exempt, .status-badge.s-zero_rated, .status-badge.s-new, .status-badge.s-planned, .status-badge.s-received, .status-badge.s-leave, .status-badge.s-holiday, .status-badge.s-unassigned, .status-badge.s-draft, .status-badge.s-not_started, .status-badge.s-scheduled, .status-badge.s-prepared, .status-badge.s-unknown, .status-badge.s-sample, .status-badge.s-planned, .status-badge.s-backed_up { background: var(--mls-well); color: var(--mls-ink); }
-  .status-badge.s-processing, .status-badge.s-on_the_road, .status-badge.s-washing, .status-badge.s-drying, .status-badge.s-folding, .status-badge.s-qc, .status-badge.s-packed, .status-badge.s-assigned, .status-badge.s-accepted, .status-badge.s-open, .status-badge.s-in_progress, .status-badge.s-out_for_delivery, .status-badge.s-for_pickup, .status-badge.s-computed, .status-badge.s-gateway_queued, .status-badge.s-running { background: var(--mls-info-soft); color: var(--mls-info); }
-  .status-badge.s-ready, .status-badge.s-finished, .status-badge.s-issued, .status-badge.s-verified, .status-badge.s-applied, .status-badge.s-active, .status-badge.s-paid, .status-badge.s-present, .status-badge.s-approved, .status-badge.s-finalized, .status-badge.s-delivered, .status-badge.s-picked_up, .status-badge.s-in, .status-badge.s-pass, .status-badge.s-ok, .status-badge.s-on_time, .status-badge.s-user_confirmed_sent, .status-badge.s-resolved, .status-badge.s-gateway_delivered, .status-badge.s-attached, .status-badge.s-production { background: var(--mls-success-soft); color: var(--mls-success); }
-  .status-badge.s-partial, .status-badge.s-paused, .status-badge.s-reviewed, .status-badge.s-late, .status-badge.s-undertime, .status-badge.s-pending, .status-badge.s-reopened, .status-badge.s-submitted, .status-badge.s-stale, .status-badge.s-unpaid, .status-badge.s-warning, .status-badge.s-composer_open_requested, .status-badge.s-in_review, .status-badge.s-gateway_sent, .status-badge.s-soon, .status-badge.s-stopped, .status-badge.s-skipped { background: var(--mls-warning-soft); color: var(--mls-warning); }
-  .status-badge.s-cancelled, .status-badge.s-discrepancy, .status-badge.s-refunded, .status-badge.s-absent, .status-badge.s-review, .status-badge.s-rejected, .status-badge.s-failed, .status-badge.s-fail, .status-badge.s-locked, .status-badge.s-disabled, .status-badge.s-error, .status-badge.s-overdue, .status-badge.s-not_sent, .status-badge.s-failed_to_open, .status-badge.s-gateway_failed, .status-badge.s-down, .status-badge.s-due, .status-badge.s-missing, .status-badge.s-test, .status-badge.s-demo, .status-badge.s-deleted { background: var(--mls-danger-soft); color: var(--mls-danger); }
+  .chk-part { max-width: 9rem; margin-left: auto; }  /* 1.52.0: the amount of a check put on one invoice or order */
+  .status-badge.s-deposited, .status-badge.s-processing, .status-badge.s-on_the_road, .status-badge.s-washing, .status-badge.s-drying, .status-badge.s-folding, .status-badge.s-qc, .status-badge.s-packed, .status-badge.s-assigned, .status-badge.s-accepted, .status-badge.s-open, .status-badge.s-in_progress, .status-badge.s-out_for_delivery, .status-badge.s-for_pickup, .status-badge.s-computed, .status-badge.s-gateway_queued, .status-badge.s-running { background: var(--mls-info-soft); color: var(--mls-info); }
+  .status-badge.s-cleared, .status-badge.s-ready, .status-badge.s-finished, .status-badge.s-issued, .status-badge.s-verified, .status-badge.s-applied, .status-badge.s-active, .status-badge.s-paid, .status-badge.s-present, .status-badge.s-approved, .status-badge.s-finalized, .status-badge.s-delivered, .status-badge.s-picked_up, .status-badge.s-in, .status-badge.s-pass, .status-badge.s-ok, .status-badge.s-on_time, .status-badge.s-user_confirmed_sent, .status-badge.s-resolved, .status-badge.s-gateway_delivered, .status-badge.s-attached, .status-badge.s-production { background: var(--mls-success-soft); color: var(--mls-success); }
+  .status-badge.s-held, .status-badge.s-soon, .status-badge.s-partial, .status-badge.s-paused, .status-badge.s-reviewed, .status-badge.s-late, .status-badge.s-undertime, .status-badge.s-pending, .status-badge.s-reopened, .status-badge.s-submitted, .status-badge.s-stale, .status-badge.s-unpaid, .status-badge.s-warning, .status-badge.s-composer_open_requested, .status-badge.s-in_review, .status-badge.s-gateway_sent, .status-badge.s-soon, .status-badge.s-stopped, .status-badge.s-skipped { background: var(--mls-warning-soft); color: var(--mls-warning); }
+  .status-badge.s-bounced, .status-badge.s-cancelled, .status-badge.s-discrepancy, .status-badge.s-refunded, .status-badge.s-absent, .status-badge.s-review, .status-badge.s-rejected, .status-badge.s-failed, .status-badge.s-fail, .status-badge.s-locked, .status-badge.s-disabled, .status-badge.s-error, .status-badge.s-overdue, .status-badge.s-not_sent, .status-badge.s-failed_to_open, .status-badge.s-gateway_failed, .status-badge.s-down, .status-badge.s-due, .status-badge.s-missing, .status-badge.s-test, .status-badge.s-demo, .status-badge.s-deleted { background: var(--mls-danger-soft); color: var(--mls-danger); }
   .status-badge.s-completed, .status-badge.s-released, .status-badge.s-closed { background: var(--mls-primary-soft); color: var(--mls-primary); }
-  .status-badge.s-inactive, .status-badge.s-discarded, .status-badge.s-ended, .status-badge.s-void, .status-badge.s-rest_day, .status-badge.s-unscheduled, .status-badge.s-upcoming, .status-badge.s-out, .status-badge.s-archived, .status-badge.s-retired, .status-badge.s-removed { background: transparent; color: var(--mls-ink); border-color: var(--mls-line); }
+  .status-badge.s-replaced, .status-badge.s-moved, .status-badge.s-inactive, .status-badge.s-discarded, .status-badge.s-ended, .status-badge.s-void, .status-badge.s-rest_day, .status-badge.s-unscheduled, .status-badge.s-upcoming, .status-badge.s-out, .status-badge.s-archived, .status-badge.s-retired, .status-badge.s-removed { background: transparent; color: var(--mls-ink); border-color: var(--mls-line); }
   .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 12px; }
   .toolbar .form-control, .toolbar .form-select { width: auto; min-width: 150px; flex: 0 0 auto; max-width: 100%; background-color: var(--mls-well); }
   .toolbar .form-control:focus, .toolbar .form-select:focus { background-color: var(--mls-card); }
@@ -1068,7 +1069,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.51.0';
+  var VERSION = '1.52.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -1097,6 +1098,7 @@ window.MLS = (function () {
     { route: 'staff', title: 'Staff', icon: 'fa-id-badge', section: 'People', phase: 5 },
     { route: 'expenses', title: 'Expenses', icon: 'fa-receipt', section: 'Money', permission: 'EXPENSE_VIEW', phase: 6 },
     { route: 'eod', title: 'End of Day', icon: 'fa-vault', section: 'Money', permission: 'EOD_VIEW', phase: 6 },
+    { route: 'checks', title: 'Checks', icon: 'fa-money-check', section: 'Money', permission: 'CHECK_VIEW', phase: 11 },  // 1.52.0: post-dated checks, followed until the bank clears them
     { route: 'reports', title: 'Reports & Audit', icon: 'fa-chart-line', section: 'Money', permission: 'REPORT_VIEW', phase: 6 },
     { route: 'settings', title: 'Settings & Profile', icon: 'fa-gear', section: 'System', phase: 7 },
     { route: 'sync', title: 'Sync', icon: 'fa-rotate', section: 'System', phase: 11 },
@@ -4475,6 +4477,7 @@ window.MLS = (function () {
       if (c.CustomerType === 'CORPORATE' && !c.Anonymised && M.PickupSchedules && M.PickupSchedules.canView()) more.push('<li><button type="button" class="dropdown-item" data-act="schedule"><i class="fa-solid fa-repeat me-2" aria-hidden="true"></i>Pickup schedule</button></li>');  // 1.48.0
       if (M.Auth.can('CUSTOMER_ERASE') && !c.Anonymised) danger.push('<li><button type="button" class="dropdown-item text-danger" data-act="erase"><i class="fa-solid fa-user-slash me-2" aria-hidden="true"></i>Erase personal data</button></li>');
       if (c.CustomerType === 'CORPORATE' && !c.Anonymised && M.Statements && M.Statements.canView()) right.push('<button type="button" class="btn btn-sm btn-outline-secondary" data-act="statement"><i class="fa-solid fa-file-invoice me-1"></i>Statement</button>');  // 1.47.0
+      if (!c.Anonymised && M.Checks && M.Checks.canView()) right.push('<button type="button" class="btn btn-sm btn-outline-secondary" data-act="checks"><i class="fa-solid fa-money-check me-1"></i>Checks</button>');  // 1.52.0
       if (c.CustomerType === 'CORPORATE' && !c.Anonymised && M.Invoices && M.Invoices.canView()) right.push('<button type="button" class="btn btn-sm btn-outline-secondary" data-act="invoices"><i class="fa-solid fa-file-invoice-dollar me-1"></i>Invoices</button>');  // 1.51.0
       if (M.Auth.can('CUSTOMER_EDIT') && !c.Anonymised) right.push('<button type="button" class="btn btn-sm btn-outline-primary" data-act="edit"><i class="fa-solid fa-pen me-1"></i>Edit</button>');
       if (M.Auth.can('POS_CREATE') && c.Status === 'ACTIVE') right.push('<button type="button" class="btn btn-sm btn-primary" data-act="pos"><i class="fa-solid fa-cash-register me-1"></i>New order</button>');
@@ -4484,7 +4487,7 @@ window.MLS = (function () {
       var smsItems = []; if (withBalance) smsItems.push({ code: 'BALANCE_REMINDER', label: 'Balance reminder · ' + withBalance.OrderNo, icon: 'fa-bell', suggested: true, arg: withBalance.Id }); smsItems.push({ code: 'GENERAL', label: 'General message', icon: 'fa-comment', suggested: !withBalance });
       var smsMenu = M.Sms && M.Sms.can(c.Mobile) && c.Status === 'ACTIVE' ? M.Sms.menuHtml({ id: 'cust-sms-menu', label: 'Send SMS', items: smsItems }) : '';
       UI.html('cust-view-actions', moreMenu + '<span class="spacer"></span>' + smsMenu + right.join(''));
-      UI.el('cust-view-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); if (a === 'incident') return M.Incidents.report({ customerId: c.Id, customerName: c.FullName }); if (a === 'erase') return erase(c); M.Modal.closeThen('cust-view-modal', function () { if (a === 'schedule') M.PickupSchedules.open(c.Id, { name: c.FullName }); else if (a === 'pos') M.Router.go('pos', { customerId: c.Id }); else if (a === 'statement') M.Statements.open(c.Id, { name: c.FullName }); else if (a === 'invoices') M.Invoices.open({ customerId: c.Id, name: c.FullName }); else openForm(c); }); }; });
+      UI.el('cust-view-actions').querySelectorAll('[data-act]').forEach(function (b) { b.onclick = function () { var a = b.getAttribute('data-act'); if (a === 'incident') return M.Incidents.report({ customerId: c.Id, customerName: c.FullName }); if (a === 'erase') return erase(c); M.Modal.closeThen('cust-view-modal', function () { if (a === 'schedule') M.PickupSchedules.open(c.Id, { name: c.FullName }); else if (a === 'pos') M.Router.go('pos', { customerId: c.Id }); else if (a === 'statement') M.Statements.open(c.Id, { name: c.FullName }); else if (a === 'invoices') M.Invoices.open({ customerId: c.Id, name: c.FullName }); else if (a === 'checks') M.Router.go('checks', { customerId: c.Id, name: c.FullName }); else openForm(c); }); }; });
       if (smsMenu) M.Sms.wireMenu(UI.el('cust-view-actions'), function (arg) { return { customerId: c.Id, orderId: arg || '' }; }, function () { if (M.Auth.can('SMS_VIEW_LOGS')) loadHistory(c.Id); });
       M.Modal.open('cust-view-modal');
     }).catch(function (e) { Toast.danger(UI.error(e)); });
@@ -7766,6 +7769,7 @@ window.MLS = (function () {
     var top = '<div class="d-flex flex-wrap align-items-center gap-2 mb-2"><span class="fw-bold" id="ivc-no">' + UI.esc(d.InvoiceNo || 'Draft') + '</span>' + badges(d) + '<span class="text-muted small">' + (d.IssuedAt ? 'issued ' + UI.esc(F.datetime(d.IssuedAt)) + (d.IssuedBy ? ' by ' + UI.esc(d.IssuedBy) : '') : 'not issued yet') + '</span></div>' +
       (d.Status === 'VOID' ? '<div class="alert alert-light border small" id="ivc-voided">Voided' + (d.VoidedBy ? ' by ' + UI.esc(d.VoidedBy) : '') + ': ' + UI.esc(d.VoidReason) + '. Its job orders can be invoiced again; payments already made stay on them.</div>' : '');
     var grid = [['Invoice total', money(d.Total), 'ivc-total'], ['Paid', money(d.Paid), 'ivc-paid'], ['Balance', money(d.Balance), 'ivc-balance']];
+    if (num(d.Covered)) grid.push(['Covered by checks held', money(d.Covered), 'ivc-covered']);  // 1.52.0: not money yet; the balance does not move for it
     if (d.DueDate) grid.push(['Due by', UI.esc(F.date(d.DueDate)), 'ivc-due-shown']);
     if (num(d.Discount)) grid.push(['Discounts', money(d.Discount), 'ivc-discount']);
     if (num(d.Charges)) grid.push(['Delivery and other charges', money(d.Charges), 'ivc-charges']);
@@ -7781,6 +7785,10 @@ window.MLS = (function () {
       var first = p.Group && all.findIndex(function (q) { return q.Group === p.Group; }) === i;
       return '<tr><td data-label="Date">' + UI.esc(F.date(p.Date)) + '</td><td data-label="Job order">' + UI.esc(p.OrderNo) + '</td><td data-label="Payment">' + (p.Type === 'REFUND' ? 'Refund · ' : '') + UI.esc(F.status(p.Method)) + (p.ReferenceNo ? ' · ' + UI.esc(p.ReferenceNo) : '') + '</td><td data-label="Amount" class="text-end num">' + (p.Type === 'REFUND' ? '-' : '') + money(p.Amount) + '</td><td class="text-end no-label">' + (first ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-ack="' + UI.esc(p.Group) + '"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>Acknowledgment</button>' : '') + '</td></tr>';
     }).join('') + '</tbody></table></div></section>' : '';
+    var CHECK_WORDS = { HELD: 'Held', DEPOSITED: 'At the bank', CLEARED: 'Cleared', BOUNCED: 'Returned', REPLACED: 'Replaced', CANCELLED: 'Cancelled' };
+    var checks = d.Checks && d.Checks.length ? '<section class="od-section mt-3"><h6 class="section-title">Checks for this invoice <span class="count">' + d.Checks.length + '</span></h6><p class="small text-muted mb-1">A check is counted as paid only once the bank has cleared it.</p><div class="table-wrap"><table class="table table-sm table-cards mb-0" id="ivc-checks"><thead><tr><th>Check</th><th>Check date</th><th class="text-end num">For this invoice</th><th>Status</th></tr></thead><tbody>' + d.Checks.map(function (k) {
+      return '<tr><td data-label="Check"><button type="button" class="btn btn-link p-0 fw-bold" data-check="' + UI.esc(k.Id) + '">' + UI.esc(k.CheckNo) + '</button> <span class="small text-muted">' + UI.esc(k.Bank) + '</span></td><td data-label="Check date">' + UI.esc(F.date(k.CheckDate)) + '</td><td data-label="For this invoice" class="text-end num">' + money(k.Amount) + '</td><td data-label="Status">' + UI.badge(k.Status, CHECK_WORDS[k.Status]) + '</td></tr>';
+    }).join('') + '</tbody></table></div></section>' : '';
     var panel = '';
     if (s.panel === 'pay') panel = '<form class="mt-3 pt-3 border-top" id="ivc-pay-form" autocomplete="off" novalidate><div class="row g-2 align-items-end mx-0"><div class="col-12"><h6 class="section-title mb-1">Record a payment</h6><p class="small text-muted mb-1">The amount is put on the job orders that still owe, the oldest first.</p></div>' +
       '<div class="col-6 col-md-3"><label class="form-label" for="ivc-pay-amount">Amount</label><input class="form-control" id="ivc-pay-amount" name="amount" inputmode="decimal" value="' + UI.esc(num(d.Balance).toFixed(2)) + '" aria-required="true"></div>' +
@@ -7791,7 +7799,7 @@ window.MLS = (function () {
       '<div class="col-12"><label class="form-label" for="ivc-void-reason">Why is this invoice voided?</label><input class="form-control" id="ivc-void-reason" name="reason" maxlength="200" aria-required="true"></div>' +
       '<div class="col-12 d-flex gap-2"><button type="submit" class="btn btn-danger btn-sm" id="ivc-void-go">Void the invoice</button><button type="button" class="btn btn-outline-secondary btn-sm" id="ivc-panel-cancel">Cancel</button></div></div></form>';
     return top + '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v" id="' + g[2] + '">' + g[1] + '</div></div>'; }).join('') + '</div>' + differs + problems +
-      (d.Notes ? '<div class="alert alert-light border small mt-3 mb-0" id="ivc-notes-shown">' + UI.esc(d.Notes) + '</div>' : '') + orders + pays + panel + (issued || d.Status === 'VOID' ? '' : '<p class="small text-muted mt-3 mb-0">A draft has no number. Its figures follow the job orders until it is issued.</p>');
+      (d.Notes ? '<div class="alert alert-light border small mt-3 mb-0" id="ivc-notes-shown">' + UI.esc(d.Notes) + '</div>' : '') + orders + pays + checks + panel + (issued || d.Status === 'VOID' ? '' : '<p class="small text-muted mt-3 mb-0">A draft has no number. Its figures follow the job orders until it is issued.</p>');
   }
   function paintInvoice(d) {
     s.view = 'invoice'; s.doc = d; error(''); title(d.Status === 'DRAFT' ? 'Draft invoice' : 'Invoice ' + d.InvoiceNo);
@@ -7801,12 +7809,15 @@ window.MLS = (function () {
     out.push('<span class="spacer"></span>');
     if (d.Status === 'DRAFT' && can('INVOICE_ISSUE')) out.push('<button type="button" class="btn btn-sm btn-primary" id="ivc-edit"><i class="fa-solid fa-pen me-1" aria-hidden="true"></i>Open the draft</button>');
     if (issued && can('PAYMENT_CREATE') && num(d.Balance) > 0 && !s.panel) out.push('<button type="button" class="btn btn-sm btn-outline-primary" id="ivc-pay"><i class="fa-solid fa-coins me-1" aria-hidden="true"></i>Record payment</button>');
+    if (issued && M.Checks && M.Checks.canReceive() && num(d.Balance) - num(d.Covered) > 0 && !s.panel) out.push('<button type="button" class="btn btn-sm btn-outline-primary" id="ivc-check"><i class="fa-solid fa-money-check me-1" aria-hidden="true"></i>Receive check</button>');  // 1.52.0
     if (d.Status === 'ISSUED' || d.Status === 'VOID') out.push('<button type="button" class="btn btn-sm btn-primary" id="ivc-print"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>' + (num(d.PrintCount) ? 'Print again' : 'Print') + '</button>');
     foot(out.join(''));
     var b;
     UI.el('ivc-back').onclick = function () { load(1); };
     if ((b = UI.el('ivc-edit'))) b.onclick = function () { compose(d); };
     if ((b = UI.el('ivc-print'))) b.onclick = function () { print(d.Id); };
+    if ((b = UI.el('ivc-check'))) b.onclick = function () { Modal.closeThen('ivc-modal', function () { M.Checks.receive({ customerId: d.CustomerId, name: (d.Client || {}).Name || '', invoiceId: d.Id, after: function () { reopen(d.Id); } }); }); };
+    UI.el('ivc-body').querySelectorAll('[data-check]').forEach(function (x) { x.onclick = function () { var id = x.getAttribute('data-check'); Modal.closeThen('ivc-modal', function () { M.Checks.open(id, { after: function () { reopen(d.Id); } }); }); }; });
     if ((b = UI.el('ivc-void'))) b.onclick = function () { s.panel = 'void'; paintInvoice(d); UI.el('ivc-void-reason').focus(); };
     if ((b = UI.el('ivc-pay'))) b.onclick = function () { s.payRequest = UI.uuid().replace(/[^A-Za-z0-9]/g, '').slice(0, 32); (methods ? Promise.resolve() : M.OrdersUI.meta().then(function (m) { methods = m.paymentMethods; })).then(function () { s.panel = 'pay'; paintInvoice(d); UI.el('ivc-pay-amount').focus(); UI.el('ivc-pay-amount').select(); }).catch(fail); };
     if ((b = UI.el('ivc-panel-cancel'))) b.onclick = function () { var was = s.panel; s.panel = ''; paintInvoice(d); var back = UI.el(was === 'pay' ? 'ivc-pay' : 'ivc-void'); if (back) back.focus(); };
@@ -7887,6 +7898,367 @@ window.MLS = (function () {
   }
 
   M.Invoices = { open: open, print: print, documentHtml: documentHtml, receiptHtml: receiptHtml, canView: function () { return can('INVOICE_VIEW'); }, canIssue: function () { return can('INVOICE_ISSUE'); } };
+})();
+</script>
+
+        <!-- Mrs Laundry Sys — ChecksPage.html (release 1.52.0): post-dated checks.
+     The screen: tiles and the register of checks, searched and paged on the server. One dialog with two views: a check received
+     (the client, what is written on the check, what it is to pay), and one check with its history and the next step — deposited,
+     cleared, returned, replaced, cancelled. A check is not a payment until the bank clears it; the page never says otherwise.
+     The page sends what was typed; every amount that counts is checked by the server. -->
+<section id="view-checks" class="view" hidden>
+  <div class="view-head">
+    <h2>Checks</h2>
+    <span class="text-soft small" id="chk-scope"></span>
+    <span class="spacer"></span>
+    <button type="button" class="btn btn-outline-primary btn-sm" id="chk-refresh"><i class="fa-solid fa-rotate me-1" aria-hidden="true"></i>Refresh</button>
+    <button type="button" class="btn btn-primary btn-sm" id="chk-new" hidden><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Receive check</button>
+  </div>
+  <p class="small text-muted mb-2">A check is a promise, not money. Nothing is recorded as paid until you mark the check as cleared by the bank.</p>
+  <div class="sum-grid mb-3" id="chk-tiles"></div>
+  <div class="toolbar">
+    <input class="form-control" id="chk-q" type="search" maxlength="60" placeholder="Check number, client or bank" aria-label="Search by check number, client or bank">
+    <select class="form-select" id="chk-status" aria-label="Status">
+      <option value="">Every status</option><option value="OPEN">Held or at the bank</option><option value="DUE">Due for deposit</option><option value="HELD">Held</option><option value="DEPOSITED">At the bank</option>
+      <option value="CLEARED">Cleared</option><option value="BOUNCED">Returned by the bank</option><option value="REPLACED">Replaced</option><option value="CANCELLED">Cancelled</option>
+    </select>
+    <input class="form-control" id="chk-from" type="date" aria-label="Check date from">
+    <input class="form-control" id="chk-to" type="date" aria-label="Check date to">
+    <button type="button" class="btn btn-outline-primary btn-sm" id="chk-go"><i class="fa-solid fa-magnifying-glass me-1" aria-hidden="true"></i>Show</button>
+  </div>
+  <div class="card"><div class="card-body p-0" id="chk-list"></div></div>
+</section>
+
+<div class="modal fade" id="chk-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="chk-title">Check</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <div class="alert alert-danger small mb-2" id="chk-error" role="alert" hidden></div>
+        <div id="chk-body"></div>
+      </div>
+      <div class="modal-footer flex-wrap gap-2" id="chk-actions"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var M = window.MLS, UI = M.UI, F = M.Formatter, Api = M.Api, Toast = M.Toast, Modal = M.Modal;
+  var st = { rows: [], page: 1, more: false, total: 0, customerId: '', name: '', wired: false };   // the register
+  var s = null;   // the dialog: { view: 'receive' | 'check', doc, panel, customerId, name, invoiceId, targets, picked: { key: true }, requestId, after }
+  var PAPER_KEY = 'mls.check.paper';
+  var LABEL = { HELD: 'Held', DEPOSITED: 'At the bank', CLEARED: 'Cleared', BOUNCED: 'Returned', REPLACED: 'Replaced', CANCELLED: 'Cancelled' };
+  var EVENT = { RECEIVED: 'Received', DEPOSITED: 'Deposited', CLEARED: 'Cleared by the bank', BOUNCED: 'Returned by the bank', REPLACED: 'Replaced', CANCELLED: 'Cancelled' };
+  function can(code) { return M.Auth.can(code); }
+  function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+  function cents(v) { return Math.round(num(String(v).replace(/,/g, '')) * 100); }
+  function money(v) { return F.peso(v); }
+  function today() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+  function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+  function error(msg) { var box = UI.el('chk-error'); box.textContent = msg || ''; box.hidden = !msg; if (msg) box.scrollIntoView({ block: 'nearest' }); }
+  function title(text) { UI.el('chk-title').textContent = text; }
+  function foot(html) { UI.html('chk-actions', html); }
+  /** Puts the cursor in a field of the dialog — now, and again once the dialog has finished opening (it takes the focus itself when it does). */
+  function focusField(id) {
+    var el = UI.el(id), modal = UI.el('chk-modal'); if (!el) return;
+    el.focus(); if (document.activeElement === el) return;
+    modal.addEventListener('shown.bs.modal', function once() { modal.removeEventListener('shown.bs.modal', once); var again = UI.el(id); if (again) again.focus(); });
+  }
+  function focusBody() { var b = UI.el('chk-body'); b.setAttribute('tabindex', '-1'); b.focus({ preventScroll: true }); UI.el('chk-modal').querySelector('.modal-body').scrollTop = 0; }
+  /** The badges of a check: where it stands, and for one still held whether its date has come. */
+  function badges(d) {
+    var out = UI.badge(d.Status, LABEL[d.Status]);
+    if (d.Due === 'NOW') out += ' <span class="status-badge s-due">Due for deposit</span>';
+    else if (d.Due === 'SOON') out += ' <span class="status-badge s-soon">Due in ' + plural(num(d.DaysToDate), 'day') + '</span>';
+    if (d.Status === 'CLEARED' && num(d.Unapplied) > 0) out += ' <span class="status-badge s-review">' + money(d.Unapplied) + ' not applied</span>';
+    return out;
+  }
+
+  // ------------------------------------------------------------------ the screen
+  function tilesHtml(t) {
+    var tiles = [['Held', t.held, 'chk-tile-held'], ['Due for deposit', t.due, 'chk-tile-due'], ['Due within ' + plural(num(t.soonDays), 'day'), t.soon, 'chk-tile-soon'], ['At the bank', t.deposited, 'chk-tile-deposited'], ['Returned by the bank', t.bounced, 'chk-tile-bounced']];
+    if (t.unapplied && t.unapplied.count) tiles.push(['Cleared, not applied', t.unapplied, 'chk-tile-unapplied']);
+    return tiles.map(function (x) { return '<div class="tile" id="' + x[2] + '"><div class="k">' + UI.esc(x[0]) + ' (' + num(x[1].count) + ')</div><div class="v">' + money(x[1].amount) + '</div></div>'; }).join('') +
+      '<div class="tile" id="chk-tile-outstanding"><div class="k">Not yet cleared</div><div class="v">' + money(t.outstanding) + '</div></div>';
+  }
+  function listHtml() {
+    if (!st.rows.length) return UI.empty({ icon: 'fa-money-check', title: 'No check here', hint: can('CHECK_RECEIVE') ? 'Receive check records a check a client handed in, and what it is to pay.' : 'Checks a client handed in are listed here.' });
+    return '<div class="table-wrap"><table class="table table-sm table-cards mb-0" id="chk-table"><thead><tr><th>Check</th><th>Client</th><th>Check date</th><th class="text-end num">Amount</th><th>Status</th></tr></thead><tbody>' + st.rows.map(function (x) {
+      return '<tr class="pointer" tabindex="0" data-kb="row" data-check="' + UI.esc(x.Id) + '"><td data-label="Check"><span class="fw-bold">' + UI.esc(x.CheckNo) + '</span><div class="small text-muted">' + UI.esc(x.Bank) + '</div></td><td data-label="Client">' + UI.esc(x.Client) + '</td><td data-label="Check date">' + UI.esc(F.date(x.CheckDate)) + '</td><td data-label="Amount" class="text-end num">' + money(x.Amount) + '</td><td data-label="Status">' + badges(x) + '</td></tr>';
+    }).join('') + '</tbody></table></div>' + (st.more ? '<div class="text-center my-2"><button type="button" class="btn btn-sm btn-outline-secondary" id="chk-more">Show more</button></div>' : '');
+  }
+  function paintList() {
+    UI.html('chk-list', listHtml());
+    UI.el('chk-list').querySelectorAll('[data-check]').forEach(function (tr) { tr.onclick = function () { open(tr.getAttribute('data-check')); }; });
+    var m = UI.el('chk-more'); if (m) m.onclick = function () { load(st.page + 1); };
+    UI.el('chk-scope').innerHTML = st.customerId ? 'of ' + UI.esc(st.name || 'one client') + ' <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="chk-all">show every client</button>' : '';
+    var all = UI.el('chk-all'); if (all) all.onclick = function () { st.customerId = ''; st.name = ''; load(1); };
+  }
+  function query(page) {
+    var p = { page: page || 1, tiles: true }, q = UI.el('chk-q').value.trim(), status = UI.el('chk-status').value, from = UI.el('chk-from').value, to = UI.el('chk-to').value;
+    if (q) p.search = q; if (status) p.status = status; if (from) p.from = from; if (to) p.to = to; if (st.customerId) p.customerId = st.customerId;
+    return p;
+  }
+  function load(page) {
+    var p = query(page);
+    if (p.page === 1) UI.html('chk-list', UI.skeleton({ kind: 'rows', count: 4, label: 'Loading the checks' }));
+    return Api.call('checks.list', p).then(function (r) {
+      st.rows = p.page > 1 ? st.rows.concat(r.rows) : r.rows; st.page = r.page; st.more = r.more; st.total = r.total;
+      UI.html('chk-tiles', tilesHtml(r.tiles)); paintList(); return r;
+    }).catch(function (e) {
+      st.rows = []; st.more = false; UI.html('chk-tiles', '');
+      var away = !!(e && (e.offline || e.code === 'NETWORK' || e.code === 'TIMEOUT'));
+      UI.html('chk-list', UI.empty({ icon: 'fa-plug-circle-xmark', title: away ? 'The list of checks needs a connection' : 'The checks could not be loaded', hint: away ? 'They load when the connection is back.' : UI.error(e), action: { label: 'Try again', icon: 'fa-rotate' } }));
+      var again = UI.el('chk-list').querySelector('[data-empty-action]'); if (again) again.onclick = function () { load(1); }; return null;
+    });
+  }
+  function wire() {
+    if (st.wired) return; st.wired = true;
+    UI.el('chk-refresh').onclick = function () { load(1); }; UI.el('chk-go').onclick = function () { load(1); };
+    UI.el('chk-status').onchange = function () { load(1); };
+    UI.el('chk-q').onkeydown = function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); load(1); } };
+    UI.el('chk-new').onclick = function () { receive({ customerId: st.customerId, name: st.name }); };
+  }
+  function enter(params) {
+    wire(); UI.el('chk-new').hidden = !can('CHECK_RECEIVE');
+    if (params && params.customerId) { st.customerId = params.customerId; st.name = params.name || ''; }
+    return load(1).then(function () { if (params && params.open) open(params.open); });
+  }
+
+  // ------------------------------------------------------------------ a check received
+  function key(r) { return (r.Kind === 'INVOICE' ? 'i:' : 'o:') + r.Id; }
+  function partBox(i) { return UI.el('chk-body').querySelector('[data-part="' + i + '"]'); }
+  function partsTotal() {
+    var t = 0, n = 0; (s.targets ? s.targets.rows : []).forEach(function (r, i) { var box = partBox(i); if (box && s.picked[key(r)]) { t += cents(box.value); n++; } });
+    return { cents: t, count: n };
+  }
+  function paintTotal() {
+    var el = UI.el('chk-parts-total'); if (!el) return;
+    var t = partsTotal(), amount = cents(UI.el('chk-amount').value), ok = t.count > 0 && t.cents === amount && amount > 0;
+    el.textContent = plural(t.count, 'part') + ' · ' + money(t.cents / 100) + ' of ' + money(amount / 100) + (ok ? '' : (t.cents < amount ? ' · ' + money((amount - t.cents) / 100) + ' still to place' : (t.cents > amount ? ' · ' + money((t.cents - amount) / 100) + ' too much' : '')));
+    el.classList.toggle('text-danger', !ok); el.classList.toggle('text-success', ok);
+    var b = UI.el('chk-save'); if (b) b.disabled = !ok;
+  }
+  /** Ticking a row offers what is left of the check, never more than the row has open. */
+  function tick(i, on) {
+    var r = s.targets.rows[i], box = partBox(i); s.picked[key(r)] = on; box.disabled = !on;
+    if (!on) { box.value = ''; paintTotal(); return; }
+    var amount = cents(UI.el('chk-amount').value), left = amount - partsTotal().cents + cents(box.value), open = cents(r.Open);
+    box.value = ((amount > 0 ? Math.max(0, Math.min(open, left)) : open) / 100).toFixed(2);
+    paintTotal();
+  }
+  function clientStepHtml() {
+    return '<p class="small text-muted mb-2">Whose check is it? Type a few letters of the client\'s name or phone number.</p><div class="row g-2 mx-0"><div class="col-12 col-md-8"><label class="form-label" for="chk-client-q">Client</label><input class="form-control" id="chk-client-q" type="search" maxlength="60" autocomplete="off"></div></div><div class="mt-2" id="chk-client-results" aria-live="polite"></div>';
+  }
+  function receiveHtml() {
+    var t = s.targets, rows = t.rows;
+    var head = '<p class="small text-muted mb-2">Recording a check does not record a payment. What the client owes stays as it is until the bank clears the check.</p>' +
+      '<form id="chk-form" autocomplete="off" novalidate><div class="row g-2 mx-0">' +
+      '<div class="col-6 col-md-4"><label class="form-label" for="chk-no">Check number</label><input class="form-control" id="chk-no" name="checkNo" maxlength="30" aria-required="true"></div>' +
+      '<div class="col-6 col-md-4"><label class="form-label" for="chk-bank">Bank it is drawn on</label><input class="form-control" id="chk-bank" name="bank" maxlength="60" aria-required="true"></div>' +
+      '<div class="col-12 col-md-4"><label class="form-label" for="chk-bank-branch">Bank branch (optional)</label><input class="form-control" id="chk-bank-branch" name="bankBranch" maxlength="60"></div>' +
+      '<div class="col-12 col-md-6"><label class="form-label" for="chk-drawer">Account name on the check</label><input class="form-control" id="chk-drawer" name="drawer" maxlength="80" value="' + UI.esc(t.client.Name) + '"></div>' +
+      '<div class="col-6 col-md-3"><label class="form-label" for="chk-date">Date on the check</label><input class="form-control" id="chk-date" name="checkDate" type="date" aria-required="true"></div>' +
+      '<div class="col-6 col-md-3"><label class="form-label" for="chk-amount">Amount</label><input class="form-control" id="chk-amount" name="amount" inputmode="decimal" aria-required="true"></div>' +
+      '<div class="col-6 col-md-3"><label class="form-label" for="chk-received">Date received</label><input class="form-control" id="chk-received" name="receivedDate" type="date" value="' + UI.esc(t.today || today()) + '" max="' + UI.esc(t.today || today()) + '"></div>' +
+      '<div class="col-12 col-md-9"><label class="form-label" for="chk-remarks">Remarks (optional)</label><input class="form-control" id="chk-remarks" name="remarks" maxlength="300"></div></div>';
+    var table = rows.length ? '<h6 class="section-title mt-3 mb-1">What this check pays</h6><div class="table-wrap"><table class="table table-sm table-cards mb-0" id="chk-parts"><thead><tr><th class="ivc-tick"><span class="visually-hidden">Tick</span></th><th>Invoice or order</th><th class="text-end num">Owes</th><th class="text-end num">Covered by checks held</th><th class="text-end num">This check</th></tr></thead><tbody>' + rows.map(function (r, i) {
+      var open = num(r.Open) > 0;
+      return '<tr><td class="ivc-tick no-label"><input class="form-check-input" type="checkbox" id="chk-pick-' + i + '" data-pick="' + i + '"' + (open ? '' : ' disabled') + '></td><td data-label="Invoice or order"><label class="fw-bold mb-0" for="chk-pick-' + i + '">' + (r.Kind === 'INVOICE' ? 'Invoice ' : 'Order ') + UI.esc(r.No) + '</label><div class="small text-muted">' + UI.esc(F.date(r.Date)) + (r.DueDate ? ' · due ' + UI.esc(F.date(r.DueDate)) : '') + (open ? '' : ' · covered in full by checks held') + '</div></td><td data-label="Owes" class="text-end num">' + money(r.Balance) + '</td><td data-label="Covered by checks held" class="text-end num">' + money(r.Covered) + '</td><td data-label="This check" class="text-end"><input class="form-control form-control-sm text-end chk-part" data-part="' + i + '" inputmode="decimal" aria-label="Amount of this check for ' + UI.esc(r.No) + '" disabled></td></tr>';
+    }).join('') + '</tbody></table></div><p class="fw-bold text-end mt-2 mb-0" id="chk-parts-total" aria-live="polite"></p>'
+      : '<div class="mt-3">' + UI.empty({ icon: 'fa-circle-check', title: UI.esc(t.client.Name) + ' owes nothing a check could pay', hint: 'A check pays an issued invoice, or an order that is on no invoice, that still owes.' }) + '</div>';
+    return head + table + '</form>';
+  }
+  function paintReceive() {
+    s.view = 'receive'; error(''); title('Receive check' + (s.name ? ' · ' + s.name : ''));
+    UI.html('chk-body', receiveHtml());
+    foot('<span class="spacer"></span><button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-sm btn-primary" id="chk-save" disabled><i class="fa-solid fa-floppy-disk me-1" aria-hidden="true"></i>Record the check</button>');
+    UI.el('chk-body').querySelectorAll('[data-pick]').forEach(function (box) { box.onchange = function () { tick(Number(box.getAttribute('data-pick')), box.checked); }; });
+    UI.el('chk-body').querySelectorAll('.chk-part').forEach(function (box) { box.oninput = paintTotal; });
+    UI.el('chk-amount').oninput = paintTotal;
+    UI.el('chk-save').onclick = save; UI.el('chk-form').onsubmit = function (ev) { ev.preventDefault(); save(); };
+    // opened from an invoice: that invoice is ticked once an amount is typed, or straight away with what it has open
+    if (s.invoiceId) s.targets.rows.forEach(function (r, i) { if (r.Kind === 'INVOICE' && r.Id === s.invoiceId && num(r.Open) > 0) { UI.el('chk-body').querySelector('[data-pick="' + i + '"]').checked = true; UI.el('chk-amount').value = num(r.Open).toFixed(2); tick(i, true); } });
+    paintTotal(); focusField('chk-no');
+  }
+  function chooseClient(id, name) {
+    s.customerId = id; s.name = name; error('');
+    UI.html('chk-body', UI.skeleton({ kind: 'rows', count: 3, label: 'Loading what ' + name + ' owes' }));
+    return Api.call('checks.targets', { customerId: id }, { busy: true }).then(function (t) { s.targets = t; s.name = t.client.Name; s.picked = {}; paintReceive(); return t; })
+      .catch(function (e) { paintClientStep(); error(UI.error(e)); return null; });
+  }
+  function paintClientStep() {
+    s.view = 'receive'; error(''); title('Receive check'); UI.html('chk-body', clientStepHtml()); foot('<span class="spacer"></span><button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>');
+    var q = UI.el('chk-client-q'), timer = null, seq = 0;
+    var search = function () {
+      var text = q.value.trim(), mine = ++seq; if (text.length < 2) { UI.html('chk-client-results', ''); return; }
+      Api.call('customers.search', { q: text }).then(function (rows) {
+        if (mine !== seq) return;
+        UI.html('chk-client-results', rows.length ? '<div class="list-group">' + rows.slice(0, 8).map(function (c) { return '<button type="button" class="list-group-item list-group-item-action" data-client="' + UI.esc(c.Id) + '" data-name="' + UI.esc(c.FullName) + '"><span class="fw-bold">' + UI.esc(c.FullName) + '</span> <span class="small text-muted">' + UI.esc(c.Phone || '') + '</span></button>'; }).join('') + '</div>' : '<p class="small text-muted mb-0">No client by that name.</p>');
+        UI.el('chk-client-results').querySelectorAll('[data-client]').forEach(function (b) { b.onclick = function () { chooseClient(b.getAttribute('data-client'), b.getAttribute('data-name')); }; });
+      }).catch(function (e) { if (mine === seq) error(UI.error(e)); });
+    };
+    q.oninput = function () { clearTimeout(timer); timer = setTimeout(search, 250); };
+    focusField('chk-client-q');
+  }
+  function invalid(form, e) { var k = e && e.fields ? Object.keys(e.fields)[0] : '', el = k && form ? form.querySelector('[name="' + k + '"]') : null; if (el) { el.classList.add('is-invalid'); el.focus(); } error(UI.error(e)); }
+  function save() {
+    var form = UI.el('chk-form'), btn = UI.el('chk-save'); error(''); form.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
+    var need = [['chk-no', 'Enter the check number.'], ['chk-bank', 'Enter the bank the check is drawn on.'], ['chk-date', 'Enter the date written on the check.']];
+    for (var i = 0; i < need.length; i++) { var el = UI.el(need[i][0]); if (!el.value.trim()) { el.classList.add('is-invalid'); el.focus(); error(need[i][1]); return; } }
+    var parts = []; s.targets.rows.forEach(function (r, j) { if (!s.picked[key(r)]) return; var a = cents(partBox(j).value) / 100; parts.push(r.Kind === 'INVOICE' ? { invoiceId: r.Id, amount: a } : { orderId: r.Id, amount: a }); });
+    btn.disabled = true;
+    Api.call('checks.receive', { customerId: s.customerId, checkNo: UI.el('chk-no').value.trim(), bank: UI.el('chk-bank').value.trim(), bankBranch: UI.el('chk-bank-branch').value.trim(), drawer: UI.el('chk-drawer').value.trim(), checkDate: UI.el('chk-date').value,
+      amount: cents(UI.el('chk-amount').value) / 100, receivedDate: UI.el('chk-received').value, remarks: UI.el('chk-remarks').value.trim(), allocations: parts, requestId: s.requestId }, { busy: true, timeoutMs: 120000 }).then(function (d) {
+      Toast.success('Check ' + d.CheckNo + ' recorded. No payment was recorded.'); s.changed = true; paintCheck(d); focusBody();
+    }).catch(function (e) { btn.disabled = false; invalid(form, e); });
+  }
+  /** Opens the dialog to record a check. opts: { customerId, name, invoiceId, after } — without a client, the first step asks whose check it is. */
+  function receive(opts) {
+    opts = opts || {}; s = { view: 'receive', doc: null, panel: '', customerId: opts.customerId || '', name: opts.name || '', invoiceId: opts.invoiceId || '', targets: null, picked: {}, requestId: UI.uuid(), after: opts.after || null, changed: false };
+    title('Receive check'); UI.html('chk-body', ''); foot(''); error(''); Modal.open('chk-modal');
+    return s.customerId ? chooseClient(s.customerId, s.name) : Promise.resolve(paintClientStep());
+  }
+
+  // ------------------------------------------------------------------ one check
+  /** One labelled input of a panel; attrs begins with the input's id, written out so that every id of the page can be found by reading it. */
+  function field(label, attrs, value, col) { var id = /^id="([^"]+)"/.exec(attrs)[1]; return '<div class="' + (col || 'col-6 col-md-4') + '"><label class="form-label" for="' + id + '">' + label + '</label><input class="form-control" ' + attrs + ' value="' + UI.esc(value || '') + '"></div>'; }
+  function panelHtml(d) {
+    var t = today(), open = function (id, head, text) { return '<form class="mt-3 pt-3 border-top" id="' + id + '" autocomplete="off" novalidate><div class="row g-2 align-items-end mx-0"><div class="col-12"><h6 class="section-title mb-1">' + head + '</h6><p class="small text-muted mb-1">' + text + '</p></div>'; };
+    var close = function (id, label, cls) { return '<div class="col-12 d-flex gap-2"><button type="submit" class="btn ' + (cls || 'btn-primary') + ' btn-sm" id="' + id + '">' + label + '</button><button type="button" class="btn btn-outline-secondary btn-sm" id="chk-panel-cancel">Cancel</button></div></div></form>'; };
+    if (s.panel === 'deposit') {
+      var banks = (M.AppState.me && M.AppState.me.settings && M.AppState.me.settings.CheckDepositBanks) || [];
+      var account = banks.length ? '<div class="col-12 col-md-4"><label class="form-label" for="chk-dep-bank">Deposited to</label><select class="form-select" id="chk-dep-bank" name="bank">' + banks.map(function (b) { return '<option>' + UI.esc(b) + '</option>'; }).join('') + '</select></div>'
+        : field('Deposited to (your account)', 'id="chk-dep-bank" name="bank" maxlength="60" aria-required="true"', '', 'col-12 col-md-4');
+      return open('chk-dep-form', 'Mark as deposited', 'The check went to the bank. This still records no payment.') + field('Deposit date', 'id="chk-dep-date" name="date" type="date" max="' + t + '"', t, 'col-6 col-md-3') + account + field('Deposit slip number (optional)', 'id="chk-dep-ref" name="reference" maxlength="60"', '', 'col-6 col-md-5') + field('Remarks (optional)', 'id="chk-dep-remarks" name="remarks" maxlength="200"', '', 'col-12') + close('chk-dep-go', 'Mark as deposited');
+    }
+    if (s.panel === 'clear') return open('chk-clr-form', 'Cleared by the bank', '<strong>This records the payments.</strong> ' + money(d.Amount) + ' is put on what the check was to pay, as payments by check dated today. Do it only once the bank shows the money in your account.') +
+      field('Date it cleared', 'id="chk-clr-date" name="date" type="date" max="' + t + '"', t, 'col-6 col-md-3') + field('Bank reference', 'id="chk-clr-ref" name="reference" maxlength="60" aria-required="true" aria-describedby="chk-clr-help"', '', 'col-6 col-md-4') + field('Remarks (optional)', 'id="chk-clr-remarks" name="remarks" maxlength="200"', '', 'col-12 col-md-5') +
+      '<div class="col-12"><div class="form-text mt-0" id="chk-clr-help">The line on the bank statement or the confirmation number.</div></div>' + close('chk-clr-go', 'Cleared: record the payments');
+    if (s.panel === 'bounce') return open('chk-bnc-form', 'Returned by the bank', 'The bank did not pay this check. Nothing is reversed, because nothing was recorded as paid. What the check covered is owed and open again.') +
+      field('Date it was returned', 'id="chk-bnc-date" name="date" type="date" max="' + t + '"', t, 'col-6 col-md-3') + field('Reason the bank gave', 'id="chk-bnc-reason" name="reason" maxlength="200" aria-required="true"', '', 'col-12 col-md-9') + close('chk-bnc-go', 'Mark as returned', 'btn-danger');
+    if (s.panel === 'cancel') return open('chk-can-form', 'Cancel this check', 'For a check given back to the client or recorded by mistake. It stays in the list as cancelled, and what it covered is open again.') +
+      field('Why is it cancelled?', 'id="chk-can-reason" name="reason" maxlength="200" aria-required="true"', '', 'col-12') + close('chk-can-go', 'Cancel the check', 'btn-danger');
+    if (s.panel === 'replace') return open('chk-rep-form', 'Replace with a new check', 'The new check is for the same amount, ' + money(d.Amount) + ', and takes over what this one was to pay. This one stays in the list as replaced.') +
+      field('New check number', 'id="chk-rep-no" name="checkNo" maxlength="30" aria-required="true"', '') + field('Bank it is drawn on', 'id="chk-rep-bank" name="bank" maxlength="60" aria-required="true"', d.Bank) + field('Bank branch (optional)', 'id="chk-rep-branch" name="bankBranch" maxlength="60"', d.BankBranch, 'col-12 col-md-4') +
+      field('Account name on the check', 'id="chk-rep-drawer" name="drawer" maxlength="80"', d.Drawer, 'col-12 col-md-6') + field('Date on the check', 'id="chk-rep-date" name="checkDate" type="date" aria-required="true"', '', 'col-6 col-md-3') + field('Date received', 'id="chk-rep-received" name="receivedDate" type="date" max="' + t + '"', t, 'col-6 col-md-3') +
+      field('Remarks (optional)', 'id="chk-rep-remarks" name="remarks" maxlength="200"', '', 'col-12') + close('chk-rep-go', 'Record the replacement');
+    return '';
+  }
+  function checkHtml(d) {
+    var top = '<div class="d-flex flex-wrap align-items-center gap-2 mb-2"><span class="fw-bold" id="chk-doc-no">' + UI.esc(d.CheckNo) + '</span><span class="text-muted">' + UI.esc(d.Bank) + '</span>' + badges(d) + '</div>';
+    var note = '';
+    if (d.Status === 'HELD') note = 'Held. No payment is recorded until the bank clears this check.' + (d.Due === 'NOW' ? ' Its date has come: it can be deposited.' : (num(d.DaysToDate) > 0 ? ' It can be deposited from ' + F.date(d.CheckDate) + '.' : ''));
+    if (d.Status === 'DEPOSITED') note = 'At the bank since ' + F.date(d.DepositDate) + ' (' + plural(num(d.DaysAtBank), 'day') + '). No payment is recorded until you mark it as cleared.';
+    if (d.Status === 'BOUNCED') note = 'The bank returned this check on ' + F.date(d.BouncedDate) + ': ' + d.BounceReason + '. Nothing was recorded as paid. Replace it with a new check, or cancel it.';
+    if (d.Status === 'CANCELLED') note = 'Cancelled: ' + d.CancelReason + '.';
+    if (d.Status === 'CLEARED') note = 'Cleared on ' + F.date(d.ClearedDate) + '. ' + money(d.Posted) + ' was recorded as payments by check.';
+    var alert = note ? '<div class="alert alert-light border small mb-2" id="chk-note">' + UI.esc(note) + '</div>' : '';
+    if (d.Status === 'CLEARED' && num(d.Unapplied) > 0) alert += '<div class="alert alert-warning small mb-2" id="chk-unapplied"><strong>' + money(d.Unapplied) + ' of this check was not put on any order.</strong> What it was to pay had been paid another way, or cancelled, before the check cleared. The client has paid ' + money(d.Unapplied) + ' more than is recorded here; settle it with them.</div>';
+    var grid = [['Amount', money(d.Amount), 'chk-doc-amount'], ['Date on the check', UI.esc(F.date(d.CheckDate)), 'chk-doc-date'], ['Client', UI.esc(d.Client), 'chk-doc-client'], ['Account name', UI.esc(d.Drawer), 'chk-doc-drawer']];
+    if (d.BankBranch) grid.push(['Bank branch', UI.esc(d.BankBranch), 'chk-doc-branch']);
+    grid.push(['Received', UI.esc(F.date(d.ReceivedDate)) + (d.ReceivedBy ? ' by ' + UI.esc(d.ReceivedBy) : ''), 'chk-doc-received']);
+    if (d.DepositDate) grid.push(['Deposited', UI.esc(F.date(d.DepositDate)) + ' · ' + UI.esc(d.DepositBank) + (d.DepositRef ? ' · slip ' + UI.esc(d.DepositRef) : ''), 'chk-doc-deposited']);
+    if (d.ClearedDate) grid.push(['Cleared', UI.esc(F.date(d.ClearedDate)) + ' · ' + UI.esc(d.ClearRef), 'chk-doc-cleared']);
+    if (d.Status === 'CLEARED') grid.push(['Recorded as paid', money(d.Posted), 'chk-doc-posted']);
+    if (d.Replaces) grid.push(['Replaces', '<button type="button" class="btn btn-link p-0" data-other="' + UI.esc(d.Replaces.Id) + '">' + UI.esc(d.Replaces.CheckNo) + ' · ' + UI.esc(d.Replaces.Bank) + '</button>', 'chk-doc-replaces']);
+    if (d.ReplacedBy) grid.push(['Replaced by', '<button type="button" class="btn btn-link p-0" data-other="' + UI.esc(d.ReplacedBy.Id) + '">' + UI.esc(d.ReplacedBy.CheckNo) + ' · ' + UI.esc(d.ReplacedBy.Bank) + '</button>', 'chk-doc-replaced-by']);
+    if (d.Remarks) grid.push(['Remarks', UI.esc(d.Remarks), 'chk-doc-remarks']);
+    var cleared = d.Status === 'CLEARED';
+    var parts = '<section class="od-section mt-3"><h6 class="section-title">What it ' + (cleared ? 'paid' : 'is to pay') + ' <span class="count">' + d.Allocations.length + '</span></h6><div class="table-wrap"><table class="table table-sm table-cards mb-0" id="chk-doc-parts"><thead><tr><th>Invoice or order</th><th class="text-end num">Amount</th>' + (cleared ? '<th class="text-end num">Recorded as paid</th><th class="text-end num">Not applied</th>' : '') + '</tr></thead><tbody>' + d.Allocations.map(function (a) {
+      var name = a.Kind === 'INVOICE' ? (M.Invoices && M.Invoices.canView() ? '<button type="button" class="btn btn-link p-0 fw-bold" data-invoice="' + UI.esc(a.InvoiceId) + '">Invoice ' + UI.esc(a.No) + '</button>' : '<span class="fw-bold">Invoice ' + UI.esc(a.No) + '</span>') : '<span class="fw-bold">Order ' + UI.esc(a.No) + '</span>';
+      return '<tr><td data-label="Invoice or order">' + name + (a.Status === 'MOVED' ? ' <span class="status-badge s-moved">Moved to the replacement</span>' : (a.Status === 'RELEASED' ? ' <span class="status-badge s-released">Released</span>' : '')) + '</td><td data-label="Amount" class="text-end num">' + money(a.Amount) + '</td>' + (cleared ? '<td data-label="Recorded as paid" class="text-end num">' + money(a.Posted) + '</td><td data-label="Not applied" class="text-end num">' + money(a.Unapplied) + '</td>' : '') + '</tr>';
+    }).join('') + '</tbody></table></div></section>';
+    var hist = '<section class="od-section mt-3"><h6 class="section-title">History <span class="count">' + d.Events.length + '</span></h6><div class="table-wrap"><table class="table table-sm table-cards mb-0" id="chk-doc-events"><thead><tr><th>Date</th><th>What happened</th><th>Reference</th><th>Remarks</th><th>By</th></tr></thead><tbody>' + d.Events.map(function (e) {
+      return '<tr><td data-label="Date">' + UI.esc(F.date(e.Date)) + '</td><td data-label="What happened">' + UI.esc(EVENT[e.Event] || e.Event) + '</td><td data-label="Reference">' + UI.esc(e.Reference) + '</td><td data-label="Remarks">' + UI.esc(e.Remarks) + '</td><td data-label="By">' + UI.esc(e.By) + '</td></tr>';
+    }).join('') + '</tbody></table></div></section>';
+    return top + alert + '<div class="detail-grid">' + grid.map(function (g) { return '<div><div class="k">' + g[0] + '</div><div class="v" id="' + g[2] + '">' + g[1] + '</div></div>'; }).join('') + '</div>' + parts + hist + panelHtml(d);
+  }
+  var PANELS = {
+    deposit: { form: 'chk-dep-form', go: 'chk-dep-go', action: 'checks.deposit', first: 'chk-dep-ref', read: function () { return { date: UI.el('chk-dep-date').value, bank: UI.el('chk-dep-bank').value.trim(), reference: UI.el('chk-dep-ref').value.trim(), remarks: UI.el('chk-dep-remarks').value.trim() }; }, need: [['chk-dep-bank', 'Say which account the check was deposited to.']], done: function (d) { return 'Check ' + d.CheckNo + ' marked as deposited. No payment was recorded.'; } },
+    clear: { form: 'chk-clr-form', go: 'chk-clr-go', action: 'checks.clear', first: 'chk-clr-ref', read: function () { return { date: UI.el('chk-clr-date').value, reference: UI.el('chk-clr-ref').value.trim(), remarks: UI.el('chk-clr-remarks').value.trim() }; }, need: [['chk-clr-ref', 'Enter the bank\'s reference for the cleared check.']], done: function (d) { return 'Check ' + d.CheckNo + ' cleared: ' + money(d.Posted) + ' recorded as paid' + (num(d.Unapplied) > 0 ? ', ' + money(d.Unapplied) + ' not applied' : '') + '.'; } },
+    bounce: { form: 'chk-bnc-form', go: 'chk-bnc-go', action: 'checks.bounce', first: 'chk-bnc-reason', read: function () { return { date: UI.el('chk-bnc-date').value, reason: UI.el('chk-bnc-reason').value.trim() }; }, need: [['chk-bnc-reason', 'Say why the bank returned the check.']], done: function (d) { return 'Check ' + d.CheckNo + ' marked as returned. Nothing was reversed.'; } },
+    cancel: { form: 'chk-can-form', go: 'chk-can-go', action: 'checks.cancel', first: 'chk-can-reason', read: function () { return { reason: UI.el('chk-can-reason').value.trim() }; }, need: [['chk-can-reason', 'Say why the check is cancelled.']], done: function (d) { return 'Check ' + d.CheckNo + ' cancelled.'; } },
+    replace: { form: 'chk-rep-form', go: 'chk-rep-go', action: 'checks.replace', first: 'chk-rep-no', read: function () { return { checkNo: UI.el('chk-rep-no').value.trim(), bank: UI.el('chk-rep-bank').value.trim(), bankBranch: UI.el('chk-rep-branch').value.trim(), drawer: UI.el('chk-rep-drawer').value.trim(), checkDate: UI.el('chk-rep-date').value, receivedDate: UI.el('chk-rep-received').value, remarks: UI.el('chk-rep-remarks').value.trim(), requestId: s.requestId }; }, need: [['chk-rep-no', 'Enter the new check number.'], ['chk-rep-bank', 'Enter the bank the new check is drawn on.'], ['chk-rep-date', 'Enter the date written on the new check.']], done: function (d) { return 'Check ' + d.CheckNo + ' recorded as the replacement. No payment was recorded.'; } }
+  };
+  function submitPanel(ev) {
+    ev.preventDefault(); var P = PANELS[s.panel], form = UI.el(P.form), btn = UI.el(P.go); error(''); form.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
+    for (var i = 0; i < P.need.length; i++) { var el = UI.el(P.need[i][0]); if (!el.value.trim() || (P.need[i][0].slice(-6) === 'reason' && el.value.trim().length < 3)) { el.classList.add('is-invalid'); el.focus(); error(P.need[i][1]); return; } }
+    btn.disabled = true;
+    Api.call(P.action, Object.assign({ id: s.doc.Id }, P.read()), { busy: true, timeoutMs: 180000 }).then(function (d) { s.panel = ''; s.changed = true; Toast.success(P.done(d)); paintCheck(d); focusBody(); })
+      .catch(function (e) { btn.disabled = false; invalid(form, e); });
+  }
+  function paintCheck(d) {
+    s.view = 'check'; s.doc = d; error(''); title('Check ' + d.CheckNo + ' · ' + d.Client);
+    UI.html('chk-body', checkHtml(d));
+    var out = [], idle = !s.panel, held = d.Status === 'HELD', atBank = d.Status === 'DEPOSITED', back = d.Status === 'BOUNCED', btn = function (id, cls, icon, label) { return '<button type="button" class="btn btn-sm ' + cls + '" id="' + id + '">' + (icon ? '<i class="fa-solid ' + icon + ' me-1" aria-hidden="true"></i>' : '') + label + '</button>'; };
+    if (idle && (held || back) && can('CHECK_CLEAR')) out.push(btn('chk-cancel', 'btn-outline-danger', '', 'Cancel check'));
+    if (idle && held && can('CHECK_CLEAR')) out.push(btn('chk-replace', 'btn-outline-secondary', '', 'Replace'));
+    if (idle && atBank && can('CHECK_CLEAR')) out.push(btn('chk-bounce', 'btn-outline-danger', '', 'Returned by the bank'));
+    out.push('<span class="spacer"></span>');
+    out.push('<button type="button" class="btn btn-sm btn-outline-primary" id="chk-print"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>' + (num(d.PrintCount) ? 'Print again' : 'Print acknowledgment') + '</button>');
+    if (idle && held && can('CHECK_DEPOSIT')) out.push(btn('chk-deposit', 'btn-primary', 'fa-building-columns', 'Mark as deposited'));
+    if (idle && atBank && can('CHECK_CLEAR')) out.push(btn('chk-clear', 'btn-primary', 'fa-circle-check', 'Cleared by the bank'));
+    if (idle && back && can('CHECK_CLEAR')) out.push(btn('chk-replace', 'btn-primary', '', 'Replace with a new check'));
+    foot(out.join(''));
+    var b, panel = function (id, name) { var x = UI.el(id); if (x) x.onclick = function () { s.panel = name; s.requestId = UI.uuid(); paintCheck(d); var f = UI.el(PANELS[name].first); if (f) f.focus(); }; };
+    panel('chk-deposit', 'deposit'); panel('chk-clear', 'clear'); panel('chk-bounce', 'bounce'); panel('chk-cancel', 'cancel'); panel('chk-replace', 'replace');
+    UI.el('chk-print').onclick = function () { print(d.Id); };
+    if ((b = UI.el('chk-panel-cancel'))) b.onclick = function () { s.panel = ''; paintCheck(d); };
+    if (s.panel && (b = UI.el(PANELS[s.panel].form))) b.onsubmit = submitPanel;
+    UI.el('chk-body').querySelectorAll('[data-other]').forEach(function (x) { x.onclick = function () { show(x.getAttribute('data-other')); }; });
+    UI.el('chk-body').querySelectorAll('[data-invoice]').forEach(function (x) { x.onclick = function () { var id = x.getAttribute('data-invoice'); s.after = null; Modal.closeThen('chk-modal', function () { M.Invoices.open({ invoiceId: id }); }); }; });
+  }
+  function show(id) { s.panel = ''; return Api.call('checks.get', { id: id }, { busy: true }).then(function (d) { paintCheck(d); focusBody(); return d; }).catch(function (e) { error(UI.error(e)); return null; }); }
+  /** Opens one check. opts: { after } — called when the dialog closes after something changed. */
+  function open(id, opts) {
+    opts = opts || {}; s = { view: 'check', doc: null, panel: '', customerId: '', name: '', invoiceId: '', targets: null, picked: {}, requestId: UI.uuid(), after: opts.after || null, changed: false };
+    title('Check'); UI.html('chk-body', UI.skeleton({ kind: 'rows', count: 4, label: 'Loading the check' })); foot(''); error('');
+    Modal.open('chk-modal');
+    return show(id);
+  }
+  UI.el('chk-modal').addEventListener('hidden.bs.modal', function () {
+    // opened from an invoice: closing goes back to it, changed or not; opened on the Checks screen: the list is read again when something changed
+    if (!s) return; var after = s.after, changed = s.changed; s.changed = false; s.after = null;
+    if (after) after(); else if (changed && M.Router.current && M.Router.current() === 'checks') load(1);
+  });
+
+  // ------------------------------------------------------------------ the printed acknowledgment
+  var DOC_CSS = '.chk-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.chk-top .doc-head{flex:1;text-align:left;margin-bottom:0}.chk-top .doc-logo{margin-left:0}.chk-mark{font-weight:800;font-size:13px;letter-spacing:.06em;border:2px solid #111;padding:2px 8px;white-space:nowrap}' +
+    '.chk-band{background:#6D2322;color:#FFF9E3;padding:6px 10px;margin:10px 0 8px;display:flex;justify-content:space-between;gap:12px;font-size:13px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.chk-band b{font-size:15px}' +
+    '.chk-blk{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;margin:6px 0 10px}.chk-blk b{display:inline-block;min-width:112px;font-weight:700}.chk-sum{margin:10px 0 0 auto;width:auto;min-width:46%}.chk-sum td{border:0;padding:3px 6px}.chk-sum tr.tot td{border-top:2px solid #333;font-weight:800}' +
+    '.chk-said{margin-top:14px;border:1px solid #333;padding:8px 10px;font-weight:700}.chk-note{margin-top:10px;font-size:11px;color:#444}.chk-sign{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:36px}.chk-sign div{border-top:1px solid #333;padding-top:4px;font-size:11px;text-align:center}';
+  function documentHtml(d) {
+    var esc = UI.esc, blk = function (k, v) { return v ? '<div><b>' + k + '</b>' + esc(v) + '</div>' : ''; };
+    var state = d.Status === 'HELD' ? '' : '<p class="chk-note">As of this print the check is: <b>' + esc((LABEL[d.Status] || d.Status).toLowerCase()) + '</b>' + (d.Status === 'CLEARED' ? ' on ' + esc(F.date(d.ClearedDate)) : (d.Status === 'BOUNCED' ? ' (' + esc(d.BounceReason) + ')' : '')) + '.</p>';
+    return '<style>' + DOC_CSS + '</style><div class="chk-top">' + M.Print.header({ title: 'Acknowledgment of a check received', business: d.Business || {} }) + '<div>' + (d.Reprint ? '<div class="chk-mark">REPRINT</div>' : '') + '</div></div>' +
+      '<div class="chk-band"><span>Check No. <b>' + esc(d.CheckNo) + '</b></span><span>Dated <b>' + esc(F.date(d.CheckDate)) + '</b></span><span>Amount <b>' + esc(money(d.Amount)) + '</b></span></div>' +
+      '<div class="chk-blk">' + blk('Received from', d.Client) + blk('Account name', d.Drawer) + blk('Bank', d.Bank) + blk('Bank branch', d.BankBranch) + blk('Date received', F.date(d.ReceivedDate)) + blk('Received by', d.ReceivedBy) + blk('Remarks', d.Remarks) + '</div>' +
+      '<table><thead><tr><th>Intended for</th><th class="r">Amount</th></tr></thead><tbody>' + d.Allocations.filter(function (a) { return a.Status === 'ACTIVE'; }).map(function (a) { return '<tr><td>' + (a.Kind === 'INVOICE' ? 'Billing invoice ' : 'Order ') + esc(a.No) + '</td><td class="r num">' + esc(money(a.Amount)) + '</td></tr>'; }).join('') + '</tbody></table>' +
+      '<table class="chk-sum"><tbody><tr class="tot"><td>AMOUNT OF THE CHECK</td><td class="r num">' + esc(money(d.Amount)) + '</td></tr></tbody></table>' +
+      '<div class="chk-said">Received the above-described post-dated check subject to bank clearing and confirmation. Receipt of this check does not constitute confirmation of cleared funds.</div>' + state +
+      '<div class="chk-note">This acknowledges that a check was handed over. <b>It is not an official receipt and not a record of payment.</b> The amount is recorded as paid only after the bank has cleared the check.</div>' +
+      '<div class="chk-sign"><div>Received by (signature over printed name)</div><div>Handed over by (signature over printed name)</div></div>' +
+      M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: (d.Reprint ? 'REPRINT · ' : '') + 'print ' + num(d.PrintCount) + ' · check ' + d.CheckNo });
+  }
+  function paper() { var size = 'A4'; try { size = window.localStorage.getItem(PAPER_KEY) || 'A4'; } catch (e) { /* private mode */ } return size; }
+  /** The server counts the print first; the page is laid out from its answer. */
+  function print(id) {
+    return Api.call('checks.document', { id: id }, { busy: true }).then(function (d) {
+      M.Print.open(documentHtml(d), { title: 'Check ' + d.CheckNo + ' acknowledgment', size: paper() });
+      if (s && s.doc && s.doc.Id === d.Id) { s.doc.PrintCount = d.PrintCount; paintCheck(s.doc); }
+      return d;
+    }).catch(function (e) { Toast.danger(UI.error(e)); return null; });
+  }
+
+  M.Router.register('checks', {
+    title: 'Checks',
+    render: function (el, params) { enter(params); },
+    refresh: function (el, params) { enter(params); }
+  });
+  M.Checks = { open: open, receive: receive, print: print, documentHtml: documentHtml, canView: function () { return can('CHECK_VIEW'); }, canReceive: function () { return can('CHECK_RECEIVE'); } };
 })();
 </script>
 
