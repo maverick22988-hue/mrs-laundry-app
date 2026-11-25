@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mrs Laundry Sys">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>window.MLS_PWA = { build: 'e79f40a53e', version: '1.52.0' };</script>
+  <script>window.MLS_PWA = { build: '7e9ef12bb3', version: '1.53.0' };</script>
   <title>Mrs Laundry Sys</title>
   <script>
     /* First-error reporter. Runs before anything else: records the first script error (with its line) and every
@@ -1069,7 +1069,7 @@
 window.MLS = (function () {
   'use strict';
   var APP_PHASE = 11;
-  var VERSION = '1.52.0';
+  var VERSION = '1.53.0';
   /**
    * Where this page runs. 'htmlservice': served by Apps Script (or the test harness), google.script.run carries every call.
    * 'pwa': the same page on its own origin (the installable app); the server is reached by fetch at the web-app address
@@ -7502,7 +7502,8 @@ window.MLS = (function () {
       head.map(function (h) { return '<th' + (h[1] ? ' class="text-end num"' : '') + '>' + h[0] + '</th>'; }).join('') + '</tr></thead><tbody>' +
       rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td data-label="' + head[i][0] + '"' + (head[i][1] ? ' class="text-end num"' : '') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div></section>';
   }
-  function orderRows(lines) { return lines.map(function (l) { return [UI.esc(F.date(l.Date)), '<span class="fw-bold">' + UI.esc(l.OrderNo) + '</span> <span class="text-muted small">' + UI.esc(l.Description) + '</span>', l.Pieces === '' ? '' : num(l.Pieces), money(l.Billed), money(l.Paid), money(l.Balance)]; }); }
+  var CHECK_WORDS = { HELD: 'Held', DEPOSITED: 'At the bank', BOUNCED: 'Returned by the bank' };  // 1.53.0
+  function orderRows(lines) { return lines.map(function (l) { return [UI.esc(F.date(l.Date)), '<span class="fw-bold">' + UI.esc(l.OrderNo) + '</span> <span class="text-muted small">' + UI.esc(l.Description) + (l.InvoiceNo ? ' · invoice ' + UI.esc(l.InvoiceNo) : '') + '</span>', l.Pieces === '' ? '' : num(l.Pieces), money(l.Billed), money(l.Paid), money(l.Balance)]; }); }
   var ORDER_HEAD = [['Date'], ['Order'], ['Pieces', 1], ['Billed', 1], ['Paid', 1], ['Balance', 1]];
 
   /** The statement on the screen: the preview, or an issued one as it was issued. */
@@ -7514,6 +7515,7 @@ window.MLS = (function () {
       : '<p class="small text-muted mb-2" id="soa-preview-note">Preview for ' + UI.esc(periodText(d)) + '. Nothing is saved until the statement is issued.</p>';
     var grid = [['Brought forward', money(d.Forward), 'soa-forward'], ['Billed this period', money(d.Billed), 'soa-billed'], ['Paid this period', money(d.Paid), 'soa-paid'], ['Balance due', money(d.BalanceDue), 'soa-balance']];
     M.Vat.rows(d.Vat).forEach(function (v, i) { grid.push([v[0] + (i ? '' : ', of the amount billed'), money(v[1]), 'soa-vat-' + i]); });  // 1.50.0: only when an order of the period carries VAT figures
+    if (d.Checks) grid.push(['Checks held or at the bank', money(d.ChecksHeld), 'soa-checks-held']);  // 1.53.0: not money yet, so not in the balance
     if (d.DueDate) grid.push(['Due by', UI.esc(F.date(d.DueDate)), 'soa-due-shown']);
     if (c.BillingTerms) grid.push(['Billing terms', UI.esc(c.BillingTerms), 'soa-terms']);
     var touching = !issued && d.Issued && d.Issued.length ? '<div class="alert alert-light border small mt-3 mb-0" id="soa-touching">Already issued for days in this period: ' + d.Issued.map(function (x) { return UI.esc(x.StatementNo) + ' (' + UI.esc(F.date(x.PeriodFrom)) + ' to ' + UI.esc(F.date(x.PeriodTo)) + ')'; }).join(', ') + '.</div>' : '';
@@ -7521,7 +7523,10 @@ window.MLS = (function () {
       (d.Notes ? '<div class="alert alert-light border small mt-3 mb-0">' + UI.esc(d.Notes) + '</div>' : '') + (d.Covers ? '<div class="alert alert-light border small mt-3 mb-0" id="soa-covers">' + UI.esc(d.Covers.charAt(0).toUpperCase() + d.Covers.slice(1)) + '.</div>' : '') + touching +
       table('Orders in this period', ORDER_HEAD, orderRows(d.Orders), 'No order was billed in this period.') +
       table('Earlier orders still owing', ORDER_HEAD, orderRows(d.Earlier)) +
-      table('Payments received in this period', [['Date'], ['Order'], ['Payment'], ['Amount', 1]], d.Payments.map(function (l) { return [UI.esc(F.date(l.Date)), UI.esc(l.OrderNo), UI.esc(l.Description), money(l.Paid)]; }));
+      table('Payments received in this period', [['Date'], ['Order'], ['Payment'], ['Amount', 1]], d.Payments.map(function (l) { return [UI.esc(F.date(l.Date)), UI.esc(l.OrderNo), UI.esc(l.Description), money(l.Paid)]; })) +
+      table('Invoices issued in this period', [['Invoice'], ['Issued'], ['Due'], ['Job orders', 1], ['Total', 1]], (d.Invoices || []).map(function (v) { return ['<span class="fw-bold">' + UI.esc(v.InvoiceNo) + '</span>', UI.esc(F.date(v.Date)), v.DueDate ? UI.esc(F.date(v.DueDate)) : '—', num(v.Orders), money(v.Total)]; })) +
+      (d.Checks ? '<div id="soa-checks">' + table('Checks received, not yet cleared', [['Check'], ['Check date'], ['Received'], ['Status'], ['Amount', 1]], d.Checks.map(function (k) { return ['<span class="fw-bold">' + UI.esc(k.CheckNo) + '</span> <span class="text-muted small">' + UI.esc(k.Bank) + '</span>', UI.esc(F.date(k.CheckDate)), UI.esc(F.date(k.ReceivedDate)), UI.esc(CHECK_WORDS[k.Status] || k.Status), money(k.Amount)]; })) +
+        '<p class="small text-muted mt-1 mb-0" id="soa-checks-note">These checks are not counted as paid. A check is a payment only once the bank has cleared it; it then appears under the payments.</p></div>' : '');
   }
 
   function actions() {
@@ -7583,7 +7588,7 @@ window.MLS = (function () {
   }
   function documentHtml(d) {
     var esc = UI.esc, c = d.Client || {}, blk = function (k, v) { return v ? '<div><b>' + k + '</b>' + esc(v) + '</div>' : ''; };
-    var rows = function (lines) { return lines.map(function (l) { return [esc(F.date(l.Date)), esc(l.OrderNo), esc(l.Description), l.Pieces === '' ? '' : num(l.Pieces), esc(money(l.Billed)), esc(money(l.Paid)), esc(money(l.Balance))]; }); };
+    var rows = function (lines) { return lines.map(function (l) { return [esc(F.date(l.Date)), esc(l.OrderNo), esc(l.Description) + (l.InvoiceNo ? ' · invoice ' + esc(l.InvoiceNo) : ''), l.Pieces === '' ? '' : num(l.Pieces), esc(money(l.Billed)), esc(money(l.Paid)), esc(money(l.Balance))]; }); };
     var head = [['Date'], ['Order no.'], [''], ['Pieces', 1], ['Billed', 1], ['Paid', 1], ['Balance', 1]];
     var mark = d.Status === 'VOID' ? '<div class="soa-mark soa-void">VOID</div>' : (d.Reprint ? '<div class="soa-mark">REPRINT</div>' : '');
     return '<style>' + DOC_CSS + '</style><div class="soa-top">' + M.Print.header({ title: 'Statement of account', business: d.Business || {} }) + '<div>' + mark + '</div></div>' +
@@ -7591,11 +7596,13 @@ window.MLS = (function () {
       '<div class="soa-blk">' + blk('Client', c.Name) + blk('Property', c.PropertyName) + blk('Address', c.Address) + blk('Representative', [c.Representative, c.RepresentativePosition].filter(Boolean).join(', ')) + blk('Contract ref.', c.ContractRef) + blk('Billing terms', c.BillingTerms) + blk('Issued', F.date(d.IssuedAt)) + blk('Due by', d.DueDate ? F.date(d.DueDate) : '') + '</div>' +
       docTable('Orders in this period', head, rows(d.Orders)) + docTable('Earlier orders still owing', head, rows(d.Earlier)) +
       docTable('Payments received in this period', [['Date'], ['Order no.'], ['Payment'], ['Amount', 1]], d.Payments.map(function (l) { return [esc(F.date(l.Date)), esc(l.OrderNo), esc(l.Description), esc(money(l.Paid))]; })) +
+      docTable('Billing invoices issued in this period', [['Invoice no.'], ['Issued'], ['Due'], ['Job orders', 1], ['Total', 1]], (d.Invoices || []).map(function (v) { return [esc(v.InvoiceNo), esc(F.date(v.Date)), v.DueDate ? esc(F.date(v.DueDate)) : '—', num(v.Orders), esc(money(v.Total))]; })) +
+      (d.Checks ? docTable('Checks received, not yet cleared (not counted as paid)', [['Check no.'], ['Bank'], ['Check date'], ['Status'], ['Amount', 1]], d.Checks.map(function (k) { return [esc(k.CheckNo), esc(k.Bank), esc(F.date(k.CheckDate)), esc(CHECK_WORDS[k.Status] || k.Status), esc(money(k.Amount))]; })) : '') +
       '<table class="soa-sum"><tbody><tr><td>Balance brought forward</td><td class="r num">' + esc(money(d.Forward)) + '</td></tr><tr><td>Billed this period</td><td class="r num">' + esc(money(d.Billed)) + '</td></tr><tr><td>Paid this period</td><td class="r num">' + esc(money(d.Paid)) + '</td></tr>' +
       '<tr class="tot"><td>BALANCE DUE</td><td class="r num">' + esc(money(d.BalanceDue)) + '</td></tr></tbody></table>' +
       (d.Vat ? '<table class="soa-sum soa-vat"><tbody><tr><td colspan="2">Of the amount billed this period</td></tr>' + M.Vat.rows(d.Vat).map(function (v) { return '<tr><td>' + esc(v[0]) + '</td><td class="r num">' + esc(money(v[1])) + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
       (d.Notes ? '<p>' + esc(d.Notes) + '</p>' : '') +
-      '<div class="soa-note">This statement lists the orders billed and the payments received as recorded on the day it was issued. It is not an official receipt.' + (d.Status === 'VOID' ? ' <span class="soa-void">This statement was voided: ' + esc(d.VoidReason) + '.</span>' : '') + '</div>' +
+      '<div class="soa-note">This statement lists the orders billed and the payments received as recorded on the day it was issued. It is not an official receipt.' + (d.Checks ? ' Checks received and not yet cleared (' + esc(money(d.ChecksHeld)) + ' held or at the bank) are not counted as paid.' : '') + (d.Status === 'VOID' ? ' <span class="soa-void">This statement was voided: ' + esc(d.VoidReason) + '.</span>' : '') + '</div>' +
       M.Print.footer({ by: d.PrintedBy, at: d.PrintedAt, note: (d.Reprint ? 'REPRINT · ' : '') + 'print ' + num(d.PrintCount) + ' · ' + d.StatementNo });
   }
   /** The server counts the print first; the page is laid out from its answer. */
@@ -10122,7 +10129,7 @@ window.MLS = (function () {
   function pct(v, dp) { return v === null || v === undefined ? '—' : F.number(v, dp === undefined ? 1 : dp) + '%'; }
   function delta(v) { if (v === null || v === undefined) return '<span class="text-soft">—</span>'; var up = Number(v) > 0; return '<span class="' + (up ? 'text-success' : (Number(v) < 0 ? 'text-danger' : 'text-soft')) + '">' + (up ? '▲ ' : (Number(v) < 0 ? '▼ ' : '')) + F.number(Math.abs(Number(v)), 1) + '%</span>'; }
   function bold(v) { return '<span class="money fw-bold">' + F.peso(v) + '</span>'; }
-  var TABS = [['sales', 'Sales', 'REPORT_VIEW'], ['payments', 'Payments', 'REPORT_VIEW'], ['expenses', 'Expenses', 'REPORT_VIEW'], ['receivables', 'Receivables', 'REPORT_VIEW'], ['production', 'Production', 'REPORT_VIEW'], ['business', 'Business', 'REPORT_VIEW'], ['jobs', 'Job orders', 'REPORT_VIEW'], ['routes', 'Routes', 'REPORT_VIEW'], ['invoices', 'Invoices', 'REPORT_VIEW'], ['vat', 'VAT', 'REPORT_VIEW', function () { return M.Vat.known(); }], ['inventory', 'Inventory', 'REPORT_VIEW'], ['payroll', 'Payroll', ['STAFF_PAYROLL_ADMIN', 'STAFF_PAYROLL_HOURS_VIEW']], ['messages', 'Messages', 'SMS_VIEW_LOGS'], ['audit', 'Audit log', 'AUDIT_VIEW']];
+  var TABS = [['sales', 'Sales', 'REPORT_VIEW'], ['payments', 'Payments', 'REPORT_VIEW'], ['expenses', 'Expenses', 'REPORT_VIEW'], ['receivables', 'Receivables', 'REPORT_VIEW'], ['production', 'Production', 'REPORT_VIEW'], ['business', 'Business', 'REPORT_VIEW'], ['jobs', 'Job orders', 'REPORT_VIEW'], ['routes', 'Routes', 'REPORT_VIEW'], ['invoices', 'Invoices', 'REPORT_VIEW'], ['checks', 'Checks', 'REPORT_VIEW'], ['vat', 'VAT', 'REPORT_VIEW', function () { return M.Vat.known(); }], ['inventory', 'Inventory', 'REPORT_VIEW'], ['payroll', 'Payroll', ['STAFF_PAYROLL_ADMIN', 'STAFF_PAYROLL_HOURS_VIEW']], ['messages', 'Messages', 'SMS_VIEW_LOGS'], ['audit', 'Audit log', 'AUDIT_VIEW']];
   var PRESETS = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This week'], ['month', 'This month'], ['lastMonth', 'Last month'], ['quarter', 'Last 90 days'], ['year', 'This year'], ['twelve', 'Last 12 months']];
   function tabAllowed(t) { var p = t[2]; if (t[3] && !t[3]()) return false; return Array.isArray(p) ? p.some(can) : can(p); }  // 1.50.0: a tab may also depend on a setting (VAT: only once VAT has been switched on)
   function preset(code) {
@@ -10171,12 +10178,14 @@ window.MLS = (function () {
     receivables: {
       noRange: true,
       load: function () { return Api.call('reports.receivables', { asOf: state.to || today() }); },
-      kpis: function (d) { return [['Open balances', d.totals.count], ['Outstanding', F.peso(d.totals.outstanding)], ['Customers', d.totals.customers]].concat(d.buckets.map(function (b) { return [b.Label, F.peso(b.Amount) + ' (' + b.Count + ')']; })); },
-      columns: function () { return [{ key: 'OrderNo', label: 'Order', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + F.date(r.OrderDate) + ' · ' + UI.esc(r.StatusLabel) + '</div>'; } }, { key: 'CustomerName', label: 'Customer', format: function (v, r) { return UI.esc(v || '—') + (r.CustomerPhone ? '<div class="small text-soft">' + UI.esc(r.CustomerPhone) + '</div>' : ''); } }, { key: 'OrderTotal', label: 'Total', align: 'right', format: peso }, { key: 'PaidAmount', label: 'Paid', align: 'right', format: peso }, { key: 'BalanceAmount', label: 'Balance', align: 'right', format: bold }, { key: 'Days', label: 'Days', align: 'right', format: function (v, r) { return '<span class="status-badge ' + (r.Bucket === 'OVERDUE' ? 's-rejected' : (r.Bucket === 'DUE' ? 's-pending' : 's-paid')) + '">' + v + ' d</span>'; } }]; },
+      kpis: function (d) { return [['Open balances', d.totals.count], ['Outstanding', F.peso(d.totals.outstanding)], ['Customers', d.totals.customers]].concat(d.buckets.map(function (b) { return [b.Label, F.peso(b.Amount) + ' (' + b.Count + ')']; })).concat(d.totals.covered ? [['Checks held', F.peso(d.totals.covered)]] : []); },  // 1.53.0: what checks still held or at the bank would pay — not money yet
+      columns: function () { return [{ key: 'OrderNo', label: 'Order', format: function (v, r) { return '<span class="fw-bold">' + UI.esc(v) + '</span><div class="small text-soft">' + F.date(r.OrderDate) + ' · ' + UI.esc(r.StatusLabel) + (r.InvoiceNo ? ' · invoice ' + UI.esc(r.InvoiceNo) : '') + '</div>'; } }, { key: 'CustomerName', label: 'Customer', format: function (v, r) { return UI.esc(v || '—') + (r.CustomerPhone ? '<div class="small text-soft">' + UI.esc(r.CustomerPhone) + '</div>' : ''); } }, { key: 'OrderTotal', label: 'Total', align: 'right', format: peso }, { key: 'PaidAmount', label: 'Paid', align: 'right', format: peso }, { key: 'BalanceAmount', label: 'Balance', align: 'right', format: bold }, { key: 'Covered', label: 'Covered by checks held', align: 'right', format: function (v) { return Number(v) ? peso(v) : '<span class="text-soft">—</span>'; } }, { key: 'Days', label: 'Days', align: 'right', format: function (v, r) { return '<span class="status-badge ' + (r.Bucket === 'OVERDUE' ? 's-rejected' : (r.Bucket === 'DUE' ? 's-pending' : 's-paid')) + '">' + v + ' d</span>'; } },
+        { key: 'PastDue', label: 'Past due', align: 'right', format: function (v, r) { return r.Age === undefined ? '' : (Number(v) ? '<span class="status-badge ' + (v > 60 ? 's-rejected' : 's-pending') + '">' + v + ' d</span>' : '<span class="text-soft">not yet</span>') + (r.DueDate && r.InvoiceNo ? '<div class="small text-soft">due ' + UI.esc(F.date(r.DueDate)) + '</div>' : ''); } }]; },  // 1.53.0: days past the due date — the invoice's, or the order date for an order on no invoice
       rows: function (d) { return d.rows; },
       onRow: function (r) { if (M.OrdersUI && can('ORDER_VIEW')) M.OrdersUI.openOrder(r.OrderId); },
       chart: function (d) { return { type: 'bar', labels: d.buckets.map(function (b) { return b.Label; }), datasets: [{ label: 'Outstanding', data: d.buckets.map(function (b) { return b.Amount; }) }] }; },
-      extra: function (d) { return table('By customer', [{ key: 'CustomerName', label: 'Customer' }, { key: 'Orders', label: 'Orders', align: 'right' }, { key: 'OldestDays', label: 'Oldest', align: 'right', format: function (v) { return v + ' d'; } }, { key: 'Balance', label: 'Balance', align: 'right', format: bold }], d.byCustomer); }
+      extra: function (d) { return (d.ageing ? table('By days past the due date', [{ key: 'Label', label: 'Past due' }, { key: 'Count', label: 'Orders', align: 'right' }, { key: 'Amount', label: 'Balance', align: 'right', format: bold }, { key: 'Covered', label: 'Covered by checks held', align: 'right', format: peso }], d.ageing) +
+        '<p class="small text-soft" id="rp-age-note">An order on an invoice is due on the invoice\'s due date (an invoice without one is never past due); an order on no invoice is due on its order date. A check still held or at the bank is not money: the balance stays until it clears.</p>' : '') + table('By customer', [{ key: 'CustomerName', label: 'Customer' }, { key: 'Orders', label: 'Orders', align: 'right' }, { key: 'OldestDays', label: 'Oldest', align: 'right', format: function (v) { return v + ' d'; } }, { key: 'Balance', label: 'Balance', align: 'right', format: bold }], d.byCustomer); }
     },
     production: {
       load: function () { return Api.call('reports.production', { from: state.from, to: state.to }); },
@@ -10236,6 +10245,17 @@ window.MLS = (function () {
       chart: function () { return null; },
       extra: function (d) { return (d.voided.length ? table('Voided', [{ key: 'InvoiceNo', label: 'Invoice', format: function (v, r) { return lead(v, 'issued ' + UI.esc(F.date(r.Date))); } }, { key: 'Client', label: 'Client', format: function (v) { return UI.esc(v); } }, { key: 'Total', label: 'Total', align: R, format: peso }, { key: 'VoidReason', label: 'Why', format: function (v, r) { return UI.esc(v) + (r.VoidedBy ? '<div class="small text-soft">' + UI.esc(r.VoidedBy) + '</div>' : ''); } }], d.voided) : '') +
         '<p class="small text-soft" id="rp-inv-note">The invoices issued in the range. Total is the amount on the invoice as it was issued. Paid and Balance are read from its job orders as they stand now, whenever the payment was made. An invoice is overdue when it still owes after its due date. A billing invoice is not an official receipt.</p>'; }
+    },
+    checks: {   // release 1.53.0: the checks received in the range and where each stands now
+      load: function () { return Api.call('reports.checks', { from: state.from, to: state.to }); },
+      kpis: function (d) { var t = d.totals; return [['Checks', t.Checks], ['Received', F.peso(t.Received)], ['Not yet cleared', F.peso(t.Open)], ['Cleared', F.peso(t.Cleared)], ['Recorded as paid', F.peso(t.Posted)], ['Not applied', F.peso(t.Unapplied)], ['Returned by the bank', F.peso(t.Returned) + ' (' + t.ReturnedCount + ')']]; },
+      columns: function () { var words = { HELD: 'Held', DEPOSITED: 'At the bank', CLEARED: 'Cleared', BOUNCED: 'Returned', REPLACED: 'Replaced', CANCELLED: 'Cancelled' }; return [{ key: 'CheckNo', label: 'Check', format: function (v, r) { return lead(v, UI.esc(r.Bank) + ' · received ' + UI.esc(F.date(r.ReceivedDate))); } }, { key: 'Client', label: 'Client', format: function (v) { return UI.esc(v); } }, { key: 'CheckDate', label: 'Check date', format: function (v) { return UI.esc(F.date(v)); } }, { key: 'Amount', label: 'Amount', align: R, format: bold },
+        { key: 'Status', label: 'Status', format: function (v, r) { return '<span class="status-badge s-' + String(v).toLowerCase() + '">' + (words[v] || UI.esc(v)) + '</span>' + (r.Due === 'NOW' ? ' <span class="status-badge s-due">Due for deposit</span>' : ''); } }, { key: 'Posted', label: 'Recorded as paid', align: R, format: function (v, r) { return r.Status === 'CLEARED' ? peso(v) + (Number(r.Unapplied) ? '<div class="small text-soft">' + F.peso(r.Unapplied) + ' not applied</div>' : '') : '<span class="text-soft">—</span>'; } }]; },
+      rows: function (d) { return d.rows; },
+      onRow: function (r) { if (M.Checks && M.Checks.canView()) M.Checks.open(r.Id); },
+      chart: function () { return null; },
+      extra: function (d) { return table('By status', [{ key: 'Label', label: 'Status' }, { key: 'Count', label: 'Checks', align: R }, { key: 'Amount', label: 'Amount', align: R, format: bold }], d.byStatus) +
+        '<p class="small text-soft" id="rp-chk-note">The checks received in the range, as they stand now. A check is counted as paid only once the bank has cleared it; Recorded as paid is what its clearing put on orders. Checks are never archived, so the list is whole for any range.</p>'; }
     },
     vat: {   // release 1.50.0: the VAT summary by month, from each order's own figures
       load: function () { return Api.call('reports.vat', { from: state.from, to: state.to }); },
@@ -11235,7 +11255,11 @@ window.MLS = (function () {
     var sizes = live.sizes ? Object.keys(live.sizes).map(function (t) { return '<span class="me-2 text-nowrap">' + UI.esc(t) + ' <b>' + F.number(live.sizes[t] || 0, 0) + '</b></span>'; }).join('') : '';
     var dev = M.Timing ? M.Timing.summary().filter(function (t) { return t.action.indexOf('view:') !== 0 && t.action !== 'start'; }).sort(function (a, b) { return (b.errors || 0) - (a.errors || 0) || b.count - a.count; }).slice(0, 15) : [];
     var devRows = dev.map(function (t) { return '<tr><td class="font-monospace small">' + UI.esc(t.action) + '</td><td class="text-end">' + t.count + '</td><td class="text-end">' + (t.p50Ms === null ? '—' : t.p50Ms) + ' / ' + (t.p95Ms === null ? '—' : t.p95Ms) + '</td><td class="text-end">' + (t.p50ServerMs === null || t.p50ServerMs === undefined ? '—' : t.p50ServerMs + ' / ' + t.p95ServerMs) + '</td><td class="text-end' + (t.errors ? ' text-danger fw-bold' : '') + '">' + (t.errors || 0) + (t.lastError ? ' <span class="small text-soft">' + UI.esc(t.lastError.code) + '</span>' : '') + '</td></tr>'; }).join('');
-    return '<div class="sum-grid mb-2">' + tiles.join('') + '</div>' +
+    // 1.53.0: the money to follow up — the same lines the morning digest sends; counts and amounts, no client's name
+    var go = { checks: ['checks', 'Open Checks'], invoices: ['reports', 'Open Reports'] };
+    var rem = (h.reminders || []).map(function (r) { var icon = r.level === 'warn' ? 'fa-triangle-exclamation text-warning' : 'fa-circle-info text-primary', g = go[r.where]; return '<li class="mb-1"><i class="fa-solid ' + icon + ' me-2" aria-hidden="true"></i>' + UI.esc(r.text) + (g ? ' <a href="#/' + g[0] + '">' + g[1] + '</a>' : '') + '</li>'; }).join('');
+    var remHtml = h.reminders ? '<div class="small mb-2" id="set-health-reminders"><b>Money to follow up:</b> ' + (rem ? '<ul class="list-unstyled mb-0 mt-1">' + rem + '</ul>' : '<span class="text-soft">no check or invoice needs a look today.</span>') + '</div>' : '';
+    return '<div class="sum-grid mb-2">' + tiles.join('') + '</div>' + remHtml +
       '<div class="small mb-2"><b>Scheduled jobs:</b> ' + (trig || '<span class="text-soft">unknown</span>') + '</div>' +
       '<div class="table-wrap mb-2"><table class="table table-sm table-xs mb-0"><thead><tr><th>Job</th><th>Last outcome</th><th>When</th><th>Note</th></tr></thead><tbody>' + (jobRows || '<tr><td colspan="4" class="text-soft">No job has run yet.</td></tr>') + '</tbody></table></div>' +
       '<div class="small text-soft mb-2"><b>Rows on the live sheets:</b> ' + sizes + '</div>' +
